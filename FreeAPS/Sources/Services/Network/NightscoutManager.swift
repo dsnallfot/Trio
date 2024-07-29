@@ -305,11 +305,11 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         var suggested = storage.retrieve(OpenAPS.Enact.suggested, as: Suggestion.self)
         var enacted = storage.retrieve(OpenAPS.Enact.enacted, as: Suggestion.self)
 
-        if (suggested?.timestamp ?? .distantPast) > (enacted?.timestamp ?? .distantPast) {
-            enacted?.predictions = nil
-        } else {
-            suggested?.predictions = nil
-        }
+        /* if (suggested?.timestamp ?? .distantPast) > (enacted?.timestamp ?? .distantPast) {
+             enacted?.predictions = nil
+         } else {
+             suggested?.predictions = nil
+         } */ // Daniel: Commented out to upload predictions for both suggested and enacted which is needed to use suggestion for loop follow
 
         let loopIsClosed = settingsManager.settings.closedLoop
 
