@@ -3,21 +3,22 @@ import Foundation
 extension TrioRemoteControl {
     func handleMealCommand(_ pushMessage: PushMessage) async {
         // If bolusAmount is not nil but all others are nil, exit early without logging an error
-                if pushMessage.bolusAmount != nil &&
-                    pushMessage.carbs == nil &&
-                    pushMessage.fat == nil &&
-                    pushMessage.protein == nil {
-                    return
-                }
+        if pushMessage.bolusAmount != nil &&
+            pushMessage.carbs == nil &&
+            pushMessage.fat == nil &&
+            pushMessage.protein == nil
+        {
+            return
+        }
         guard pushMessage.carbs != nil || pushMessage.fat != nil || pushMessage.protein != nil else {
-            await logError("Command rejected: meal data is incomplete or invalid.", pushMessage: pushMessage)
+            await logError("Kommandot avvisades: måltidsdata är ofullständiga eller ogiltiga.", pushMessage: pushMessage)
             return
         }
 
         let carbsDecimal = pushMessage.carbs != nil ? Decimal(pushMessage.carbs!) : nil
         let fatDecimal = pushMessage.fat != nil ? Decimal(pushMessage.fat!) : nil
         let proteinDecimal = pushMessage.protein != nil ? Decimal(pushMessage.protein!) : nil
-        let notes = pushMessage.notes != nil ? pushMessage.notes : ""
+        let notes = pushMessage.notes ?? ""
 
         let settings = await TrioApp.resolver.resolve(SettingsManager.self)?.settings
         let maxCarbs = settings?.maxCarbs ?? Decimal(0)
@@ -26,7 +27,7 @@ extension TrioRemoteControl {
 
         if let carbs = carbsDecimal, carbs > maxCarbs {
             await logError(
-                "Command rejected: carbs amount (\(carbs)g) exceeds the maximum allowed (\(maxCarbs)g).",
+                "Kommandot avvisades: mängden kolhydrater (\(carbs)g) överskrider det maximalt tillåtna (\(maxCarbs)g).",
                 pushMessage: pushMessage
             )
             return
@@ -34,7 +35,7 @@ extension TrioRemoteControl {
 
         if let fat = fatDecimal, fat > maxFat {
             await logError(
-                "Command rejected: fat amount (\(fat)g) exceeds the maximum allowed (\(maxFat)g).",
+                "Kommandot avvisades: mängden fett (\(fat)g) överskrider det maximalt tillåtna (\(maxFat)g).",
                 pushMessage: pushMessage
             )
             return
@@ -42,7 +43,7 @@ extension TrioRemoteControl {
 
         if let protein = proteinDecimal, protein > maxProtein {
             await logError(
-                "Command rejected: protein amount (\(protein)g) exceeds the maximum allowed (\(maxProtein)g).",
+                "Kommandot avvisades: mängden protein (\(protein)g) överskrider det maximalt tillåtna (\(maxProtein)g).",
                 pushMessage: pushMessage
             )
             return
@@ -54,7 +55,7 @@ extension TrioRemoteControl {
 
         if !carbsAfterPushMessage.isEmpty {
             await logError(
-                "Command rejected: newer carb entries have been logged since the command was sent.",
+                "Kommandot avvisades: nyare måltidsregistreringar har loggats sedan kommandot skickades.",
                 pushMessage: pushMessage
             )
             return
@@ -84,7 +85,35 @@ extension TrioRemoteControl {
 
         debug(
             .remoteControl,
-            "Remote command processed successfully. \(pushMessage.humanReadableDescription())"
+            "Remote måltid behandlades framgångsrikt. \(pushMessage.humanReadableDescription())"
+        )
+        // Construct the notification body
+        var notificationBody = !notes.isEmpty ? "\(notes)\n" : ""
+        if let carbs = carbsDecimal, carbs > 0 {
+            notificationBody += "Kolhydrater: \(carbs) g\n"
+        }
+        if let fat = fatDecimal, fat > 0 {
+            notificationBody += "Fett: \(fat) g\n"
+        }
+        if let protein = proteinDecimal, protein > 0 {
+            notificationBody += "Protein: \(protein) g\n"
+        }
+        if let bolusAmount = pushMessage.bolusAmount, bolusAmount > 0 {
+            notificationBody += "Bolus: \(bolusAmount) E\n"
+        }
+        notificationBody += "Inlagt av: \(pushMessage.user)\n"
+        // Convert timestamp to HH:mm:ss format
+        let date = Date(timeIntervalSince1970: pushMessage.timestamp)
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "HH:mm:ss"
+        let formattedTime = dateFormatter.string(from: date)
+        notificationBody += "Tid: \(formattedTime)\n"
+        // Trim trailing newline, if present
+        notificationBody = notificationBody.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+        // Send success notification
+        notificationManager.notifyTrioRemoteControl(
+            title: "Remote Måltid",
+            body: notificationBody
         )
     }
 }

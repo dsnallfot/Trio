@@ -8,5 +8,8 @@ extension TrioRemoteControl {
         }
         debug(.remoteControl, note)
         await nightscoutManager.uploadNoteTreatment(note: note)
+
+        // Send local notification
+        notificationManager.notifyTrioRemoteControl(title: "Remote misslyckades ❌", body: note)
     }
 }

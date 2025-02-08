@@ -6,7 +6,7 @@ extension TrioRemoteControl {
         guard let targetValue = pushMessage.target,
               let durationValue = pushMessage.duration
         else {
-            await logError("Command rejected: temp target data is incomplete or invalid.", pushMessage: pushMessage)
+            await logError("Kommandot avvisades: data för temp target är ofullständig eller ogiltig.", pushMessage: pushMessage)
             return
         }
 
@@ -31,18 +31,52 @@ extension TrioRemoteControl {
 
         debug(
             .remoteControl,
-            "Remote command processed successfully. \(pushMessage.humanReadableDescription())"
+            "Remote Temp Target behandlades framgångsrikt. \(pushMessage.humanReadableDescription())"
+        )
+        var notificationBody = "Temp target aktiverades: \(targetValue) i \(durationInMinutes) minuter.\n"
+        notificationBody += "Inlagt av: \(pushMessage.user)\n"
+        // Convert timestamp to HH:mm:ss format
+        let date = Date(timeIntervalSince1970: pushMessage.timestamp)
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "HH:mm:ss"
+        let formattedTime = dateFormatter.string(from: date)
+        notificationBody += "Tid: \(formattedTime)\n"
+
+        // Trim trailing newline, if present
+        notificationBody = notificationBody.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+
+        // Send success notification
+        notificationManager.notifyTrioRemoteControl(
+            title: "Remote Temp Target",
+            body: notificationBody
         )
     }
 
     @MainActor func cancelTempTarget(_ pushMessage: PushMessage) async {
-        debug(.remoteControl, "Cancelling temp target.")
+        debug(.remoteControl, "Avbryter temp target.")
 
         await disableAllActiveTempTargets()
 
         debug(
             .remoteControl,
-            "Remote command processed successfully. \(pushMessage.humanReadableDescription())"
+            "Remote Temp Target behandlades framgångsrikt. \(pushMessage.humanReadableDescription())"
+        )
+        var notificationBody = "Pågående temp target avbröts.\n"
+        notificationBody += "Inlagt av: \(pushMessage.user)\n"
+        // Convert timestamp to HH:mm:ss format
+        let date = Date(timeIntervalSince1970: pushMessage.timestamp)
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "HH:mm:ss"
+        let formattedTime = dateFormatter.string(from: date)
+        notificationBody += "Tid: \(formattedTime)\n"
+
+        // Trim trailing newline, if present
+        notificationBody = notificationBody.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+
+        // Send success notification
+        notificationManager.notifyTrioRemoteControl(
+            title: "Remote Temp Target",
+            body: notificationBody
         )
     }
 
@@ -57,7 +91,7 @@ extension TrioRemoteControl {
 
                 guard !results.isEmpty else {
                     Task {
-                        await self.logError("Command rejected: no active temp target to cancel.")
+                        await self.logError("Kommandot avvisades: ingen aktiv temp target att avbryta.")
                     }
                     return false
                 }

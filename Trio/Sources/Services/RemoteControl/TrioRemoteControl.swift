@@ -1,6 +1,7 @@
 import CoreData
 import Foundation
 import Swinject
+import UserNotifications
 
 class TrioRemoteControl: Injectable {
     static let shared = TrioRemoteControl()
@@ -10,6 +11,7 @@ class TrioRemoteControl: Injectable {
     @Injected() internal var nightscoutManager: NightscoutManager!
     @Injected() internal var overrideStorage: OverrideStorage!
     @Injected() internal var settings: SettingsManager!
+    @Injected() public var notificationManager: BaseUserNotificationsManager!
 
     private let timeWindow: TimeInterval = 600 // Defines how old messages that are accepted, 10 minutes
 
@@ -20,12 +22,15 @@ class TrioRemoteControl: Injectable {
         pumpHistoryFetchContext = CoreDataStack.shared.newTaskContext()
         viewContext = CoreDataStack.shared.persistentContainer.viewContext
         injectServices(TrioApp.resolver)
+
+        // Validera att notificationshanteraren är injicerad
+        assert(notificationManager != nil, "NotificationManager är inte injicerad. Kontrollera Swinject-registrering.")
     }
 
     func handleRemoteNotification(pushMessage: PushMessage) async {
         let isTrioRemoteControlEnabled = UserDefaults.standard.bool(forKey: "isTrioRemoteControlEnabled")
         guard isTrioRemoteControlEnabled else {
-            await logError("Remote command received, but remote control is disabled in settings. Ignoring the command.")
+            await logError("Fjärrkommando mottogs, men fjärrkontroll är inaktiverad i inställningarna. Kommandot ignoreras.")
             return
         }
 
@@ -34,24 +39,24 @@ class TrioRemoteControl: Injectable {
 
         if timeDifference > timeWindow {
             await logError(
-                "Command rejected: the message is too old (sent \(Int(timeDifference)) seconds ago, which exceeds the allowed limit).",
+                "Kommandot avvisades: meddelandet är för gammalt (skickades för \(Int(timeDifference)) sekunder sedan, vilket överskrider den tillåtna gränsen).",
                 pushMessage: pushMessage
             )
             return
         } else if timeDifference < -timeWindow {
             await logError(
-                "Command rejected: the message has an invalid future timestamp (timestamp is \(Int(-timeDifference)) seconds ahead of the current time).",
+                "Kommandot avvisades: meddelandet har en ogiltig framtida tidsstämpel (tidsstämpeln är \(Int(-timeDifference)) sekunder före aktuell tid).",
                 pushMessage: pushMessage
             )
             return
         }
 
-        debug(.remoteControl, "Command received with acceptable time difference: \(Int(timeDifference)) seconds.")
+        debug(.remoteControl, "Kommando mottogs med acceptabel tidsdifferens: \(Int(timeDifference)) sekunder.")
 
         let storedSecret = UserDefaults.standard.string(forKey: "trioRemoteControlSharedSecret") ?? ""
         guard !storedSecret.isEmpty else {
             await logError(
-                "Command rejected: shared secret is missing in settings. Cannot authenticate the command.",
+                "Kommandot avvisades: delad hemlighet saknas i inställningarna. Kommandot kan inte autentiseras.",
                 pushMessage: pushMessage
             )
             return
@@ -59,7 +64,7 @@ class TrioRemoteControl: Injectable {
 
         guard pushMessage.sharedSecret == storedSecret else {
             await logError(
-                "Command rejected: shared secret does not match. Cannot authenticate the command.",
+                "Kommandot avvisades: delad hemlighet matchar inte. Kommandot kan inte autentiseras.",
                 pushMessage: pushMessage
             )
             return
@@ -102,16 +107,33 @@ extension TrioRemoteControl {
             case .bolus:
                 return "Bolus"
             case .tempTarget:
-                return "Temporary Target"
+                return "Temporärt mål"
             case .cancelTempTarget:
-                return "Cancel Temporary Target"
+                return "Avbryt temporärt mål"
             case .meal:
-                return "Meal"
+                return "Måltid"
             case .startOverride:
-                return "Start Override"
+                return "Starta Override"
             case .cancelOverride:
-                return "Cancel Override"
+                return "Avbryt Override"
             }
         }
+    }
+}
+
+extension BaseUserNotificationsManager {
+    func notifyTrioRemoteControl(title: String, body: String) {
+        let content = UNMutableNotificationContent()
+        content.title = title
+        content.body = body
+        content.sound = .default
+        content.interruptionLevel = .timeSensitive
+        // Generate a unique identifier for each notification
+        let uniqueIdentifier = Identifier.trioRemoteLocalNotification.rawValue + "." + UUID().uuidString
+        addRequest(
+            identifier: uniqueIdentifier, // Pass the unique identifier
+            content: content,
+            deleteOld: false
+        )
     }
 }

@@ -38,12 +38,13 @@ protocol pumpNotificationObserver {
 }
 
 final class BaseUserNotificationsManager: NSObject, UserNotificationsManager, Injectable {
-    private enum Identifier: String {
+    public enum Identifier: String {
         case glucoseNotification = "Trio.glucoseNotification"
         case carbsRequiredNotification = "Trio.carbsRequiredNotification"
         case noLoopFirstNotification = "Trio.noLoopFirstNotification"
         case noLoopSecondNotification = "Trio.noLoopSecondNotification"
         case bolusFailedNotification = "Trio.bolusFailedNotification"
+        case trioRemoteLocalNotification = "FreeAPS.trioRemoteLocalNotification"
         case pumpNotification = "Trio.pumpNotification"
         case alertMessageNotification = "Trio.alertMessageNotification"
     }
@@ -182,7 +183,12 @@ final class BaseUserNotificationsManager: NSObject, UserNotificationsManager, In
             ),
             carbs
         )
-        addRequest(identifier: .carbsRequiredNotification, content: content, deleteOld: true, messageSubtype: .carb)
+        addRequest(
+            identifier: Identifier.carbsRequiredNotification.rawValue,
+            content: content,
+            deleteOld: true,
+            messageSubtype: .carb
+        )
     }
 
     private func scheduleMissingLoopNotifiactions(date _: Date) {
@@ -203,7 +209,7 @@ final class BaseUserNotificationsManager: NSObject, UserNotificationsManager, In
         let secondTrigger = UNTimeIntervalNotificationTrigger(timeInterval: 60 * TimeInterval(secondInterval), repeats: false)
 
         addRequest(
-            identifier: .noLoopFirstNotification,
+            identifier: Identifier.noLoopFirstNotification.rawValue,
             content: firstContent,
             deleteOld: true,
             trigger: firstTrigger,
@@ -211,7 +217,7 @@ final class BaseUserNotificationsManager: NSObject, UserNotificationsManager, In
             messageSubtype: .algorithm
         )
         addRequest(
-            identifier: .noLoopSecondNotification,
+            identifier: Identifier.noLoopSecondNotification.rawValue,
             content: secondContent,
             deleteOld: true,
             trigger: secondTrigger,
@@ -232,7 +238,7 @@ final class BaseUserNotificationsManager: NSObject, UserNotificationsManager, In
         content.sound = .default
 
         addRequest(
-            identifier: .noLoopFirstNotification,
+            identifier: Identifier.bolusFailedNotification.rawValue,
             content: content,
             deleteOld: true,
             trigger: nil,
@@ -312,8 +318,8 @@ final class BaseUserNotificationsManager: NSObject, UserNotificationsManager, In
                 }
 
                 addRequest(
-                    identifier: .glucoseNotification,
-                    content: content,
+                    identifier: Identifier.glucoseNotification.rawValue, content: content,
+
                     deleteOld: true,
                     messageType: messageType,
                     messageSubtype: .glucose,
@@ -403,8 +409,8 @@ final class BaseUserNotificationsManager: NSObject, UserNotificationsManager, In
         }
     }
 
-    private func addRequest(
-        identifier: Identifier,
+    public func addRequest(
+        identifier: String, // Changed to String
         content: UNMutableNotificationContent,
         deleteOld: Bool = false,
         trigger: UNNotificationTrigger? = nil,
@@ -421,22 +427,47 @@ final class BaseUserNotificationsManager: NSObject, UserNotificationsManager, In
             trigger: trigger,
             action: action
         )
-        var alertIdentifier = identifier.rawValue
-        alertIdentifier = identifier == .pumpNotification ? alertIdentifier + content
-            .title : (identifier == .alertMessageNotification ? alertIdentifier + content.body : alertIdentifier)
+
+        // Just use 'identifier' directly instead of 'identifier.rawValue'
+        var alertIdentifier = identifier
+
+        // If you used to write something like:
+        //   if identifier == .pumpNotification { ... }
+        // just switch to a string compare:
+        if identifier == "pumpNotification" {
+            // If you want to concatenate the notification body
+            // (assuming content.body is a String):
+            alertIdentifier += content.body
+        } else if identifier == "alertMessageNotification" {
+            // If your old code did something special for that case
+            alertIdentifier += content.body
+        }
+
+        // remove old notifications if asked
         if deleteOld {
             DispatchQueue.main.async {
                 self.center.removeDeliveredNotifications(withIdentifiers: [alertIdentifier])
                 self.center.removePendingNotificationRequests(withIdentifiers: [alertIdentifier])
             }
         }
+        /*
+         var alertIdentifier = identifier.rawValue
+         alertIdentifier = identifier == .pumpNotification ? alertIdentifier + content
+             .title : (identifier == .alertMessageNotification ? alertIdentifier + content.body : alertIdentifier)
+         if deleteOld {
+             DispatchQueue.main.async {
+                 self.center.removeDeliveredNotifications(withIdentifiers: [alertIdentifier])
+                 self.center.removePendingNotificationRequests(withIdentifiers: [alertIdentifier])
+             }
+         }
+         */
         if alertPermissionsChecker.notificationsDisabled {
             router.alertMessage.send(messageCont)
             return
         }
         guard router.allowNotify(messageCont, settingsManager.settings) else { return }
 
-        let request = UNNotificationRequest(identifier: alertIdentifier, content: content, trigger: trigger)
+        let request = UNNotificationRequest(identifier: alertIdentifier as! String, content: content, trigger: trigger)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             self.center.add(request) { error in
                 if let error = error {
@@ -541,7 +572,7 @@ extension BaseUserNotificationsManager: alertMessageNotificationObserver {
         content.body = NSLocalizedString(message.content, comment: "Info message")
         content.sound = .default
         addRequest(
-            identifier: identifier,
+            identifier: identifier.rawValue,
             content: content,
             deleteOld: true,
             trigger: message.trigger,
@@ -568,7 +599,7 @@ extension BaseUserNotificationsManager: pumpNotificationObserver {
         content.body = alert.contentBody ?? "Unknown"
         content.sound = .default
         addRequest(
-            identifier: .pumpNotification,
+            identifier: Identifier.pumpNotification.rawValue,
             content: content,
             deleteOld: true,
             trigger: nil,

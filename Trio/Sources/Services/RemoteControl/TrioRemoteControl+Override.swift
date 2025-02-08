@@ -7,13 +7,28 @@ extension TrioRemoteControl {
 
         debug(
             .remoteControl,
-            "Remote command processed successfully. \(pushMessage.humanReadableDescription())"
+            "Remote Override behandlades framgångsrikt. \(pushMessage.humanReadableDescription())"
+        )
+        var notificationBody = "Pågående override avbröts.\n"
+        notificationBody += "Inlagt av: \(pushMessage.user)\n"
+        // Convert timestamp to HH:mm:ss format
+        let date = Date(timeIntervalSince1970: pushMessage.timestamp)
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "HH:mm:ss"
+        let formattedTime = dateFormatter.string(from: date)
+        notificationBody += "Tid: \(formattedTime)\n"
+
+        // Trim trailing newline, if present
+        notificationBody = notificationBody.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+        notificationManager.notifyTrioRemoteControl(
+            title: "Remote Override",
+            body: notificationBody
         )
     }
 
     @MainActor internal func handleStartOverrideCommand(_ pushMessage: PushMessage) async {
         guard let overrideName = pushMessage.overrideName, !overrideName.isEmpty else {
-            await logError("Command rejected: override name is missing.", pushMessage: pushMessage)
+            await logError("Kommandot avvisades: override-namn saknas.", pushMessage: pushMessage)
             return
         }
 
@@ -26,7 +41,7 @@ extension TrioRemoteControl {
         if let preset = presets.first(where: { $0.name == overrideName }) {
             await enactOverridePreset(preset: preset, pushMessage: pushMessage)
         } else {
-            await logError("Command rejected: override preset '\(overrideName)' not found.", pushMessage: pushMessage)
+            await logError("Kommandot avvisades: override '\(overrideName)' hittades inte.", pushMessage: pushMessage)
         }
     }
 
@@ -44,10 +59,26 @@ extension TrioRemoteControl {
                 Foundation.NotificationCenter.default.post(name: .willUpdateOverrideConfiguration, object: nil)
                 await awaitNotification(.didUpdateOverrideConfiguration)
 
-                debug(.remoteControl, "Remote command processed successfully. \(pushMessage.humanReadableDescription())")
+                debug(.remoteControl, "Remote Override behandlades framgångsrikt. \(pushMessage.humanReadableDescription())")
+
+                var notificationBody = "\(pushMessage.overrideName) aktiverades\n"
+                notificationBody += "Inlagt av: \(pushMessage.user)\n"
+                // Convert timestamp to HH:mm:ss format
+                let date = Date(timeIntervalSince1970: pushMessage.timestamp)
+                let dateFormatter = DateFormatter()
+                dateFormatter.dateFormat = "HH:mm:ss"
+                let formattedTime = dateFormatter.string(from: date)
+                notificationBody += "Tid: \(formattedTime)\n"
+
+                // Trim trailing newline, if present
+                notificationBody = notificationBody.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+                notificationManager.notifyTrioRemoteControl(
+                    title: "Remote Override",
+                    body: notificationBody
+                )
             }
         } catch {
-            debug(.remoteControl, "Failed to enact override preset: \(error.localizedDescription)")
+            debug(.remoteControl, "Misslyckades med att aktivera override-presets: \(error.localizedDescription)")
         }
     }
 
@@ -91,7 +122,7 @@ extension TrioRemoteControl {
                 }
             } catch {
                 debugPrint(
-                    "\(DebuggingIdentifiers.failed) \(#file) \(#function) Failed to disable active Overrides with error: \(error.localizedDescription)"
+                    "\(DebuggingIdentifiers.failed) \(#file) \(#function) Misslyckades med att avaktivera aktiva overrides med fel: \(error.localizedDescription)"
                 )
                 return false
             }
