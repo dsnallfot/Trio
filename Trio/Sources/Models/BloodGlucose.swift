@@ -70,6 +70,7 @@ struct BloodGlucose: JSON, Identifiable, Hashable, Codable {
         case noise
         case glucose
         case type
+        case device
         case activationDate
         case sessionStartDate
         case transmitterID
@@ -94,6 +95,7 @@ struct BloodGlucose: JSON, Identifiable, Hashable, Codable {
         noise = try container.decodeIfPresent(Int.self, forKey: .noise)
         glucose = try container.decodeIfPresent(Int.self, forKey: .glucose)
         type = try container.decodeIfPresent(String.self, forKey: .type)
+        device = try container.decodeIfPresent(String.self, forKey: .device)
         activationDate = try container.decodeIfPresent(Date.self, forKey: .activationDate)
         sessionStartDate = try container.decodeIfPresent(Date.self, forKey: .sessionStartDate)
         transmitterID = try container.decodeIfPresent(String.self, forKey: .transmitterID)
@@ -110,7 +112,7 @@ struct BloodGlucose: JSON, Identifiable, Hashable, Codable {
         noise: Int? = nil,
         glucose: Int? = nil,
         type: String? = nil,
-        var device: String?,
+        device: String? = nil,
         activationDate: Date? = nil,
         sessionStartDate: Date? = nil,
         transmitterID: String? = nil
@@ -125,6 +127,7 @@ struct BloodGlucose: JSON, Identifiable, Hashable, Codable {
         self.noise = noise
         self.glucose = glucose
         self.type = type
+        self.device = device
         self.activationDate = activationDate
         self.sessionStartDate = sessionStartDate
         self.transmitterID = transmitterID
@@ -144,6 +147,7 @@ struct BloodGlucose: JSON, Identifiable, Hashable, Codable {
     let noise: Int?
     var glucose: Int?
     var type: String? = nil
+    var device: String?
     var activationDate: Date? = nil
     var sessionStartDate: Date? = nil
     var transmitterID: String? = nil
