@@ -10,6 +10,7 @@ extension TrioRemoteControl {
         let carbsDecimal = pushMessage.carbs != nil ? Decimal(pushMessage.carbs!) : nil
         let fatDecimal = pushMessage.fat != nil ? Decimal(pushMessage.fat!) : nil
         let proteinDecimal = pushMessage.protein != nil ? Decimal(pushMessage.protein!) : nil
+        let notes = pushMessage.notes != nil ? pushMessage.notes : ""
 
         let settings = await TrioApp.resolver.resolve(SettingsManager.self)?.settings
         let maxCarbs = settings?.maxCarbs ?? Decimal(0)
@@ -66,7 +67,7 @@ extension TrioRemoteControl {
             carbs: carbsDecimal ?? 0,
             fat: fatDecimal,
             protein: proteinDecimal,
-            note: "Remote meal command",
+            note: notes,
             enteredBy: CarbsEntry.local,
             isFPU: false,
             fpuID: fatDecimal ?? 0 > 0 || proteinDecimal ?? 0 > 0 ? UUID().uuidString : nil
