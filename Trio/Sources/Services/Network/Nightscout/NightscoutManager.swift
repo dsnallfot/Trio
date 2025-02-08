@@ -13,6 +13,7 @@ protocol NightscoutManager: GlucoseSource {
     func deleteInsulin(withID id: String) async
     func deleteManualGlucose(withID id: String) async
     func uploadDeviceStatus() async
+    func uploadErrors(withNotes notes: String) async
     func uploadGlucose() async
     func uploadCarbs() async
     func uploadPumpHistory() async
@@ -928,6 +929,41 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             debug(.nightscout, "Treatments uploaded")
         } catch {
             debug(.nightscout, error.localizedDescription)
+        }
+    }
+
+    // Daniel: Added to upload bolus failure reasons as a note to Nightscout
+    internal func uploadErrors(withNotes notes: String) async {
+        let errorNote = NightscoutTreatment(
+            duration: nil,
+            rawDuration: nil,
+            rawRate: nil,
+            absolute: nil,
+            rate: nil,
+            eventType: .nsNote,
+            createdAt: Date(),
+            enteredBy: NightscoutTreatment.local,
+            bolus: nil,
+            insulin: nil,
+            notes: notes,
+            carbs: nil,
+            fat: nil,
+            protein: nil,
+            targetTop: nil,
+            targetBottom: nil
+        )
+        guard let nightscout = nightscoutAPI, isNetworkReachable else {
+            if !isNetworkReachable {
+                debug(.nightscout, "Network issues; aborting upload of bolus error note")
+            }
+            debug(.nightscout, "Nightscout API service not available; aborting upload of bolus error note")
+            return
+        }
+        do {
+            try await nightscout.uploadErrors(errorNote)
+            debug(.nightscout, "Error note uploaded successfully.")
+        } catch {
+            debug(.nightscout, "Failed to upload error note: \(error.localizedDescription)")
         }
     }
 

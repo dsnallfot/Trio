@@ -39,17 +39,17 @@ enum APSError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case let .pumpError(error):
-            return "Pump error: \(error.localizedDescription)"
+            return "Pumpfel: \(error.localizedDescription)"
         case let .invalidPumpState(message):
-            return "Error: Invalid Pump State: \(message)"
+            return "Pumpstatus: \(message)"
         case let .glucoseError(message):
-            return "Error: Invalid glucose: \(message)"
+            return "Glukosstatus: \(message)"
         case let .apsError(message):
-            return "APS error: \(message)"
+            return "APS fel: \(message)"
         case let .deviceSyncError(message):
-            return "Sync error: \(message)"
+            return "Synkfel: \(message)"
         case let .manualBasalTemp(message):
-            return "Manual Basal Temp : \(message)"
+            return "Manuell temp basal: \(message)"
         }
     }
 }
@@ -188,18 +188,18 @@ final class BaseAPSManager: APSManager, Injectable {
             // check the last start of looping is more the loopInterval but the previous loop was completed
             if lastLoopDate > lastLoopStartDate {
                 guard lastLoopStartDate.addingTimeInterval(Config.loopInterval) < Date() else {
-                    debug(.apsManager, "too close to do a loop : \(lastLoopStartDate)")
+                    debug(.apsManager, "för nära inpå senaste loop : \(lastLoopStartDate)")
                     return
                 }
             }
 
             guard !isLooping.value else {
-                warning(.apsManager, "Loop already in progress. Skip recommendation.")
+                warning(.apsManager, "Loop pågår. Ignorerar rekommendation.")
                 return
             }
 
             // start background time extension
-            backGroundTaskID = await UIApplication.shared.beginBackgroundTask(withName: "Loop starting") {
+            backGroundTaskID = await UIApplication.shared.beginBackgroundTask(withName: "Loop startar") {
                 guard let backgroundTask = self.backGroundTaskID else { return }
                 Task {
                     UIApplication.shared.endBackgroundTask(backgroundTask)
@@ -235,7 +235,7 @@ final class BaseAPSManager: APSManager, Injectable {
 
             var loopStatRecord = LoopStats(
                 start: lastLoopStartDate,
-                loopStatus: "Starting",
+                loopStatus: "Startar",
                 interval: interval
             )
 
@@ -243,7 +243,7 @@ final class BaseAPSManager: APSManager, Injectable {
 
             do {
                 if await !determineBasal() {
-                    throw APSError.apsError(message: "Determine basal failed")
+                    throw APSError.apsError(message: "Determine basal misslyckades")
                 }
 
                 // Open loop completed
@@ -288,14 +288,17 @@ final class BaseAPSManager: APSManager, Injectable {
         isLooping.send(false)
 
         if let error = error {
-            warning(.apsManager, "Loop failed with error: \(error.localizedDescription)")
+            let errorDescription = "Loop slutfördes inte: \(error.localizedDescription)"
+            warning(.apsManager, errorDescription)
+            // Daniel: Added to upload loop failure reasons as a note to Nightscout
+            await nightscout.uploadErrors(withNotes: errorDescription)
             if let backgroundTask = backGroundTaskID {
                 await UIApplication.shared.endBackgroundTask(backgroundTask)
                 backGroundTaskID = .invalid
             }
             processError(error)
         } else {
-            debug(.apsManager, "Loop succeeded")
+            debug(.apsManager, "Loop lyckades")
             lastLoopDate = Date()
             lastError.send(nil)
         }
@@ -315,21 +318,21 @@ final class BaseAPSManager: APSManager, Injectable {
 
     private func verifyStatus() -> Error? {
         guard let pump = pumpManager else {
-            return APSError.invalidPumpState(message: "Pump not set")
+            return APSError.invalidPumpState(message: "Pump ej inställd!")
         }
         let status = pump.status.pumpStatus
 
         guard !status.bolusing else {
-            return APSError.invalidPumpState(message: "Pump is bolusing")
+            return APSError.invalidPumpState(message: "Pågående Bolus")
         }
 
         guard !status.suspended else {
-            return APSError.invalidPumpState(message: "Pump suspended")
+            return APSError.invalidPumpState(message: "Pump avstängd!")
         }
 
         let reservoir = storage.retrieve(OpenAPS.Monitor.reservoir, as: Decimal.self) ?? 100
         guard reservoir >= 0 else {
-            return APSError.invalidPumpState(message: "Reservoir is empty")
+            return APSError.invalidPumpState(message: "Reservoar är tom!")
         }
 
         return nil
@@ -347,7 +350,7 @@ final class BaseAPSManager: APSManager, Injectable {
     }
 
     func determineBasal() async -> Bool {
-        debug(.apsManager, "Start determine basal")
+        debug(.apsManager, "Starta determine basal")
 
         // Fetch glucose asynchronously
         let glucose = await fetchGlucose(predicate: NSPredicate.predicateForOneHourAgo, fetchLimit: 6)
@@ -355,21 +358,21 @@ final class BaseAPSManager: APSManager, Injectable {
         // Perform the context-related checks and actions
         let isValidGlucoseData = await privateContext.perform {
             guard glucose.count > 2 else {
-                debug(.apsManager, "Not enough glucose data")
-                self.processError(APSError.glucoseError(message: "Not enough glucose data"))
+                debug(.apsManager, "Ej tillräcklig glukosdata")
+                self.processError(APSError.glucoseError(message: "Ej tillräcklig glukosdata!"))
                 return false
             }
 
             let dateOfLastGlucose = glucose.first?.date
             guard dateOfLastGlucose ?? Date() >= Date().addingTimeInterval(-12.minutes.timeInterval) else {
-                debug(.apsManager, "Glucose data is stale")
-                self.processError(APSError.glucoseError(message: "Glucose data is stale"))
+                debug(.apsManager, "Glukosdata är inaktuell")
+                self.processError(APSError.glucoseError(message: "Glukosdata är inaktuell!"))
                 return false
             }
 
             guard !GlucoseStored.glucoseIsFlat(glucose) else {
-                debug(.apsManager, "Glucose data is too flat")
-                self.processError(APSError.glucoseError(message: "Glucose data is too flat"))
+                debug(.apsManager, "Flera identiska glukosvärden i rad")
+                self.processError(APSError.glucoseError(message: "Flera identiska glukosvärden i rad. Kontrollera CGM!"))
                 return false
             }
 
@@ -440,7 +443,10 @@ final class BaseAPSManager: APSManager, Injectable {
         }
 
         if let error = verifyStatus() {
+            let errorDescription = error.localizedDescription
             processError(error)
+            // Daniel: Added to upload bolus failure reasons as a note to Nightscout
+            await nightscout.uploadErrors(withNotes: errorDescription)
             processQueue.async {
                 self.broadcaster.notify(BolusFailureObserver.self, on: self.processQueue) {
                     $0.bolusDidFail()
@@ -454,19 +460,22 @@ final class BaseAPSManager: APSManager, Injectable {
 
         let roundedAmount = pump.roundToSupportedBolusVolume(units: amount)
 
-        debug(.apsManager, "Enact bolus \(roundedAmount), manual \(!isSMB)")
+        debug(.apsManager, "Utför bolus \(roundedAmount), manuell \(!isSMB)")
 
         do {
             try await pump.enactBolus(units: roundedAmount, automatic: isSMB)
-            debug(.apsManager, "Bolus succeeded")
+            debug(.apsManager, "Bolus lyckades")
             if !isSMB {
                 await determineBasalSync()
             }
             bolusProgress.send(0)
             callback?(true, "Bolus enacted successfully.")
         } catch {
-            warning(.apsManager, "Bolus failed with error: \(error.localizedDescription)")
+            let errorDescription = error.localizedDescription
+            warning(.apsManager, errorDescription)
             processError(APSError.pumpError(error))
+            // Daniel: Added to upload bolus failure reasons as a note to Nightscout
+            await nightscout.uploadErrors(withNotes: errorDescription)
             if !isSMB {
                 processQueue.async {
                     self.broadcaster.notify(BolusFailureObserver.self, on: self.processQueue) {
@@ -480,13 +489,13 @@ final class BaseAPSManager: APSManager, Injectable {
 
     func cancelBolus(_ callback: ((Bool, String) -> Void)?) async {
         guard let pump = pumpManager, pump.status.pumpStatus.bolusing else { return }
-        debug(.apsManager, "Cancel bolus")
+        debug(.apsManager, "Abcryt bolus")
         do {
             _ = try await pump.cancelBolus()
-            debug(.apsManager, "Bolus cancelled")
+            debug(.apsManager, "Bolus avbröts")
             callback?(true, "Bolus cancelled successfully.")
         } catch {
-            debug(.apsManager, "Bolus cancellation failed with error: \(error.localizedDescription)")
+            debug(.apsManager, "Kunde ej avbryta bolus, felorsak: \(error.localizedDescription)")
             processError(APSError.pumpError(error))
             callback?(false, "Error! Bolus cancellation failed.")
         }
@@ -505,19 +514,19 @@ final class BaseAPSManager: APSManager, Injectable {
 
         // unable to do temp basal during manual temp basal 😁
         if isManualTempBasal {
-            processError(APSError.manualBasalTemp(message: "Loop not possible during the manual basal temp"))
+            processError(APSError.manualBasalTemp(message: "Loop ej möjlig under manuell temp basal"))
             return
         }
 
-        debug(.apsManager, "Enact temp basal \(rate) - \(duration)")
+        debug(.apsManager, "Utför temp basal \(rate) - \(duration)")
 
         let roundedAmout = pump.roundToSupportedBasalRate(unitsPerHour: rate)
 
         do {
             try await pump.enactTempBasal(unitsPerHour: roundedAmout, for: duration)
-            debug(.apsManager, "Temp Basal succeeded")
+            debug(.apsManager, "Temp basal lyckades")
         } catch {
-            debug(.apsManager, "Temp Basal failed with error: \(error.localizedDescription)")
+            debug(.apsManager, "Temp basal misslyckades med felorsak: \(error.localizedDescription)")
             processError(APSError.pumpError(error))
         }
     }
@@ -569,12 +578,12 @@ final class BaseAPSManager: APSManager, Injectable {
         }
 
         guard let pump = pumpManager else {
-            throw APSError.apsError(message: "Pump not set")
+            throw APSError.apsError(message: "Pump ej inställd")
         }
 
         // Unable to do temp basal during manual temp basal 😁
         if isManualTempBasal {
-            throw APSError.manualBasalTemp(message: "Loop not possible during the manual basal temp")
+            throw APSError.manualBasalTemp(message: "Loop ej möjlig under manuell temp basal")
         }
 
         let (rateDecimal, durationInSeconds, smbToDeliver) = try await setValues(determinationID: determinationID)
