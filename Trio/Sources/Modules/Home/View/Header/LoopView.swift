@@ -26,7 +26,7 @@ struct LoopView: View {
             .padding(.horizontal, 10)
             .overlay(
                 Capsule()
-                    .stroke(color.opacity(0.4), lineWidth: 2)
+                    .stroke(color.opacity(0.4), lineWidth: 1)
             )
     }
 

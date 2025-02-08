@@ -3,15 +3,15 @@ import Foundation
 
 @available(iOS 16.0, *) struct ListStateIntent: AppIntent {
     // Title of the action in the Shortcuts app
-    static var title: LocalizedStringResource = "List last state available with Trio"
+    static var title: LocalizedStringResource = "Lista senaste Trio status"
 
     // Description of the action in the Shortcuts app
     static var description = IntentDescription(
-        "Allow to list the last glucose reading, trends, IOB and COB available in Trio"
+        "Tillåt att blodsocker, trend, IOB och COB från Trio litsas"
     )
 
     static var parameterSummary: some ParameterSummary {
-        Summary("List all states of Trio")
+        Summary("Lista Trio status")
     }
 
     @MainActor func perform() async throws -> some ReturnsValue<StateResults> & ShowsSnippetView {

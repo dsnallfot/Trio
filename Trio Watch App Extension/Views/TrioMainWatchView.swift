@@ -133,7 +133,7 @@ struct TrioMainWatchView: View {
                     Button {
                         showingOverrideSheet = true
                     } label: {
-                        Image(systemName: "clock.arrow.2.circlepath")
+                        Image(systemName: "arrow.up.arrow.down.circle")
                             .foregroundStyle(Color.primary, isOverrideActive ? Color.primary : Color.purple)
                     }.tint(isOverrideActive ? Color.purple : nil)
 

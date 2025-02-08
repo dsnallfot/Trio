@@ -66,7 +66,7 @@ struct PumpView: View {
                     .foregroundStyle(reservoirColor)
                     .overlay(
                         Capsule()
-                            .stroke(reservoirColor.opacity(0.4), lineWidth: 2)
+                            .stroke(reservoirColor.opacity(0.4), lineWidth: 1)
                     )
 
                     if let timeZone = timeZone, timeZone.secondsFromGMT() != TimeZone.current.secondsFromGMT() {

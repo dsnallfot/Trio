@@ -7,7 +7,7 @@ struct AppShortcuts: AppShortcutsProvider {
             intent: BolusIntent(),
             phrases: [
                 "\(.applicationName) bolus",
-                "Enacts a \(.applicationName) Bolus"
+                "Ge en bolus via \(.applicationName)"
             ],
             shortTitle: "Bolus",
             systemImageName: "syringe.fill"
@@ -15,8 +15,8 @@ struct AppShortcuts: AppShortcutsProvider {
         AppShortcut(
             intent: ApplyTempPresetIntent(),
             phrases: [
-                "Activate \(.applicationName) temporary target ?",
-                "\(.applicationName) apply a temporary target"
+                "Aktivera ett tillfälligt mål i \(.applicationName)?",
+                "\(.applicationName) aktivera tillfälligt mål"
             ],
             shortTitle: "Temporary Target",
             systemImageName: "target"
@@ -24,8 +24,8 @@ struct AppShortcuts: AppShortcutsProvider {
         AppShortcut(
             intent: ListStateIntent(),
             phrases: [
-                "List \(.applicationName) state",
-                "\(.applicationName) state"
+                "Lista \(.applicationName) status",
+                "\(.applicationName) status"
             ],
             shortTitle: "List State",
             systemImageName: "list.bullet"
@@ -33,8 +33,8 @@ struct AppShortcuts: AppShortcutsProvider {
         AppShortcut(
             intent: AddCarbPresetIntent(),
             phrases: [
-                "Add carbs in \(.applicationName)",
-                "\(.applicationName) allows to add carbs"
+                "Registera måltid i \(.applicationName)",
+                "\(.applicationName) tillåts registrera måltid"
             ],
             shortTitle: "Add Carbs",
             systemImageName: "fork.knife"
@@ -42,17 +42,18 @@ struct AppShortcuts: AppShortcutsProvider {
         AppShortcut(
             intent: ApplyOverridePresetIntent(),
             phrases: [
-                "Activate \(.applicationName) override",
-                "Activates an available \(.applicationName) override"
+                "Aktivera en override i \(.applicationName)",
+                "Aktiverar en tillgänglig override i \(.applicationName)"
             ],
             shortTitle: "Activate Override",
-            systemImageName: "clock.arrow.2.circlepath"
+            systemImageName: "arrow.up.arrow.down.circle"
         )
         AppShortcut(
             intent: CancelOverrideIntent(),
             phrases: [
-                "Cancel \(.applicationName) override",
-                "Cancels an active \(.applicationName) override"
+                "Avbryt override i \(.applicationName)",
+                "Avbryter en aktiv override i \(.applicationName)"
+
             ],
             shortTitle: "Cancel Override",
             systemImageName: "xmark.circle.fill"

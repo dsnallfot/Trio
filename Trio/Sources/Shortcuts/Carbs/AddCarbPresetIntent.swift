@@ -5,63 +5,63 @@ import Swinject
 
 @available(iOS 16.0,*) struct AddCarbPresetIntent: AppIntent {
     // Title of the action in the Shortcuts app
-    static var title: LocalizedStringResource = "Add carbs"
+    static var title: LocalizedStringResource = "Registrera måltid"
 
     // Description of the action in the Shortcuts app
-    static var description = IntentDescription("Allow to add carbs in Trio.")
+    static var description = IntentDescription("Tillåt att måltid registreras i Trio.")
 
     init() {
         dateAdded = Date()
     }
 
     @Parameter(
-        title: "Quantity Carbs",
-        description: "Quantity of carbs in g",
+        title: "Mängd kh",
+        description: "Mängd kh i gram",
         controlStyle: .field,
         inclusiveRange: (lowerBound: 0, upperBound: 200),
-        requestValueDialog: IntentDialog("What is the numeric value of the carb to add")
+        requestValueDialog: IntentDialog("Vad är nummervärdet kh att lägga till")
     ) var carbQuantity: Double?
 
     @Parameter(
-        title: "Quantity fat",
-        description: "Quantity of fat in g",
+        title: "Mängd fett",
+        description: "Mängd fett i g",
         default: 0.0,
         inclusiveRange: (0, 200)
     ) var fatQuantity: Double
 
     @Parameter(
-        title: "Quantity Protein",
-        description: "Quantity of Protein in g",
+        title: "Mängd protein",
+        description: "Mängd protein i g",
         default: 0.0,
         inclusiveRange: (0, 200)
     ) var proteinQuantity: Double
 
     @Parameter(
-        title: "Date",
-        description: "Date of adding"
+        title: "Tid",
+        description: "Tid för måltid"
     ) var dateAdded: Date
 
     @Parameter(
-        title: "Notes",
-        description: "Emoji or short text"
+        title: "Noteringar",
+        description: "Emoji eller kort text"
     ) var note: String?
 
     @Parameter(
-        title: "Confirm Before applying",
-        description: "If toggled, you will need to confirm before applying",
+        title: "Bekräfta innan registrering",
+        description: "Om aktiverad, så måste du konfirmera innan registrering.",
         default: true
     ) var confirmBeforeApplying: Bool
 
     static var parameterSummary: some ParameterSummary {
         When(\.$confirmBeforeApplying, .equalTo, true, {
-            Summary("Applying \(\.$carbQuantity) at \(\.$dateAdded)") {
+            Summary("Registrerar \(\.$carbQuantity) vid \(\.$dateAdded)") {
                 \.$fatQuantity
                 \.$proteinQuantity
                 \.$note
                 \.$confirmBeforeApplying
             }
         }, otherwise: {
-            Summary("Immediately applying \(\.$carbQuantity) at \(\.$dateAdded)") {
+            Summary("Omedelbar registrering \(\.$carbQuantity) vid \(\.$dateAdded)") {
                 \.$fatQuantity
                 \.$proteinQuantity
                 \.$note
@@ -76,13 +76,14 @@ import Swinject
             if let cq = carbQuantity {
                 quantityCarbs = cq
             } else {
-                quantityCarbs = try await $carbQuantity.requestValue("How many carbs ?")
+                quantityCarbs = try await $carbQuantity.requestValue("Hur många g kh?")
             }
 
             let quantityCarbsName = quantityCarbs.toString()
             if confirmBeforeApplying {
                 try await requestConfirmation(
-                    result: .result(dialog: "Are you sure to add \(quantityCarbsName) g of carbs ?")
+                    result: .result(dialog: "Vill du vill registrera \(quantityCarbsName) g kh?")
+
                 )
             }
 

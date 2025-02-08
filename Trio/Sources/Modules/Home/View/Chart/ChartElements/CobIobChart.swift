@@ -41,7 +41,7 @@ extension MainChartView {
         }
         .chartForegroundStyleScale([
             "COB": Color.orange,
-            "IOB": Color.darkerBlue
+            "IOB": Color.insulin
         ])
         .chartLegend(.hidden)
         .frame(minHeight: geo.size.height * 0.12)

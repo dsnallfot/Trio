@@ -266,7 +266,7 @@ extension DataTable {
             var symbolName: String {
                 switch self {
                 case .override:
-                    return "clock.arrow.2.circlepath"
+                    return "arrow.up.arrow.down.circle"
                 case .tempTarget:
                     return "target"
                 }

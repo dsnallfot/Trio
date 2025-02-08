@@ -18,19 +18,19 @@ struct StateResults: AppEntity {
     }
 
     var id: UUID
-    @Property(title: "Glucose") var glucose: String
+    @Property(title: "Blodsocker") var glucose: String
 
     @Property(title: "Trend") var trend: String
 
     @Property(title: "Delta") var delta: String
 
-    @Property(title: "Date") var date: Date
+    @Property(title: "Tid") var date: Date
 
     @Property(title: "IOB") var iob: Double?
 
     @Property(title: "COB") var cob: Double?
 
-    @Property(title: "unit") var unit: String?
+    @Property(title: "enhet") var unit: String?
 
     init(glucose: String, trend: String, delta: String, date: Date, iob: Double, cob: Double, unit: GlucoseUnits) {
         id = UUID()

@@ -271,7 +271,7 @@ extension Home {
                         .clipShape(Capsule())
                         .overlay(
                             Capsule()
-                                .stroke(button.active ? buttonColor.opacity(0.4) : Color.clear, lineWidth: 2)
+                                .stroke(button.active ? buttonColor.opacity(0.4) : Color.clear, lineWidth: 1)
                         )
                     }
                 }
@@ -305,7 +305,7 @@ extension Home {
                 .foregroundStyle(buttonColor)
                 .overlay(
                     Capsule()
-                        .stroke(buttonColor.opacity(0.4), lineWidth: 2)
+                        .stroke(buttonColor.opacity(0.4), lineWidth: 1)
                 )
             }
         }
@@ -483,7 +483,7 @@ extension Home {
 
         @ViewBuilder func adjustmentsOverrideView(_ overrideString: String) -> some View {
             Group {
-                Image(systemName: "clock.arrow.2.circlepath")
+                Image(systemName: "arrow.up.arrow.down.circle")
                     .font(.title2)
                     .foregroundStyle(Color.primary, Color.purple)
                 VStack(alignment: .leading) {
@@ -975,7 +975,8 @@ extension Home {
                         .tabItem {
                             Label(
                                 "Adjustments",
-                                systemImage: "slider.horizontal.2.gobackward"
+                                // systemImage: "slider.horizontal.2.gobackward"
+                                systemImage: "arrow.up.arrow.down.circle"
                             ) }.tag(2)
 
                     NavigationStack(path: self.$settingsPath) {
@@ -992,8 +993,11 @@ extension Home {
                         state.showModal(for: .bolus) },
                     label: {
                         Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 40))
-                            .foregroundStyle(Color.tabBar)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 55, height: 55)
+                            .symbolRenderingMode(.palette) // Enables multicolor rendering
+                            .foregroundStyle(.white, Color.tabBar) // White accent, tabBar base color
                             .padding(.bottom, 1)
                             .padding(.horizontal, 22.5)
                     }

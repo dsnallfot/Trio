@@ -16,7 +16,7 @@ struct TempPreset: AppEntity, Identifiable {
         DisplayRepresentation(title: "\(name)")
     }
 
-    static var typeDisplayRepresentation: TypeDisplayRepresentation = "Presets"
+    static var typeDisplayRepresentation: TypeDisplayRepresentation = "Förval"
 }
 
 struct TempPresetsQuery: EntityQuery {

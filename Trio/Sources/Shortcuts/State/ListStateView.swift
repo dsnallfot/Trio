@@ -55,7 +55,7 @@ struct ListStateView: View {
                 Text("IOB").font(.caption).foregroundColor(.secondary)
                 Text(
                     (numberFormatter.string(from: (state.iob ?? 0) as NSNumber) ?? "0") +
-                        NSLocalizedString(" U", comment: "Insulin unit")
+                        NSLocalizedString(" E", comment: "Insulin unit")
                 )
                 .font(.body).fontWeight(.bold)
             }

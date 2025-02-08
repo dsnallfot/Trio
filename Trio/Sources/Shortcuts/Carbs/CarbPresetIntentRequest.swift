@@ -10,7 +10,7 @@ import Foundation
         _ note: String?
     ) async throws -> String {
         guard quantityCarbs >= 0.0 || quantityFat >= 0.0 || quantityProtein >= 0.0 else {
-            return "not adding carbs in Trio"
+            return "registrerar inte måltid i Trio"
         }
 
         let carbs = min(Decimal(quantityCarbs), settingsManager.settings.maxCarbs)
@@ -30,15 +30,15 @@ import Foundation
             areFetchedFromRemote: false
         )
         var resultDisplay: String
-        resultDisplay = "\(carbs) g carbs"
+        resultDisplay = "\(carbs) g kh"
         if quantityFat > 0.0 {
-            resultDisplay = "\(resultDisplay) and \(quantityFat) g fats"
+            resultDisplay = "\(resultDisplay) och \(quantityFat) g fett"
         }
         if quantityProtein > 0.0 {
-            resultDisplay = "\(resultDisplay) and \(quantityProtein) g protein"
+            resultDisplay = "\(resultDisplay) och \(quantityProtein) g protein"
         }
         let dateName = dateAdded.formatted()
-        resultDisplay = "\(resultDisplay) added at \(dateName)"
+        resultDisplay = "\(resultDisplay) lades till \(dateName)"
         return resultDisplay
     }
 }
