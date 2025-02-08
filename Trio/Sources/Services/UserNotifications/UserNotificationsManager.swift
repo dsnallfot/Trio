@@ -409,8 +409,8 @@ final class BaseUserNotificationsManager: NSObject, UserNotificationsManager, In
         }
     }
 
-    public func addRequest(
-        identifier: String, // Changed to String
+    internal func addRequest(
+        identifier: String,
         content: UNMutableNotificationContent,
         deleteOld: Bool = false,
         trigger: UNNotificationTrigger? = nil,
@@ -428,46 +428,22 @@ final class BaseUserNotificationsManager: NSObject, UserNotificationsManager, In
             action: action
         )
 
-        // Just use 'identifier' directly instead of 'identifier.rawValue'
-        var alertIdentifier = identifier
-
-        // If you used to write something like:
-        //   if identifier == .pumpNotification { ... }
-        // just switch to a string compare:
-        if identifier == "pumpNotification" {
-            // If you want to concatenate the notification body
-            // (assuming content.body is a String):
-            alertIdentifier += content.body
-        } else if identifier == "alertMessageNotification" {
-            // If your old code did something special for that case
-            alertIdentifier += content.body
-        }
-
-        // remove old notifications if asked
-        if deleteOld {
-            DispatchQueue.main.async {
-                self.center.removeDeliveredNotifications(withIdentifiers: [alertIdentifier])
-                self.center.removePendingNotificationRequests(withIdentifiers: [alertIdentifier])
-            }
-        }
-        /*
-         var alertIdentifier = identifier.rawValue
-         alertIdentifier = identifier == .pumpNotification ? alertIdentifier + content
-             .title : (identifier == .alertMessageNotification ? alertIdentifier + content.body : alertIdentifier)
-         if deleteOld {
-             DispatchQueue.main.async {
-                 self.center.removeDeliveredNotifications(withIdentifiers: [alertIdentifier])
-                 self.center.removePendingNotificationRequests(withIdentifiers: [alertIdentifier])
-             }
-         }
-         */
         if alertPermissionsChecker.notificationsDisabled {
             router.alertMessage.send(messageCont)
             return
         }
+
         guard router.allowNotify(messageCont, settingsManager.settings) else { return }
 
-        let request = UNNotificationRequest(identifier: alertIdentifier as! String, content: content, trigger: trigger)
+        let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
+
+        if deleteOld {
+            DispatchQueue.main.async {
+                self.center.removeDeliveredNotifications(withIdentifiers: [identifier])
+                self.center.removePendingNotificationRequests(withIdentifiers: [identifier])
+            }
+        }
+
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             self.center.add(request) { error in
                 if let error = error {
@@ -475,10 +451,103 @@ final class BaseUserNotificationsManager: NSObject, UserNotificationsManager, In
                     return
                 }
 
-                debug(.service, "Sending \(identifier) notification for \(request.content.title)")
+                debug(.service, "Sending notification with identifier \(identifier)")
             }
         }
     }
+
+    internal func addRequest(
+        identifier: Identifier,
+        content: UNMutableNotificationContent,
+        deleteOld: Bool = false,
+        trigger: UNNotificationTrigger? = nil,
+        messageType: MessageType = MessageType.other,
+        messageSubtype: MessageSubtype = MessageSubtype.misc,
+        action: NotificationAction = NotificationAction.none
+    ) {
+        addRequest(
+            identifier: identifier.rawValue,
+            content: content,
+            deleteOld: deleteOld,
+            trigger: trigger,
+            messageType: messageType,
+            messageSubtype: messageSubtype,
+            action: action
+        )
+    }
+
+    /*
+        internal func addRequest(
+            identifier: String,
+            content: UNMutableNotificationContent,
+            deleteOld: Bool = false,
+            trigger: UNNotificationTrigger? = nil,
+            messageType: MessageType = MessageType.other,
+            messageSubtype: MessageSubtype = MessageSubtype.misc,
+            action: NotificationAction = NotificationAction.none
+        ) {
+            let messageCont = MessageContent(
+                content: content.body,
+                type: messageType,
+                subtype: messageSubtype,
+                title: content.title,
+                useAPN: false,
+                trigger: trigger,
+                action: action
+            )
+
+            // Just use 'identifier' directly instead of 'identifier.rawValue'
+            var alertIdentifier = identifier
+
+            // If you used to write something like:
+            //   if identifier == .pumpNotification { ... }
+            // just switch to a string compare:
+            if identifier == "pumpNotification" {
+                // If you want to concatenate the notification body
+                // (assuming content.body is a String):
+                alertIdentifier += content.body
+            } else if identifier == "alertMessageNotification" {
+                // If your old code did something special for that case
+                alertIdentifier += content.body
+            }
+
+            // remove old notifications if asked
+            if deleteOld {
+                DispatchQueue.main.async {
+                    self.center.removeDeliveredNotifications(withIdentifiers: [alertIdentifier])
+                    self.center.removePendingNotificationRequests(withIdentifiers: [alertIdentifier])
+                }
+            }
+            /*
+             var alertIdentifier = identifier.rawValue
+             alertIdentifier = identifier == .pumpNotification ? alertIdentifier + content
+                 .title : (identifier == .alertMessageNotification ? alertIdentifier + content.body : alertIdentifier)
+             if deleteOld {
+                 DispatchQueue.main.async {
+                     self.center.removeDeliveredNotifications(withIdentifiers: [alertIdentifier])
+                     self.center.removePendingNotificationRequests(withIdentifiers: [alertIdentifier])
+                 }
+             }
+             */
+            if alertPermissionsChecker.notificationsDisabled {
+                router.alertMessage.send(messageCont)
+                return
+            }
+            guard router.allowNotify(messageCont, settingsManager.settings) else { return }
+
+            let request = UNNotificationRequest(identifier: alertIdentifier , content: content, trigger: trigger)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                self.center.add(request) { error in
+                    if let error = error {
+                        warning(.service, "Unable to addNotificationRequest", error: error)
+                        return
+                    }
+
+                    debug(.service, "Sending \(identifier) notification for \(request.content.title)")
+                }
+            }
+        }
+     */
 
     private func playSoundIfNeeded() {
         guard settingsManager.settings.useAlarmSound, snoozeUntilDate < Date() else { return }

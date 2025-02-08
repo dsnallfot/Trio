@@ -89,6 +89,13 @@ extension TrioRemoteControl {
         )
         // Construct the notification body
         var notificationBody = !notes.isEmpty ? "\(notes)\n" : ""
+
+        // Create a number formatter for consistent decimal formatting
+        let numberFormatter = NumberFormatter()
+        numberFormatter.minimumFractionDigits = 2
+        numberFormatter.maximumFractionDigits = 2
+        numberFormatter.numberStyle = .decimal
+
         if let carbs = carbsDecimal, carbs > 0 {
             notificationBody += "Kolhydrater: \(carbs) g\n"
         }
@@ -99,7 +106,8 @@ extension TrioRemoteControl {
             notificationBody += "Protein: \(protein) g\n"
         }
         if let bolusAmount = pushMessage.bolusAmount, bolusAmount > 0 {
-            notificationBody += "Bolus: \(bolusAmount) E\n"
+            let formattedBolusAmount = numberFormatter.string(from: bolusAmount as NSNumber) ?? "\(bolusAmount)"
+            notificationBody += "Bolus: \(formattedBolusAmount) E\n"
         }
         notificationBody += "Inlagt av: \(pushMessage.user)\n"
         // Convert timestamp to HH:mm:ss format

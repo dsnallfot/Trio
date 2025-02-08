@@ -127,11 +127,11 @@ extension BaseUserNotificationsManager {
         content.title = title
         content.body = body
         content.sound = .default
-        content.interruptionLevel = .timeSensitive
-        // Generate a unique identifier for each notification
-        let uniqueIdentifier = Identifier.trioRemoteLocalNotification.rawValue + "." + UUID().uuidString
+        // Create a unique identifier based on the title
+        let identifier = "FreeAPS.trioRemote.\(title.replacingOccurrences(of: " ", with: "").lowercased())"
+
         addRequest(
-            identifier: uniqueIdentifier, // Pass the unique identifier
+            identifier: identifier,
             content: content,
             deleteOld: false
         )

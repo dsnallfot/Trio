@@ -53,7 +53,13 @@ extension TrioRemoteControl {
             .remoteControl,
             "Fjärrkommando behandlades framgångsrikt. \(pushMessage.humanReadableDescription())"
         )
-        var notificationBody = "Bolus: \(bolusAmount) E\n"
+        // Format the bolus amount to 2 decimal places
+        let numberFormatter = NumberFormatter()
+        numberFormatter.minimumFractionDigits = 2
+        numberFormatter.maximumFractionDigits = 2
+        numberFormatter.numberStyle = .decimal
+        let formattedBolusAmount = numberFormatter.string(from: bolusAmount as NSNumber) ?? "\(bolusAmount)"
+        var notificationBody = "Bolus: \(formattedBolusAmount) E\n"
         notificationBody += "Inlagt av: \(pushMessage.user)\n"
         // Convert timestamp to HH:mm:ss format
         let date = Date(timeIntervalSince1970: pushMessage.timestamp)
