@@ -57,10 +57,10 @@ extension MainChartView {
                 ).foregroundStyle(Color.clear)
 
                 LineMark(x: .value("Start Date", basal.start), y: .value("Amount", basal.rate))
-                    .lineStyle(.init(lineWidth: 1)).foregroundStyle(Color.clear)
+                    .lineStyle(.init(lineWidth: 1.5)).foregroundStyle(Color.clear)
 
                 LineMark(x: .value("End Date", basal.end), y: .value("Amount", basal.rate))
-                    .lineStyle(.init(lineWidth: 1)).foregroundStyle(Color.clear)
+                    .lineStyle(.init(lineWidth: 1.5)).foregroundStyle(Color.clear)
             } else {
                 RectangleMark(
                     xStart: .value("start", basal.start),
@@ -70,8 +70,8 @@ extension MainChartView {
                 ).foregroundStyle(
                     .linearGradient(
                         colors: [
-                            Color.insulin.opacity(0.6),
-                            Color.insulin.opacity(0.1)
+                            Color.insulin.opacity(0.5),
+                            Color.insulin.opacity(0.5)
                         ],
                         startPoint: .bottom,
                         endPoint: .top
@@ -79,10 +79,10 @@ extension MainChartView {
                 ).alignsMarkStylesWithPlotArea()
 
                 LineMark(x: .value("Start Date", basal.start), y: .value("Amount", basal.rate))
-                    .lineStyle(.init(lineWidth: 1)).foregroundStyle(Color.insulin)
+                    .lineStyle(.init(lineWidth: 1.5)).foregroundStyle(Color.insulin)
 
                 LineMark(x: .value("End Date", basal.end), y: .value("Amount", basal.rate))
-                    .lineStyle(.init(lineWidth: 1)).foregroundStyle(Color.insulin)
+                    .lineStyle(.init(lineWidth: 1.5)).foregroundStyle(Color.insulin)
             }
         }
     }
@@ -94,12 +94,12 @@ extension MainChartView {
                 x: .value("Start Date", profile.startDate),
                 y: .value("Amount", profile.amount),
                 series: .value("profile", "profile")
-            ).lineStyle(.init(lineWidth: 2, dash: [2, 4])).foregroundStyle(Color.insulin)
+            ).lineStyle(.init(lineWidth: 1.5, dash: [2, 2])).foregroundStyle(Color.insulin)
             LineMark(
                 x: .value("End Date", profile.endDate ?? state.endMarker),
                 y: .value("Amount", profile.amount),
                 series: .value("profile", "profile")
-            ).lineStyle(.init(lineWidth: 2.5, dash: [2, 4])).foregroundStyle(Color.insulin)
+            ).lineStyle(.init(lineWidth: 1.5, dash: [2, 2])).foregroundStyle(Color.insulin)
         }
     }
 

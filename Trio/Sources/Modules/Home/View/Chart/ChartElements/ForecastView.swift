@@ -2,6 +2,33 @@ import Charts
 import Foundation
 import SwiftUI
 
+private struct DonutSymbol: ChartSymbolShape {
+    var perceptualUnitRect: CGRect {
+        CGRect(origin: .zero, size: CGSize(width: 1, height: 1))
+    }
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let outerRadius = min(rect.width, rect.height) / 2
+        let innerRadius = outerRadius / 2
+        path.addArc(
+            center: CGPoint(x: rect.midX, y: rect.midY),
+            radius: outerRadius,
+            startAngle: .degrees(0),
+            endAngle: .degrees(360),
+            clockwise: false
+        )
+        path.addArc(
+            center: CGPoint(x: rect.midX, y: rect.midY),
+            radius: innerRadius,
+            startAngle: .degrees(360),
+            endAngle: .degrees(0),
+            clockwise: true
+        )
+        return path
+    }
+}
+
 struct ForecastView: ChartContent {
     let preprocessedData: [(id: UUID, forecast: Forecast, forecastValue: ForecastValue)]
     let minForecast: [Int]
@@ -80,11 +107,14 @@ struct ForecastView: ChartContent {
             let xValue = timeForIndex(forecastValue.index)
 
             if xValue <= Date(timeIntervalSinceNow: TimeInterval(hours: 2.5)) {
-                LineMark(
+                // LineMark(
+                PointMark(
                     x: .value("Time", xValue),
                     y: .value("Value", displayValue)
                 )
                 .foregroundStyle(by: .value("Predictions", forecast.type ?? ""))
+                .symbol(DonutSymbol())
+                .symbolSize(20)
             }
         }
     }

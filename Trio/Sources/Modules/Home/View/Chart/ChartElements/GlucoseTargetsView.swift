@@ -21,14 +21,14 @@ struct GlucoseTargetsView: ChartContent {
                 x: .value("Time", Date(timeIntervalSinceReferenceDate: profile.startTime)),
                 y: .value("Target", profile.value)
             )
-            .lineStyle(.init(lineWidth: 1))
+            .lineStyle(.init(lineWidth: 0.5))
             .foregroundStyle(Color.green.gradient)
 
             LineMark(
                 x: .value("Time", Date(timeIntervalSinceReferenceDate: profile.endTime)),
                 y: .value("Target", profile.value)
             )
-            .lineStyle(.init(lineWidth: 1))
+            .lineStyle(.init(lineWidth: 0.5))
             .foregroundStyle(Color.green.gradient)
         }
     }

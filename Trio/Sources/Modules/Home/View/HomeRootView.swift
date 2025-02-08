@@ -606,7 +606,8 @@ extension Home {
                         (overrideString != nil || tempTargetString != nil) ?
                             (
                                 colorScheme == .dark ?
-                                    Color(red: 0.03921568627, green: 0.133333333, blue: 0.2156862745) :
+                                    // Color(red: 0.03921568627, green: 0.133333333, blue: 0.2156862745) :
+                                    Color.purple.opacity(0.5) :
                                     Color.insulin.opacity(0.1)
                             ) : Color.clear // Use clear and add the Material in the background
                     )

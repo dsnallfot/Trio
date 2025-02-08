@@ -31,10 +31,10 @@ extension MainChartView {
 
                 RuleMark(y: .value("High", units == .mgdL ? highGlucose : highGlucose.asMmolL))
                     .foregroundStyle(highColor)
-                    .lineStyle(.init(lineWidth: 1, dash: [5]))
+                    .lineStyle(.init(lineWidth: 0.5, dash: [0]))
                 RuleMark(y: .value("Low", units == .mgdL ? lowGlucose : lowGlucose.asMmolL))
                     .foregroundStyle(lowColor)
-                    .lineStyle(.init(lineWidth: 1, dash: [5]))
+                    .lineStyle(.init(lineWidth: 0.5, dash: [0]))
             }
         }
         .id("DummyMainChart")
