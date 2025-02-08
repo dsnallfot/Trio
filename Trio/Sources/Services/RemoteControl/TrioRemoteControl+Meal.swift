@@ -2,6 +2,13 @@ import Foundation
 
 extension TrioRemoteControl {
     func handleMealCommand(_ pushMessage: PushMessage) async {
+        // If bolusAmount is not nil but all others are nil, exit early without logging an error
+                if pushMessage.bolusAmount != nil &&
+                    pushMessage.carbs == nil &&
+                    pushMessage.fat == nil &&
+                    pushMessage.protein == nil {
+                    return
+                }
         guard pushMessage.carbs != nil || pushMessage.fat != nil || pushMessage.protein != nil else {
             await logError("Command rejected: meal data is incomplete or invalid.", pushMessage: pushMessage)
             return
