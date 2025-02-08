@@ -23,7 +23,7 @@ import Foundation
                 carbs: carbs,
                 fat: Decimal(quantityFat),
                 protein: Decimal(quantityProtein),
-                note: (note?.isEmpty ?? true) ? "Via Shortcut" : note!,
+                note: (note?.isEmpty ?? true) ? "✨" : note!,
                 enteredBy: CarbsEntry.local,
                 isFPU: false, fpuID: nil
             )],

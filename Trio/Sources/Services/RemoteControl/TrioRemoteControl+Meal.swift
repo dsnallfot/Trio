@@ -18,7 +18,7 @@ extension TrioRemoteControl {
         let carbsDecimal = pushMessage.carbs != nil ? Decimal(pushMessage.carbs!) : nil
         let fatDecimal = pushMessage.fat != nil ? Decimal(pushMessage.fat!) : nil
         let proteinDecimal = pushMessage.protein != nil ? Decimal(pushMessage.protein!) : nil
-        let notes = pushMessage.notes ?? ""
+        let notes = (pushMessage.notes?.isEmpty ?? true) ? "📲" : pushMessage.notes!
 
         let settings = await TrioApp.resolver.resolve(SettingsManager.self)?.settings
         let maxCarbs = settings?.maxCarbs ?? Decimal(0)
