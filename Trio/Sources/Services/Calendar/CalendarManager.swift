@@ -252,32 +252,32 @@ final class BaseCalendarManager: CalendarManager, Injectable {
             }
 
             // var glucoseIcon = "🟢"
-                        // if displayEmojis {
-                        // glucoseIcon = Double(glucoseValue) <= Double(settingsManager.settings.low) ? "🔴" : glucoseIcon
-                        // glucoseIcon = Double(glucoseValue) >= Double(settingsManager.settings.high) ? "🟠" : glucoseIcon
-                        // glucoseIcon = freshLoop > 15 ? "🚫" : glucoseIcon
-                        // }
-                        // let deltaSymbols = Double(delta!)
-                        // let glucoseSymbols = Double(glucoseValue)
-                        // let symbolsValue = glucoseSymbols + deltaSymbols * 3
-                        var glucoseIcon = ""
-                        // if displayEmojis {
-                        // glucoseIcon = symbolsValue <= Double(settingsManager.settings.low) ? "‼️" : glucoseIcon
-                        // glucoseIcon = symbolsValue >= Double(settingsManager.settings.high) ? "⚠️" : glucoseIcon
-                        // glucoseIcon = freshLoop > 15 ? "🚫" : glucoseIcon
-                        // }
+            // if displayEmojis {
+            // glucoseIcon = Double(glucoseValue) <= Double(settingsManager.settings.low) ? "🔴" : glucoseIcon
+            // glucoseIcon = Double(glucoseValue) >= Double(settingsManager.settings.high) ? "🟠" : glucoseIcon
+            // glucoseIcon = freshLoop > 15 ? "🚫" : glucoseIcon
+            // }
+            // let deltaSymbols = Double(delta!)
+            // let glucoseSymbols = Double(glucoseValue)
+            // let symbolsValue = glucoseSymbols + deltaSymbols * 3
+            var glucoseIcon = ""
+            // if displayEmojis {
+            // glucoseIcon = symbolsValue <= Double(settingsManager.settings.low) ? "‼️" : glucoseIcon
+            // glucoseIcon = symbolsValue >= Double(settingsManager.settings.high) ? "⚠️" : glucoseIcon
+            // glucoseIcon = freshLoop > 15 ? "🚫" : glucoseIcon
+            // }
 
             let glucoseText = glucoseFormatter
                 .string(from: Double(
                     settingsManager.settings.units == .mmolL ? Int(lastGlucoseValue)
                         .asMmolL : Decimal(lastGlucoseValue)
                 ) as NSNumber)!
-            
+
             let directionText = lastGlucoseObject.directionEnum?.symbol ?? "↔︎"
-            
+
             let deltaValue = settingsManager.settings.units == .mmolL ? delta.asMmolL : delta
             let deltaText = deltaFormatter.string(from: deltaValue as NSNumber) ?? "--"
-            
+
             // Daniel: What could the BG be within 15 min if current trend cintinues linear (for school resource watch)
             let cleanedDelta = deltaText
                 .replacingOccurrences(of: ",", with: ".")
@@ -295,20 +295,20 @@ final class BaseCalendarManager: CalendarManager, Injectable {
             // Replace the decimal separator
             // let formattedComputedValueWithComma = formattedComputedValue.replacingOccurrences(of: ".", with: ",")
             let fifteenMinutesText = formattedComputedValue
-            
+
             let iobText = iobFormatter.string(from: (determinationObject.iob ?? 0) as NSNumber) ?? ""
             let cobText = cobFormatter.string(from: determinationObject.cob as NSNumber) ?? ""
             let cleanedIobText = iobText.replacingOccurrences(of: ",", with: ".")
             let cleanedCobText = cobText.replacingOccurrences(of: ",", with: ".")
-            
+
             var glucoseDisplayText = displayEmojis ? glucoseIcon + " " : ""
             glucoseDisplayText += cleanedGlucose + " " + directionText + " " + cleanedDisplayDelta
-            
+
             var iobDisplayText = ""
             var cobDisplayText = ""
-            
+
             var fifteenMinutesDisplayText = ""
-            
+
             if displayCOBandIOB {
                 if displayEmojis {
                     cobDisplayText += ""
@@ -330,7 +330,7 @@ final class BaseCalendarManager: CalendarManager, Injectable {
                 fifteenMinutesDisplayText += "" + fifteenMinutesText + ""
                 event.location = fifteenMinutesDisplayText + " • " + iobDisplayText + " • " + cobDisplayText
             }
-            
+
             event.title = glucoseDisplayText // + "\n" + cobDisplayText + "" + iobDisplayText + "" + fifteenMinutesDisplayText
             event.notes = "Trio"
             event.startDate = Date()
