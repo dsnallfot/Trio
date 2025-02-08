@@ -48,7 +48,7 @@ final class BaseCalendarManager: CalendarManager, Injectable {
     private var iobFormatter: NumberFormatter {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 1
+        formatter.maximumFractionDigits = 2
         return formatter
     }
 
@@ -251,47 +251,87 @@ final class BaseCalendarManager: CalendarManager, Injectable {
                 freshLoop = -1 * (lastLoop?.timeIntervalSinceNow.minutes ?? 0)
             }
 
-            var glucoseIcon = "🟢"
-            if displayEmojis {
-                glucoseIcon = Double(lastGlucoseValue) <= Double(settingsManager.settings.low) ? "🔴" : glucoseIcon
-                glucoseIcon = Double(lastGlucoseValue) >= Double(settingsManager.settings.high) ? "🟠" : glucoseIcon
-                glucoseIcon = freshLoop > 15 ? "🚫" : glucoseIcon
-            }
+            // var glucoseIcon = "🟢"
+                        // if displayEmojis {
+                        // glucoseIcon = Double(glucoseValue) <= Double(settingsManager.settings.low) ? "🔴" : glucoseIcon
+                        // glucoseIcon = Double(glucoseValue) >= Double(settingsManager.settings.high) ? "🟠" : glucoseIcon
+                        // glucoseIcon = freshLoop > 15 ? "🚫" : glucoseIcon
+                        // }
+                        // let deltaSymbols = Double(delta!)
+                        // let glucoseSymbols = Double(glucoseValue)
+                        // let symbolsValue = glucoseSymbols + deltaSymbols * 3
+                        var glucoseIcon = ""
+                        // if displayEmojis {
+                        // glucoseIcon = symbolsValue <= Double(settingsManager.settings.low) ? "‼️" : glucoseIcon
+                        // glucoseIcon = symbolsValue >= Double(settingsManager.settings.high) ? "⚠️" : glucoseIcon
+                        // glucoseIcon = freshLoop > 15 ? "🚫" : glucoseIcon
+                        // }
 
             let glucoseText = glucoseFormatter
                 .string(from: Double(
                     settingsManager.settings.units == .mmolL ? Int(lastGlucoseValue)
                         .asMmolL : Decimal(lastGlucoseValue)
                 ) as NSNumber)!
-
+            
             let directionText = lastGlucoseObject.directionEnum?.symbol ?? "↔︎"
-
+            
             let deltaValue = settingsManager.settings.units == .mmolL ? delta.asMmolL : delta
             let deltaText = deltaFormatter.string(from: deltaValue as NSNumber) ?? "--"
-
+            
+            // Daniel: What could the BG be within 15 min if current trend cintinues linear (for school resource watch)
+            let cleanedDelta = deltaText
+                .replacingOccurrences(of: ",", with: ".")
+                .replacingOccurrences(of: "+", with: "")
+                .replacingOccurrences(of: "−", with: "-") // Replace any em dash characters with a regular minus sign
+            let cleanedDisplayDelta = deltaText
+                .replacingOccurrences(of: ",", with: ".")
+            let cleanedGlucose = glucoseText
+                .replacingOccurrences(of: ",", with: ".")
+            let glucoseValueFifteen = Double(cleanedGlucose) ?? 0.0
+            let deltaValueClean = Double(cleanedDelta)!
+            let computedValue = glucoseValueFifteen + deltaValueClean * 2.5
+            // Use string interpolation with format specifier to display one decimal place
+            let formattedComputedValue = String(format: "%.1f", computedValue)
+            // Replace the decimal separator
+            // let formattedComputedValueWithComma = formattedComputedValue.replacingOccurrences(of: ".", with: ",")
+            let fifteenMinutesText = formattedComputedValue
+            
             let iobText = iobFormatter.string(from: (determinationObject.iob ?? 0) as NSNumber) ?? ""
             let cobText = cobFormatter.string(from: determinationObject.cob as NSNumber) ?? ""
-
+            let cleanedIobText = iobText.replacingOccurrences(of: ",", with: ".")
+            let cleanedCobText = cobText.replacingOccurrences(of: ",", with: ".")
+            
             var glucoseDisplayText = displayEmojis ? glucoseIcon + " " : ""
-            glucoseDisplayText += glucoseText + " " + directionText + " " + deltaText
-
+            glucoseDisplayText += cleanedGlucose + " " + directionText + " " + cleanedDisplayDelta
+            
             var iobDisplayText = ""
             var cobDisplayText = ""
-
+            
+            var fifteenMinutesDisplayText = ""
+            
             if displayCOBandIOB {
                 if displayEmojis {
-                    iobDisplayText += "💉"
-                    cobDisplayText += "🥨"
+                    cobDisplayText += ""
+                    iobDisplayText += ""
+                    if computedValue > 7.8 {
+                        fifteenMinutesDisplayText += "⚠️ " // Emoji for values higher than 7.8
+                    } else if computedValue < 3.9 {
+                        fifteenMinutesDisplayText += "🆘 " // Emoji for values lower than 3.9
+                    } else {
+                        fifteenMinutesDisplayText += "✅ " // Emoji for values in-between 3.9 and 7.8
+                    }
                 } else {
-                    iobDisplayText += "IOB:"
-                    cobDisplayText += "COB:"
+                    iobDisplayText += "IOB"
+                    cobDisplayText += "COB"
+                    fifteenMinutesDisplayText += ""
                 }
-                iobDisplayText += " " + iobText
-                cobDisplayText += " " + cobText
-                event.location = iobDisplayText + " " + cobDisplayText
+                cobDisplayText += "" + cleanedCobText + "g"
+                iobDisplayText += "" + cleanedIobText + "E"
+                fifteenMinutesDisplayText += "" + fifteenMinutesText + ""
+                event.location = fifteenMinutesDisplayText + " • " + iobDisplayText + " • " + cobDisplayText
             }
-
-            event.title = glucoseDisplayText
+            
+            event.title = glucoseDisplayText // + "\n" + cobDisplayText + "" + iobDisplayText + "" + fifteenMinutesDisplayText
             event.notes = "Trio"
             event.startDate = Date()
             event.endDate = Date(timeIntervalSinceNow: 60 * 10)
