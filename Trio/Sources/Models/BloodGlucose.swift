@@ -110,6 +110,7 @@ struct BloodGlucose: JSON, Identifiable, Hashable, Codable {
         noise: Int? = nil,
         glucose: Int? = nil,
         type: String? = nil,
+        var device: String?,
         activationDate: Date? = nil,
         sessionStartDate: Date? = nil,
         transmitterID: String? = nil
