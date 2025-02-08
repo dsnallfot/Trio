@@ -952,7 +952,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             targetTop: nil,
             targetBottom: nil
         )
-        guard let nightscout = nightscoutAPI, isNetworkReachable else {
+        guard let nightscout = nightscoutAPI, isNetworkReachable, isUploadEnabled else {
             if !isNetworkReachable {
                 debug(.nightscout, "Network issues; aborting upload of bolus error note")
             }
