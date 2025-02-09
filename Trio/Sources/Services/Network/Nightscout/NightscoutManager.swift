@@ -769,11 +769,14 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
                    let cr = carbRatios.schedule.map(\.ratio).first,
                    isf > 0, cr > 0
                 {
+                    debug(
+                        .nightscout,
+                        "Calculating carbsHr with isf: \(isf), cr: \(cr), min5mCarbimpact: \(settingsManager.preferences.min5mCarbimpact)"
+                    )
                     carbsHr = settingsManager.preferences.min5mCarbimpact * 12 / isf * cr
-                    if settingsManager.settings.units == .mmolL {
-                        carbsHr *= GlucoseUnits.exchangeRate
-                    }
                     carbsHr = Decimal(round(Double(carbsHr) * 10.0)) / 10
+
+                    debug(.nightscout, "Calculated carbsHr: \(carbsHr)")
                 }
 
                 let scheduledProfile = ScheduledNightscoutProfile(
