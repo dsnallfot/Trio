@@ -34,7 +34,7 @@ extension Home {
         @State var showPumpSelection: Bool = false
         @State var notificationsDisabled = false
         @State var timeButtons: [TimePicker] = [
-            TimePicker(active: false, hours: 4),
+            TimePicker(active: false, hours: 3),
             TimePicker(active: false, hours: 6),
             TimePicker(active: false, hours: 12),
             TimePicker(active: false, hours: 24)
@@ -576,10 +576,10 @@ extension Home {
         @ViewBuilder func noActiveAdjustmentsView() -> some View {
             Group {
                 VStack {
-                    Text("No Active Adjustment")
+                    Text("Normal profile")
                         .font(.subheadline)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    Text("Profile at 100 %")
+                    Text("100 %")
                         .font(.caption)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }.padding(.leading, 10)
@@ -611,7 +611,7 @@ extension Home {
                                     Color.insulin.opacity(0.1)
                             ) : Color.clear // Use clear and add the Material in the background
                     )
-                    .background(colorScheme == .dark ? Color.chart.opacity(0.25) : Color.black.opacity(0.075))
+                    .background(colorScheme == .dark ? Color.white.opacity(0.05) : Color.black.opacity(0.05))
                     .clipShape(RoundedRectangle(cornerRadius: 15))
                     .frame(height: geo.size.height * 0.08)
                     .shadow(
@@ -825,6 +825,14 @@ extension Home {
 
         @ViewBuilder func mainViewElements(_ geo: GeometryProxy) -> some View {
             VStack(spacing: 0) {
+                mealPanel(geo) // .padding(.top, UIDevice.adjustPadding(min: nil, max: 30))
+                    .padding(.top, 10)
+                    .padding(.bottom, 24)
+                    .safeAreaInset(edge: .top, spacing: 0) {
+                        if notificationsDisabled {
+                            alertSafetyNotificationsView(geo: geo)
+                        }
+                    }
                 ZStack {
                     /// glucose bobble
                     glucoseView
@@ -840,15 +848,16 @@ extension Home {
                         pumpView
                         Spacer()
                     }.padding(.leading, 20)
-                }.padding(.top, 10)
-                    .safeAreaInset(edge: .top, spacing: 0) {
-                        if notificationsDisabled {
-                            alertSafetyNotificationsView(geo: geo)
-                        }
-                    }
+                }.padding(.bottom, 24)
+                // .padding(.top, 10)
+                // .safeAreaInset(edge: .top, spacing: 0) {
+                // if notificationsDisabled {
+                // alertSafetyNotificationsView(geo: geo)
+                // }
+                // }
 
-                mealPanel(geo).padding(.top, UIDevice.adjustPadding(min: nil, max: 30))
-                    .padding(.bottom, UIDevice.adjustPadding(min: nil, max: 20))
+                // mealPanel(geo).padding(.top, UIDevice.adjustPadding(min: nil, max: 30))
+                // .padding(.bottom, UIDevice.adjustPadding(min: nil, max: 20))
 
                 mainChart(geo: geo)
 
@@ -995,7 +1004,7 @@ extension Home {
                         Image(systemName: "plus.circle.fill")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                            .frame(width: 55, height: 55)
+                            .frame(width: 45, height: 45)
                             .symbolRenderingMode(.palette) // Enables multicolor rendering
                             .foregroundStyle(.white, Color.tabBar) // White accent, tabBar base color
                             .padding(.bottom, 1)

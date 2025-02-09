@@ -204,6 +204,33 @@ final class BaseContactImageManager: NSObject, ContactImageManager, Injectable {
                 : 0
             let deltaConverted = settingsManager.settings.units == .mgdL ? delta : delta.asMmolL
             state.delta = deltaFormatter.string(from: deltaConverted as NSNumber)
+
+            if let latestGlucoseValue = glucoseObjects.first?.glucose {
+                let latestGlucoseConverted = settingsManager.settings.units == .mgdL
+                    ? Decimal(latestGlucoseValue)
+                    : Decimal(latestGlucoseValue).asMmolL
+
+                // Calculate fifteenMinBg: latest glucose + delta * 2.5
+                let fifteenMinBgDecimal = latestGlucoseConverted + (deltaConverted * Decimal(2.5))
+
+                let bgFormatter = NumberFormatter()
+                bgFormatter.numberStyle = .decimal
+                bgFormatter.maximumFractionDigits = settingsManager.settings.units == .mgdL ? 0 : 1
+
+                state.fifteenMinBg = bgFormatter.string(from: fifteenMinBgDecimal as NSNumber) ?? "N/A"
+
+                // Set emoji for self.state.fifteenLabel based on fifteenMinBgDecimal
+                if fifteenMinBgDecimal > 7.8 {
+                    state.fifteenLabel = "⚠️" // Emoji for values higher than 7.8
+                } else if fifteenMinBgDecimal < 3.9 {
+                    state.fifteenLabel = "🆘" // Emoji for values lower than 3.9
+                } else {
+                    state.fifteenLabel = "✅" // Emoji for values in-between 3.9 and 7.8
+                }
+            } else {
+                state.fifteenMinBg = "N/A"
+                state.fifteenLabel = "❓" // Fallback emoji for unavailable data
+            }
         }
 
         state.lastLoopDate = lastDetermination?.timestamp
@@ -243,6 +270,11 @@ final class BaseContactImageManager: NSObject, ContactImageManager, Injectable {
             .targetGlucose = await getCurrentGlucoseTarget() ??
             (settingsManager.settings.units == .mgdL ? Decimal(100) : 100.asMmolL)
         state.glucoseColorScheme = settingsManager.settings.glucoseColorScheme
+
+        // Daniel: Additional labels
+        state.iobLabel = "IOB"
+        state.cobLabel = "COB"
+        state.loopLabel = "Loop"
 
         // Notify delegate about state update on main thread
         await MainActor.run {

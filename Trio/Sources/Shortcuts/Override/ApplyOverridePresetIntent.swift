@@ -40,7 +40,6 @@ struct ApplyOverridePresetIntent: AppIntent {
                 presetToApply = try await $preset.requestDisambiguation(
                     among: await OverridePresetsIntentRequest().fetchAndProcessOverrides(),
                     dialog: IntentDialog(LocalizedStringResource("Välj override", table: "ShortcutsDetail"))
-
                 )
             }
 

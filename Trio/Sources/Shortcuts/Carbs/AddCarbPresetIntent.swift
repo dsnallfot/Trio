@@ -83,7 +83,6 @@ import Swinject
             if confirmBeforeApplying {
                 try await requestConfirmation(
                     result: .result(dialog: "Vill du vill registrera \(quantityCarbsName) g kh?")
-
                 )
             }
 

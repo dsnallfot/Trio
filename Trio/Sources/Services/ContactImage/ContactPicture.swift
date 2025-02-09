@@ -254,9 +254,14 @@ struct ContactPicture: View {
         case .eventualBG: state.eventualBG
         case .delta: state.delta
         case .trend: state.trend
+        case .fifteenMinBg: state.fifteenMinBg
         case .lastLoopDate: state.lastLoopDate.map({ formatter.string(from: $0) })
         case .cob: state.cobText
         case .iob: state.iobText
+        case .fifteenLabel: state.fifteenLabel
+        case .iobLabel: state.iobLabel
+        case .cobLabel: state.cobLabel
+        case .loopLabel: state.loopLabel
         default: nil
         }
 
