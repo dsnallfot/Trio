@@ -776,7 +776,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
                     uniqueOffsets.append(1440)
                 }
 
-                //debug(.nightscout, "Unique time offsets: \(uniqueOffsets)")
+                // debug(.nightscout, "Unique time offsets: \(uniqueOffsets)")
 
                 // Iterate through each time segment (including the last hour)
                 for (index, startOffset) in uniqueOffsets.enumerated() where index < uniqueOffsets.count - 1 {
@@ -796,10 +796,10 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
                         carbsHr += weightedImpact
                         totalWeight += duration
 
-                        /*debug(
-                            .nightscout,
-                            "Time \(startOffset)-\(endOffset) min: ISF \(isf), CR \(cr), Duration \(duration) hr -> Weighted carbsHr impact: \(weightedImpact)"
-                        )*/
+                        /* debug(
+                             .nightscout,
+                             "Time \(startOffset)-\(endOffset) min: ISF \(isf), CR \(cr), Duration \(duration) hr -> Weighted carbsHr impact: \(weightedImpact)"
+                         ) */
                     }
                 }
 
