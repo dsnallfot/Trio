@@ -484,8 +484,8 @@ extension Home {
         @ViewBuilder func adjustmentsOverrideView(_ overrideString: String) -> some View {
             Group {
                 Image(systemName: "arrow.up.arrow.down.circle")
-                    .font(.title2)
-                    .foregroundStyle(Color.primary, Color.purple)
+                    .font(.title)
+                    .foregroundStyle(Color.primary, Color.primary)
                 VStack(alignment: .leading) {
                     Text(latestOverride.first?.name ?? "Custom Override")
                         .font(.subheadline)
@@ -503,7 +503,7 @@ extension Home {
         @ViewBuilder func adjustmentsTempTargetView(_ tempTargetString: String) -> some View {
             Group {
                 Image(systemName: "target")
-                    .font(.title2)
+                    .font(.title)
                     .foregroundStyle(Color.loopGreen)
                 VStack(alignment: .leading) {
                     Text(latestTempTarget.first?.name ?? "Temp Target")
@@ -826,8 +826,8 @@ extension Home {
         @ViewBuilder func mainViewElements(_ geo: GeometryProxy) -> some View {
             VStack(spacing: 0) {
                 mealPanel(geo) // .padding(.top, UIDevice.adjustPadding(min: nil, max: 30))
-                    .padding(.top, 10)
-                    .padding(.bottom, 24)
+                    .padding(.top, 5)
+                    .padding(.bottom, 20)
                     .safeAreaInset(edge: .top, spacing: 0) {
                         if notificationsDisabled {
                             alertSafetyNotificationsView(geo: geo)
@@ -848,7 +848,7 @@ extension Home {
                         pumpView
                         Spacer()
                     }.padding(.leading, 20)
-                }.padding(.bottom, 24)
+                }.padding(.bottom, 20)
                 // .padding(.top, 10)
                 // .safeAreaInset(edge: .top, spacing: 0) {
                 // if notificationsDisabled {

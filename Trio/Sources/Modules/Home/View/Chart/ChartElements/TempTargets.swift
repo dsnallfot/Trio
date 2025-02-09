@@ -32,8 +32,8 @@ struct TempTargetView: ChartContent {
                         xEnd: .value("End", end, unit: .second),
                         y: .value("Value", units == .mgdL ? target : target.asMmolL)
                     )
-                    .foregroundStyle(Color.green.opacity(0.4))
-                    .lineStyle(.init(lineWidth: 8))
+                    .foregroundStyle(Color.green.opacity(0.7))
+                    .lineStyle(.init(lineWidth: 10))
                 }
             }
         }
@@ -49,8 +49,8 @@ struct TempTargetView: ChartContent {
                 xEnd: .value("End", end, unit: .second),
                 y: .value("Value", units == .mgdL ? target : target.asMmolL)
             )
-            .foregroundStyle(Color.green.opacity(0.25))
-            .lineStyle(.init(lineWidth: 8))
+            .foregroundStyle(Color.green.opacity(0.4))
+            .lineStyle(.init(lineWidth: 10))
         }
     }
 }

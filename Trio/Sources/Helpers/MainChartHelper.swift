@@ -102,7 +102,7 @@ extension MainChartView {
                 Date(timeIntervalSince1970: TimeInterval(NSDate().timeIntervalSince1970)),
                 unit: .second
             )
-        ).lineStyle(.init(lineWidth: 2, dash: [3])).foregroundStyle(Color(.systemGray2))
+        ).lineStyle(.init(lineWidth: 2, dash: [3])).foregroundStyle(Color.secondary)
     }
 
     func drawStartRuleMark() -> some ChartContent {
@@ -134,7 +134,7 @@ extension MainChartView {
     var mainChartXAxis: some AxisContent {
         AxisMarks(values: .stride(by: .hour, count: screenHours > 6 ? (screenHours > 12 ? 4 : 2) : 1)) { _ in
             if displayXgridLines {
-                AxisGridLine(stroke: .init(lineWidth: 0.5, dash: [2, 3]))
+                AxisGridLine(stroke: .init(lineWidth: 0.25, dash: [0]))
             } else {
                 AxisGridLine(stroke: .init(lineWidth: 0, dash: [2, 3]))
             }
@@ -144,7 +144,7 @@ extension MainChartView {
     var basalChartXAxis: some AxisContent {
         AxisMarks(values: .stride(by: .hour, count: screenHours > 6 ? (screenHours > 12 ? 4 : 2) : 1)) { _ in
             if displayXgridLines {
-                AxisGridLine(stroke: .init(lineWidth: 0.5, dash: [2, 3]))
+                AxisGridLine(stroke: .init(lineWidth: 0.25, dash: [0]))
             } else {
                 AxisGridLine(stroke: .init(lineWidth: 0, dash: [2, 3]))
             }
@@ -157,7 +157,7 @@ extension MainChartView {
         AxisMarks(position: .trailing) { value in
 
             if displayYgridLines {
-                AxisGridLine(stroke: .init(lineWidth: 0.5, dash: [2, 3]))
+                AxisGridLine(stroke: .init(lineWidth: 0.25, dash: [0]))
             } else {
                 AxisGridLine(stroke: .init(lineWidth: 0, dash: [2, 3]))
             }
@@ -175,7 +175,7 @@ extension MainChartView {
     var cobIobChartYAxis: some AxisContent {
         AxisMarks(position: .trailing) { _ in
             if displayYgridLines {
-                AxisGridLine(stroke: .init(lineWidth: 0.5, dash: [2, 3]))
+                AxisGridLine(stroke: .init(lineWidth: 0.25, dash: [0]))
             } else {
                 AxisGridLine(stroke: .init(lineWidth: 0, dash: [2, 3]))
             }
