@@ -765,19 +765,53 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
                 }()
 
                 var carbsHr: Decimal = 0
-                if let isf = sensitivities.sensitivities.map(\.sensitivity).first,
-                   let cr = carbRatios.schedule.map(\.ratio).first,
-                   isf > 0, cr > 0
-                {
-                    debug(
-                        .nightscout,
-                        "Calculating carbsHr with isf: \(isf), cr: \(cr), min5mCarbimpact: \(settingsManager.preferences.min5mCarbimpact)"
-                    )
-                    carbsHr = settingsManager.preferences.min5mCarbimpact * 12 / isf * cr
-                    carbsHr = Decimal(round(Double(carbsHr) * 10.0)) / 10
+                var totalWeight: Decimal = 0
 
-                    debug(.nightscout, "Calculated carbsHr: \(carbsHr)")
+                // Extract all unique time offsets from both ISF and CR schedules
+                var uniqueOffsets = Set(sensitivities.sensitivities.map(\.offset) + carbRatios.schedule.map(\.offset))
+                    .sorted() // Sort by time in minutes
+
+                // Ensure 1440 (24:00) is included as the last offset
+                if !uniqueOffsets.contains(1440) {
+                    uniqueOffsets.append(1440)
                 }
+
+                //debug(.nightscout, "Unique time offsets: \(uniqueOffsets)")
+
+                // Iterate through each time segment (including the last hour)
+                for (index, startOffset) in uniqueOffsets.enumerated() where index < uniqueOffsets.count - 1 {
+                    let endOffset = uniqueOffsets[index + 1] // The next time point
+                    let duration = Decimal(endOffset - startOffset) / 60 // Convert minutes to hours
+
+                    // Get the closest ISF value that applies at this time
+                    let isfEntry = sensitivities.sensitivities.last(where: { $0.offset <= startOffset })
+                    let isf = isfEntry?.sensitivity ?? 0
+
+                    // Get the closest CR value that applies at this time
+                    let crEntry = carbRatios.schedule.last(where: { $0.offset <= startOffset })
+                    let cr = crEntry?.ratio ?? 0
+
+                    if isf > 0, cr > 0 {
+                        let weightedImpact = settingsManager.preferences.min5mCarbimpact * 12 / isf * cr * duration
+                        carbsHr += weightedImpact
+                        totalWeight += duration
+
+                        /*debug(
+                            .nightscout,
+                            "Time \(startOffset)-\(endOffset) min: ISF \(isf), CR \(cr), Duration \(duration) hr -> Weighted carbsHr impact: \(weightedImpact)"
+                        )*/
+                    }
+                }
+
+                // Normalize by total duration weight to get an average impact per hour
+                if totalWeight > 0 {
+                    carbsHr /= totalWeight
+                }
+
+                // Round the result to one decimal place
+                carbsHr = Decimal(round(Double(carbsHr) * 10.0)) / 10
+
+                debug(.nightscout, "Final calculated carbsHr: \(carbsHr)")
 
                 let scheduledProfile = ScheduledNightscoutProfile(
                     dia: settingsManager.pumpSettings.insulinActionCurve,
