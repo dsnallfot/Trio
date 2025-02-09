@@ -24,6 +24,8 @@ final class BaseContactImageManager: NSObject, ContactImageManager, Injectable {
     @Injected() private var settingsManager: SettingsManager!
     @Injected() private var fileStorage: FileStorage!
 
+    private var workItem: DispatchWorkItem?
+
     private let contactStore = CNContactStore()
 
     // Make it read-only from outside the class
@@ -50,6 +52,7 @@ final class BaseContactImageManager: NSObject, ContactImageManager, Injectable {
 
     weak var delegate: ContactImageManagerDelegate?
 
+    // Original implementation
     init(resolver: Resolver) {
         super.init()
         injectServices(resolver)
@@ -73,6 +76,43 @@ final class BaseContactImageManager: NSObject, ContactImageManager, Injectable {
 
         registerHandlers()
     }
+
+    /*
+        //Daniel test 10 sec delay to get updated IOB+COB
+        init(resolver: Resolver) {
+            super.init()
+            injectServices(resolver)
+            units = settingsManager.settings.units
+            coreDataPublisher =
+                changedObjectsOnManagedObjectContextDidSavePublisher()
+                    .receive(on: queue)
+                    .share()
+                    .eraseToAnyPublisher()
+
+            glucoseStorage.updatePublisher
+                .receive(on: DispatchQueue.global(qos: .background))
+                .sink { [weak self] _ in
+                    guard let self = self else { return }
+                        // Cancel any pending work item
+                        self.workItem?.cancel()
+
+                        // Create a new work item with a delay
+                        let workItem = DispatchWorkItem {
+                            Task {
+                                await self.updateContactImageState()
+                                await self.updateContactImages()
+                            }
+                        }
+                        self.workItem = workItem
+
+                        // Schedule the work item with a delay (e.g., 10 seconds)
+                        DispatchQueue.global(qos: .background).asyncAfter(deadline: .now() + 10, execute: workItem)
+                }
+                .store(in: &subscriptions)
+
+            registerHandlers()
+        }
+     */
 
     // MARK: - Core Data observation
 

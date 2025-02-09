@@ -25,6 +25,8 @@ final class BaseCalendarManager: CalendarManager, Injectable {
     private var subscriptions = Set<AnyCancellable>()
     private var previousDeterminationId: NSManagedObjectID?
 
+    private var createEventWorkItem: DispatchWorkItem?
+
     private var glucoseFormatter: NumberFormatter {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
@@ -97,6 +99,7 @@ final class BaseCalendarManager: CalendarManager, Injectable {
         }.store(in: &subscriptions)
     }
 
+    // Original implementation
     private func registerSubscribers() {
         glucoseStorage.updatePublisher
             .receive(on: DispatchQueue.global(qos: .background))
@@ -108,6 +111,35 @@ final class BaseCalendarManager: CalendarManager, Injectable {
             }
             .store(in: &subscriptions)
     }
+
+    /*
+     //Daniel test 10 sec delay to get updated IOB+COB
+     private func registerSubscribers() {
+         glucoseStorage.updatePublisher
+             .receive(on: DispatchQueue.global(qos: .background))
+             .sink { [weak self] _ in
+                 guard let self = self else { return }
+
+                 //Daniel test 10 sec delay to get updated IOB+COB
+
+                 // Cancel any existing work item for createEvent
+                 self.createEventWorkItem?.cancel()
+
+                 // Create a new work item with a 10-second delay
+                 let createEventWorkItem = DispatchWorkItem {
+                     Task {
+                         await self.createEvent()
+                     }
+                 }
+                 self.createEventWorkItem = createEventWorkItem
+
+                 // Schedule the work item
+                 DispatchQueue.global(qos: .background).asyncAfter(deadline: .now() + 10, execute: createEventWorkItem)
+
+             }
+             .store(in: &subscriptions)
+     }
+     */
 
     func requestAccessIfNeeded() async -> Bool {
         let status = EKEventStore.authorizationStatus(for: .event)
