@@ -152,7 +152,7 @@ struct ChartLegendView: View {
                             definition: Text(
                                 "Shows the IOB value calculated by the algorithm at a specific time in the past. These values are snapshots and won’t change if insulin is added or removed after the fact."
                             ),
-                            color: Color.darkerBlue.opacity(0.8),
+                            color: Color.insulin.opacity(0.8),
                             iconString: "line.diagonal"
                         )
 
@@ -236,7 +236,7 @@ struct ChartLegendView: View {
                     "To modify how the forecast is displayed, go to Settings > Features > User Interface > Forecast Display Type."
                 )
             },
-            color: Color.blue.opacity(0.5)
+            color: Color.cyan.opacity(0.4)
         )
     }
 }

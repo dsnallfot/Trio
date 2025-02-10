@@ -329,7 +329,7 @@ struct ForecastChart: View {
                         yStart: .value("Min Value", state.units == .mgdL ? yMinValue : yMinValue.asMmolL),
                         yEnd: .value("Max Value", state.units == .mgdL ? yMaxValue : yMaxValue.asMmolL)
                     )
-                    .foregroundStyle(Color.blue.opacity(0.5))
+                    .foregroundStyle(Color.cyan.opacity(0.4))
                     .interpolationMethod(.catmullRom)
 
                 } else {
@@ -341,7 +341,7 @@ struct ForecastChart: View {
                         yStart: .value("Min Value", state.units == .mgdL ? yMinValue : yMinValue.asMmolL),
                         yEnd: .value("Max Value", state.units == .mgdL ? yMaxValue : yMaxValue.asMmolL)
                     )
-                    .foregroundStyle(Color.blue.opacity(0.5))
+                    .foregroundStyle(Color.cyan.opacity(0.4))
                     .interpolationMethod(.catmullRom)
                 }
             }

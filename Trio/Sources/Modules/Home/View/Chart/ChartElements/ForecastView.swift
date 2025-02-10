@@ -75,7 +75,7 @@ struct ForecastView: ChartContent {
                             yStart: .value("Min Value", yMinValue <= maxValue ? yMinValue : maxValue),
                             yEnd: .value("Max Value", yMaxValue <= maxValue ? yMaxValue : maxValue)
                         )
-                        .foregroundStyle(Color.blue.opacity(0.5))
+                        .foregroundStyle(Color.cyan.opacity(0.4))
                         .interpolationMethod(.catmullRom)
                     }
                 } else {
@@ -91,7 +91,7 @@ struct ForecastView: ChartContent {
                             yStart: .value("Min Value", yMinValue <= maxValue ? yMinValue : maxValue),
                             yEnd: .value("Max Value", yMaxValue <= maxValue ? yMaxValue : maxValue)
                         )
-                        .foregroundStyle(Color.blue.opacity(0.5))
+                        .foregroundStyle(Color.cyan.opacity(0.4))
                         .interpolationMethod(.catmullRom)
                     }
                 }
