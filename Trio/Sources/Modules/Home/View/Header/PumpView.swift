@@ -44,19 +44,19 @@ struct PumpView: View {
                 if let reservoir = reservoir {
                     HStack {
                         Image(systemName: "cross.vial.fill")
-                            .font(.callout)
+                            .font(.subheadline)
 
                         if reservoir == 0xDEAD_BEEF {
-                            Text("50+ " + NSLocalizedString("U", comment: "Insulin unit"))
-                                .font(.callout)
+                            Text("50+ " + NSLocalizedString("E", comment: "Insulin unit"))
+                                .font(.subheadline)
                                 .fontWeight(.bold)
                                 .fontDesign(.rounded)
                         } else {
                             Text(
                                 Formatter.integerFormatter
-                                    .string(from: reservoir as NSNumber)! + NSLocalizedString(" U", comment: "Insulin unit")
+                                    .string(from: reservoir as NSNumber)! + NSLocalizedString(" E", comment: "Insulin unit")
                             )
-                            .font(.callout)
+                            .font(.subheadline)
                             .fontWeight(.bold)
                             .fontDesign(.rounded)
                         }
@@ -72,12 +72,12 @@ struct PumpView: View {
                     if let timeZone = timeZone, timeZone.secondsFromGMT() != TimeZone.current.secondsFromGMT() {
                         HStack {
                             Image(systemName: "clock.badge.exclamationmark.fill")
-                                .font(.callout)
+                                .font(.subheadline)
                                 .symbolRenderingMode(.palette)
                                 .foregroundStyle(.red, Color(.warning))
 
                             Text("Timezone")
-                                .font(.callout)
+                                .font(.subheadline)
                                 .fontWeight(.bold)
                                 .fontDesign(.rounded)
                                 .foregroundStyle(.red)
@@ -89,23 +89,23 @@ struct PumpView: View {
                 if (battery.first?.display) != nil, let shouldBatteryDisplay = battery.first?.display, shouldBatteryDisplay {
                     HStack {
                         Image(systemName: "battery.100")
-                            .font(.callout)
+                            .font(.subheadline)
                             .foregroundStyle(batteryColor)
                         Text("\(Formatter.integerFormatter.string(for: battery.first?.percent ?? 100) ?? "100") %")
-                            .font(.callout).fontWeight(.bold).fontDesign(.rounded)
+                            .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
                     }
                 }
 
                 if let date = expiresAtDate {
                     HStack {
                         Image(systemName: "stopwatch.fill")
-                            .font(.callout)
+                            .font(.subheadline)
                             .foregroundStyle(timerColor)
 
                         let remainingTimeString = remainingTimeString(time: date.timeIntervalSince(timerDate))
 
                         Text(remainingTimeString)
-                            .font(date.timeIntervalSince(timerDate) > 0 ? .callout : .subheadline)
+                            .font(date.timeIntervalSince(timerDate) > 0 ? .subheadline : .subheadline)
                             .fontWeight(.bold)
                             .fontDesign(.rounded)
                             .lineLimit(2)

@@ -137,7 +137,7 @@ extension Home {
                 )
             }
 
-            return rateString + " " + NSLocalizedString(" U/hr", comment: "Unit per hour with space") + manualBasalString
+            return rateString + " " + NSLocalizedString(" E/h", comment: "Unit per hour with space") + manualBasalString
         }
 
         var overrideString: String? {
@@ -362,7 +362,7 @@ extension Home {
                     let bg = eventualBG as Decimal
                     HStack {
                         Image(systemName: "arrow.right.circle")
-                            .font(.callout).fontWeight(.bold)
+                            .font(.subheadline).fontWeight(.bold)
                         Text(
                             Formatter.decimalFormatterWithTwoFractionDigits.string(
                                 from: (
@@ -370,16 +370,16 @@ extension Home {
                                         .asMmolL : bg
                                 ) as NSNumber
                             )!
-                        ).font(.callout).fontWeight(.bold).fontDesign(.rounded)
+                        ).font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
                     }
                     // aligns the evBG icon exactly with the first pixel of loop status icon
                     .padding(.leading, 12)
                 } else {
                     HStack {
                         Image(systemName: "arrow.right.circle")
-                            .font(.callout).fontWeight(.bold)
+                            .font(.subheadline).fontWeight(.bold)
                         Text("--")
-                            .font(.callout).fontWeight(.bold).fontDesign(.rounded)
+                            .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
                     }
                 }
             }
@@ -388,24 +388,26 @@ extension Home {
         @ViewBuilder func mealPanel(_: GeometryProxy) -> some View {
             HStack {
                 HStack {
-                    Image(systemName: "syringe.fill")
-                        .font(.callout)
+                    // Image(systemName: "syringe.fill")
+                    Text("IOB")
+                        .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
                         .foregroundColor(Color.insulin)
                     Text(
                         (
                             Formatter.decimalFormatterWithTwoFractionDigits
                                 .string(from: (state.enactedAndNonEnactedDeterminations.first?.iob ?? 0) as NSNumber) ?? "0"
                         ) +
-                            NSLocalizedString(" U", comment: "Insulin unit")
+                            NSLocalizedString(" E", comment: "Insulin unit")
                     )
-                    .font(.callout).fontWeight(.bold).fontDesign(.rounded)
+                    .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
                 }
 
                 Spacer()
 
                 HStack {
-                    Image(systemName: "fork.knife")
-                        .font(.callout)
+                    // Image(systemName: "fork.knife")
+                    Text("COB")
+                        .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
                         .foregroundColor(.loopYellow)
                     Text(
                         (
@@ -415,7 +417,7 @@ extension Home {
                         ) +
                             NSLocalizedString(" g", comment: "gram of carbs")
                     )
-                    .font(.callout).fontWeight(.bold).fontDesign(.rounded)
+                    .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
                 }
 
                 Spacer()
@@ -423,29 +425,29 @@ extension Home {
                 HStack {
                     if state.pumpSuspended {
                         Text("Pump suspended")
-                            .font(.callout).fontWeight(.bold).fontDesign(.rounded)
+                            .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
                             .foregroundColor(.loopGray)
                     } else if let tempBasalString = tempBasalString {
-                        Image(systemName: "drop.circle")
-                            .font(.callout)
+                        Image(systemName: "drop.circle.fill")
+                            .font(.subheadline)
                             .foregroundColor(.insulinTintColor)
                         if tempBasalString.count > 5 {
                             Text(tempBasalString)
-                                .font(.callout).fontWeight(.bold).fontDesign(.rounded)
+                                .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.85)
                                 .truncationMode(.tail)
                                 .allowsTightening(true)
                         } else {
                             // Short strings can just display normally
-                            Text(tempBasalString).font(.callout).fontWeight(.bold).fontDesign(.rounded)
+                            Text(tempBasalString).font(.footnote).fontWeight(.bold).fontDesign(.rounded)
                         }
                     } else {
                         Image(systemName: "drop.circle")
-                            .font(.callout)
+                            .font(.subheadline)
                             .foregroundColor(.insulinTintColor)
                         Text("No Data")
-                            .font(.callout).fontWeight(.bold).fontDesign(.rounded)
+                            .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
                     }
                 }
                 if state.totalInsulinDisplayType == .totalDailyDose {
@@ -457,17 +459,17 @@ extension Home {
                                     .string(from: (state.determinationsFromPersistence.first?.totalDailyDose ?? 0) as NSNumber) ??
                                     "0"
                             ) +
-                            NSLocalizedString(" U", comment: "Insulin unit")
+                            NSLocalizedString(" E", comment: "Insulin unit")
                     )
-                    .font(.callout).fontWeight(.bold).fontDesign(.rounded)
+                    .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
                 } else {
                     Spacer()
                     HStack {
                         Text(
                             "TINS: \(state.roundedTotalBolus)" +
-                                NSLocalizedString(" U", comment: "Unit in number of units delivered (keep the space character!)")
+                                NSLocalizedString(" E", comment: "Unit in number of units delivered (keep the space character!)")
                         )
-                        .font(.callout).fontWeight(.bold).fontDesign(.rounded)
+                        .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
                         .onChange(of: state.hours) {
                             state.roundedTotalBolus = state.calculateTINS()
                         }
