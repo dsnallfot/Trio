@@ -3,15 +3,15 @@ import Foundation
 
 struct AppShortcuts: AppShortcutsProvider {
     @AppShortcutsBuilder static var appShortcuts: [AppShortcut] {
-        AppShortcut(
-            intent: BolusIntent(),
-            phrases: [
-                "\(.applicationName) bolus",
-                "Ge en bolus via \(.applicationName)"
-            ],
-            shortTitle: "Bolus",
-            systemImageName: "syringe.fill"
-        )
+        /* AppShortcut(
+             intent: BolusIntent(),
+             phrases: [
+                 "\(.applicationName) bolus",
+                 "Ge en bolus via \(.applicationName)"
+             ],
+             shortTitle: "Bolus",
+             systemImageName: "syringe.fill"
+         ) */
         AppShortcut(
             intent: ApplyTempPresetIntent(),
             phrases: [
