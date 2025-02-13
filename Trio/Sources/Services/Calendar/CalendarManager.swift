@@ -263,8 +263,14 @@ final class BaseCalendarManager: CalendarManager, Injectable {
                 try viewContext.existingObject(with: id) as? GlucoseStored
             }
 
-            guard let lastGlucoseObject = glucoseObjects.first, let lastGlucoseValue = glucoseObjects.first?.glucose,
-                  let secondLastReading = glucoseObjects.dropFirst().first?.glucose else { return }
+            // Ensure we have at least two readings and also obtain the date of the latest reading
+            guard let lastGlucoseObject = glucoseObjects.first,
+                  let lastGlucoseValue = lastGlucoseObject.glucose as Int16?,
+                  let secondLastReading = glucoseObjects.dropFirst().first?.glucose,
+                  let lastGlucoseDate = lastGlucoseObject.date else { return }
+
+            // Check if the latest reading is older than 4 minutes.
+            let isStale = Date().timeIntervalSince(lastGlucoseDate) > (4 * 60)
 
             let delta = Decimal(lastGlucoseValue) - Decimal(secondLastReading)
 
@@ -285,25 +291,23 @@ final class BaseCalendarManager: CalendarManager, Injectable {
 
             // var glucoseIcon = "🟢"
             // if displayEmojis {
-            // glucoseIcon = Double(glucoseValue) <= Double(settingsManager.settings.low) ? "🔴" : glucoseIcon
-            // glucoseIcon = Double(glucoseValue) >= Double(settingsManager.settings.high) ? "🟠" : glucoseIcon
-            // glucoseIcon = freshLoop > 15 ? "🚫" : glucoseIcon
+            //     glucoseIcon = Double(glucoseValue) <= Double(settingsManager.settings.low) ? "🔴" : glucoseIcon
+            //     glucoseIcon = Double(glucoseValue) >= Double(settingsManager.settings.high) ? "🟠" : glucoseIcon
+            //     glucoseIcon = freshLoop > 15 ? "🚫" : glucoseIcon
             // }
             // let deltaSymbols = Double(delta!)
             // let glucoseSymbols = Double(glucoseValue)
             // let symbolsValue = glucoseSymbols + deltaSymbols * 3
             var glucoseIcon = ""
             // if displayEmojis {
-            // glucoseIcon = symbolsValue <= Double(settingsManager.settings.low) ? "‼️" : glucoseIcon
-            // glucoseIcon = symbolsValue >= Double(settingsManager.settings.high) ? "⚠️" : glucoseIcon
-            // glucoseIcon = freshLoop > 15 ? "🚫" : glucoseIcon
+            //     glucoseIcon = symbolsValue <= Double(settingsManager.settings.low) ? "‼️" : glucoseIcon
+            //     glucoseIcon = symbolsValue >= Double(settingsManager.settings.high) ? "⚠️" : glucoseIcon
+            //     glucoseIcon = freshLoop > 15 ? "🚫" : glucoseIcon
             // }
 
-            let glucoseText = glucoseFormatter
-                .string(from: Double(
-                    settingsManager.settings.units == .mmolL ? Int(lastGlucoseValue)
-                        .asMmolL : Decimal(lastGlucoseValue)
-                ) as NSNumber)!
+            let glucoseText = glucoseFormatter.string(from: Double(
+                settingsManager.settings.units == .mmolL ? Int(lastGlucoseValue).asMmolL : Decimal(lastGlucoseValue)
+            ) as NSNumber)!
 
             let directionText = lastGlucoseObject.directionEnum?.symbol ?? "↔︎"
 
@@ -315,10 +319,8 @@ final class BaseCalendarManager: CalendarManager, Injectable {
                 .replacingOccurrences(of: ",", with: ".")
                 .replacingOccurrences(of: "+", with: "")
                 .replacingOccurrences(of: "−", with: "-") // Replace any em dash characters with a regular minus sign
-            let cleanedDisplayDelta = deltaText
-                .replacingOccurrences(of: ",", with: ".")
-            let cleanedGlucose = glucoseText
-                .replacingOccurrences(of: ",", with: ".")
+            let cleanedDisplayDelta = deltaText.replacingOccurrences(of: ",", with: ".")
+            let cleanedGlucose = glucoseText.replacingOccurrences(of: ",", with: ".")
             let glucoseValueFifteen = Double(cleanedGlucose) ?? 0.0
             let deltaValueClean = Double(cleanedDelta)!
             let computedValue = glucoseValueFifteen + deltaValueClean * 2.5
@@ -338,19 +340,22 @@ final class BaseCalendarManager: CalendarManager, Injectable {
 
             var iobDisplayText = ""
             var cobDisplayText = ""
-
             var fifteenMinutesDisplayText = ""
 
             if displayCOBandIOB {
                 if displayEmojis {
                     cobDisplayText += ""
                     iobDisplayText += ""
-                    if computedValue > 7.8 {
-                        fifteenMinutesDisplayText += "⚠️ " // Emoji for values higher than 7.8
-                    } else if computedValue < 3.9 {
-                        fifteenMinutesDisplayText += "🆘 " // Emoji for values lower than 3.9
+                    if isStale {
+                        fifteenMinutesDisplayText += "?? " // ?? for stale BG data
                     } else {
-                        fifteenMinutesDisplayText += "✅ " // Emoji for values in-between 3.9 and 7.8
+                        if computedValue > 7.8 {
+                            fifteenMinutesDisplayText += "⚠️ " // Emoji for values higher than 7.8
+                        } else if computedValue < 3.9 {
+                            fifteenMinutesDisplayText += "🆘 " // Emoji for values lower than 3.9
+                        } else {
+                            fifteenMinutesDisplayText += "✅ " // Emoji for values in-between 3.9 and 7.8
+                        }
                     }
                 } else {
                     iobDisplayText += "IOB"
@@ -363,7 +368,13 @@ final class BaseCalendarManager: CalendarManager, Injectable {
                 event.location = fifteenMinutesDisplayText + " • " + iobDisplayText + " • " + cobDisplayText
             }
 
-            event.title = glucoseDisplayText // + "\n" + cobDisplayText + "" + iobDisplayText + "" + fifteenMinutesDisplayText
+            // If the latest reading is stale, override the title with "stale"
+            if isStale {
+                event.title = "❌ BG saknas!"
+            } else {
+                event.title = glucoseDisplayText // + "\n" + cobDisplayText + "" + iobDisplayText + "" + fifteenMinutesDisplayText
+            }
+
             event.notes = "Trio"
             event.startDate = Date()
             event.endDate = Date(timeIntervalSinceNow: 60 * 10)
@@ -379,6 +390,146 @@ final class BaseCalendarManager: CalendarManager, Injectable {
             )
         }
     }
+
+    /*
+     @MainActor func createEvent() async {
+         guard settingsManager.settings.useCalendar, let calendar = currentCalendar,
+               let determinationId = await getLastDetermination() else { return }
+
+         // Ignore the update if the determinationId is the same as it was at last update
+         if determinationId == previousDeterminationId {
+             return
+         }
+
+         let glucoseIds = await fetchGlucose()
+
+         deleteAllEvents(in: calendar)
+
+         do {
+             guard let determinationObject = try viewContext.existingObject(with: determinationId) as? OrefDetermination
+             else { return }
+
+             let glucoseObjects = try glucoseIds.compactMap { id in
+                 try viewContext.existingObject(with: id) as? GlucoseStored
+             }
+
+             guard let lastGlucoseObject = glucoseObjects.first, let lastGlucoseValue = glucoseObjects.first?.glucose,
+                   let secondLastReading = glucoseObjects.dropFirst().first?.glucose else { return }
+
+             let delta = Decimal(lastGlucoseValue) - Decimal(secondLastReading)
+
+             // create an event now
+             let event = EKEvent(eventStore: eventStore)
+
+             // Calendar settings
+             let displayCOBandIOB = settingsManager.settings.displayCalendarIOBandCOB
+             let displayEmojis = settingsManager.settings.displayCalendarEmojis
+
+             // Latest Loop data
+             var freshLoop: Double = 20
+             var lastLoop: Date?
+             if displayCOBandIOB || displayEmojis {
+                 lastLoop = determinationObject.timestamp
+                 freshLoop = -1 * (lastLoop?.timeIntervalSinceNow.minutes ?? 0)
+             }
+
+             // var glucoseIcon = "🟢"
+             // if displayEmojis {
+             // glucoseIcon = Double(glucoseValue) <= Double(settingsManager.settings.low) ? "🔴" : glucoseIcon
+             // glucoseIcon = Double(glucoseValue) >= Double(settingsManager.settings.high) ? "🟠" : glucoseIcon
+             // glucoseIcon = freshLoop > 15 ? "🚫" : glucoseIcon
+             // }
+             // let deltaSymbols = Double(delta!)
+             // let glucoseSymbols = Double(glucoseValue)
+             // let symbolsValue = glucoseSymbols + deltaSymbols * 3
+             var glucoseIcon = ""
+             // if displayEmojis {
+             // glucoseIcon = symbolsValue <= Double(settingsManager.settings.low) ? "‼️" : glucoseIcon
+             // glucoseIcon = symbolsValue >= Double(settingsManager.settings.high) ? "⚠️" : glucoseIcon
+             // glucoseIcon = freshLoop > 15 ? "🚫" : glucoseIcon
+             // }
+
+             let glucoseText = glucoseFormatter
+                 .string(from: Double(
+                     settingsManager.settings.units == .mmolL ? Int(lastGlucoseValue)
+                         .asMmolL : Decimal(lastGlucoseValue)
+                 ) as NSNumber)!
+
+             let directionText = lastGlucoseObject.directionEnum?.symbol ?? "↔︎"
+
+             let deltaValue = settingsManager.settings.units == .mmolL ? delta.asMmolL : delta
+             let deltaText = deltaFormatter.string(from: deltaValue as NSNumber) ?? "--"
+
+             // Daniel: What could the BG be within 15 min if current trend cintinues linear (for school resource watch)
+             let cleanedDelta = deltaText
+                 .replacingOccurrences(of: ",", with: ".")
+                 .replacingOccurrences(of: "+", with: "")
+                 .replacingOccurrences(of: "−", with: "-") // Replace any em dash characters with a regular minus sign
+             let cleanedDisplayDelta = deltaText
+                 .replacingOccurrences(of: ",", with: ".")
+             let cleanedGlucose = glucoseText
+                 .replacingOccurrences(of: ",", with: ".")
+             let glucoseValueFifteen = Double(cleanedGlucose) ?? 0.0
+             let deltaValueClean = Double(cleanedDelta)!
+             let computedValue = glucoseValueFifteen + deltaValueClean * 2.5
+             // Use string interpolation with format specifier to display one decimal place
+             let formattedComputedValue = String(format: "%.1f", computedValue)
+             // Replace the decimal separator
+             // let formattedComputedValueWithComma = formattedComputedValue.replacingOccurrences(of: ".", with: ",")
+             let fifteenMinutesText = formattedComputedValue
+
+             let iobText = iobFormatter.string(from: (determinationObject.iob ?? 0) as NSNumber) ?? ""
+             let cobText = cobFormatter.string(from: determinationObject.cob as NSNumber) ?? ""
+             let cleanedIobText = iobText.replacingOccurrences(of: ",", with: ".")
+             let cleanedCobText = cobText.replacingOccurrences(of: ",", with: ".")
+
+             var glucoseDisplayText = displayEmojis ? glucoseIcon + " " : ""
+             glucoseDisplayText += cleanedGlucose + " " + directionText + " " + cleanedDisplayDelta
+
+             var iobDisplayText = ""
+             var cobDisplayText = ""
+
+             var fifteenMinutesDisplayText = ""
+
+             if displayCOBandIOB {
+                 if displayEmojis {
+                     cobDisplayText += ""
+                     iobDisplayText += ""
+                     if computedValue > 7.8 {
+                         fifteenMinutesDisplayText += "⚠️ " // Emoji for values higher than 7.8
+                     } else if computedValue < 3.9 {
+                         fifteenMinutesDisplayText += "🆘 " // Emoji for values lower than 3.9
+                     } else {
+                         fifteenMinutesDisplayText += "✅ " // Emoji for values in-between 3.9 and 7.8
+                     }
+                 } else {
+                     iobDisplayText += "IOB"
+                     cobDisplayText += "COB"
+                     fifteenMinutesDisplayText += ""
+                 }
+                 cobDisplayText += "" + cleanedCobText + "g"
+                 iobDisplayText += "" + cleanedIobText + "E"
+                 fifteenMinutesDisplayText += "" + fifteenMinutesText + ""
+                 event.location = fifteenMinutesDisplayText + " • " + iobDisplayText + " • " + cobDisplayText
+             }
+
+             event.title = glucoseDisplayText // + "\n" + cobDisplayText + "" + iobDisplayText + "" + fifteenMinutesDisplayText
+             event.notes = "Trio"
+             event.startDate = Date()
+             event.endDate = Date(timeIntervalSinceNow: 60 * 10)
+             event.calendar = calendar
+
+             try eventStore.save(event, span: .thisEvent)
+
+             previousDeterminationId = determinationId
+
+         } catch {
+             debugPrint(
+                 "\(DebuggingIdentifiers.failed) \(#file) \(#function) Failed to create calendar event: \(error.localizedDescription)"
+             )
+         }
+     }
+     */
 
     var currentCalendar: EKCalendar? {
         let calendars = eventStore.calendars(for: .event)
