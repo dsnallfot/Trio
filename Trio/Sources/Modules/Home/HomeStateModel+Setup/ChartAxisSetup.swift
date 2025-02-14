@@ -85,7 +85,7 @@ extension Home.StateModel {
     }
 
     func yAxisChartDataIobChart(determinations: [[String: Any]]) {
-        // Daniel Conversion factor similar to average CR: how many COB units equal 1 IOB unit in visual line height.
+        // Daniel Conversion factor: how many COB units equal 1 IOB unit in visual line height.
         let conversionFactor: Decimal = 10
 
         determinationFetchContext.perform {
@@ -102,17 +102,23 @@ extension Home.StateModel {
             }
             let maxCob = cobMapped.max() ?? 0
 
-            // Use the conversion factor as a margin, similar to your COB chart
-            let calculatedCobMax: Decimal = (maxCob == 0 ? conversionFactor : maxCob + conversionFactor)
+            // Determine the desired IOB max based on available COB values.
+            // If there are COB values, base it on them;
+            // if not, then use the IOB max directly.
+            let desiredMaxIob: Decimal
+            if maxCob > 0 {
+                // Use COB as basis: add a margin and then convert the max COB to IOB scale.
+                let calculatedCobMax = maxCob + conversionFactor
+                desiredMaxIob = calculatedCobMax / conversionFactor
+            } else {
+                // When no COB values exist, use the IOB maximum directly.
+                desiredMaxIob = iobMapped.max() ?? 0
+            }
 
-            // Calculate the desired IOB maximum using the conversion factor:
-            // (i.e. conversionFactor COB = 1 IOB in visual line height)
-            let desiredMaxIob = calculatedCobMax / conversionFactor
-
-            // Optionally add a little extra margin (here 0.5) so that the IOB line isn't drawn exactly at the top
+            // Optionally add a little extra margin so the IOB line isn't drawn exactly at the top.
             let finalMaxIob = desiredMaxIob + 0.5
 
-            // For negative IOB values, add a small margin as needed
+            // For negative IOB values, add a small margin as needed.
             let adjustedMinIob: Decimal = minIob < 0 ? minIob - 0.5 : 0
 
             Task {
