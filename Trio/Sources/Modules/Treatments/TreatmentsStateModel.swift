@@ -432,6 +432,8 @@ extension Treatments {
                 let isFatPresent = fat > 0
                 let isProteinPresent = protein > 0
 
+                await saveMeal() // ALTERNATIVE 2: Pierres suggestion to move this up fixes COB not updating immediately
+
                 if isInsulinGiven {
                     try await handleInsulin(isExternal: externalInsulin)
                 } else if isCarbsPresent || isFatPresent || isProteinPresent {
@@ -443,7 +445,7 @@ extension Treatments {
                     return
                 }
 
-                await saveMeal()
+                // await saveMeal() // ALTERNATIVE 1: ORIGINAL CODE
 
                 // If glucose data is stale end the custom loading animation by hiding the modal
                 // Get date on Main thread
