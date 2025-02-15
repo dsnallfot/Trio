@@ -52,7 +52,7 @@ struct LoopView: View {
                 Text("--")
             }
         }
-        .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
+        .font(.subheadline).fontWeight(.semibold).fontDesign(.rounded)
         .foregroundColor(color)
     }
 

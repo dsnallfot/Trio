@@ -24,7 +24,7 @@ struct LoopStatusHelpView: View {
                         definition: Text(
                             "The ratio of how sensitive or resistant to insulin you are in the current loop cycle. Baseline = 1.0, Sensitive < 1.0, Resistant > 1.0"
                         ),
-                        color: .insulin
+                        color: .green
                     ).listRowBackground(Color.gray.opacity(0.1))
 
                     DefinitionRow(
@@ -32,7 +32,7 @@ struct LoopStatusHelpView: View {
                         definition: Text(
                             "The first value is your profile Insulin Sensitivity Factor (ISF). The second value, after the arrow, is your adjusted ISF used for the most recent automated dosing calculation."
                         ),
-                        color: .insulin
+                        color: .green
                     ).listRowBackground(Color.gray.opacity(0.1))
 
                     DefinitionRow(
@@ -40,7 +40,7 @@ struct LoopStatusHelpView: View {
                         definition: Text(
                             "Amount of Carbs on Board (COB) used in the most recent automated dosing calculation."
                         ),
-                        color: .insulin
+                        color: .green
                     ).listRowBackground(Color.gray.opacity(0.1))
 
                     DefinitionRow(
@@ -48,7 +48,7 @@ struct LoopStatusHelpView: View {
                         definition: Text(
                             "Abbreviation for 'Deviation'. How much the actual glucose change deviated from the BGI."
                         ),
-                        color: .insulin
+                        color: .green
                     ).listRowBackground(Color.gray.opacity(0.1))
 
                     DefinitionRow(
@@ -56,7 +56,7 @@ struct LoopStatusHelpView: View {
                         definition: Text(
                             "The degree to which your glucose should be rising or falling based solely on insulin activity."
                         ),
-                        color: .insulin
+                        color: .green
                     ).listRowBackground(Color.gray.opacity(0.1))
 
                     DefinitionRow(
@@ -64,7 +64,7 @@ struct LoopStatusHelpView: View {
                         definition: Text(
                             "The first value is your profile Carb Ratio (CR). The second value, after the arrow, is your adjusted CR used for the most recent automated dosing calculation."
                         ),
-                        color: .insulin
+                        color: .green
                     ).listRowBackground(Color.gray.opacity(0.1))
 
                     DefinitionRow(
@@ -72,7 +72,7 @@ struct LoopStatusHelpView: View {
                         definition: Text(
                             "The first value is your target glucose from your settings. The second value, after the arrow, is your adjusted target glucose used for the most recent automated dosing calculation. A second value is shown if you have a temp target, override, or one of the Target Behavior options enabled."
                         ),
-                        color: .insulin
+                        color: .green
                     ).listRowBackground(Color.gray.opacity(0.1))
 
                     DefinitionRow(
@@ -80,7 +80,7 @@ struct LoopStatusHelpView: View {
                         definition: Text(
                             "The lowest forecasted value that Trio has estimated for your future glucose."
                         ),
-                        color: .insulin
+                        color: .green
                     ).listRowBackground(Color.gray.opacity(0.1))
 
                     DefinitionRow(
@@ -88,7 +88,7 @@ struct LoopStatusHelpView: View {
                         definition: Text(
                             "The lowest forecasted glucose during the remaining duration of insulin action (DIA)."
                         ),
-                        color: .insulin
+                        color: .green
                     ).listRowBackground(Color.gray.opacity(0.1))
 
                     DefinitionRow(
@@ -96,7 +96,7 @@ struct LoopStatusHelpView: View {
                         definition: Text(
                             "The forecasted glucose value in 4 hours calculated based on IOB only."
                         ),
-                        color: .insulin
+                        color: .green
                     ).listRowBackground(Color.gray.opacity(0.1))
 
                     DefinitionRow(
@@ -104,7 +104,7 @@ struct LoopStatusHelpView: View {
                         definition: Text(
                             "The forecasted glucose value in 4 hours calculated based on current IOB and COB."
                         ),
-                        color: .insulin
+                        color: .green
                     ).listRowBackground(Color.gray.opacity(0.1))
 
                     DefinitionRow(
@@ -112,7 +112,7 @@ struct LoopStatusHelpView: View {
                         definition: Text(
                             "The forecasted glucose value in 4 hours based on current deviations ramping down to zero at the same rate they have been recently."
                         ),
-                        color: .insulin
+                        color: .green
                     ).listRowBackground(Color.gray.opacity(0.1))
 
                     DefinitionRow(
@@ -120,7 +120,7 @@ struct LoopStatusHelpView: View {
                         definition: Text(
                             "Abbreviation for 'Total Daily Dose'. Last 24 hours of total insulin administered, both basal and bolus."
                         ),
-                        color: .zt
+                        color: .insulin
                     ).listRowBackground(Color.gray.opacity(0.1))
 
                     DefinitionRow(
@@ -128,7 +128,7 @@ struct LoopStatusHelpView: View {
                         definition: Text(
                             "Of the total insulin delivered in the past 24 hours, this indicates what percentage was administered through basals and what was given through bolus."
                         ),
-                        color: .green
+                        color: .insulin
                     ).listRowBackground(Color.gray.opacity(0.1))
 
                     DefinitionRow(
@@ -164,7 +164,7 @@ struct LoopStatusHelpView: View {
                         definition: Text(
                             "SMB Delivery Ratio of calculated insulin required that is given as SMB."
                         ),
-                        color: .zt
+                        color: .uam
                     ).listRowBackground(Color.gray.opacity(0.1))
 
                     DefinitionRow(

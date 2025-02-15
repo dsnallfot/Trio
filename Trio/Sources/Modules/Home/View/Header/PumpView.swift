@@ -23,7 +23,7 @@ struct PumpView: View {
             VStack(alignment: .center) {
                 Text(pumpStatusHighlightMessage)
                     .font(.footnote)
-                    .fontWeight(.bold)
+                    .fontWeight(.semibold)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: .infinity)
             }
@@ -59,7 +59,7 @@ struct PumpView: View {
                                 .string(from: reservoir as NSNumber)! + NSLocalizedString(" E", comment: "Insulin unit")
                         )
                         .font(.subheadline)
-                        .fontWeight(.bold)
+                        .fontWeight(.semibold)
                         .fontDesign(.rounded)
                         .foregroundColor(.secondary)
                     }
@@ -77,7 +77,7 @@ struct PumpView: View {
 
                         Text("Timezone")
                             .font(.subheadline)
-                            .fontWeight(.bold)
+                            .fontWeight(.semibold)
                             .fontDesign(.rounded)
                             .foregroundStyle(.red)
                     }
@@ -91,7 +91,7 @@ struct PumpView: View {
                             .foregroundStyle(batteryColor)
                         Text("\(Formatter.integerFormatter.string(for: battery.first?.percent ?? 100) ?? "100") %")
                             .font(.subheadline)
-                            .fontWeight(.bold)
+                            .fontWeight(.semibold)
                             .fontDesign(.rounded)
                             .foregroundColor(.secondary)
                     }
@@ -105,7 +105,7 @@ struct PumpView: View {
                             .foregroundStyle(timerColor)
                         Text(remainingTimeString(time: date.timeIntervalSince(timerDate)))
                             .font(.subheadline)
-                            .fontWeight(.bold)
+                            .fontWeight(.semibold)
                             .fontDesign(.rounded)
                             .lineLimit(2)
                             .multilineTextAlignment(.leading)

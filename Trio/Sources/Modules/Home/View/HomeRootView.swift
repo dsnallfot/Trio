@@ -362,7 +362,7 @@ extension Home {
                     let bg = eventualBG as Decimal
                     HStack {
                         Image(systemName: "arrow.right.circle")
-                            .font(.subheadline).fontWeight(.bold).foregroundColor(.secondary)
+                            .font(.subheadline).fontWeight(.semibold).foregroundColor(.secondary)
                         Text(
                             Formatter.decimalFormatterWithTwoFractionDigits.string(
                                 from: (
@@ -370,7 +370,7 @@ extension Home {
                                         .asMmolL : bg
                                 ) as NSNumber
                             )!
-                        ).font(.subheadline).fontWeight(.bold).fontDesign(.rounded).foregroundColor(.secondary)
+                        ).font(.subheadline).fontWeight(.semibold).fontDesign(.rounded).foregroundColor(.secondary)
                     }
                     // aligns the evBG icon exactly with the first pixel of loop status icon
                     .padding(.leading, 10)
@@ -380,9 +380,9 @@ extension Home {
                 } else {
                     HStack {
                         Image(systemName: "arrow.right.circle")
-                            .font(.subheadline).fontWeight(.bold).foregroundColor(.secondary)
+                            .font(.subheadline).fontWeight(.semibold).foregroundColor(.secondary)
                         Text("--")
-                            .font(.subheadline).fontWeight(.bold).fontDesign(.rounded).foregroundColor(.secondary)
+                            .font(.subheadline).fontWeight(.semibold).fontDesign(.rounded).foregroundColor(.secondary)
                     }
                     .padding(.leading, 10)
                 }
@@ -598,7 +598,7 @@ extension Home {
         @ViewBuilder func noActiveAdjustmentsView() -> some View {
             Group {
                 VStack {
-                    Text("Normal profile")
+                    Text("Normal profil")
                         .font(.subheadline)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     Text("100 %")
@@ -906,7 +906,9 @@ extension Home {
                         iconString: "info.circle", // "info",
                         action: { state.isLegendPresented.toggle() }
                     )
-                }.padding([.horizontal, .top, .bottom])
+                }
+                .padding(.horizontal, 20)
+                .padding([.top, .bottom])
 
                 if let progress = state.bolusProgress {
                     bolusView(geo: geo, progress)
@@ -996,7 +998,7 @@ extension Home {
                     }()
 
                     NavigationStack { mainView() }
-                        .tabItem { Label("Main", systemImage: "chart.xyaxis.line") }
+                        .tabItem { Label("Hem", systemImage: "chart.xyaxis.line") }
                         .badge(carbsRequiredBadge).tag(0)
 
                     NavigationStack { DataTable.RootView(resolver: resolver) }
@@ -1007,7 +1009,7 @@ extension Home {
                     NavigationStack { Adjustments.RootView(resolver: resolver) }
                         .tabItem {
                             Label(
-                                "Adjustments",
+                                "Override",
                                 // systemImage: "slider.horizontal.2.gobackward"
                                 systemImage: "arrow.up.arrow.down.circle"
                             ) }.tag(2)
