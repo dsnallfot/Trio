@@ -362,7 +362,7 @@ extension Home {
                     let bg = eventualBG as Decimal
                     HStack {
                         Image(systemName: "arrow.right.circle")
-                            .font(.subheadline).fontWeight(.semibold).foregroundColor(.secondary)
+                            .font(.subheadline).fontWeight(.semibold).foregroundColor(.primary)
                         Text(
                             Formatter.decimalFormatterWithTwoFractionDigits.string(
                                 from: (
@@ -370,7 +370,7 @@ extension Home {
                                         .asMmolL : bg
                                 ) as NSNumber
                             )!
-                        ).font(.subheadline).fontWeight(.semibold).fontDesign(.rounded).foregroundColor(.secondary)
+                        ).font(.subheadline).fontWeight(.semibold).fontDesign(.rounded).foregroundColor(.primary)
                     }
                     // aligns the evBG icon exactly with the first pixel of loop status icon
                     .padding(.leading, 10)

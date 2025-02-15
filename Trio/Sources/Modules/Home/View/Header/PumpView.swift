@@ -50,7 +50,7 @@ struct PumpView: View {
                     HStack {
                         Image(systemName: "cross.vial.fill")
                             .font(.subheadline)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.primary)
 
                         Text(
                             reservoir == 0xDEAD_BEEF ?
@@ -61,7 +61,7 @@ struct PumpView: View {
                         .font(.subheadline)
                         .fontWeight(.semibold)
                         .fontDesign(.rounded)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.primary)
                     }
                     .padding(.horizontal, 12) // Unified left padding
                     .padding(.vertical, 5)
@@ -93,7 +93,7 @@ struct PumpView: View {
                             .font(.subheadline)
                             .fontWeight(.semibold)
                             .fontDesign(.rounded)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.primary)
                     }
                     .padding(.horizontal, 12) // Unified left padding
                 }
@@ -265,7 +265,7 @@ struct PumpView: View {
         case ...20:
             return Color.orange
         default:
-            return Color.secondary
+            return Color.primary
             // return Color.loopGreen
         }
     }
@@ -281,7 +281,7 @@ struct PumpView: View {
         case ...30:
             return Color.orange
         default:
-            return Color.secondary
+            return Color.primary
             // return Color.insulin
         }
     }
@@ -299,7 +299,7 @@ struct PumpView: View {
         case ...1.days.timeInterval:
             return Color.orange
         default:
-            return Color.loopGreen
+            return Color.primary
         }
     }
 }

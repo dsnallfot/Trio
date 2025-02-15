@@ -99,47 +99,46 @@ final class BaseCalendarManager: CalendarManager, Injectable {
         }.store(in: &subscriptions)
     }
 
-    // Original implementation
-    private func registerSubscribers() {
-        glucoseStorage.updatePublisher
-            .receive(on: DispatchQueue.global(qos: .background))
-            .sink { [weak self] _ in
-                guard let self = self else { return }
-                Task {
-                    await self.createEvent()
-                }
-            }
-            .store(in: &subscriptions)
-    }
-
     /*
-     //Daniel test 10 sec delay to get updated IOB+COB
+     // Original implementation
      private func registerSubscribers() {
          glucoseStorage.updatePublisher
              .receive(on: DispatchQueue.global(qos: .background))
              .sink { [weak self] _ in
                  guard let self = self else { return }
-
-                 //Daniel test 10 sec delay to get updated IOB+COB
-
-                 // Cancel any existing work item for createEvent
-                 self.createEventWorkItem?.cancel()
-
-                 // Create a new work item with a 10-second delay
-                 let createEventWorkItem = DispatchWorkItem {
-                     Task {
-                         await self.createEvent()
-                     }
+                 Task {
+                     await self.createEvent()
                  }
-                 self.createEventWorkItem = createEventWorkItem
-
-                 // Schedule the work item
-                 DispatchQueue.global(qos: .background).asyncAfter(deadline: .now() + 10, execute: createEventWorkItem)
-
              }
              .store(in: &subscriptions)
      }
      */
+
+    // Daniel test 10 sec delay to get updated IOB+COB
+    private func registerSubscribers() {
+        glucoseStorage.updatePublisher
+            .receive(on: DispatchQueue.global(qos: .background))
+            .sink { [weak self] _ in
+                guard let self = self else { return }
+
+                // Daniel test 10 sec delay to get updated IOB+COB
+
+                // Cancel any existing work item for createEvent
+                self.createEventWorkItem?.cancel()
+
+                // Create a new work item with a 10-second delay
+                let createEventWorkItem = DispatchWorkItem {
+                    Task {
+                        await self.createEvent()
+                    }
+                }
+                self.createEventWorkItem = createEventWorkItem
+
+                // Schedule the work item
+                DispatchQueue.global(qos: .background).asyncAfter(deadline: .now() + 10, execute: createEventWorkItem)
+            }
+            .store(in: &subscriptions)
+    }
 
     func requestAccessIfNeeded() async -> Bool {
         let status = EKEventStore.authorizationStatus(for: .event)
@@ -269,8 +268,8 @@ final class BaseCalendarManager: CalendarManager, Injectable {
                   let secondLastReading = glucoseObjects.dropFirst().first?.glucose,
                   let lastGlucoseDate = lastGlucoseObject.date else { return }
 
-            // Check if the latest reading is older than 4 minutes.
-            let isStale = Date().timeIntervalSince(lastGlucoseDate) > (4 * 60)
+            // Check if the latest reading is older than 5 minutes.
+            let isStale = Date().timeIntervalSince(lastGlucoseDate) > (5 * 60)
 
             let delta = Decimal(lastGlucoseValue) - Decimal(secondLastReading)
 
