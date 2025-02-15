@@ -289,7 +289,7 @@ extension Home {
 
         @ViewBuilder private func tappableButton(
             buttonColor: Color,
-            label: String,
+            // label: String,
             iconString: String,
             action: @escaping () -> Void
         ) -> some View {
@@ -298,10 +298,10 @@ extension Home {
             }) {
                 HStack {
                     Image(systemName: iconString)
-                    Text(label)
+                    // Text(label)
                 }
                 // .font(.footnote)
-                .font(.title3)
+                .font(.title2)
                 .padding(.vertical, 5)
                 .padding(.horizontal, 10)
                 .foregroundStyle(buttonColor)
@@ -350,9 +350,7 @@ extension Home {
                     manualTempBasal: state.manualTempBasal,
                     determination: state.determinationsFromPersistence
                 )
-                .onTapGesture {
-                    state.isLoopStatusPresented = true
-                }
+
                 .onLongPressGesture {
                     let impactHeavy = UIImpactFeedbackGenerator(style: .heavy)
                     impactHeavy.impactOccurred()
@@ -376,6 +374,9 @@ extension Home {
                     }
                     // aligns the evBG icon exactly with the first pixel of loop status icon
                     .padding(.leading, 10)
+                    .onTapGesture {
+                        state.isLoopStatusPresented = true
+                    }
                 } else {
                     HStack {
                         Image(systemName: "arrow.right.circle")
@@ -383,7 +384,11 @@ extension Home {
                         Text("--")
                             .font(.subheadline).fontWeight(.bold).fontDesign(.rounded).foregroundColor(.secondary)
                     }
+                    .padding(.leading, 10)
                 }
+            }
+            .onTapGesture {
+                state.isLoopStatusPresented = true
             }
         }
 
@@ -882,7 +887,7 @@ extension Home {
                     tappableButton(
                         // buttonColor: (colorScheme == .dark ? Color.white : Color.black).opacity(0.8),
                         buttonColor: Color.secondary,
-                        label: "", // "Stats",
+                        // label: "", // "Stats",
                         iconString: "chart.pie", // statsIconString,
                         action: { state.showModal(for: .statistics) }
                     )
@@ -897,7 +902,7 @@ extension Home {
                     tappableButton(
                         // buttonColor: (colorScheme == .dark ? Color.white : Color.black).opacity(0.8),
                         buttonColor: Color.secondary,
-                        label: "", // "Info",
+                        // label: "", // "Info",
                         iconString: "info.circle", // "info",
                         action: { state.isLegendPresented.toggle() }
                     )
@@ -939,7 +944,7 @@ extension Home {
             .navigationTitle("Home")
             .navigationBarHidden(true)
             .ignoresSafeArea(.keyboard)
-            .blur(radius: state.isLoopStatusPresented ? 3 : 0)
+            .blur(radius: state.isLoopStatusPresented ? 1 : 0)
             .sheet(isPresented: $state.isLoopStatusPresented) {
                 LoopStatusView(state: state)
             }
