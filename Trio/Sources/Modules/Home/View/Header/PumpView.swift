@@ -44,13 +44,14 @@ struct PumpView: View {
                 if let reservoir = reservoir {
                     HStack {
                         Image(systemName: "cross.vial.fill")
-                            .font(.subheadline)
+                            .font(.subheadline).foregroundColor(.secondary)
 
                         if reservoir == 0xDEAD_BEEF {
                             Text("50+ " + NSLocalizedString("E", comment: "Insulin unit"))
                                 .font(.subheadline)
                                 .fontWeight(.bold)
                                 .fontDesign(.rounded)
+                                .foregroundColor(.secondary)
                         } else {
                             Text(
                                 Formatter.integerFormatter
@@ -59,15 +60,16 @@ struct PumpView: View {
                             .font(.subheadline)
                             .fontWeight(.bold)
                             .fontDesign(.rounded)
+                            .foregroundColor(.secondary)
                         }
                     }
                     .padding(.vertical, 5)
                     .padding(.horizontal, 10)
                     .foregroundStyle(reservoirColor)
-                    .overlay(
-                        Capsule()
-                            .stroke(reservoirColor.opacity(0.4), lineWidth: 1)
-                    )
+                    /* .overlay(
+                         Capsule()
+                             .stroke(reservoirColor.opacity(0.4), lineWidth: 1)
+                     ) */
 
                     if let timeZone = timeZone, timeZone.secondsFromGMT() != TimeZone.current.secondsFromGMT() {
                         HStack {
@@ -92,7 +94,7 @@ struct PumpView: View {
                             .font(.subheadline)
                             .foregroundStyle(batteryColor)
                         Text("\(Formatter.integerFormatter.string(for: battery.first?.percent ?? 100) ?? "100") %")
-                            .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
+                            .font(.subheadline).fontWeight(.bold).fontDesign(.rounded).foregroundColor(.secondary)
                     }
                 }
 
@@ -159,7 +161,8 @@ struct PumpView: View {
         case ...20:
             return Color.orange
         default:
-            return Color.loopGreen
+            return Color.secondary
+            // return Color.loopGreen
         }
     }
 
@@ -174,7 +177,8 @@ struct PumpView: View {
         case ...30:
             return Color.orange
         default:
-            return Color.insulin
+            return Color.secondary
+            // return Color.insulin
         }
     }
 

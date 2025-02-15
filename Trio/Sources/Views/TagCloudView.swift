@@ -57,28 +57,26 @@ struct TagCloudView: View {
     private func drawTag(for textTag: String, isMmolL: Bool) -> some View {
         var colorOfTag: Color {
             switch textTag {
-            case textTag where textTag.contains("SMB Delivery Ratio:"):
+            case textTag where textTag.contains("SMB Delivery Ratio:"),
+                 textTag where textTag.contains("SMB Ratio"):
                 return .uam
-            case textTag where textTag.contains("Bolus"):
-                return .green
-            case textTag where textTag.contains("TDD:"),
-                 textTag where textTag.contains("tdd_factor"),
+            case textTag where textTag.contains("Bolus"),
+                 textTag where textTag.contains("TDD:"):
+                return .insulin
+            case textTag where textTag.contains("tdd_factor"),
                  textTag where textTag.contains("Sigmoid function"),
                  textTag where textTag.contains("Logarithmic formula"),
                  textTag where textTag.contains("AF:"),
                  textTag where textTag.contains("Autosens/Dynamic Limit:"),
                  textTag where textTag.contains("Dynamic ISF/CR"),
-                 textTag where textTag.contains("Basal ratio"),
-                 textTag where textTag.contains("SMB Ratio"):
+                 textTag where textTag.contains("Basal ratio"):
                 return .zt
             case textTag where textTag.contains("Middleware:"):
                 return .red
-            case textTag where textTag.contains("SMB Ratio"):
-                return .orange
             case textTag where textTag.contains("Smoothing: On"):
                 return .gray
             default:
-                return .insulin
+                return .green
             }
         }
 

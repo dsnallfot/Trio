@@ -118,7 +118,7 @@ extension Home {
                     showPumpSelection.toggle()
                 } else {
                     // sends user to pump settings
-                    state.setupPump.toggle()
+                    state.setupPump.toggle() // Daniel: Maybe disable or add auth to avoid accidentally tapping
                 }
             }
         }
@@ -242,7 +242,8 @@ extension Home {
         }
 
         var timeIntervalButtons: some View {
-            let buttonColor = (colorScheme == .dark ? Color.white : Color.black).opacity(0.8)
+            // let buttonColor = (colorScheme == .dark ? Color.white : Color.black).opacity(0.8)
+            let buttonColor = Color.secondary
 
             return HStack(alignment: .center) {
                 ForEach(timeButtons) { button in
@@ -299,14 +300,15 @@ extension Home {
                     Image(systemName: iconString)
                     Text(label)
                 }
-                .font(.footnote)
+                // .font(.footnote)
+                .font(.title3)
                 .padding(.vertical, 5)
                 .padding(.horizontal, 10)
                 .foregroundStyle(buttonColor)
-                .overlay(
-                    Capsule()
-                        .stroke(buttonColor.opacity(0.4), lineWidth: 1)
-                )
+                /* .overlay(
+                     Capsule()
+                         .stroke(buttonColor.opacity(0.4), lineWidth: 1)
+                 ) */
             }
         }
 
@@ -362,7 +364,7 @@ extension Home {
                     let bg = eventualBG as Decimal
                     HStack {
                         Image(systemName: "arrow.right.circle")
-                            .font(.subheadline).fontWeight(.bold)
+                            .font(.subheadline).fontWeight(.bold).foregroundColor(.secondary)
                         Text(
                             Formatter.decimalFormatterWithTwoFractionDigits.string(
                                 from: (
@@ -370,16 +372,16 @@ extension Home {
                                         .asMmolL : bg
                                 ) as NSNumber
                             )!
-                        ).font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
+                        ).font(.subheadline).fontWeight(.bold).fontDesign(.rounded).foregroundColor(.secondary)
                     }
                     // aligns the evBG icon exactly with the first pixel of loop status icon
-                    .padding(.leading, 12)
+                    .padding(.leading, 10)
                 } else {
                     HStack {
                         Image(systemName: "arrow.right.circle")
-                            .font(.subheadline).fontWeight(.bold)
+                            .font(.subheadline).fontWeight(.bold).foregroundColor(.secondary)
                         Text("--")
-                            .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
+                            .font(.subheadline).fontWeight(.bold).fontDesign(.rounded).foregroundColor(.secondary)
                     }
                 }
             }
@@ -878,9 +880,10 @@ extension Home {
 
                 HStack {
                     tappableButton(
-                        buttonColor: (colorScheme == .dark ? Color.white : Color.black).opacity(0.8),
-                        label: "Stats",
-                        iconString: statsIconString,
+                        // buttonColor: (colorScheme == .dark ? Color.white : Color.black).opacity(0.8),
+                        buttonColor: Color.secondary,
+                        label: "", // "Stats",
+                        iconString: "chart.pie", // statsIconString,
                         action: { state.showModal(for: .statistics) }
                     )
 
@@ -892,9 +895,10 @@ extension Home {
                     Spacer()
 
                     tappableButton(
-                        buttonColor: (colorScheme == .dark ? Color.white : Color.black).opacity(0.8),
-                        label: "Info",
-                        iconString: "info",
+                        // buttonColor: (colorScheme == .dark ? Color.white : Color.black).opacity(0.8),
+                        buttonColor: Color.secondary,
+                        label: "", // "Info",
+                        iconString: "info.circle", // "info",
                         action: { state.isLegendPresented.toggle() }
                     )
                 }.padding([.horizontal, .top, .bottom])

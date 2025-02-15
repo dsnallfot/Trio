@@ -24,10 +24,10 @@ struct LoopView: View {
         loopStatusWithMinutes
             .padding(.vertical, 5)
             .padding(.horizontal, 10)
-            .overlay(
-                Capsule()
-                    .stroke(color.opacity(0.4), lineWidth: 1)
-            )
+        /* .overlay(
+             Capsule()
+                 .stroke(color.opacity(0.4), lineWidth: 1)
+         ) */
     }
 
     private var loopStatusWithMinutes: some View {
