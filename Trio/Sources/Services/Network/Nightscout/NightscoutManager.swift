@@ -594,7 +594,8 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         let reservoir = await fetchedReservoir
         let pumpStatus = await fetchedPumpStatus
         let pump = NSPumpStatus(
-            clock: Date(),
+            clock: pumpStatus?.timestamp ?? Date().addingTimeInterval(-3600),
+            // Daniel: Fix to show correct timestamp in NS pump pill
             battery: battery,
             reservoir: reservoir != 0xDEAD_BEEF ? reservoir : nil,
             status: pumpStatus
