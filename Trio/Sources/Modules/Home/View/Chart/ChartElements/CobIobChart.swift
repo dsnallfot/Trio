@@ -164,7 +164,7 @@ extension MainChartView {
          }
      }
      */
-    @ChartContentBuilder  func drawCOBIOBChart() -> some ChartContent {
+    @ChartContentBuilder func drawCOBIOBChart() -> some ChartContent {
         // Daniel Conversion factor similar to average CR: how many COB units equal 1 IOB unit in visual line height.
         let conversionFactor: Double = 20.0
 
