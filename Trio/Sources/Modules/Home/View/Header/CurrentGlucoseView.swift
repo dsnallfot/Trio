@@ -207,9 +207,10 @@ struct CircleShape: View {
 
     var body: some View {
         Circle()
-            // .stroke(gradient, lineWidth: 6)
             .stroke(gradient, lineWidth: 1.5)
-            .background(Circle().fill(Color.chart))
+            .background(
+                Circle().fill(Color(UIColor.systemBackground))
+            )
             .frame(width: 130, height: 130)
     }
 }

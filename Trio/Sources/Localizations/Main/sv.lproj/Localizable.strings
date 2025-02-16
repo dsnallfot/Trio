@@ -651,7 +651,23 @@ Enact a temp Basal or a temp target */
 "Delete Insulin?" = "Ta bort insulin?";
 
 /* Treatments list */
-"Treatments" = "Behandlingar";
+"Treatments" = "Behandling";
+
+"Meals" = "Måltid";
+
+"Adjustments" = "Override";
+
+"Add Glucose" = "Logga glukos";
+
+"Add Override" = "Ny override";
+
+"Add Temp Target" = "Nytt tillfälligt mål";
+
+"Insulin" = "Behandling";
+
+"Values" = "Värden";
+
+"Show Future" = "Visa kommande";
 
 /* " min" in Treatments list */
 " min" = " min";
@@ -1128,7 +1144,7 @@ Enact a temp Basal or a temp target */
 "Note" = "Anteckning";
 
 /* */
-"Temp Basal" = "Temporär basal";
+"Temp Basal" = "Temp basal";
 
 /* */
 "Temp Target" = "Tillfälligt målvärde";

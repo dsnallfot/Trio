@@ -65,34 +65,38 @@ struct SelectionPopoverView: ChartContent {
             HStack {
                 Image(systemName: "clock")
                 Text(selectedGlucose.date?.formatted(.dateTime.hour().minute(.twoDigits)) ?? "")
-                    .font(.body).bold()
+                    .font(.subheadline).bold()
             }
-            .font(.body).padding(.bottom, 5)
+            .font(.subheadline).padding(.bottom, 5)
 
             HStack {
                 Text(glucoseToDisplay.description).bold() + Text(" \(units.rawValue)")
             }
             .foregroundStyle(pointMarkColor)
-            .font(.body)
+            .font(.subheadline)
 
             if let selectedIOBValue, let iob = selectedIOBValue.iob {
                 HStack {
-                    Image(systemName: "syringe.fill").frame(width: 15)
+                    // Image(systemName: "syringe.fill").frame(width: 15)
+                    Text("IOB")
+                        .bold()
                     Text(Formatter.bolusFormatter.string(from: iob) ?? "")
                         .bold()
-                        + Text(NSLocalizedString(" U", comment: "Insulin unit"))
+                        + Text(NSLocalizedString(" E", comment: "Insulin unit"))
                 }
-                .foregroundStyle(Color.insulin).font(.body)
+                .foregroundStyle(Color.insulin).font(.subheadline)
             }
 
             if let selectedCOBValue {
                 HStack {
-                    Image(systemName: "fork.knife").frame(width: 15)
+                    // Image(systemName: "fork.knife").frame(width: 15)
+                    Text("COB")
+                        .bold()
                     Text(Formatter.integerFormatter.string(from: selectedCOBValue.cob as NSNumber) ?? "")
                         .bold()
                         + Text(NSLocalizedString(" g", comment: "gram of carbs"))
                 }
-                .foregroundStyle(Color.orange).font(.body)
+                .foregroundStyle(Color.orange).font(.subheadline)
             }
         }
         .padding()
