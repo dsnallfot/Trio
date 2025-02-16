@@ -350,7 +350,9 @@ extension Home {
                     manualTempBasal: state.manualTempBasal,
                     determination: state.determinationsFromPersistence
                 )
-
+                .onTapGesture {
+                    state.isLoopStatusPresented = true
+                }
                 .onLongPressGesture {
                     let impactHeavy = UIImpactFeedbackGenerator(style: .heavy)
                     impactHeavy.impactOccurred()
@@ -385,10 +387,10 @@ extension Home {
                             .font(.subheadline).fontWeight(.semibold).fontDesign(.rounded).foregroundColor(.secondary)
                     }
                     .padding(.leading, 10)
+                    .onTapGesture {
+                        state.isLoopStatusPresented = true
+                    }
                 }
-            }
-            .onTapGesture {
-                state.isLoopStatusPresented = true
             }
         }
 
