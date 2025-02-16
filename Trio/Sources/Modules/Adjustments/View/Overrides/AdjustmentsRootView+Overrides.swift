@@ -64,7 +64,7 @@ extension Adjustments.RootView {
             }
             .listRowBackground(Color.chart)
         } header: {
-            Text("Override Presets")
+            Text("Override förval")
         } footer: {
             HStack {
                 Image(systemName: "hand.draw.fill").foregroundStyle(.primary)
@@ -163,7 +163,7 @@ extension Adjustments.RootView {
 
         let targetString = target.isEmpty ? "" : "\(target) \(state.units.rawValue)"
 
-        let durationString = indefinite ? "" : "\(state.formatHrMin(Int(duration)))"
+        let durationString = indefinite ? " ∞ " : "\(state.formatHrMin(Int(duration)))"
 
         let scheduledSMBString: String = {
             guard preset.smbIsScheduledOff, preset.start != preset.end else { return "" }
@@ -172,7 +172,7 @@ extension Adjustments.RootView {
 
         let smbString: String = {
             guard preset.smbIsOff || preset.smbIsScheduledOff else { return "" }
-            return "SMBs Off\(scheduledSMBString)"
+            return "SMB AV\(scheduledSMBString)"
         }()
 
         let maxSmbMinsString: String = {
@@ -205,8 +205,8 @@ extension Adjustments.RootView {
 
         // Combine all labels into a single array, filtering out empty strings
         let labels: [String] = [
-            durationString,
             percentageString,
+            durationString,
             targetString,
             smbString,
             maxSmbMinsString,
@@ -224,13 +224,13 @@ extension Adjustments.RootView {
                         HStack(spacing: 5) {
                             ForEach(labels, id: \.self) { label in
                                 Text(label)
-                                if label != labels.last { // Add divider between labels
-                                    overrideLabelDivider
-                                }
+                                /* if label != labels.last { // Add divider between labels
+                                     overrideLabelDivider
+                                 } */
                             }
                             Spacer()
                         }
-                        .padding(.top, 2)
+                        .padding(.top, 1)
                         .foregroundColor(.secondary)
                         .font(.caption)
                     }

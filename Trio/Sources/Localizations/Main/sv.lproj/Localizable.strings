@@ -653,9 +653,12 @@ Enact a temp Basal or a temp target */
 /* Treatments list */
 "Treatments" = "Behandling";
 
+/* Daniel added */
 "Meals" = "Måltid";
 
 "Adjustments" = "Override";
+
+"Adjustment" = "Override";
 
 "Add Glucose" = "Logga glukos";
 

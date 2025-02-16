@@ -52,7 +52,7 @@ extension Adjustments.RootView {
             }
             .listRowBackground(Color.chart)
         } header: {
-            Text("Temporary Target Presets")
+            Text("Temporära mål förval")
         } footer: {
             HStack {
                 Image(systemName: "hand.draw.fill").foregroundStyle(.primary)
@@ -209,7 +209,7 @@ extension Adjustments.RootView {
                         }
                         Spacer()
                     }
-                    .padding(.top, 2)
+                    .padding(.top, 1)
                 }
                 .contentShape(Rectangle())
                 .onTapGesture {

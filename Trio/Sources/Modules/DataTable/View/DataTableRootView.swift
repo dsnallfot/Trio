@@ -188,7 +188,7 @@ extension DataTable {
         private var mealsList: some View {
             List {
                 HStack {
-                    Text("Type").foregroundStyle(.secondary)
+                    Text("Meal").foregroundStyle(.secondary)
                     Spacer()
                     filterEntriesButton
                 }
