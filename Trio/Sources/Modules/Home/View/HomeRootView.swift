@@ -67,6 +67,7 @@ extension Home {
             let formatter = NumberFormatter()
             formatter.numberStyle = .decimal
             if state.units == .mmolL {
+                formatter.minimumFractionDigits = 1
                 formatter.maximumFractionDigits = 1
             } else { formatter.maximumFractionDigits = 0 }
             return formatter

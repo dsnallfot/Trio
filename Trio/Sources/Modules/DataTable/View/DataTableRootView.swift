@@ -339,9 +339,11 @@ extension DataTable {
                         HStack {
                             Text(formatGlucose(Decimal(glucose.glucose), isManual: glucose.isManual))
 
-                            /// check for manual glucose
+                            // check for manual glucose
                             if glucose.isManual {
-                                Image(systemName: "drop.fill").symbolRenderingMode(.monochrome).foregroundStyle(.red)
+                                Image(systemName: "drop.fill")
+                                    .symbolRenderingMode(.monochrome)
+                                    .foregroundStyle(.red)
                             } else {
                                 Text("\(glucose.directionEnum?.symbol ?? "--")")
                             }
@@ -349,7 +351,8 @@ extension DataTable {
                             Spacer()
 
                             Text(Formatter.dateFormatter.string(from: glucose.date ?? Date()))
-                        }.swipeActions {
+                        }
+                        .swipeActions {
                             Button(
                                 "Delete",
                                 systemImage: "trash.fill",
@@ -358,13 +361,27 @@ extension DataTable {
                                     alertGlucoseToDelete = glucose
 
                                     alertTitle = "Delete Glucose?"
-                                    alertMessage = Formatter.dateFormatter
-                                        .string(from: glucose.date ?? Date()) + ", " +
-                                        (Formatter.decimalFormatterWithTwoFractionDigits.string(for: glucose.glucose) ?? "0")
+
+                                    let dateString = Formatter.dateFormatter.string(from: glucose.date ?? Date())
+
+                                    // Convert to mmol if needed
+                                    let glucoseDecimal = Decimal(glucose.glucose)
+                                    let glucoseValue: String = {
+                                        if state.units == .mmolL {
+                                            return Formatter.decimalFormatterWithTwoFractionDigits
+                                                .string(for: glucoseDecimal.asMmolL) ?? "0"
+                                        } else {
+                                            return Formatter.decimalFormatterWithTwoFractionDigits
+                                                .string(for: glucoseDecimal) ?? "0"
+                                        }
+                                    }()
+
+                                    alertMessage = dateString + " • " + glucoseValue
 
                                     isRemoveHistoryItemAlertPresented = true
                                 }
-                            ).tint(.red)
+                            )
+                            .tint(.red)
                         }
                         .alert(
                             Text(NSLocalizedString(alertTitle, comment: "")),
@@ -373,7 +390,7 @@ extension DataTable {
                             Button("Cancel", role: .cancel) {}
                             Button("Delete", role: .destructive) {
                                 guard let glucoseToDelete = alertGlucoseToDelete else {
-                                    debug(.default, "Cannot gracefully unwrap alertCarbEntryToDelete!")
+                                    debug(.default, "Cannot gracefully unwrap alertGlucoseToDelete!")
                                     return
                                 }
                                 let glucoseToDeleteObjectID = glucoseToDelete.objectID
@@ -388,10 +405,11 @@ extension DataTable {
                         Text("No data.")
                     }
                 }
-            }.listRowBackground(Color.chart)
-                .alert(isPresented: $showAlert) {
-                    Alert(title: Text("Error"), message: Text(alertMessage), dismissButton: .default(Text("OK")))
-                }
+            }
+            .listRowBackground(Color.chart)
+            .alert(isPresented: $showAlert) {
+                Alert(title: Text("Error"), message: Text(alertMessage), dismissButton: .default(Text("OK")))
+            }
         }
 
         private func deleteGlucose(at offsets: IndexSet) {
@@ -516,7 +534,7 @@ extension DataTable {
                             alertTreatmentToDelete = item
                             alertTitle = "Delete Insulin?"
                             alertMessage = Formatter.dateFormatter
-                                .string(from: item.timestamp ?? Date()) + ", " +
+                                .string(from: item.timestamp ?? Date()) + " • " +
                                 (Formatter.decimalFormatterWithTwoFractionDigits.string(from: item.bolus?.amount ?? 0) ?? "0") +
                                 NSLocalizedString(" U", comment: "Insulin unit")
 
@@ -593,7 +611,7 @@ extension DataTable {
                         if meal.fpuID == nil {
                             alertTitle = "Delete Carbs?"
                             alertMessage = Formatter.dateFormatter
-                                .string(from: meal.date ?? Date()) + ", " +
+                                .string(from: meal.date ?? Date()) + " • " +
                                 (Formatter.decimalFormatterWithTwoFractionDigits.string(for: meal.carbs) ?? "0") +
                                 NSLocalizedString(" g", comment: "gram of carbs")
                         }

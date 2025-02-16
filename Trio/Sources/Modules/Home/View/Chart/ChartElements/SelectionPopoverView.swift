@@ -16,6 +16,19 @@ struct SelectionPopoverView: ChartContent {
         units == .mgdL ? Decimal(selectedGlucose.glucose) : Decimal(selectedGlucose.glucose).asMmolL
     }
 
+    /// Formats the glucose value so that if the units are mmol/L, it always shows one decimal place.
+    private var formattedGlucose: String {
+        if units == .mmolL {
+            let formatter = NumberFormatter()
+            formatter.numberStyle = .decimal
+            formatter.minimumFractionDigits = 1
+            formatter.maximumFractionDigits = 1
+            return formatter.string(from: glucoseToDisplay as NSDecimalNumber) ?? "\(glucoseToDisplay)"
+        } else {
+            return "\(glucoseToDisplay)"
+        }
+    }
+
     private var pointMarkColor: Color {
         let hardCodedLow = Decimal(55)
         let hardCodedHigh = Decimal(220)
@@ -65,15 +78,16 @@ struct SelectionPopoverView: ChartContent {
             HStack {
                 Image(systemName: "clock")
                 Text(selectedGlucose.date?.formatted(.dateTime.hour().minute(.twoDigits)) ?? "")
-                    .font(.subheadline).bold()
+                    .font(.body).bold()
             }
-            .font(.subheadline).padding(.bottom, 5)
+            .font(.body).padding(.bottom, 5)
 
             HStack {
-                Text(glucoseToDisplay.description).bold() + Text(" \(units.rawValue)")
+                // Use the formattedGlucose string to ensure one decimal when units are mmol/L.
+                Text(formattedGlucose).bold() + Text(" \(units.rawValue)")
             }
             .foregroundStyle(pointMarkColor)
-            .font(.subheadline)
+            .font(.body)
 
             if let selectedIOBValue, let iob = selectedIOBValue.iob {
                 HStack {
@@ -84,7 +98,7 @@ struct SelectionPopoverView: ChartContent {
                         .bold()
                         + Text(NSLocalizedString(" E", comment: "Insulin unit"))
                 }
-                .foregroundStyle(Color.insulin).font(.subheadline)
+                .foregroundStyle(Color.insulin).font(.body)
             }
 
             if let selectedCOBValue {
@@ -96,7 +110,7 @@ struct SelectionPopoverView: ChartContent {
                         .bold()
                         + Text(NSLocalizedString(" g", comment: "gram of carbs"))
                 }
-                .foregroundStyle(Color.orange).font(.subheadline)
+                .foregroundStyle(Color.orange).font(.body)
             }
         }
         .padding()

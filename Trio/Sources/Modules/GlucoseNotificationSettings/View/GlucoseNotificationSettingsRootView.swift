@@ -22,6 +22,7 @@ extension GlucoseNotificationSettings {
             formatter.numberStyle = .decimal
             formatter.maximumFractionDigits = 0
             if state.units == .mmolL {
+                formatter.minimumFractionDigits = 1
                 formatter.maximumFractionDigits = 1
             }
             formatter.roundingMode = .halfUp

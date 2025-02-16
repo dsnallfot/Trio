@@ -54,6 +54,7 @@ final class BaseGlucoseStorage: GlucoseStorage, Injectable {
         formatter.numberStyle = .decimal
         formatter.maximumFractionDigits = 0
         if settingsManager.settings.units == .mmolL {
+            formatter.minimumFractionDigits = 1
             formatter.maximumFractionDigits = 1
         }
         formatter.decimalSeparator = "."

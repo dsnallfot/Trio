@@ -45,6 +45,7 @@ final class BaseContactImageManager: NSObject, ContactImageManager, Injectable {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
         formatter.maximumFractionDigits = settingsManager.settings.units == .mmolL ? 1 : 0
+        formatter.minimumFractionDigits = settingsManager.settings.units == .mmolL ? 1 : 0
         formatter.positivePrefix = "+"
         formatter.negativePrefix = "-"
         return formatter
@@ -256,6 +257,7 @@ final class BaseContactImageManager: NSObject, ContactImageManager, Injectable {
                 let bgFormatter = NumberFormatter()
                 bgFormatter.numberStyle = .decimal
                 bgFormatter.maximumFractionDigits = settingsManager.settings.units == .mgdL ? 0 : 1
+                bgFormatter.minimumFractionDigits = settingsManager.settings.units == .mgdL ? 0 : 1
 
                 state.fifteenMinBg = bgFormatter.string(from: fifteenMinBgDecimal as NSNumber) ?? "N/A"
 
