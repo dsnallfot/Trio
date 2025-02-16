@@ -131,11 +131,62 @@ extension MainChartView {
          }
      }
      */
-    @ChartContentBuilder func drawCOBIOBChart() -> some ChartContent {
+    /*
+     @ChartContentBuilder func drawCOBIOBChart() -> some ChartContent {
+         // Daniel Conversion factor similar to average CR: how many COB units equal 1 IOB unit in visual line height.
+         let conversionFactor: Double = 20.0
+
+         ForEach(state.enactedAndNonEnactedDeterminations, id: \.id) { item in
+             // Ensure we have a Date from deliverAt; adjust the cast if needed.
+             let date: Date = (item.deliverAt as? Date) ?? Date()
+
+             // COB marks
+             let amountCOB = Double(item.cob)
+             LineMark(x: .value("Time", date), y: .value("Value", amountCOB))
+                 .foregroundStyle(by: .value("Type", "COB"))
+                 .position(by: .value("Axis", "COB"))
+             AreaMark(x: .value("Time", date), y: .value("Value", amountCOB))
+                 .foregroundStyle(by: .value("Type", "COB"))
+                 .position(by: .value("Axis", "COB"))
+                 .opacity(0.2)
+
+             // IOB marks using the conversion factor
+             let rawAmount = item.iob?.doubleValue ?? 0
+             let amountIOB = rawAmount * conversionFactor
+
+             AreaMark(x: .value("Time", date), y: .value("Value", amountIOB))
+                 .foregroundStyle(by: .value("Type", "IOB"))
+                 .position(by: .value("Axis", "IOB"))
+                 .opacity(0.2)
+             LineMark(x: .value("Time", date), y: .value("Value", amountIOB))
+                 .foregroundStyle(by: .value("Type", "IOB"))
+                 .position(by: .value("Axis", "IOB"))
+         }
+     }
+     */
+    @ChartContentBuilder  func drawCOBIOBChart() -> some ChartContent {
         // Daniel Conversion factor similar to average CR: how many COB units equal 1 IOB unit in visual line height.
         let conversionFactor: Double = 20.0
 
-        ForEach(state.enactedAndNonEnactedDeterminations, id: \.id) { item in
+        // Filter out duplicate entries by `deliverAt`
+        // We sometimes get two determinations when editing carbs – one without the entry-to-be-edited and then another one after editing.
+        // Since the array is in descending order, the first one is the correct (edited) entry, so we keep that.
+        var seenDates = Set<Date>()
+        let filteredDeterminations = state.enactedAndNonEnactedDeterminations.filter { item in
+            if let date = item.deliverAt as? Date {
+                if seenDates.contains(date) {
+                    // Already seen this date – filter it out.
+                    return false
+                } else {
+                    seenDates.insert(date)
+                    return true
+                }
+            }
+            return true
+        }
+
+        // Use the filtered results for drawing the chart
+        ForEach(filteredDeterminations, id: \.id) { item in
             // Ensure we have a Date from deliverAt; adjust the cast if needed.
             let date: Date = (item.deliverAt as? Date) ?? Date()
 
@@ -152,7 +203,6 @@ extension MainChartView {
             // IOB marks using the conversion factor
             let rawAmount = item.iob?.doubleValue ?? 0
             let amountIOB = rawAmount * conversionFactor
-
             AreaMark(x: .value("Time", date), y: .value("Value", amountIOB))
                 .foregroundStyle(by: .value("Type", "IOB"))
                 .position(by: .value("Axis", "IOB"))
