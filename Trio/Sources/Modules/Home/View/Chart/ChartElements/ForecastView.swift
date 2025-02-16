@@ -2,6 +2,33 @@ import Charts
 import Foundation
 import SwiftUI
 
+private struct DonutSymbol: ChartSymbolShape {
+    var perceptualUnitRect: CGRect {
+        CGRect(origin: .zero, size: CGSize(width: 1, height: 1))
+    }
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let outerRadius = min(rect.width, rect.height) / 2
+        let innerRadius = outerRadius / 2
+        path.addArc(
+            center: CGPoint(x: rect.midX, y: rect.midY),
+            radius: outerRadius,
+            startAngle: .degrees(0),
+            endAngle: .degrees(360),
+            clockwise: false
+        )
+        path.addArc(
+            center: CGPoint(x: rect.midX, y: rect.midY),
+            radius: innerRadius,
+            startAngle: .degrees(360),
+            endAngle: .degrees(0),
+            clockwise: true
+        )
+        return path
+    }
+}
+
 struct ForecastView: ChartContent {
     let preprocessedData: [(id: UUID, forecast: Forecast, forecastValue: ForecastValue)]
     let minForecast: [Int]
@@ -9,6 +36,7 @@ struct ForecastView: ChartContent {
     let units: GlucoseUnits
     let maxValue: Decimal
     let forecastDisplayType: ForecastDisplayType
+    let lastDeterminationDate: Date
 
     var body: some ChartContent {
         if forecastDisplayType == .lines {
@@ -19,7 +47,7 @@ struct ForecastView: ChartContent {
     }
 
     private func timeForIndex(_ index: Int32) -> Date {
-        let currentTime = Date()
+        let currentTime = lastDeterminationDate
         let timeInterval = TimeInterval(index * 300)
         return currentTime.addingTimeInterval(timeInterval)
     }
@@ -47,7 +75,7 @@ struct ForecastView: ChartContent {
                             yStart: .value("Min Value", yMinValue <= maxValue ? yMinValue : maxValue),
                             yEnd: .value("Max Value", yMaxValue <= maxValue ? yMaxValue : maxValue)
                         )
-                        .foregroundStyle(Color.blue.opacity(0.5))
+                        .foregroundStyle(Color.cyan.opacity(0.4))
                         .interpolationMethod(.catmullRom)
                     }
                 } else {
@@ -63,7 +91,7 @@ struct ForecastView: ChartContent {
                             yStart: .value("Min Value", yMinValue <= maxValue ? yMinValue : maxValue),
                             yEnd: .value("Max Value", yMaxValue <= maxValue ? yMaxValue : maxValue)
                         )
-                        .foregroundStyle(Color.blue.opacity(0.5))
+                        .foregroundStyle(Color.cyan.opacity(0.4))
                         .interpolationMethod(.catmullRom)
                     }
                 }
@@ -80,11 +108,14 @@ struct ForecastView: ChartContent {
             let xValue = timeForIndex(forecastValue.index)
 
             if xValue <= Date(timeIntervalSinceNow: TimeInterval(hours: 2.5)) {
-                LineMark(
+                // LineMark(
+                PointMark(
                     x: .value("Time", xValue),
                     y: .value("Value", displayValue)
                 )
                 .foregroundStyle(by: .value("Predictions", forecast.type ?? ""))
+                .symbol(DonutSymbol())
+                .symbolSize(20)
             }
         }
     }

@@ -19,19 +19,30 @@ extension Home.StateModel {
                 // Ensure all values exist, otherwise set default values
                 guard let minGlucose = minGlucose, let maxGlucose = maxGlucose else {
                     Task {
-                        await self.updateChartBounds(minValue: 39, maxValue: 300)
+                        await self.updateChartBounds(minValue: 39, maxValue: 200)
                     }
                     return
                 }
 
-                // Adjust max forecast to be no more than 100 over max glucose
-                let adjustedMaxForecast = min(maxForecast ?? maxGlucose + 100, maxGlucose + 100)
+                // Adjust max forecast to be no more than 50 over max glucose
+                let adjustedMaxForecast = min(maxForecast ?? maxGlucose + 50, maxGlucose + 50)
                 let minOverall = min(minGlucose, minForecast ?? minGlucose)
                 let maxOverall = max(maxGlucose, adjustedMaxForecast)
 
+                var maxYValue = Decimal(200)
+                if maxOverall > 200, maxOverall <= 225 {
+                    maxYValue = Decimal(250)
+                } else if maxOverall > 225, maxOverall <= 275 {
+                    maxYValue = Decimal(300)
+                } else if maxOverall > 275, maxOverall <= 325 {
+                    maxYValue = Decimal(350)
+                } else if maxOverall > 325 {
+                    maxYValue = Decimal(400)
+                }
+
                 // Update the chart bounds on the main thread
                 Task {
-                    await self.updateChartBounds(minValue: minOverall - 50, maxValue: maxOverall + 80)
+                    await self.updateChartBounds(minValue: minOverall, maxValue: maxYValue)
                 }
             }
         }
@@ -74,25 +85,70 @@ extension Home.StateModel {
     }
 
     func yAxisChartDataIobChart(determinations: [[String: Any]]) {
+        // Daniel Conversion factor: how many COB units equal 1 IOB unit in visual line height.
+        let conversionFactor: Decimal = 10
+
         determinationFetchContext.perform {
             // Map the IOB values from the fetched dictionaries
             let iobMapped = determinations.compactMap { ($0["iob"] as? NSDecimalNumber)?.decimalValue }
-            let minIob = iobMapped.min()
-            let maxIob = iobMapped.max()
+            let minIob = iobMapped.min() ?? 0
 
-            // Ensure min and max IOB values exist, or set defaults
-            if let minIob = minIob, let maxIob = maxIob {
-                let adjustedMin = minIob < 0 ? minIob - 2 : 0
-                Task {
-                    await self.updateIobChartBounds(minValue: adjustedMin, maxValue: maxIob + 2)
+            // Extract COB values to use for scaling
+            let cobMapped = determinations.compactMap { entry in
+                if let cobValue = entry["cob"] as? Int16 {
+                    return Decimal(cobValue)
                 }
+                return nil
+            }
+            let maxCob = cobMapped.max() ?? 0
+
+            // Determine the desired IOB max based on available COB values.
+            // If there are COB values, base it on them;
+            // if not, then use the IOB max directly.
+            let desiredMaxIob: Decimal
+            if maxCob > 0 {
+                // Use COB as basis: add a margin and then convert the max COB to IOB scale.
+                let calculatedCobMax = maxCob + conversionFactor
+                desiredMaxIob = calculatedCobMax / conversionFactor
             } else {
-                Task {
-                    await self.updateIobChartBounds(minValue: 0, maxValue: 5)
-                }
+                // When no COB values exist, use the IOB maximum directly.
+                desiredMaxIob = iobMapped.max() ?? 0
+            }
+
+            // Optionally add a little extra margin so the IOB line isn't drawn exactly at the top.
+            let finalMaxIob = desiredMaxIob + 0.5
+
+            // For negative IOB values, add a small margin as needed.
+            let adjustedMinIob: Decimal = minIob < 0 ? minIob - 0.5 : 0
+
+            Task {
+                await self.updateIobChartBounds(minValue: adjustedMinIob, maxValue: finalMaxIob)
             }
         }
     }
+
+    /*
+     func yAxisChartDataIobChart(determinations: [[String: Any]]) {
+         determinationFetchContext.perform {
+             // Map the IOB values from the fetched dictionaries
+             let iobMapped = determinations.compactMap { ($0["iob"] as? NSDecimalNumber)?.decimalValue }
+             let minIob = iobMapped.min()
+             let maxIob = iobMapped.max()
+
+             // Ensure min and max IOB values exist, or set defaults
+             if let minIob = minIob, let maxIob = maxIob {
+                 let adjustedMin = minIob < 0 ? minIob - 2 : 0
+                 Task {
+                     await self.updateIobChartBounds(minValue: adjustedMin, maxValue: maxIob + 2)
+                 }
+             } else {
+                 Task {
+                     await self.updateIobChartBounds(minValue: 0, maxValue: 5)
+                 }
+             }
+         }
+     }
+     */
 
     @MainActor private func updateIobChartBounds(minValue: Decimal, maxValue: Decimal) async {
         minValueIobChart = minValue

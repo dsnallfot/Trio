@@ -122,10 +122,15 @@ enum ContactImageValue: String, JSON, CaseIterable, Identifiable, Codable {
     case eventualBG
     case delta
     case trend
+    case fifteenMinBg
     case lastLoopDate
     case cob
     case iob
     case ring
+    case fifteenLabel
+    case iobLabel
+    case cobLabel
+    case loopLabel
 
     var displayName: String {
         switch self {
@@ -139,6 +144,8 @@ enum ContactImageValue: String, JSON, CaseIterable, Identifiable, Codable {
             return NSLocalizedString("Glucose Delta", comment: "")
         case .trend:
             return NSLocalizedString("Glucose Trend", comment: "")
+        case .fifteenMinBg:
+            return NSLocalizedString("15 Min Trend", comment: "")
         case .lastLoopDate:
             return NSLocalizedString("Last Loop Time", comment: "")
         case .cob:
@@ -147,6 +154,14 @@ enum ContactImageValue: String, JSON, CaseIterable, Identifiable, Codable {
             return NSLocalizedString("IOB", comment: "")
         case .ring:
             return NSLocalizedString("Loop Status", comment: "")
+        case .fifteenLabel:
+            return NSLocalizedString("15 Min Label", comment: "")
+        case .iobLabel:
+            return NSLocalizedString("IOB Label", comment: "")
+        case .cobLabel:
+            return NSLocalizedString("COB Label", comment: "")
+        case .loopLabel:
+            return NSLocalizedString("Loop Label", comment: "")
         }
     }
 }

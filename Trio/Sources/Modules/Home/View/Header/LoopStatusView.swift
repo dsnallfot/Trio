@@ -185,11 +185,18 @@ struct LoopStatusView: View {
 
     // TODO: Consolidate all mmol parsing methods (in TagCloudView, NightscoutManager and HomeRootView) to one central func
     private func parseReasonConclusion(_ reasonConclusion: String, isMmolL: Bool) -> String {
+        // Normalize HTML entities to standard comparison symbols
+        let normalizedReason = reasonConclusion
+            .replacingOccurrences(of: "&lt;", with: "<")
+            .replacingOccurrences(of: "&gt;", with: ">")
         let patterns = [
             "minGuardBG\\s*-?\\d+\\.?\\d*<-?\\d+\\.?\\d*", // minGuardBG x<y
             "Eventual BG\\s*-?\\d+\\.?\\d*\\s*>=\\s*-?\\d+\\.?\\d*", // Eventual BG x >= target
             "Eventual BG\\s*-?\\d+\\.?\\d*\\s*<\\s*-?\\d+\\.?\\d*", // Eventual BG x < target
-            "(\\S+)\\s+(-?\\d+\\.?\\d*)\\s*>\\s*(\\d+)%\\s+of\\s+BG\\s+(-?\\d+\\.?\\d*)" // maxDelta x > y% of BG z
+            "(\\S+)\\s+(-?\\d+\\.?\\d*)\\s*>\\s*(\\d+)%\\s+of\\s+BG\\s+(-?\\d+\\.?\\d*)", // maxDelta x > y% of BG z
+            "Eventual BG\\s*-?\\d+\\.?\\d*\\s*>&\\s*-?\\d+\\.?\\d*\\s*but\\s*Min\\.\\s*Delta\\s*-?\\d+\\.?\\d*\\s*<\\s*Exp\\.\\s*Delta\\s*-?\\d+\\.?\\d*",
+            // Eventual BG X > Y but Min. Delta A < Exp. Delta B
+            "-?\\d+\\.?\\d*-\\d+\\.?\\d* in range" // New pattern: "105-80 in range"
         ]
         let pattern = patterns.joined(separator: "|")
         let regex = try! NSRegularExpression(pattern: pattern)
@@ -203,17 +210,55 @@ struct LoopStatusView: View {
         }
 
         let matches = regex.matches(
-            in: reasonConclusion,
-            range: NSRange(reasonConclusion.startIndex..., in: reasonConclusion)
+            in: normalizedReason,
+            range: NSRange(normalizedReason.startIndex..., in: normalizedReason)
         )
-        var updatedConclusion = reasonConclusion
+        var updatedConclusion = normalizedReason
 
         for match in matches.reversed() {
-            guard let range = Range(match.range, in: reasonConclusion) else { continue }
-            let matchedString = String(reasonConclusion[range])
+            guard let range = Range(match.range, in: normalizedReason) else { continue }
+            let matchedString = String(normalizedReason[range])
 
             if isMmolL {
-                if matchedString.contains("<"), matchedString.contains("Eventual BG"), !matchedString.contains("=") {
+                if matchedString.contains(" in range") {
+                    // Handle "105-80 in range: no temp required"
+                    let values = matchedString.components(separatedBy: "-")
+                    if values.count == 2 {
+                        let firstValue = values[0].trimmingCharacters(in: .whitespaces)
+                        let secondPart = values[1].components(separatedBy: " in range")[0]
+                            .trimmingCharacters(in: .whitespaces)
+                        let formattedFirstValue = convertToMmolL(firstValue)
+                        let formattedSecondValue = convertToMmolL(secondPart)
+                        let formattedString = "\(formattedFirstValue)-\(formattedSecondValue) in range"
+                        updatedConclusion.replaceSubrange(range, with: formattedString)
+                    }
+                } else if matchedString.contains("Eventual BG"), matchedString.contains(">"),
+                          matchedString.contains("but Min. Delta")
+                {
+                    // Handle "Eventual BG X > Y but Min. Delta A < Exp. Delta B"
+                    let regexSubPattern =
+                        "Eventual BG\\s*(-?\\d+\\.?\\d*)\\s*>&\\s*(-?\\d+\\.?\\d*)\\s*but\\s*Min\\.\\s*Delta\\s*(-?\\d+\\.?\\d*)\\s*<\\s*Exp\\.\\s*Delta\\s*(-?\\d+\\.?\\d*)"
+                    let subRegex = try! NSRegularExpression(pattern: regexSubPattern)
+
+                    if let subMatch = subRegex.firstMatch(
+                        in: matchedString,
+                        range: NSRange(matchedString.startIndex..., in: matchedString)
+                    ) {
+                        let bg1 = String(matchedString[Range(subMatch.range(at: 1), in: matchedString)!])
+                        let bg2 = String(matchedString[Range(subMatch.range(at: 2), in: matchedString)!])
+                        let minDelta = String(matchedString[Range(subMatch.range(at: 3), in: matchedString)!])
+                        let expDelta = String(matchedString[Range(subMatch.range(at: 4), in: matchedString)!])
+
+                        let formattedBG1 = convertToMmolL(bg1)
+                        let formattedBG2 = convertToMmolL(bg2)
+                        let formattedMinDelta = convertToMmolL(minDelta)
+                        let formattedExpDelta = convertToMmolL(expDelta)
+
+                        let formattedString =
+                            "Prognos BG: \(formattedBG1)>\(formattedBG2) min min. Delta \(formattedMinDelta)<exp. Delta \(formattedExpDelta)"
+                        updatedConclusion.replaceSubrange(range, with: formattedString)
+                    }
+                } else if matchedString.contains("<"), matchedString.contains("Eventual BG"), !matchedString.contains("=") {
                     // Handle "Eventual BG x < target" pattern
                     let parts = matchedString.components(separatedBy: "<")
                     if parts.count == 2 {
@@ -222,7 +267,7 @@ struct LoopStatusView: View {
                         let targetValue = parts[1].trimmingCharacters(in: .whitespaces)
                         let formattedBGPart = convertToMmolL(bgPart)
                         let formattedTargetValue = convertToMmolL(targetValue)
-                        let formattedString = "Eventual BG \(formattedBGPart)<\(formattedTargetValue)"
+                        let formattedString = "Prognos BG: \(formattedBGPart)<\(formattedTargetValue)"
                         updatedConclusion.replaceSubrange(range, with: formattedString)
                     }
                 } else if matchedString.contains("<"), matchedString.contains("minGuardBG") {
@@ -237,15 +282,21 @@ struct LoopStatusView: View {
                         updatedConclusion.replaceSubrange(range, with: formattedString)
                     }
                 } else if matchedString.contains(">=") {
-                    // Handle "Eventual BG x >= target" pattern
-                    let parts = matchedString.components(separatedBy: " >= ")
-                    if parts.count == 2 {
-                        let firstValue = parts[0].replacingOccurrences(of: "Eventual BG", with: "")
-                            .trimmingCharacters(in: .whitespaces)
-                        let secondValue = parts[1].trimmingCharacters(in: .whitespaces)
-                        let formattedFirstValue = convertToMmolL(firstValue)
-                        let formattedSecondValue = convertToMmolL(secondValue)
-                        let formattedString = "Eventual BG \(formattedFirstValue) >= \(formattedSecondValue)"
+                    // Handle "Eventual BG X >= Y"
+                    let eventBGPattern = "Eventual BG\\s*(-?\\d+\\.?\\d*)\\s*>?=\\s*(-?\\d+\\.?\\d*)"
+
+                    let eventBGRegex = try! NSRegularExpression(pattern: eventBGPattern)
+                    if let eventBGMatch = eventBGRegex.firstMatch(
+                        in: matchedString,
+                        range: NSRange(matchedString.startIndex..., in: matchedString)
+                    ) {
+                        let bgValue = String(matchedString[Range(eventBGMatch.range(at: 1), in: matchedString)!])
+                        let targetValue = String(matchedString[Range(eventBGMatch.range(at: 2), in: matchedString)!])
+
+                        let formattedBG = convertToMmolL(bgValue)
+                        let formattedTarget = convertToMmolL(targetValue)
+
+                        let formattedString = "Prognos BG: \(formattedBG)≥\(formattedTarget)"
                         updatedConclusion.replaceSubrange(range, with: formattedString)
                     }
                 } else if let localMatch = regex.firstMatch(
@@ -262,7 +313,7 @@ struct LoopStatusView: View {
                         let formattedFirstValue = convertToMmolL(firstValue)
                         let formattedBGValue = convertToMmolL(bgValue)
 
-                        let formattedString = "\(metric) \(formattedFirstValue) > \(percentage)% of BG \(formattedBGValue)"
+                        let formattedString = "\(metric) \(formattedFirstValue)>\(percentage)% av BG \(formattedBGValue)"
                         updatedConclusion.replaceSubrange(range, with: formattedString)
                     }
                 }

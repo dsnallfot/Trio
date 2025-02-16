@@ -9,7 +9,7 @@ import Foundation
         // Block boluses if they are disabled
         case .notAllowed:
             return LocalizedStringResource(
-                "Bolusing via Shortcuts is disabled in Trio settings.",
+                "Bolus via genvägar är inaktiverat i Trio inställningar.",
                 table: "ShortcutsDetail"
             )
 
@@ -17,7 +17,7 @@ import Foundation
         case .limitBolusMax:
             if Decimal(bolusAmount) > settingsManager.pumpSettings.maxBolus {
                 return LocalizedStringResource(
-                    "The bolus cannot be larger than the pump setting max bolus (\(settingsManager.pumpSettings.maxBolus.description)).",
+                    "Bolusen kan inte överskrida inställd maxbolus (\(settingsManager.pumpSettings.maxBolus.description)).",
                     table: "ShortcutsDetail"
                 )
             } else {
@@ -25,7 +25,7 @@ import Foundation
             }
             await apsManager.enactBolus(amount: Double(bolusQuantity), isSMB: false, callback: nil)
             return LocalizedStringResource(
-                "A bolus command of \(bolusQuantity.formatted()) U of insulin was sent.",
+                "En bolusdos på \(bolusQuantity.formatted()) E insulin skickades till Trio",
                 table: "ShortcutsDetail"
             )
         }

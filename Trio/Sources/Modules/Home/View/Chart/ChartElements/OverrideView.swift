@@ -33,8 +33,8 @@ struct OverrideView: ChartContent {
                 xEnd: .value("End", end, unit: .second),
                 y: .value("Value", units == .mgdL ? target : target.asMmolL)
             )
-            .foregroundStyle(Color.purple.opacity(0.4))
-            .lineStyle(.init(lineWidth: 8))
+            .foregroundStyle(Color.purple.opacity(0.7))
+            .lineStyle(.init(lineWidth: 10))
         }
     }
 
@@ -48,8 +48,8 @@ struct OverrideView: ChartContent {
                 xEnd: .value("End", end, unit: .second),
                 y: .value("Value", units == .mgdL ? target : target.asMmolL)
             )
-            .foregroundStyle(Color.purple.opacity(0.25))
-            .lineStyle(.init(lineWidth: 8))
+            .foregroundStyle(Color.purple.opacity(0.4))
+            .lineStyle(.init(lineWidth: 10))
         }
     }
 

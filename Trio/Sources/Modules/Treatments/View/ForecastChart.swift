@@ -3,6 +3,33 @@ import CoreData
 import Foundation
 import SwiftUI
 
+private struct DonutSymbol: ChartSymbolShape {
+    var perceptualUnitRect: CGRect {
+        CGRect(origin: .zero, size: CGSize(width: 1, height: 1))
+    }
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let outerRadius = min(rect.width, rect.height) / 2
+        let innerRadius = outerRadius / 2
+        path.addArc(
+            center: CGPoint(x: rect.midX, y: rect.midY),
+            radius: outerRadius,
+            startAngle: .degrees(0),
+            endAngle: .degrees(360),
+            clockwise: false
+        )
+        path.addArc(
+            center: CGPoint(x: rect.midX, y: rect.midY),
+            radius: innerRadius,
+            startAngle: .degrees(360),
+            endAngle: .degrees(0),
+            clockwise: true
+        )
+        return path
+    }
+}
+
 struct ForecastChart: View {
     var state: Treatments.StateModel
     @Environment(\.colorScheme) var colorScheme
@@ -302,7 +329,7 @@ struct ForecastChart: View {
                         yStart: .value("Min Value", state.units == .mgdL ? yMinValue : yMinValue.asMmolL),
                         yEnd: .value("Max Value", state.units == .mgdL ? yMaxValue : yMaxValue.asMmolL)
                     )
-                    .foregroundStyle(Color.blue.opacity(0.5))
+                    .foregroundStyle(Color.cyan.opacity(0.4))
                     .interpolationMethod(.catmullRom)
 
                 } else {
@@ -314,7 +341,7 @@ struct ForecastChart: View {
                         yStart: .value("Min Value", state.units == .mgdL ? yMinValue : yMinValue.asMmolL),
                         yEnd: .value("Max Value", state.units == .mgdL ? yMaxValue : yMaxValue.asMmolL)
                     )
-                    .foregroundStyle(Color.blue.opacity(0.5))
+                    .foregroundStyle(Color.cyan.opacity(0.4))
                     .interpolationMethod(.catmullRom)
                 }
             }
@@ -335,11 +362,14 @@ struct ForecastChart: View {
         return ForEach(predictionData, id: \.0) { name, values in
             if let values = values {
                 ForEach(values.indices, id: \.self) { index in
-                    LineMark(
+                    // LineMark(
+                    PointMark(
                         x: .value("Time", timeForIndex(Int32(index))),
                         y: .value("Value", state.units == .mgdL ? Decimal(values[index]) : Decimal(values[index]).asMmolL)
                     )
                     .foregroundStyle(by: .value("Prediction Type", name))
+                    .symbol(DonutSymbol())
+                    .symbolSize(20)
                 }
             }
         }

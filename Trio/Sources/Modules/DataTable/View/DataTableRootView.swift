@@ -266,7 +266,7 @@ extension DataTable {
             var symbolName: String {
                 switch self {
                 case .override:
-                    return "clock.arrow.2.circlepath"
+                    return "arrow.up.arrow.down.circle"
                 case .tempTarget:
                     return "target"
                 }
@@ -478,7 +478,7 @@ extension DataTable {
         @ViewBuilder private func treatmentView(_ item: PumpEventStored) -> some View {
             HStack {
                 if let bolus = item.bolus, let amount = bolus.amount {
-                    Image(systemName: "circle.fill").foregroundColor(Color.insulin)
+                    Image(systemName: bolus.isSMB ? "bolt.circle.fill" : "circle.fill").foregroundColor(Color.insulin)
                     Text(bolus.isSMB ? "SMB" : item.type ?? "Bolus")
                     Text(
                         (Formatter.decimalFormatterWithTwoFractionDigits.string(from: amount) ?? "0") +
@@ -489,7 +489,7 @@ extension DataTable {
                         Text(NSLocalizedString("External", comment: "External Insulin")).foregroundColor(.secondary)
                     }
                 } else if let tempBasal = item.tempBasal, let rate = tempBasal.rate {
-                    Image(systemName: "circle.fill").foregroundColor(Color.insulin.opacity(0.4))
+                    Image(systemName: "drop.circle.fill").foregroundColor(Color.insulin.opacity(0.4))
                     Text("Temp Basal")
                     Text(
                         (Formatter.decimalFormatterWithTwoFractionDigits.string(from: rate) ?? "0") +

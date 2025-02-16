@@ -13,35 +13,52 @@ extension MainChartView {
             let hardCodedHigh = Decimal(220)
             let isDynamicColorScheme = glucoseColorScheme == .dynamicColor
 
+            /* // Original code
+             if thresholdLines {
+                 let highColor = Trio.getDynamicGlucoseColor(
+                     glucoseValue: highGlucose,
+                     highGlucoseColorValue: isDynamicColorScheme ? hardCodedHigh : highGlucose,
+                     lowGlucoseColorValue: isDynamicColorScheme ? hardCodedLow : lowGlucose,
+                     targetGlucose: currentGlucoseTarget,
+                     glucoseColorScheme: glucoseColorScheme
+                 )
+                 let lowColor = Trio.getDynamicGlucoseColor(
+                     glucoseValue: lowGlucose,
+                     highGlucoseColorValue: isDynamicColorScheme ? hardCodedHigh : highGlucose,
+                     lowGlucoseColorValue: isDynamicColorScheme ? hardCodedLow : lowGlucose,
+                     targetGlucose: currentGlucoseTarget,
+                     glucoseColorScheme: glucoseColorScheme
+                 )
+                 */
+            // Daniel: Hardcoded colors
             if thresholdLines {
-                let highColor = Trio.getDynamicGlucoseColor(
-                    glucoseValue: highGlucose,
-                    highGlucoseColorValue: isDynamicColorScheme ? hardCodedHigh : highGlucose,
-                    lowGlucoseColorValue: isDynamicColorScheme ? hardCodedLow : lowGlucose,
-                    targetGlucose: currentGlucoseTarget,
-                    glucoseColorScheme: glucoseColorScheme
-                )
-                let lowColor = Trio.getDynamicGlucoseColor(
-                    glucoseValue: lowGlucose,
-                    highGlucoseColorValue: isDynamicColorScheme ? hardCodedHigh : highGlucose,
-                    lowGlucoseColorValue: isDynamicColorScheme ? hardCodedLow : lowGlucose,
-                    targetGlucose: currentGlucoseTarget,
-                    glucoseColorScheme: glucoseColorScheme
-                )
+                let highColor = Color(.systemPurple)
+                let lowColor = Color("LoopRed")
 
-                RuleMark(y: .value("High", units == .mgdL ? highGlucose : highGlucose.asMmolL))
-                    .foregroundStyle(highColor)
-                    .lineStyle(.init(lineWidth: 1, dash: [5]))
-                RuleMark(y: .value("Low", units == .mgdL ? lowGlucose : lowGlucose.asMmolL))
-                    .foregroundStyle(lowColor)
-                    .lineStyle(.init(lineWidth: 1, dash: [5]))
+                RuleMark(
+                    xStart: .value("Start", state.startMarker),
+                    xEnd: .value("End", state.endMarker.addingTimeInterval(7200)),
+                    // Daniel: Extend 3 hours to the right to fill screen vertically
+                    y: .value("High", units == .mgdL ? highGlucose : highGlucose.asMmolL)
+                )
+                .foregroundStyle(highColor)
+                .lineStyle(.init(lineWidth: 0.5, dash: [3, 2])) // Daniel: Dashed: 3 filled, 2 empty
+
+                RuleMark(
+                    xStart: .value("Start", state.startMarker),
+                    xEnd: .value("End", state.endMarker.addingTimeInterval(7200)),
+                    // Daniel: Extend 3 hours to the right to fill screen vertically
+                    y: .value("Low", units == .mgdL ? lowGlucose : lowGlucose.asMmolL)
+                )
+                .foregroundStyle(lowColor)
+                .lineStyle(.init(lineWidth: 0.5, dash: [3, 2])) // Daniel: Dashed: 3 filled, 2 empty
             }
         }
         .id("DummyMainChart")
         .frame(
             minHeight: geo.size.height * (0.28 - safeAreaSize)
         )
-        .frame(width: screenSize.width - 10)
+        .frame(width: screenSize.width)
         .chartXAxis { mainChartXAxis }
         .chartXScale(domain: state.startMarker ... state.endMarker)
         .chartXAxis(.hidden)

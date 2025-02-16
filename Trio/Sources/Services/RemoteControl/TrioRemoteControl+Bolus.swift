@@ -3,7 +3,7 @@ import Foundation
 extension TrioRemoteControl {
     internal func handleBolusCommand(_ pushMessage: PushMessage) async {
         guard let bolusAmount = pushMessage.bolusAmount else {
-            await logError("Command rejected: bolus amount is missing or invalid.", pushMessage: pushMessage)
+            await logError("Kommandot avvisades: bolusmängd saknas eller är ogiltig.", pushMessage: pushMessage)
             return
         }
 
@@ -11,7 +11,7 @@ extension TrioRemoteControl {
 
         if bolusAmount > maxBolus {
             await logError(
-                "Command rejected: bolus amount (\(bolusAmount) units) exceeds the maximum allowed (\(maxBolus) units).",
+                "Kommandot avvisades: bolusmängden (\(bolusAmount) enheter) överskrider det maximalt tillåtna (\(maxBolus) enheter).",
                 pushMessage: pushMessage
             )
             return
@@ -21,7 +21,7 @@ extension TrioRemoteControl {
         let currentIOB = await fetchCurrentIOB()
         if (currentIOB + bolusAmount) > maxIOB {
             await logError(
-                "Command rejected: bolus amount (\(bolusAmount) units) would exceed max IOB (\(maxIOB) units). Current IOB: \(currentIOB) units.",
+                "Kommandot avvisades: bolusmängden (\(bolusAmount) enheter) skulle överskrida max IOB (\(maxIOB) enheter). Nuvarande IOB: \(currentIOB) enheter.",
                 pushMessage: pushMessage
             )
             return
@@ -31,17 +31,17 @@ extension TrioRemoteControl {
 
         if totalRecentBolusAmount >= bolusAmount * 0.2 {
             await logError(
-                "Command rejected: boluses totaling more than 20% of the requested amount have been delivered since the command was sent.",
+                "Kommandot avvisades: bolusdoser som totalt överstiger 20% av den begärda mängden har levererats sedan kommandot skickades.",
                 pushMessage: pushMessage
             )
             return
         }
 
-        debug(.remoteControl, "Enacting bolus command with amount: \(bolusAmount) units.")
+        debug(.remoteControl, "Utför boluskommando med mängd: \(bolusAmount) enheter.")
 
         guard let apsManager = await TrioApp.resolver.resolve(APSManager.self) else {
             await logError(
-                "Error: unable to process bolus command because the APS Manager is not available.",
+                "Fel: kunde inte bearbeta boluskommando eftersom APS Manager inte är tillgänglig.",
                 pushMessage: pushMessage
             )
             return
@@ -51,7 +51,29 @@ extension TrioRemoteControl {
 
         debug(
             .remoteControl,
-            "Remote command processed successfully. \(pushMessage.humanReadableDescription())"
+            "Fjärrkommando behandlades framgångsrikt. \(pushMessage.humanReadableDescription())"
+        )
+        // Format the bolus amount to 2 decimal places
+        let numberFormatter = NumberFormatter()
+        numberFormatter.minimumFractionDigits = 2
+        numberFormatter.maximumFractionDigits = 2
+        numberFormatter.numberStyle = .decimal
+        let formattedBolusAmount = numberFormatter.string(from: bolusAmount as NSNumber) ?? "\(bolusAmount)"
+        var notificationBody = "Bolus: \(formattedBolusAmount) E\n"
+        notificationBody += "Inlagt av: \(pushMessage.user)\n"
+        // Convert timestamp to HH:mm:ss format
+        let date = Date(timeIntervalSince1970: pushMessage.timestamp)
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "HH:mm:ss"
+        let formattedTime = dateFormatter.string(from: date)
+        notificationBody += "Tid: \(formattedTime)\n"
+
+        // Trim trailing newline, if present
+        notificationBody = notificationBody.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+        // Send success notification
+        notificationManager.notifyTrioRemoteControl(
+            title: "Remote Bolus",
+            body: notificationBody
         )
     }
 
@@ -72,7 +94,7 @@ extension TrioRemoteControl {
               let firstResult = fetchedResults.first,
               let iob = firstResult["iob"] as? Decimal
         else {
-            await logError("Failed to fetch current IOB.")
+            await logError("Misslyckades med att hämta aktuellt IOB.")
             return Decimal(0)
         }
 
@@ -97,7 +119,7 @@ extension TrioRemoteControl {
         )
 
         guard let bolusDictionaries = results as? [[String: Any]] else {
-            await logError("Failed to cast fetched bolus events. Fetched entities type: \(type(of: results))")
+            await logError("Misslyckades med att konvertera hämtade bolushändelser. Hämtad enhetstyp: \(type(of: results))")
             return 0
         }
 

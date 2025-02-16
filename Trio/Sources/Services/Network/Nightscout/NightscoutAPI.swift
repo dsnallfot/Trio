@@ -398,6 +398,28 @@ extension NightscoutAPI {
         }
     }
 
+    // Daniel: Added to upload bolus failure reasons as a note to Nightscout
+    func uploadErrors(_ errorNote: NightscoutTreatment) async throws {
+        var components = URLComponents()
+        components.scheme = url.scheme
+        components.host = url.host
+        components.port = url.port
+        components.path = Config.treatmentsPath
+        var request = URLRequest(url: components.url!)
+        request.allowsConstrainedNetworkAccess = false
+        request.timeoutInterval = Config.timeout
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let secret = secret {
+            request.addValue(secret.sha1(), forHTTPHeaderField: "api-secret")
+        }
+        request.httpBody = try JSONCoding.encoder.encode(errorNote)
+        request.httpMethod = "POST"
+        let (_, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, (200 ... 299).contains(httpResponse.statusCode) else {
+            throw URLError(.badServerResponse)
+        }
+    }
+
     func uploadProfile(_ profile: NightscoutProfileStore) async throws {
         var components = URLComponents()
         components.scheme = url.scheme

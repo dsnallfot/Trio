@@ -34,7 +34,7 @@ extension Home {
         @State var showPumpSelection: Bool = false
         @State var notificationsDisabled = false
         @State var timeButtons: [TimePicker] = [
-            TimePicker(active: false, hours: 4),
+            TimePicker(active: false, hours: 3),
             TimePicker(active: false, hours: 6),
             TimePicker(active: false, hours: 12),
             TimePicker(active: false, hours: 24)
@@ -118,7 +118,7 @@ extension Home {
                     showPumpSelection.toggle()
                 } else {
                     // sends user to pump settings
-                    state.setupPump.toggle()
+                    state.setupPump.toggle() // Daniel: Maybe disable or add auth to avoid accidentally tapping
                 }
             }
         }
@@ -137,7 +137,7 @@ extension Home {
                 )
             }
 
-            return rateString + " " + NSLocalizedString(" U/hr", comment: "Unit per hour with space") + manualBasalString
+            return rateString + " " + NSLocalizedString(" E/h", comment: "Unit per hour with space") + manualBasalString
         }
 
         var overrideString: String? {
@@ -242,7 +242,8 @@ extension Home {
         }
 
         var timeIntervalButtons: some View {
-            let buttonColor = (colorScheme == .dark ? Color.white : Color.black).opacity(0.8)
+            // let buttonColor = (colorScheme == .dark ? Color.white : Color.black).opacity(0.8)
+            let buttonColor = Color.secondary
 
             return HStack(alignment: .center) {
                 ForEach(timeButtons) { button in
@@ -271,7 +272,7 @@ extension Home {
                         .clipShape(Capsule())
                         .overlay(
                             Capsule()
-                                .stroke(button.active ? buttonColor.opacity(0.4) : Color.clear, lineWidth: 2)
+                                .stroke(button.active ? buttonColor.opacity(0.4) : Color.clear, lineWidth: 1)
                         )
                     }
                 }
@@ -288,7 +289,7 @@ extension Home {
 
         @ViewBuilder private func tappableButton(
             buttonColor: Color,
-            label: String,
+            // label: String,
             iconString: String,
             action: @escaping () -> Void
         ) -> some View {
@@ -297,16 +298,17 @@ extension Home {
             }) {
                 HStack {
                     Image(systemName: iconString)
-                    Text(label)
+                    // Text(label)
                 }
-                .font(.footnote)
+                // .font(.footnote)
+                .font(.title2)
                 .padding(.vertical, 5)
                 .padding(.horizontal, 10)
                 .foregroundStyle(buttonColor)
-                .overlay(
-                    Capsule()
-                        .stroke(buttonColor.opacity(0.4), lineWidth: 2)
-                )
+                /* .overlay(
+                     Capsule()
+                         .stroke(buttonColor.opacity(0.4), lineWidth: 1)
+                 ) */
             }
         }
 
@@ -362,7 +364,7 @@ extension Home {
                     let bg = eventualBG as Decimal
                     HStack {
                         Image(systemName: "arrow.right.circle")
-                            .font(.callout).fontWeight(.bold)
+                            .font(.subheadline).fontWeight(.semibold).foregroundColor(.primary)
                         Text(
                             Formatter.decimalFormatterWithTwoFractionDigits.string(
                                 from: (
@@ -370,16 +372,23 @@ extension Home {
                                         .asMmolL : bg
                                 ) as NSNumber
                             )!
-                        ).font(.callout).fontWeight(.bold).fontDesign(.rounded)
+                        ).font(.subheadline).fontWeight(.semibold).fontDesign(.rounded).foregroundColor(.primary)
                     }
                     // aligns the evBG icon exactly with the first pixel of loop status icon
-                    .padding(.leading, 12)
+                    .padding(.leading, 10)
+                    .onTapGesture {
+                        state.isLoopStatusPresented = true
+                    }
                 } else {
                     HStack {
                         Image(systemName: "arrow.right.circle")
-                            .font(.callout).fontWeight(.bold)
+                            .font(.subheadline).fontWeight(.semibold).foregroundColor(.secondary)
                         Text("--")
-                            .font(.callout).fontWeight(.bold).fontDesign(.rounded)
+                            .font(.subheadline).fontWeight(.semibold).fontDesign(.rounded).foregroundColor(.secondary)
+                    }
+                    .padding(.leading, 10)
+                    .onTapGesture {
+                        state.isLoopStatusPresented = true
                     }
                 }
             }
@@ -388,24 +397,26 @@ extension Home {
         @ViewBuilder func mealPanel(_: GeometryProxy) -> some View {
             HStack {
                 HStack {
-                    Image(systemName: "syringe.fill")
-                        .font(.callout)
+                    // Image(systemName: "syringe.fill")
+                    Text("IOB")
+                        .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
                         .foregroundColor(Color.insulin)
                     Text(
                         (
                             Formatter.decimalFormatterWithTwoFractionDigits
                                 .string(from: (state.enactedAndNonEnactedDeterminations.first?.iob ?? 0) as NSNumber) ?? "0"
                         ) +
-                            NSLocalizedString(" U", comment: "Insulin unit")
+                            NSLocalizedString(" E", comment: "Insulin unit")
                     )
-                    .font(.callout).fontWeight(.bold).fontDesign(.rounded)
+                    .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
                 }
 
                 Spacer()
 
                 HStack {
-                    Image(systemName: "fork.knife")
-                        .font(.callout)
+                    // Image(systemName: "fork.knife")
+                    Text("COB")
+                        .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
                         .foregroundColor(.loopYellow)
                     Text(
                         (
@@ -415,7 +426,7 @@ extension Home {
                         ) +
                             NSLocalizedString(" g", comment: "gram of carbs")
                     )
-                    .font(.callout).fontWeight(.bold).fontDesign(.rounded)
+                    .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
                 }
 
                 Spacer()
@@ -423,51 +434,64 @@ extension Home {
                 HStack {
                     if state.pumpSuspended {
                         Text("Pump suspended")
-                            .font(.callout).fontWeight(.bold).fontDesign(.rounded)
+                            .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
                             .foregroundColor(.loopGray)
                     } else if let tempBasalString = tempBasalString {
-                        Image(systemName: "drop.circle")
-                            .font(.callout)
-                            .foregroundColor(.insulinTintColor)
+                        Image(systemName: "drop.circle.fill")
+                            .font(.subheadline)
+                            .foregroundColor(Color.insulin.opacity(0.8))
                         if tempBasalString.count > 5 {
                             Text(tempBasalString)
-                                .font(.callout).fontWeight(.bold).fontDesign(.rounded)
+                                .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.85)
                                 .truncationMode(.tail)
                                 .allowsTightening(true)
                         } else {
                             // Short strings can just display normally
-                            Text(tempBasalString).font(.callout).fontWeight(.bold).fontDesign(.rounded)
+                            Text(tempBasalString).font(.footnote).fontWeight(.bold).fontDesign(.rounded)
                         }
                     } else {
                         Image(systemName: "drop.circle")
-                            .font(.callout)
-                            .foregroundColor(.insulinTintColor)
+                            .font(.subheadline)
+                            .foregroundColor(Color.insulin.opacity(0.8))
                         Text("No Data")
-                            .font(.callout).fontWeight(.bold).fontDesign(.rounded)
+                            .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
                     }
                 }
                 if state.totalInsulinDisplayType == .totalDailyDose {
                     Spacer()
-                    Text(
-                        "TDD: " +
+                    HStack {
+                        Text("TDD:")
+                            .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
+                            .foregroundColor(.secondary) // ✅ Makes "TDD" text secondary
+                        Text(
                             (
                                 Formatter.decimalFormatterWithTwoFractionDigits
-                                    .string(from: (state.determinationsFromPersistence.first?.totalDailyDose ?? 0) as NSNumber) ??
+                                    .string(from: (
+                                        state.determinationsFromPersistence.first?
+                                            .totalDailyDose ?? 0
+                                    ) as NSNumber) ??
                                     "0"
                             ) +
-                            NSLocalizedString(" U", comment: "Insulin unit")
-                    )
-                    .font(.callout).fontWeight(.bold).fontDesign(.rounded)
+                                NSLocalizedString(" E", comment: "Insulin unit")
+                        )
+                        .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
+                    }
                 } else {
                     Spacer()
                     HStack {
+                        Text("TINS:")
+                            .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
+                            .foregroundColor(.secondary) // ✅ Makes "TINS" text secondary
                         Text(
-                            "TINS: \(state.roundedTotalBolus)" +
-                                NSLocalizedString(" U", comment: "Unit in number of units delivered (keep the space character!)")
+                            "\(state.roundedTotalBolus)" +
+                                NSLocalizedString(
+                                    " E",
+                                    comment: "Unit in number of units delivered (keep the space character!)"
+                                )
                         )
-                        .font(.callout).fontWeight(.bold).fontDesign(.rounded)
+                        .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
                         .onChange(of: state.hours) {
                             state.roundedTotalBolus = state.calculateTINS()
                         }
@@ -483,9 +507,9 @@ extension Home {
 
         @ViewBuilder func adjustmentsOverrideView(_ overrideString: String) -> some View {
             Group {
-                Image(systemName: "clock.arrow.2.circlepath")
-                    .font(.title2)
-                    .foregroundStyle(Color.primary, Color.purple)
+                Image(systemName: "arrow.up.arrow.down.circle")
+                    .font(.title)
+                    .foregroundStyle(Color.primary, Color.primary)
                 VStack(alignment: .leading) {
                     Text(latestOverride.first?.name ?? "Custom Override")
                         .font(.subheadline)
@@ -503,7 +527,7 @@ extension Home {
         @ViewBuilder func adjustmentsTempTargetView(_ tempTargetString: String) -> some View {
             Group {
                 Image(systemName: "target")
-                    .font(.title2)
+                    .font(.title)
                     .foregroundStyle(Color.loopGreen)
                 VStack(alignment: .leading) {
                     Text(latestTempTarget.first?.name ?? "Temp Target")
@@ -576,10 +600,10 @@ extension Home {
         @ViewBuilder func noActiveAdjustmentsView() -> some View {
             Group {
                 VStack {
-                    Text("No Active Adjustment")
+                    Text("Normal profil")
                         .font(.subheadline)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    Text("Profile at 100 %")
+                    Text("100 %")
                         .font(.caption)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }.padding(.leading, 10)
@@ -606,11 +630,12 @@ extension Home {
                         (overrideString != nil || tempTargetString != nil) ?
                             (
                                 colorScheme == .dark ?
-                                    Color(red: 0.03921568627, green: 0.133333333, blue: 0.2156862745) :
+                                    // Color(red: 0.03921568627, green: 0.133333333, blue: 0.2156862745) :
+                                    Color.purple.opacity(0.5) :
                                     Color.insulin.opacity(0.1)
                             ) : Color.clear // Use clear and add the Material in the background
                     )
-                    .background(colorScheme == .dark ? Color.chart.opacity(0.25) : Color.black.opacity(0.075))
+                    .background(colorScheme == .dark ? Color.white.opacity(0.05) : Color.black.opacity(0.05))
                     .clipShape(RoundedRectangle(cornerRadius: 15))
                     .frame(height: geo.size.height * 0.08)
                     .shadow(
@@ -824,6 +849,14 @@ extension Home {
 
         @ViewBuilder func mainViewElements(_ geo: GeometryProxy) -> some View {
             VStack(spacing: 0) {
+                mealPanel(geo) // .padding(.top, UIDevice.adjustPadding(min: nil, max: 30))
+                    .padding(.top, 5)
+                    .padding(.bottom, 20)
+                    .safeAreaInset(edge: .top, spacing: 0) {
+                        if notificationsDisabled {
+                            alertSafetyNotificationsView(geo: geo)
+                        }
+                    }
                 ZStack {
                     /// glucose bobble
                     glucoseView
@@ -839,23 +872,25 @@ extension Home {
                         pumpView
                         Spacer()
                     }.padding(.leading, 20)
-                }.padding(.top, 10)
-                    .safeAreaInset(edge: .top, spacing: 0) {
-                        if notificationsDisabled {
-                            alertSafetyNotificationsView(geo: geo)
-                        }
-                    }
+                }.padding(.bottom, 20)
+                // .padding(.top, 10)
+                // .safeAreaInset(edge: .top, spacing: 0) {
+                // if notificationsDisabled {
+                // alertSafetyNotificationsView(geo: geo)
+                // }
+                // }
 
-                mealPanel(geo).padding(.top, UIDevice.adjustPadding(min: nil, max: 30))
-                    .padding(.bottom, UIDevice.adjustPadding(min: nil, max: 20))
+                // mealPanel(geo).padding(.top, UIDevice.adjustPadding(min: nil, max: 30))
+                // .padding(.bottom, UIDevice.adjustPadding(min: nil, max: 20))
 
                 mainChart(geo: geo)
 
                 HStack {
                     tappableButton(
-                        buttonColor: (colorScheme == .dark ? Color.white : Color.black).opacity(0.8),
-                        label: "Stats",
-                        iconString: statsIconString,
+                        // buttonColor: (colorScheme == .dark ? Color.white : Color.black).opacity(0.8),
+                        buttonColor: Color.secondary,
+                        // label: "", // "Stats",
+                        iconString: "chart.pie", // statsIconString,
                         action: { state.showModal(for: .statistics) }
                     )
 
@@ -867,12 +902,15 @@ extension Home {
                     Spacer()
 
                     tappableButton(
-                        buttonColor: (colorScheme == .dark ? Color.white : Color.black).opacity(0.8),
-                        label: "Info",
-                        iconString: "info",
+                        // buttonColor: (colorScheme == .dark ? Color.white : Color.black).opacity(0.8),
+                        buttonColor: Color.secondary,
+                        // label: "", // "Info",
+                        iconString: "info.circle", // "info",
                         action: { state.isLegendPresented.toggle() }
                     )
-                }.padding([.horizontal, .top, .bottom])
+                }
+                .padding(.horizontal, 20)
+                .padding([.top, .bottom])
 
                 if let progress = state.bolusProgress {
                     bolusView(geo: geo, progress)
@@ -910,7 +948,7 @@ extension Home {
             .navigationTitle("Home")
             .navigationBarHidden(true)
             .ignoresSafeArea(.keyboard)
-            .blur(radius: state.isLoopStatusPresented ? 3 : 0)
+            .blur(radius: state.isLoopStatusPresented ? 1 : 0)
             .sheet(isPresented: $state.isLoopStatusPresented) {
                 LoopStatusView(state: state)
             }
@@ -962,7 +1000,7 @@ extension Home {
                     }()
 
                     NavigationStack { mainView() }
-                        .tabItem { Label("Main", systemImage: "chart.xyaxis.line") }
+                        .tabItem { Label("Hem", systemImage: "chart.xyaxis.line") }
                         .badge(carbsRequiredBadge).tag(0)
 
                     NavigationStack { DataTable.RootView(resolver: resolver) }
@@ -973,8 +1011,9 @@ extension Home {
                     NavigationStack { Adjustments.RootView(resolver: resolver) }
                         .tabItem {
                             Label(
-                                "Adjustments",
-                                systemImage: "slider.horizontal.2.gobackward"
+                                "Override",
+                                // systemImage: "slider.horizontal.2.gobackward"
+                                systemImage: "arrow.up.arrow.down.circle"
                             ) }.tag(2)
 
                     NavigationStack(path: self.$settingsPath) {
@@ -991,8 +1030,11 @@ extension Home {
                         state.showModal(for: .bolus) },
                     label: {
                         Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 40))
-                            .foregroundStyle(Color.tabBar)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 45, height: 45)
+                            .symbolRenderingMode(.palette) // Enables multicolor rendering
+                            .foregroundStyle(.white, Color.tabBar) // White accent, tabBar base color
                             .padding(.bottom, 1)
                             .padding(.horizontal, 22.5)
                     }

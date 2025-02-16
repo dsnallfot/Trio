@@ -24,10 +24,10 @@ struct LoopView: View {
         loopStatusWithMinutes
             .padding(.vertical, 5)
             .padding(.horizontal, 10)
-            .overlay(
-                Capsule()
-                    .stroke(color.opacity(0.4), lineWidth: 2)
-            )
+        /* .overlay(
+             Capsule()
+                 .stroke(color.opacity(0.4), lineWidth: 1)
+         ) */
     }
 
     private var loopStatusWithMinutes: some View {
@@ -52,7 +52,7 @@ struct LoopView: View {
                 Text("--")
             }
         }
-        .font(.callout).fontWeight(.bold).fontDesign(.rounded)
+        .font(.subheadline).fontWeight(.semibold).fontDesign(.rounded)
         .foregroundColor(color)
     }
 

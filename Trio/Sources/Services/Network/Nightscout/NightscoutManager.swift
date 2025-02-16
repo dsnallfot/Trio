@@ -13,6 +13,7 @@ protocol NightscoutManager: GlucoseSource {
     func deleteInsulin(withID id: String) async
     func deleteManualGlucose(withID id: String) async
     func uploadDeviceStatus() async
+    func uploadErrors(withNotes notes: String) async
     func uploadGlucose() async
     func uploadCarbs() async
     func uploadPumpHistory() async
@@ -593,7 +594,8 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         let reservoir = await fetchedReservoir
         let pumpStatus = await fetchedPumpStatus
         let pump = NSPumpStatus(
-            clock: Date(),
+            clock: pumpStatus?.timestamp ?? Date().addingTimeInterval(-3600),
+            // Daniel: Fix to show correct timestamp in NS pump pill
             battery: battery,
             reservoir: reservoir != 0xDEAD_BEEF ? reservoir : nil,
             status: pumpStatus
@@ -764,16 +766,53 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
                 }()
 
                 var carbsHr: Decimal = 0
-                if let isf = sensitivities.sensitivities.map(\.sensitivity).first,
-                   let cr = carbRatios.schedule.map(\.ratio).first,
-                   isf > 0, cr > 0
-                {
-                    carbsHr = settingsManager.preferences.min5mCarbimpact * 12 / isf * cr
-                    if settingsManager.settings.units == .mmolL {
-                        carbsHr *= GlucoseUnits.exchangeRate
-                    }
-                    carbsHr = Decimal(round(Double(carbsHr) * 10.0)) / 10
+                var totalWeight: Decimal = 0
+
+                // Extract all unique time offsets from both ISF and CR schedules
+                var uniqueOffsets = Set(sensitivities.sensitivities.map(\.offset) + carbRatios.schedule.map(\.offset))
+                    .sorted() // Sort by time in minutes
+
+                // Ensure 1440 (24:00) is included as the last offset
+                if !uniqueOffsets.contains(1440) {
+                    uniqueOffsets.append(1440)
                 }
+
+                // debug(.nightscout, "Unique time offsets: \(uniqueOffsets)")
+
+                // Iterate through each time segment (including the last hour)
+                for (index, startOffset) in uniqueOffsets.enumerated() where index < uniqueOffsets.count - 1 {
+                    let endOffset = uniqueOffsets[index + 1] // The next time point
+                    let duration = Decimal(endOffset - startOffset) / 60 // Convert minutes to hours
+
+                    // Get the closest ISF value that applies at this time
+                    let isfEntry = sensitivities.sensitivities.last(where: { $0.offset <= startOffset })
+                    let isf = isfEntry?.sensitivity ?? 0
+
+                    // Get the closest CR value that applies at this time
+                    let crEntry = carbRatios.schedule.last(where: { $0.offset <= startOffset })
+                    let cr = crEntry?.ratio ?? 0
+
+                    if isf > 0, cr > 0 {
+                        let weightedImpact = settingsManager.preferences.min5mCarbimpact * 12 / isf * cr * duration
+                        carbsHr += weightedImpact
+                        totalWeight += duration
+
+                        /* debug(
+                             .nightscout,
+                             "Time \(startOffset)-\(endOffset) min: ISF \(isf), CR \(cr), Duration \(duration) hr -> Weighted carbsHr impact: \(weightedImpact)"
+                         ) */
+                    }
+                }
+
+                // Normalize by total duration weight to get an average impact per hour
+                if totalWeight > 0 {
+                    carbsHr /= totalWeight
+                }
+
+                // Round the result to one decimal place
+                carbsHr = Decimal(round(Double(carbsHr) * 10.0)) / 10
+
+                debug(.nightscout, "Final calculated carbsHr: \(carbsHr)")
 
                 let scheduledProfile = ScheduledNightscoutProfile(
                     dia: settingsManager.pumpSettings.insulinActionCurve,
@@ -928,6 +967,41 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             debug(.nightscout, "Treatments uploaded")
         } catch {
             debug(.nightscout, error.localizedDescription)
+        }
+    }
+
+    // Daniel: Added to upload bolus failure reasons as a note to Nightscout
+    internal func uploadErrors(withNotes notes: String) async {
+        let errorNote = NightscoutTreatment(
+            duration: nil,
+            rawDuration: nil,
+            rawRate: nil,
+            absolute: nil,
+            rate: nil,
+            eventType: .nsNote,
+            createdAt: Date(),
+            enteredBy: NightscoutTreatment.local,
+            bolus: nil,
+            insulin: nil,
+            notes: notes,
+            carbs: nil,
+            fat: nil,
+            protein: nil,
+            targetTop: nil,
+            targetBottom: nil
+        )
+        guard let nightscout = nightscoutAPI, isNetworkReachable, isUploadEnabled else {
+            if !isNetworkReachable {
+                debug(.nightscout, "Network issues; aborting upload of bolus error note")
+            }
+            debug(.nightscout, "Nightscout API service not available; aborting upload of bolus error note")
+            return
+        }
+        do {
+            try await nightscout.uploadErrors(errorNote)
+            debug(.nightscout, "Error note uploaded successfully.")
+        } catch {
+            debug(.nightscout, "Failed to upload error note: \(error.localizedDescription)")
         }
     }
 
@@ -1261,6 +1335,10 @@ extension BaseNightscoutManager {
 
     // TODO: Consolidate all mmol parsing methods (in TagCloudView, NightscoutManager and HomeRootView) to one central func
     func parseReasonGlucoseValuesToMmolL(_ reason: String) -> String {
+        // Normalize HTML entities to standard comparison symbols
+        let normalizedReason = reason
+            .replacingOccurrences(of: "&lt;", with: "<")
+            .replacingOccurrences(of: "&gt;", with: ">")
         let patterns = [
             "ISF:\\s*-?\\d+\\.?\\d*→-?\\d+\\.?\\d*", // ISF with arrow
             "Dev:\\s*-?\\d+\\.?\\d*", // Dev pattern
@@ -1270,7 +1348,10 @@ extension BaseNightscoutManager {
             "minGuardBG\\s+-?\\d+\\.?\\d*<-?\\d+\\.?\\d*", // minGuardBG x<y
             "Eventual BG\\s+-?\\d+\\.?\\d*\\s*>=\\s*-?\\d+\\.?\\d*", // Eventual BG x >= target
             "Eventual BG\\s+-?\\d+\\.?\\d*\\s*<\\s*-?\\d+\\.?\\d*", // Eventual BG x < target
-            "\\S+\\s+\\d+\\s*>\\s*\\d+%\\s+of\\s+BG\\s+\\d+" // maxDelta x > y% of BG z
+            "Eventual BG\\s*-?\\d+\\.?\\d*\\s*>&\\s*-?\\d+\\.?\\d*\\s*but\\s*Min\\.\\s*Delta\\s*-?\\d+\\.?\\d*\\s*<\\s*Exp\\.\\s*Delta\\s*-?\\d+\\.?\\d*",
+            // Eventual BG X > Y but Min. Delta A < Exp. Delta B
+            "\\S+\\s+\\d+\\s*>\\s*\\d+%\\s+of\\s+BG\\s+\\d+", // maxDelta x > y% of BG z
+            "-?\\d+\\.?\\d*-\\d+\\.?\\d* in range" // New pattern: "105-80 in range"
         ]
         let pattern = patterns.joined(separator: "|")
         let regex = try! NSRegularExpression(pattern: pattern)
@@ -1283,14 +1364,46 @@ extension BaseNightscoutManager {
             return value
         }
 
-        let matches = regex.matches(in: reason, range: NSRange(reason.startIndex..., in: reason))
-        var updatedReason = reason
+        let matches = regex.matches(in: normalizedReason, range: NSRange(normalizedReason.startIndex..., in: normalizedReason))
+        var updatedReason = normalizedReason
 
         for match in matches.reversed() {
-            guard let range = Range(match.range, in: reason) else { continue }
-            let glucoseValueString = String(reason[range])
+            guard let range = Range(match.range, in: normalizedReason) else { continue }
+            let glucoseValueString = String(normalizedReason[range])
 
-            if glucoseValueString.contains("→") {
+            if glucoseValueString.contains(" in range") {
+                // Handle "105-80 in range: no temp required"
+                let values = glucoseValueString.components(separatedBy: "-")
+                if values.count == 2 {
+                    let firstValue = values[0].trimmingCharacters(in: .whitespaces)
+                    let secondPart = values[1].components(separatedBy: " in range")[0].trimmingCharacters(in: .whitespaces)
+                    let formattedFirstValue = convertToMmolL(firstValue)
+                    let formattedSecondValue = convertToMmolL(secondPart)
+                    let formattedString = "\(formattedFirstValue)-\(formattedSecondValue) in range"
+                    updatedReason.replaceSubrange(range, with: formattedString)
+                }
+            } else if glucoseValueString.contains("Eventual BG"), glucoseValueString.contains(">"),
+                      glucoseValueString.contains("but Min. Delta")
+            {
+                // Handle "Eventual BG X > Y but Min. Delta A < Exp. Delta B"
+                let regexSubPattern =
+                    "Eventual BG\\s*(-?\\d+\\.?\\d*)\\s*>&\\s*(-?\\d+\\.?\\d*)\\s*but\\s*Min\\.\\s*Delta\\s*(-?\\d+\\.?\\d*)\\s*<\\s*Exp\\.\\s*Delta\\s*(-?\\d+\\.?\\d*)"
+                let subRegex = try! NSRegularExpression(pattern: regexSubPattern)
+
+                if let subMatch = subRegex.firstMatch(
+                    in: glucoseValueString,
+                    range: NSRange(glucoseValueString.startIndex..., in: glucoseValueString)
+                ) {
+                    let bg1 = String(glucoseValueString[Range(subMatch.range(at: 1), in: glucoseValueString)!])
+                    let bg2 = String(glucoseValueString[Range(subMatch.range(at: 2), in: glucoseValueString)!])
+                    let minDelta = String(glucoseValueString[Range(subMatch.range(at: 3), in: glucoseValueString)!])
+                    let expDelta = String(glucoseValueString[Range(subMatch.range(at: 4), in: glucoseValueString)!])
+
+                    let formattedString =
+                        "Prognos BG: \(convertToMmolL(bg1))>\(convertToMmolL(bg2)) men min. delta \(convertToMmolL(minDelta))<exp. delta \(convertToMmolL(expDelta))"
+                    updatedReason.replaceSubrange(range, with: formattedString)
+                }
+            } else if glucoseValueString.contains("→") {
                 // Handle ISF: X→Y
                 let values = glucoseValueString.components(separatedBy: "→")
                 let firstNumber = values[0].components(separatedBy: ":")[1].trimmingCharacters(in: .whitespaces)
@@ -1308,7 +1421,7 @@ extension BaseNightscoutManager {
                     let targetValue = parts[1].trimmingCharacters(in: .whitespaces)
                     let formattedBGPart = convertToMmolL(bgPart)
                     let formattedTargetValue = convertToMmolL(targetValue)
-                    let formattedString = "Eventual BG \(formattedBGPart)<\(formattedTargetValue)"
+                    let formattedString = "Prognos BG: \(formattedBGPart)<\(formattedTargetValue)"
                     updatedReason.replaceSubrange(range, with: formattedString)
                 }
 
@@ -1326,14 +1439,20 @@ extension BaseNightscoutManager {
 
             } else if glucoseValueString.contains(">=") {
                 // Handle "Eventual BG X >= Y"
-                let parts = glucoseValueString.components(separatedBy: " >= ")
-                if parts.count == 2 {
-                    let firstValue = parts[0].replacingOccurrences(of: "Eventual BG", with: "")
-                        .trimmingCharacters(in: .whitespaces)
-                    let secondValue = parts[1].trimmingCharacters(in: .whitespaces)
-                    let formattedFirstValue = convertToMmolL(firstValue)
-                    let formattedSecondValue = convertToMmolL(secondValue)
-                    let formattedString = "Eventual BG \(formattedFirstValue) >= \(formattedSecondValue)"
+                let eventBGPattern = "Eventual BG\\s*(-?\\d+\\.?\\d*)\\s*>?=\\s*(-?\\d+\\.?\\d*)"
+
+                let eventBGRegex = try! NSRegularExpression(pattern: eventBGPattern)
+                if let eventBGMatch = eventBGRegex.firstMatch(
+                    in: glucoseValueString,
+                    range: NSRange(glucoseValueString.startIndex..., in: glucoseValueString)
+                ) {
+                    let bgValue = String(glucoseValueString[Range(eventBGMatch.range(at: 1), in: glucoseValueString)!])
+                    let targetValue = String(glucoseValueString[Range(eventBGMatch.range(at: 2), in: glucoseValueString)!])
+
+                    let formattedBG = convertToMmolL(bgValue)
+                    let formattedTarget = convertToMmolL(targetValue)
+
+                    let formattedString = "Prognos BG: \(formattedBG)≥\(formattedTarget)"
                     updatedReason.replaceSubrange(range, with: formattedString)
                 }
 
@@ -1354,15 +1473,15 @@ extension BaseNightscoutManager {
                     let thirdValue = convertToMmolL(String(glucoseValueString[range3]))
 
                     let oldSnippet =
-                        "\(glucoseValueString[range1]) > \(glucoseValueString[range2])% of BG \(glucoseValueString[range3])"
-                    let newSnippet = "\(firstValue) > \(glucoseValueString[range2])% of BG \(thirdValue)"
+                        "\(glucoseValueString[range1])>\(glucoseValueString[range2])% of BG \(glucoseValueString[range3])"
+                    let newSnippet = "\(firstValue)>\(glucoseValueString[range2])% of BG \(thirdValue)"
 
                     let replaced = glucoseValueString.replacingOccurrences(of: oldSnippet, with: newSnippet)
                     updatedReason.replaceSubrange(range, with: replaced)
                 }
 
             } else {
-                // Handle everything else, e.g., "minPredBG 39", "Dev: 5", etc.
+                // Handle everything else, e.g., "minPredBG 39", etc.
                 let parts = glucoseValueString.components(separatedBy: .whitespaces)
                 if parts.count >= 2 {
                     var metric = parts[0]
@@ -1372,6 +1491,7 @@ extension BaseNightscoutManager {
                     if !metric.hasSuffix(":") {
                         metric += ":"
                     }
+
                     let formattedValue = convertToMmolL(value)
                     let formattedString = "\(metric) \(formattedValue)"
                     updatedReason.replaceSubrange(range, with: formattedString)

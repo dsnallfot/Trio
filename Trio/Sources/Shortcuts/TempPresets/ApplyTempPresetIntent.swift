@@ -3,26 +3,26 @@ import Foundation
 
 struct ApplyTempPresetIntent: AppIntent {
     // Title of the action in the Shortcuts app
-    static var title: LocalizedStringResource = "Apply a Temporary Target"
+    static var title: LocalizedStringResource = "Aktivera ett tillfälligt mål"
 
     // Description of the action in the Shortcuts app
-    static var description = IntentDescription("Enable a Temporary Target")
+    static var description = IntentDescription("Aktivera ett tillfälligt mål")
 
-    @Parameter(title: "Preset") var preset: TempPreset?
+    @Parameter(title: "Förval") var preset: TempPreset?
 
     @Parameter(
-        title: "Confirm Before applying",
-        description: "If toggled, you will need to confirm before applying",
+        title: "Bekräfta innan aktivering",
+        description: "Om aktiverad måste du bekräfta innan tillfälligt mål tillämpas",
         default: true
     ) var confirmBeforeApplying: Bool
 
     static var parameterSummary: some ParameterSummary {
         When(\ApplyTempPresetIntent.$confirmBeforeApplying, .equalTo, true, {
-            Summary("Applying \(\.$preset)") {
+            Summary("Aktiverar \(\.$preset)") {
                 \.$confirmBeforeApplying
             }
         }, otherwise: {
-            Summary("Immediately applying \(\.$preset)") {
+            Summary("Omedelbar aktivering av \(\.$preset)") {
                 \.$confirmBeforeApplying
             }
         })

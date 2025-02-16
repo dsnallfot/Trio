@@ -9,6 +9,7 @@ struct PushMessage: Codable, Sendable {
     var carbs: Int?
     var protein: Int?
     var fat: Int?
+    var notes: String?
     var sharedSecret: String
     var timestamp: TimeInterval
     var overrideName: String?
@@ -24,6 +25,7 @@ struct PushMessage: Codable, Sendable {
         case carbs
         case protein
         case fat
+        case notes
         case sharedSecret = "shared_secret"
         case timestamp
         case overrideName
@@ -40,6 +42,7 @@ struct PushMessage: Codable, Sendable {
         try container.encodeIfPresent(carbs, forKey: .carbs)
         try container.encodeIfPresent(protein, forKey: .protein)
         try container.encodeIfPresent(fat, forKey: .fat)
+        try container.encodeIfPresent(notes, forKey: .notes)
         try container.encode(sharedSecret, forKey: .sharedSecret)
         try container.encode(timestamp, forKey: .timestamp)
         try container.encodeIfPresent(overrideName, forKey: .overrideName)
@@ -58,6 +61,7 @@ struct PushMessage: Codable, Sendable {
         carbs = try container.decodeIfPresent(Int.self, forKey: .carbs)
         protein = try container.decodeIfPresent(Int.self, forKey: .protein)
         fat = try container.decodeIfPresent(Int.self, forKey: .fat)
+        notes = try container.decodeIfPresent(String.self, forKey: .notes)
         sharedSecret = try container.decode(String.self, forKey: .sharedSecret)
         timestamp = try container.decode(TimeInterval.self, forKey: .timestamp)
         overrideName = try container.decodeIfPresent(String.self, forKey: .overrideName)
@@ -73,6 +77,7 @@ struct PushMessage: Codable, Sendable {
         carbs: Int? = nil,
         protein: Int? = nil,
         fat: Int? = nil,
+        notes: String? = nil,
         sharedSecret: String,
         timestamp: TimeInterval,
         overrideName: String? = nil,
@@ -86,6 +91,7 @@ struct PushMessage: Codable, Sendable {
         self.carbs = carbs
         self.protein = protein
         self.fat = fat
+        self.notes = notes
         self.sharedSecret = sharedSecret
         self.timestamp = timestamp
         self.overrideName = overrideName
@@ -116,7 +122,8 @@ struct PushMessage: Codable, Sendable {
             let carbsDesc = carbs != nil ? "\(carbs!)g carbs" : "unknown carbs"
             let fatDesc = fat != nil ? "\(fat!)g fat" : "unknown fat"
             let proteinDesc = protein != nil ? "\(protein!)g protein" : "unknown protein"
-            description += "Meal with \(carbsDesc), \(fatDesc), \(proteinDesc)."
+            let noteDesc = notes != nil ? "\(notes!)" : ""
+            description += "Meal \(noteDesc)\n\(carbsDesc), \(fatDesc), \(proteinDesc)."
         case .startOverride:
             if let override = overrideName {
                 description += "Start Override: \(override)."

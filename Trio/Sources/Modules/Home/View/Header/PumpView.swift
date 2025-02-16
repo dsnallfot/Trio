@@ -19,13 +19,17 @@ struct PumpView: View {
     }
 
     var body: some View {
-        if let pumpStatusHighlightMessage = pumpStatusHighlightMessage { // display message instead pump info
+        if let pumpStatusHighlightMessage = pumpStatusHighlightMessage { // display message instead of pump info
             VStack(alignment: .center) {
-                Text(pumpStatusHighlightMessage).font(.footnote).fontWeight(.bold)
-                    .multilineTextAlignment(.center).frame(maxWidth: /*@START_MENU_TOKEN@*/ .infinity/*@END_MENU_TOKEN@*/)
-            }.frame(width: 100)
+                Text(pumpStatusHighlightMessage)
+                    .font(.footnote)
+                    .fontWeight(.semibold)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+            }
+            .frame(width: 100)
         } else {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 20) { // Keep original vertical spacing
                 if reservoir == nil && battery.isEmpty {
                     VStack(alignment: .center, spacing: 12) {
                         HStack {
@@ -41,88 +45,190 @@ struct PumpView: View {
                     }
                     .frame(alignment: .top)
                 }
+
                 if let reservoir = reservoir {
                     HStack {
                         Image(systemName: "cross.vial.fill")
-                            .font(.callout)
+                            .font(.subheadline)
+                            .foregroundColor(.primary)
 
-                        if reservoir == 0xDEAD_BEEF {
-                            Text("50+ " + NSLocalizedString("U", comment: "Insulin unit"))
-                                .font(.callout)
-                                .fontWeight(.bold)
-                                .fontDesign(.rounded)
-                        } else {
-                            Text(
+                        Text(
+                            reservoir == 0xDEAD_BEEF ?
+                                "50+ " + NSLocalizedString("E", comment: "Insulin unit") :
                                 Formatter.integerFormatter
-                                    .string(from: reservoir as NSNumber)! + NSLocalizedString(" U", comment: "Insulin unit")
-                            )
-                            .font(.callout)
-                            .fontWeight(.bold)
-                            .fontDesign(.rounded)
-                        }
+                                .string(from: reservoir as NSNumber)! + NSLocalizedString(" E", comment: "Insulin unit")
+                        )
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .fontDesign(.rounded)
+                        .foregroundColor(.primary)
                     }
+                    .padding(.horizontal, 12) // Unified left padding
                     .padding(.vertical, 5)
-                    .padding(.horizontal, 10)
                     .foregroundStyle(reservoirColor)
-                    .overlay(
-                        Capsule()
-                            .stroke(reservoirColor.opacity(0.4), lineWidth: 2)
-                    )
-
-                    if let timeZone = timeZone, timeZone.secondsFromGMT() != TimeZone.current.secondsFromGMT() {
-                        HStack {
-                            Image(systemName: "clock.badge.exclamationmark.fill")
-                                .font(.callout)
-                                .symbolRenderingMode(.palette)
-                                .foregroundStyle(.red, Color(.warning))
-
-                            Text("Timezone")
-                                .font(.callout)
-                                .fontWeight(.bold)
-                                .fontDesign(.rounded)
-                                .foregroundStyle(.red)
-                        }
-                        .padding(.leading, 12)
-                    }
                 }
 
-                if (battery.first?.display) != nil, let shouldBatteryDisplay = battery.first?.display, shouldBatteryDisplay {
+                if let timeZone = timeZone, timeZone.secondsFromGMT() != TimeZone.current.secondsFromGMT() {
+                    HStack {
+                        Image(systemName: "clock.badge.exclamationmark.fill")
+                            .font(.subheadline)
+                            .symbolRenderingMode(.palette)
+                            .foregroundStyle(.red, Color(.warning))
+
+                        Text("Timezone")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .fontDesign(.rounded)
+                            .foregroundStyle(.red)
+                    }
+                    .padding(.horizontal, 12) // Unified left padding
+                }
+
+                if let shouldBatteryDisplay = battery.first?.display, shouldBatteryDisplay {
                     HStack {
                         Image(systemName: "battery.100")
-                            .font(.callout)
+                            .font(.subheadline)
                             .foregroundStyle(batteryColor)
                         Text("\(Formatter.integerFormatter.string(for: battery.first?.percent ?? 100) ?? "100") %")
-                            .font(.callout).fontWeight(.bold).fontDesign(.rounded)
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .fontDesign(.rounded)
+                            .foregroundColor(.primary)
                     }
+                    .padding(.horizontal, 12) // Unified left padding
                 }
 
                 if let date = expiresAtDate {
                     HStack {
                         Image(systemName: "stopwatch.fill")
-                            .font(.callout)
+                            .font(.subheadline)
                             .foregroundStyle(timerColor)
-
-                        let remainingTimeString = remainingTimeString(time: date.timeIntervalSince(timerDate))
-
-                        Text(remainingTimeString)
-                            .font(date.timeIntervalSince(timerDate) > 0 ? .callout : .subheadline)
-                            .fontWeight(.bold)
+                        Text(remainingTimeString(time: date.timeIntervalSince(timerDate)))
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
                             .fontDesign(.rounded)
                             .lineLimit(2)
                             .multilineTextAlignment(.leading)
                             .frame(
-                                // If the string is > 6 chars, i.e., exceeds "xd yh", limit width to 80 pts
-                                // This forces the "Replace pod" string to wrap to 2 lines.
-                                maxWidth: remainingTimeString.count > 6 ? 80 : .infinity,
+                                maxWidth: remainingTimeString(time: date.timeIntervalSince(timerDate)).count > 6 ? 80 : .infinity,
                                 alignment: .leading
                             )
                     }
-                    // aligns the stopwatch icon exactly with the first pixel of the reservoir icon
-                    .padding(.leading, date.timeIntervalSince(timerDate) > 0 ? 12 : 0)
+                    .padding(.horizontal, 12) // Unified left padding
                 }
             }
         }
     }
+
+    /*
+     var body: some View {
+         if let pumpStatusHighlightMessage = pumpStatusHighlightMessage { // display message instead pump info
+             VStack(alignment: .center) {
+                 Text(pumpStatusHighlightMessage).font(.footnote).fontWeight(.bold)
+                     .multilineTextAlignment(.center).frame(maxWidth: /*@START_MENU_TOKEN@*/ .infinity/*@END_MENU_TOKEN@*/)
+             }.frame(width: 100)
+         } else {
+             VStack(alignment: .leading, spacing: 20) {
+                 if reservoir == nil && battery.isEmpty {
+                     VStack(alignment: .center, spacing: 12) {
+                         HStack {
+                             Image(systemName: "keyboard.onehanded.left")
+                                 .font(.body)
+                                 .imageScale(.large)
+                         }
+                         HStack {
+                             Text("Add pump")
+                                 .font(.caption)
+                                 .bold()
+                         }
+                     }
+                     .frame(alignment: .top)
+                 }
+                 if let reservoir = reservoir {
+                     HStack {
+                         Image(systemName: "cross.vial.fill")
+                             .font(.subheadline).foregroundColor(.secondary)
+
+                         if reservoir == 0xDEAD_BEEF {
+                             Text("50+ " + NSLocalizedString("E", comment: "Insulin unit"))
+                                 .font(.subheadline)
+                                 .fontWeight(.bold)
+                                 .fontDesign(.rounded)
+                                 .foregroundColor(.secondary)
+                         } else {
+                             Text(
+                                 Formatter.integerFormatter
+                                     .string(from: reservoir as NSNumber)! + NSLocalizedString(" E", comment: "Insulin unit")
+                             )
+                             .font(.subheadline)
+                             .fontWeight(.bold)
+                             .fontDesign(.rounded)
+                             .foregroundColor(.secondary)
+                         }
+                     }
+                     .padding(.vertical, 5)
+                     .padding(.horizontal, 10)
+                     .foregroundStyle(reservoirColor)
+                     /* .overlay(
+                          Capsule()
+                              .stroke(reservoirColor.opacity(0.4), lineWidth: 1)
+                      ) */
+
+                     if let timeZone = timeZone, timeZone.secondsFromGMT() != TimeZone.current.secondsFromGMT() {
+                         HStack {
+                             Image(systemName: "clock.badge.exclamationmark.fill")
+                                 .font(.subheadline)
+                                 .symbolRenderingMode(.palette)
+                                 .foregroundStyle(.red, Color(.warning))
+
+                             Text("Timezone")
+                                 .font(.subheadline)
+                                 .fontWeight(.bold)
+                                 .fontDesign(.rounded)
+                                 .foregroundStyle(.red)
+                         }
+                         .padding(.leading, 12)
+                     }
+                 }
+
+                 if (battery.first?.display) != nil, let shouldBatteryDisplay = battery.first?.display, shouldBatteryDisplay {
+                     HStack {
+                         Image(systemName: "battery.100")
+                             .font(.subheadline)
+                             .foregroundStyle(batteryColor)
+                         Text("\(Formatter.integerFormatter.string(for: battery.first?.percent ?? 100) ?? "100") %")
+                             .font(.subheadline).fontWeight(.bold).fontDesign(.rounded).foregroundColor(.secondary)
+                     }
+                 }
+
+                 if let date = expiresAtDate {
+                     HStack {
+                         Image(systemName: "stopwatch.fill")
+                             .font(.subheadline)
+                             .foregroundStyle(timerColor)
+
+                         let remainingTimeString = remainingTimeString(time: date.timeIntervalSince(timerDate))
+
+                         Text(remainingTimeString)
+                             .font(date.timeIntervalSince(timerDate) > 0 ? .subheadline : .subheadline)
+                             .fontWeight(.bold)
+                             .fontDesign(.rounded)
+                             .lineLimit(2)
+                             .multilineTextAlignment(.leading)
+                             .frame(
+                                 // If the string is > 6 chars, i.e., exceeds "xd yh", limit width to 80 pts
+                                 // This forces the "Replace pod" string to wrap to 2 lines.
+                                 maxWidth: remainingTimeString.count > 6 ? 80 : .infinity,
+                                 alignment: .leading
+                             )
+                     }
+                     // aligns the stopwatch icon exactly with the first pixel of the reservoir icon
+                     .padding(.leading, date.timeIntervalSince(timerDate) > 0 ? 12 : 0)
+                 }
+             }
+         }
+     }
+     */
 
     private func remainingTimeString(time: TimeInterval) -> String {
         guard time > 0 else {
@@ -159,7 +265,8 @@ struct PumpView: View {
         case ...20:
             return Color.orange
         default:
-            return Color.loopGreen
+            return Color.primary
+            // return Color.loopGreen
         }
     }
 
@@ -174,7 +281,8 @@ struct PumpView: View {
         case ...30:
             return Color.orange
         default:
-            return Color.insulin
+            return Color.primary
+            // return Color.insulin
         }
     }
 
@@ -191,7 +299,7 @@ struct PumpView: View {
         case ...1.days.timeInterval:
             return Color.orange
         default:
-            return Color.loopGreen
+            return Color.primary
         }
     }
 }

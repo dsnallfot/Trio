@@ -299,7 +299,8 @@ final class BaseGlucoseStorage: GlucoseStorage, Injectable {
                     filtered: Decimal(result.glucose),
                     noise: nil,
                     glucose: Int(result.glucose),
-                    type: "sgv"
+                    type: "sgv",
+                    device: "Trio"
                 )
             }
         }

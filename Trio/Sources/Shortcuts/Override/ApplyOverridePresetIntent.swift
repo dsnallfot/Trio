@@ -3,29 +3,29 @@ import Foundation
 
 struct ApplyOverridePresetIntent: AppIntent {
     // Title of the action in the Shortcuts app
-    static var title = LocalizedStringResource("Activate an override", table: "ShortcutsDetail")
+    static var title = LocalizedStringResource("Aktivera en override", table: "ShortcutsDetail")
 
     // Description of the action in the Shortcuts app
-    static var description = IntentDescription(.init("Activate an override", table: "ShortcutsDetail"))
+    static var description = IntentDescription(.init("Aktivera en override", table: "ShortcutsDetail"))
 
     @Parameter(
         title: LocalizedStringResource("Override", table: "ShortcutsDetail"),
-        description: LocalizedStringResource("Override choice", table: "ShortcutsDetail")
+        description: LocalizedStringResource("Val av override", table: "ShortcutsDetail")
     ) var preset: OverridePreset?
 
     @Parameter(
-        title: LocalizedStringResource("Confirm Before applying", table: "ShortcutsDetail"),
-        description: LocalizedStringResource("If toggled, you will need to confirm before applying", table: "ShortcutsDetail"),
+        title: LocalizedStringResource("Bekräfta före tillämpning", table: "ShortcutsDetail"),
+        description: LocalizedStringResource("Om aktiverad måste du bekräfta innan override tillämpas", table: "ShortcutsDetail"),
         default: true
     ) var confirmBeforeApplying: Bool
 
     static var parameterSummary: some ParameterSummary {
         When(\ApplyOverridePresetIntent.$confirmBeforeApplying, .equalTo, true, {
-            Summary("Applying \(\.$preset) override", table: "ShortcutsDetail") {
+            Summary("Tillämpa override \(\.$preset)", table: "ShortcutsDetail") {
                 \.$confirmBeforeApplying
             }
         }, otherwise: {
-            Summary("Immediately applying \(\.$preset) override", table: "ShortcutsDetail") {
+            Summary("Tillämpa override \(\.$preset) omedelbart", table: "ShortcutsDetail") {
                 \.$confirmBeforeApplying
             }
         })
@@ -39,7 +39,7 @@ struct ApplyOverridePresetIntent: AppIntent {
             } else {
                 presetToApply = try await $preset.requestDisambiguation(
                     among: await OverridePresetsIntentRequest().fetchAndProcessOverrides(),
-                    dialog: IntentDialog(LocalizedStringResource("Select override", table: "ShortcutsDetail"))
+                    dialog: IntentDialog(LocalizedStringResource("Välj override", table: "ShortcutsDetail"))
                 )
             }
 
@@ -48,8 +48,7 @@ struct ApplyOverridePresetIntent: AppIntent {
                 try await requestConfirmation(
                     result: .result(
                         dialog: IntentDialog(LocalizedStringResource(
-                            "Confirm to apply override '\(displayName)'",
-                            table: "ShortcutsDetail"
+                            "Bekräfta för att tillämpa override '\(displayName)'", table: "ShortcutsDetail"
                         ))
                     )
                 )
@@ -59,8 +58,7 @@ struct ApplyOverridePresetIntent: AppIntent {
                 return .result(
                     dialog: IntentDialog(
                         LocalizedStringResource(
-                            "Override '\(presetToApply.name)' applied",
-                            table: "ShortcutsDetail"
+                            "Override '\(presetToApply.name)' tillämpad", table: "ShortcutsDetail"
                         )
                     )
                 )
@@ -68,8 +66,7 @@ struct ApplyOverridePresetIntent: AppIntent {
                 return .result(
                     dialog: IntentDialog(
                         LocalizedStringResource(
-                            "Override '\(presetToApply.name)' failed",
-                            table: "ShortcutsDetail"
+                            "Misslyckades med att tillämpa override '\(presetToApply.name)'", table: "ShortcutsDetail"
                         )
                     )
                 )

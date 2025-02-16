@@ -45,7 +45,9 @@ final class BaseWatchManager: NSObject, WCSessionDelegate, Injectable, WatchMana
     init(resolver: Resolver) {
         super.init()
         injectServices(resolver)
-        setupWatchSession()
+        guard setupWatchSession() else {
+            return
+        }
 
         units = settingsManager.settings.units
         glucoseColorScheme = settingsManager.settings.glucoseColorScheme
@@ -123,7 +125,7 @@ final class BaseWatchManager: NSObject, WCSessionDelegate, Injectable, WatchMana
     }
 
     /// Sets up the WatchConnectivity session if the device supports it
-    private func setupWatchSession() {
+    private func setupWatchSession() -> Bool {
         if WCSession.isSupported() {
             let session = WCSession.default
             session.delegate = self
@@ -131,8 +133,17 @@ final class BaseWatchManager: NSObject, WCSessionDelegate, Injectable, WatchMana
             self.session = session
 
             debug(.watchManager, "📱 Phone session setup - isPaired: \(session.isPaired)")
+
+            guard session.isPaired else {
+                debug(.watchManager, "⌚️❌ No Watch is paired")
+                // return here to end any further initialization of Apple Watch Manager
+                return false
+            }
+            return true
         } else {
             debug(.watchManager, "📱 WCSession is not supported on this device")
+            // return here to end any further initialization of Apple Watch Manager
+            return false
         }
     }
 
@@ -252,6 +263,31 @@ final class BaseWatchManager: NSObject, WCSessionDelegate, Injectable, WatchMana
                 return WatchGlucoseObject(date: glucose.date ?? Date(), glucose: glucoseValue, color: glucoseColor.toHexString())
             }
             .sorted { $0.date < $1.date }
+
+            // Set axis domain: min and max Y-axis values
+            // Apply unit parsing conditionally, if user uses mmol/L
+            let maxGlucoseValue = Decimal(glucoseObjects.map { Int($0.glucose) }.max() ?? 200)
+            var maxYValue = Decimal(200)
+
+            if maxGlucoseValue > maxYValue, maxGlucoseValue <= 225 {
+                maxYValue = Decimal(250)
+            } else if maxGlucoseValue > 225, maxGlucoseValue <= 275 {
+                maxYValue = Decimal(300)
+            } else if maxGlucoseValue > 275, maxGlucoseValue <= 325 {
+                maxYValue = Decimal(350)
+            } else if maxGlucoseValue > 325 {
+                maxYValue = Decimal(400)
+            }
+
+            if self.units == .mmolL {
+                maxYValue = Double(truncating: maxYValue as NSNumber).asMmolL
+            }
+            watchState.maxYAxisValue = maxYValue
+
+            if self.units == .mmolL {
+                let minYValue = Double(truncating: watchState.minYAxisValue as NSNumber).asMmolL
+                watchState.minYAxisValue = minYValue
+            }
 
             // Convert direction to trend string
             watchState.trend = latestGlucose.direction
@@ -386,6 +422,8 @@ final class BaseWatchManager: NSObject, WCSessionDelegate, Injectable, WatchMana
                     "color": value.color
                 ]
             },
+            WatchMessageKeys.minYAxisValue: state.minYAxisValue,
+            WatchMessageKeys.maxYAxisValue: state.maxYAxisValue,
             WatchMessageKeys.overridePresets: state.overridePresets.map { preset in
                 [
                     "name": preset.name,
@@ -605,7 +643,7 @@ final class BaseWatchManager: NSObject, WCSessionDelegate, Injectable, WatchMana
                 carbEntry.id = UUID()
                 carbEntry.carbs = Double(truncating: amount as NSNumber)
                 carbEntry.date = date
-                carbEntry.note = "Via Watch"
+                carbEntry.note = "⌚️"
                 carbEntry.isFPU = false // set this to false to ensure watch-entered carbs are displayed in main chart
                 carbEntry.isUploadedToNS = false
 
@@ -645,7 +683,7 @@ final class BaseWatchManager: NSObject, WCSessionDelegate, Injectable, WatchMana
                     carbEntry.id = UUID()
                     carbEntry.carbs = NSDecimalNumber(decimal: carbsAmount).doubleValue
                     carbEntry.date = date
-                    carbEntry.note = "Via Watch"
+                    carbEntry.note = "⌚️"
                     carbEntry.isFPU = false // set this to false to ensure watch-entered carbs are displayed in main chart
                     carbEntry.isUploadedToNS = false
 

@@ -88,8 +88,12 @@ struct TrioMainWatchView: View {
                 }.tag(0)
 
                 // Page 2: Glucose chart
-                GlucoseChartView(glucoseValues: state.glucoseValues)
-                    .tag(1)
+                GlucoseChartView(
+                    glucoseValues: state.glucoseValues,
+                    minYAxisValue: $state.minYAxisValue,
+                    maxYAxisValue: $state.maxYAxisValue
+                )
+                .tag(1)
             }
             .onAppear {
                 // Hard reset variables when main view appears
@@ -133,7 +137,7 @@ struct TrioMainWatchView: View {
                     Button {
                         showingOverrideSheet = true
                     } label: {
-                        Image(systemName: "clock.arrow.2.circlepath")
+                        Image(systemName: "arrow.up.arrow.down.circle")
                             .foregroundStyle(Color.primary, isOverrideActive ? Color.primary : Color.purple)
                     }.tint(isOverrideActive ? Color.purple : nil)
 
