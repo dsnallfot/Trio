@@ -205,7 +205,7 @@ extension Treatments {
                             // Notes
                             HStack {
                                 Image(systemName: "square.and.pencil")
-                                TextFieldWithToolBarString(text: $state.note, placeholder: "Note...", maxLength: 25)
+                                TextFieldWithToolBarString(text: $state.note, placeholder: "Notering", maxLength: 25)
                             }
                         }.listRowBackground(Color.chart)
 
@@ -335,7 +335,7 @@ extension Treatments {
                             showPresetSheet = true
                         }, label: {
                             HStack {
-                                Text("Presets")
+                                Text("Förval")
                                 Image(systemName: "plus")
                             }
                         })
@@ -411,21 +411,21 @@ extension Treatments {
 
         private var taskButtonLabel: some View {
             if pumpBolusLimitExceeded {
-                return Text("Max Bolus of \(state.maxBolus.description) U Exceeded")
+                return Text("Maxgräns bolus: \(state.maxBolus.description) E")
             } else if externalBolusLimitExceeded {
-                return Text("Max External Bolus of \(state.maxExternal.description) U Exceeded")
+                return Text("Maxgräns extern bolus: \(state.maxExternal.description) E")
             } else if carbLimitExceeded {
-                return Text("Max Carbs of \(state.maxCarbs.description) g Exceeded")
+                return Text("Maxgräns kh: \(state.maxCarbs.description) g")
             } else if fatLimitExceeded {
-                return Text("Max Fat of \(state.maxFat.description) g Exceeded")
+                return Text("Maxgräns fett: \(state.maxFat.description) g")
             } else if proteinLimitExceeded {
-                return Text("Max Protein of \(state.maxProtein.description) g Exceeded")
+                return Text("Maxgräns protein: \(state.maxProtein.description) g")
             }
 
             let hasInsulin = state.amount > 0
             let hasCarbs = state.carbs > 0
             let hasFatOrProtein = state.fat > 0 || state.protein > 0
-            let bolusString = state.externalInsulin ? "External Insulin" : "Enact Bolus"
+            let bolusString = state.externalInsulin ? "externt Insulin" : "ge bolus"
 
             if state.isBolusInProgress && hasInsulin && !state.externalInsulin && (!hasCarbs || !hasFatOrProtein) {
                 return Text("Bolus In Progress...")
@@ -433,11 +433,11 @@ extension Treatments {
 
             switch (hasInsulin, hasCarbs, hasFatOrProtein) {
             case (true, true, true):
-                return Text("Log Meal and \(bolusString)")
+                return Text("Logga måltid & \(bolusString)")
             case (true, true, false):
-                return Text("Log Carbs and \(bolusString)")
+                return Text("Logga kh & \(bolusString)")
             case (true, false, true):
-                return Text("Log FPU and \(bolusString)")
+                return Text("Logga FPU & \(bolusString)")
             case (true, false, false):
                 return Text(state.externalInsulin ? "Log External Insulin" : "Enact Bolus")
             case (false, true, true):

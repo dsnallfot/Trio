@@ -55,7 +55,7 @@ struct TempTargetPresetsView: View {
 
                                 if preset.isEnabled {
                                     Spacer()
-                                    Text("is running")
+                                    Text("är aktiverad")
                                         .font(.caption2)
                                         .foregroundStyle(.white)
                                 }

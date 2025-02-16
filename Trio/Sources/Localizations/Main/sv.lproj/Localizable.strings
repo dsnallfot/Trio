@@ -672,6 +672,32 @@ Enact a temp Basal or a temp target */
 
 "Show Future" = "Visa kommande";
 
+"Hide Future" = "Dölj kommande";
+
+"Continue Without Treatment" = "Fortsätt utan behandling";
+
+"Bolus In Progress..." = "Bolus pågår...";
+
+"Log External Insulin" = "Logga externt insulin";
+
+"External Insulin" = "Externt insulin";
+
+"Log Meal" = "Logga måltid";
+
+"Log Carbs" = "Logga kolhydrater";
+
+"Log FPU" = "Logga fett / protein";
+
+"Super Bolus" = "Superbolus";
+
+"Now" = "Nu";
+
+"No data." = "Ingen data";
+
+"Stop Override" = "Stoppa override";
+
+"is running" = "är aktiverad";
+
 /* " min" in Treatments list */
 " min" = " min";
 

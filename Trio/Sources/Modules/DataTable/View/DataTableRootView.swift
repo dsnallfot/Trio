@@ -311,9 +311,9 @@ extension DataTable {
                         HStack(spacing: 5) {
                             ForEach(labels, id: \.self) { label in
                                 Text(label)
-                                if label != labels.last {
-                                    Divider()
-                                }
+                                /* if label != labels.last {
+                                     Divider()
+                                 } */
                             }
                             Spacer()
                         }

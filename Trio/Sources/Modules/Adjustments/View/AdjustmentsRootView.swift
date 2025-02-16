@@ -170,7 +170,7 @@ extension Adjustments {
             case .overrides:
                 Section {
                     HStack {
-                        Text("\(state.activeOverrideName) is running")
+                        Text("\(state.activeOverrideName) är aktiverad")
 
                         Spacer()
                         Image(systemName: "square.and.pencil")
@@ -195,7 +195,7 @@ extension Adjustments {
             case .tempTargets:
                 Section {
                     HStack {
-                        Text("\(state.activeTempTargetName) is running")
+                        Text("\(state.activeTempTargetName) är aktiverad")
 
                         Spacer()
                         Image(systemName: "square.and.pencil")
