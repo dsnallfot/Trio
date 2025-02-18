@@ -33,25 +33,33 @@ struct LoopView: View {
     private var loopStatusWithMinutes: some View {
         HStack(alignment: .center) {
             ZStack {
+                // Outer circle (or circle with horizontal line)
                 Image(systemName: (!closedLoop || manualTempBasal) ? "circle.and.line.horizontal" : "circle")
+                // .font(.subheadline)
+
+                // Inner circle overlay (scaled down slightly)
+                Image(systemName: (!closedLoop || manualTempBasal) ? "" : "circle")
+                    // .font(.subheadline)
+                    .scaleEffect(0.85) // scale down for a bolder outline effect
+
                 if isLooping {
                     ProgressView()
                 }
             }
+
             if isLooping {
                 Text("looping")
             } else if manualTempBasal {
                 Text("Manual")
-            } else if determination.first?
-                .deliverAt !=
-                nil
-            {
-                // previously the .timestamp property was used here because this only gets updated when the reportenacted function in the aps manager gets called
+            } else if determination.first?.deliverAt != nil {
+                // previously the .timestamp property was used here because this only gets updated
+                // when the reportenacted function in the aps manager gets called
                 Text(timeString)
             } else {
                 Text("--")
             }
         }
+
         .font(.subheadline).fontWeight(.semibold).fontDesign(.rounded)
         .foregroundColor(color)
     }
