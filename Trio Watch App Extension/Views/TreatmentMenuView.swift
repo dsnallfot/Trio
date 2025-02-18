@@ -61,6 +61,7 @@ struct TreatmentMenuView: View {
                                 Text(treatment.displayName)
                             case .mealBolusCombo:
                                 mealIcon
+                                Text("+")
                                 bolusIcon
                             }
                         }
