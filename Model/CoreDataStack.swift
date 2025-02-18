@@ -150,16 +150,16 @@ class CoreDataStack: ObservableObject {
             }
         }
     }
-    
-    func initializeStack() throws {
-             // Force initialization of persistent container
-             let container = persistentContainer
 
-             // Verify the store is loaded and available
-             guard container.persistentStoreCoordinator.persistentStores.isNotEmpty else {
-                 throw CoreDataError.storeNotInitializedError
-             }
-         }
+    func initializeStack() throws {
+        // Force initialization of persistent container
+        let container = persistentContainer
+
+        // Verify the store is loaded and available
+        guard container.persistentStoreCoordinator.persistentStores.isNotEmpty else {
+            throw CoreDataError.storeNotInitializedError
+        }
+    }
 }
 
 // MARK: - Delete
