@@ -142,7 +142,7 @@ struct TrioMainWatchView: View {
                     }
                     .tint(isOverrideActive ? Color.purple : nil)
                     .disabled(!isWatchStateDated || !isSessionUnreachable)
-                    
+
                     Button {
                         showingTreatmentMenuSheet = true
                     } label: {

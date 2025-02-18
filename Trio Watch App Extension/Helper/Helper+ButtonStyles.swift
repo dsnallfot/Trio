@@ -4,7 +4,7 @@ struct WatchOSButtonStyle: ButtonStyle {
     let deviceType: WatchSize
     var foregroundColor: Color = .white
     var fontSize: Font = .title2
-    
+
     @Environment(\.isEnabled) private var isEnabled: Bool
 
     private var fontWeight: Font.Weight {
@@ -47,13 +47,13 @@ struct WatchOSButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         var buttonBackground: Color {
-                     if isEnabled {
-                         return Color.tabBar.opacity(configuration.isPressed ? 0.8 : 1.0)
-                     } else {
-                         return Color.tabBar.opacity(0.4)
-                     }
-                 }
-        
+            if isEnabled {
+                return Color.tabBar.opacity(configuration.isPressed ? 0.8 : 1.0)
+            } else {
+                return Color.tabBar.opacity(0.4)
+            }
+        }
+
         configuration.label
             .font(fontSize)
             .fontWeight(fontWeight)
