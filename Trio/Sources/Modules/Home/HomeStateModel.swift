@@ -108,6 +108,9 @@ extension Home {
         var minValueIobChart: Decimal = 0
         var maxValueIobChart: Decimal = 5
 
+        // Daniel Conversion factor: how many COB units equal 1 IOB unit in visual line height in COBIOB chart.
+        var IobCobConversionFactor: Decimal = 20
+
         let taskContext = CoreDataStack.shared.newTaskContext()
         let glucoseFetchContext = CoreDataStack.shared.newTaskContext()
         let carbsFetchContext = CoreDataStack.shared.newTaskContext()

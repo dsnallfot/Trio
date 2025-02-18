@@ -85,8 +85,7 @@ extension Home.StateModel {
     }
 
     func yAxisChartDataIobChart(determinations: [[String: Any]]) {
-        // Daniel Conversion factor: how many COB units equal 1 IOB unit in visual line height.
-        let conversionFactor: Decimal = 10
+        let conversionFactor: Decimal = IobCobConversionFactor
 
         determinationFetchContext.perform {
             // Map the IOB values from the fetched dictionaries
@@ -126,29 +125,6 @@ extension Home.StateModel {
             }
         }
     }
-
-    /*
-     func yAxisChartDataIobChart(determinations: [[String: Any]]) {
-         determinationFetchContext.perform {
-             // Map the IOB values from the fetched dictionaries
-             let iobMapped = determinations.compactMap { ($0["iob"] as? NSDecimalNumber)?.decimalValue }
-             let minIob = iobMapped.min()
-             let maxIob = iobMapped.max()
-
-             // Ensure min and max IOB values exist, or set defaults
-             if let minIob = minIob, let maxIob = maxIob {
-                 let adjustedMin = minIob < 0 ? minIob - 2 : 0
-                 Task {
-                     await self.updateIobChartBounds(minValue: adjustedMin, maxValue: maxIob + 2)
-                 }
-             } else {
-                 Task {
-                     await self.updateIobChartBounds(minValue: 0, maxValue: 5)
-                 }
-             }
-         }
-     }
-     */
 
     @MainActor private func updateIobChartBounds(minValue: Decimal, maxValue: Decimal) async {
         minValueIobChart = minValue
