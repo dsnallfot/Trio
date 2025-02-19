@@ -96,6 +96,9 @@ struct CarbEntryEditorView: View {
                 action: {
                     guard let entryToEdit = entryToEdit else { return }
 
+                    // Append a star ✩ for each edit
+                    editedNote += "✩"
+
                     state.updateEntry(
                         entryToEdit,
                         newCarbs: editedCarbs,
