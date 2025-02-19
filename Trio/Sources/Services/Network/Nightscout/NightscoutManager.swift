@@ -104,12 +104,17 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         /// for `uploadDeviceStatus()`, as within that fuction `lastEnactedDetermination` is reassigned at the very end of the function.
         /// This way, we ensure the latest enacted determination is always part of `devicestatus` and avoid having instances
         /// where the first uploaded non-enacted determination (i.e., "suggested"), lacks the "enacted" data.
-        Task {
-            async let lastEnactedDeterminationID = determinationStorage
-                .fetchLastDeterminationObjectID(predicate: NSPredicate.enactedDetermination)
+        /*
+         Task {
+             async let lastEnactedDeterminationID = determinationStorage
+                 .fetchLastDeterminationObjectID(predicate: NSPredicate.enactedDetermination) // Fetches objects not older than 30 minutes
 
-            self.lastEnactedDetermination = await determinationStorage
-                .getOrefDeterminationNotYetUploadedToNightscout(lastEnactedDeterminationID)
+             self.lastEnactedDetermination = await determinationStorage
+                 .getOrefDeterminationNotYetUploadedToNightscout(lastEnactedDeterminationID)
+         }
+         */
+        Task {
+            self.lastEnactedDetermination = await determinationStorage.fetchLatestEnactedDetermination()
         }
     }
 
@@ -512,11 +517,12 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             return
         }
 
-        // Suggested / Enacted
-        async let enactedDeterminationID = determinationStorage
-            .fetchLastDeterminationObjectID(predicate: NSPredicate.enactedDeterminationsNotYetUploadedToNightscout)
+        // For Suggested Determination, fetch the last un-uploaded one.
         async let suggestedDeterminationID = determinationStorage
             .fetchLastDeterminationObjectID(predicate: NSPredicate.suggestedDeterminationsNotYetUploadedToNightscout)
+
+        // For Enacted Determination, always fetch the absolute latest record (regardless of upload status and age).
+        let latestEnactedDetermination = await determinationStorage.fetchLatestEnactedDetermination()
 
         // OpenAPS Status
         async let fetchedBattery = fetchBattery()
@@ -524,16 +530,15 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         async let fetchedIOBEntry = storage.retrieveAsync(OpenAPS.Monitor.iob, as: [IOBEntry].self)
         async let fetchedPumpStatus = storage.retrieveAsync(OpenAPS.Monitor.status, as: PumpStatus.self)
 
-        var (fetchedEnactedDetermination, fetchedSuggestedDetermination) = await (
-            determinationStorage.getOrefDeterminationNotYetUploadedToNightscout(enactedDeterminationID),
-            determinationStorage.getOrefDeterminationNotYetUploadedToNightscout(suggestedDeterminationID)
-        )
+        // Retrieve the full Suggested Determination object from its ID.
+        let fetchedSuggestedDetermination = await determinationStorage
+            .getOrefDeterminationNotYetUploadedToNightscout(suggestedDeterminationID)
 
-        // Guard to ensure both determinations are not nil
-        guard fetchedEnactedDetermination != nil || fetchedSuggestedDetermination != nil else {
+        // Guard: if both suggested and enacted are nil, abort.
+        guard latestEnactedDetermination != nil || fetchedSuggestedDetermination != nil else {
             debug(
                 .nightscout,
-                "Both fetchedEnactedDetermination and fetchedSuggestedDetermination are nil. Aborting NS Status upload."
+                "Both latestEnactedDetermination and fetchedSuggestedDetermination are nil. Aborting NS Status upload."
             )
             return
         }
@@ -561,24 +566,23 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             }
         }
 
-        if let fetchedEnacted = fetchedEnactedDetermination, settingsManager.settings.units == .mmolL {
-            var modifiedFetchedEnactedDetermination = fetchedEnactedDetermination
-            modifiedFetchedEnactedDetermination?
-                .reason = parseReasonGlucoseValuesToMmolL(fetchedEnacted.reason)
-            // TODO: verify that these parsings are needed for 3rd party apps, e.g., LoopFollow
-            modifiedFetchedEnactedDetermination?.current_target = fetchedEnacted.current_target?.asMmolL
-            modifiedFetchedEnactedDetermination?.minGuardBG = fetchedEnacted.minGuardBG?.asMmolL
-            modifiedFetchedEnactedDetermination?.minPredBG = fetchedEnacted.minPredBG?.asMmolL
-            modifiedFetchedEnactedDetermination?.threshold = fetchedEnacted.threshold?.asMmolL
-
-            fetchedEnactedDetermination = modifiedFetchedEnactedDetermination
+        // Process the Enacted Determination (unit conversion if needed).
+        var processedEnactedDetermination = latestEnactedDetermination
+        if let enacted = latestEnactedDetermination, settingsManager.settings.units == .mmolL {
+            var modifiedEnacted = enacted
+            modifiedEnacted.reason = parseReasonGlucoseValuesToMmolL(enacted.reason)
+            modifiedEnacted.current_target = enacted.current_target?.asMmolL
+            modifiedEnacted.minGuardBG = enacted.minGuardBG?.asMmolL
+            modifiedEnacted.minPredBG = enacted.minPredBG?.asMmolL
+            modifiedEnacted.threshold = enacted.threshold?.asMmolL
+            processedEnactedDetermination = modifiedEnacted
         }
 
         // Gather all relevant data for OpenAPS Status
         let iob = await fetchedIOBEntry
 
         let suggestedToUpload = modifiedSuggestedDetermination ?? lastSuggestedDetermination
-        let enactedToUpload = fetchedEnactedDetermination ?? lastEnactedDetermination
+        let enactedToUpload = processedEnactedDetermination ?? lastEnactedDetermination
 
         let openapsStatus = OpenAPSStatus(
             iob: iob?.first,
@@ -619,22 +623,24 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             try await nightscout.uploadDeviceStatus(status)
             debug(.nightscout, "NSDeviceStatus with Determination uploaded")
 
-            if let enacted = fetchedEnactedDetermination {
-                await updateOrefDeterminationAsUploaded([enacted])
-                debug(.nightscout, "Flagged last fetched enacted determination as uploaded")
-            }
-
+            // Mark the suggested determination as uploaded.
             if let suggested = fetchedSuggestedDetermination {
                 await updateOrefDeterminationAsUploaded([suggested])
                 debug(.nightscout, "Flagged last fetched suggested determination as uploaded")
             }
 
-            if let lastEnactedDetermination = fetchedEnactedDetermination {
-                self.lastEnactedDetermination = lastEnactedDetermination
+            // Mark the enacted determination as uploaded (if available).
+            if let enacted = latestEnactedDetermination {
+                await updateOrefDeterminationAsUploaded([enacted])
+                debug(.nightscout, "Flagged latest enacted determination as uploaded")
             }
 
-            if let lastSuggestedDetermination = fetchedSuggestedDetermination {
-                self.lastSuggestedDetermination = lastSuggestedDetermination
+            // Update local caches.
+            if let lastSuggested = fetchedSuggestedDetermination {
+                lastSuggestedDetermination = lastSuggested
+            }
+            if let latestEnacted = processedEnactedDetermination {
+                lastEnactedDetermination = latestEnacted
             }
         } catch {
             debug(.nightscout, error.localizedDescription)
