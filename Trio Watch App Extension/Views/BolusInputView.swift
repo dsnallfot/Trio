@@ -16,6 +16,12 @@ struct BolusInputView: View {
         Double(truncating: state.maxBolus as NSNumber)
     }
 
+    // Computed property to always use the rounded-down value
+    private var adjustedBolusAmount: Double {
+        let increment = Double(truncating: state.bolusIncrement as NSNumber)
+        return floor(bolusAmount / increment) * increment
+    }
+
     var trioBackgroundColor = LinearGradient(
         gradient: Gradient(colors: [Color.bgDarkBlue, Color.bgDarkerDarkBlue]),
         startPoint: .top,
@@ -30,16 +36,23 @@ struct BolusInputView: View {
             } else {
                 if effectiveBolusLimit <= 0 {
                     VStack(spacing: 8) {
-                        Text("Bolus limit cannot be fetched from phone!").font(.headline)
-                        Text("Check device settings, connect to phone, and try again.").font(.caption)
+                        Text("Bolus limit cannot be fetched from phone!")
+                            .font(.headline)
+                        Text("Check device settings, connect to phone, and try again.")
+                            .font(.caption)
                     }
                     .scenePadding()
                 } else {
                     if state.carbsAmount > 0 {
                         // Display the current carb amount
                         HStack {
-                            Text("Carbs:").bold().font(.subheadline).padding(.leading)
-                            Text("\(state.carbsAmount) g").font(.subheadline).foregroundStyle(Color.orange)
+                            Text("Carbs:")
+                                .bold()
+                                .font(.subheadline)
+                                .padding(.leading)
+                            Text("\(state.carbsAmount) g")
+                                .font(.subheadline)
+                                .foregroundStyle(Color.orange)
                             Spacer()
                         }
                     }
@@ -49,7 +62,10 @@ struct BolusInputView: View {
                     HStack {
                         // "-" Button
                         Button(action: {
-                            if bolusAmount > 0 { bolusAmount -= Double(truncating: state.bolusIncrement as NSNumber) }
+                            if bolusAmount > 0 {
+                                let decrement = Double(truncating: state.bolusIncrement as NSNumber)
+                                bolusAmount -= decrement
+                            }
                         }) {
                             Image(systemName: "minus.circle.fill")
                                 .font(.title3)
@@ -60,9 +76,7 @@ struct BolusInputView: View {
 
                         Spacer()
 
-                        let bolusIncrement = Double(truncating: state.bolusIncrement as NSNumber)
-                        let adjustedBolusAmount = floor(bolusAmount / bolusIncrement) * bolusIncrement
-
+                        // Display the adjusted (rounded down) bolus amount
                         Text(String(format: "%.2f U", adjustedBolusAmount))
                             .fontWeight(.bold)
                             .font(.system(.title2, design: .rounded))
@@ -83,10 +97,8 @@ struct BolusInputView: View {
 
                         // "+" Button
                         Button(action: {
-                            bolusAmount = min(
-                                effectiveBolusLimit,
-                                bolusAmount + Double(truncating: state.bolusIncrement as NSNumber)
-                            )
+                            let increment = Double(truncating: state.bolusIncrement as NSNumber)
+                            bolusAmount = min(effectiveBolusLimit, bolusAmount + increment)
                         }) {
                             Image(systemName: "plus.circle.fill")
                                 .font(.title3)
@@ -94,7 +106,8 @@ struct BolusInputView: View {
                         }
                         .buttonStyle(.borderless)
                         .disabled(bolusAmount >= effectiveBolusLimit)
-                    }.padding(.horizontal)
+                    }
+                    .padding(.horizontal)
 
                     Text("Insulin")
                         .font(.subheadline)
@@ -109,8 +122,9 @@ struct BolusInputView: View {
                             .foregroundColor(.loopRed)
                     }
 
+                    // Use the computed adjustedBolusAmount when enacting the bolus
                     Button("Enact Bolus") {
-                        state.bolusAmount = min(bolusAmount, effectiveBolusLimit)
+                        state.bolusAmount = min(adjustedBolusAmount, effectiveBolusLimit)
                         navigationPath.append(NavigationDestinations.bolusConfirm)
                     }
                     .buttonStyle(.bordered)
@@ -142,7 +156,8 @@ struct BolusInputView: View {
                 BolusProgressOverlay(state: state) {
                     state.shouldNavigateToRoot = false
                     navigationPath.append(NavigationDestinations.acknowledgmentPending)
-                }.transition(.opacity)
+                }
+                .transition(.opacity)
             }
         }
         .onAppear {
@@ -153,9 +168,8 @@ struct BolusInputView: View {
                 bolusAmount = Double(truncating: NSDecimalNumber(decimal: state.recommendedBolus))
             }
         }
-        // Add onChange to update bolus amount when recommendation changes
+        // Update the bolus amount if the recommendation changes
         .onChange(of: state.recommendedBolus) { oldValue, newValue in
-            // Only update if user hasn't modified the value OR if recommendation hasn't changed
             if bolusAmount == 0 || oldValue != newValue {
                 bolusAmount = Double(truncating: NSDecimalNumber(decimal: newValue))
             }
