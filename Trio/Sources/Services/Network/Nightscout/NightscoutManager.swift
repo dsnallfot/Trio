@@ -590,8 +590,6 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             var minGuardBG = latest.minGuardBG
             var minPredBG = latest.minPredBG
             var threshold = latest.threshold
-            var timestamp = latest.timestamp
-            let deliverAt = latest.deliverAt
             var received = latest.received
 
             // Apply mmol conversions if needed.
@@ -603,22 +601,21 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
                 threshold = latest.threshold?.asMmolL
             }
 
-            // Conditionally adjust the timestamp.
-            let shouldModifyTimestamp = !(suggestedToUpload?.received == false)
-            if let originalTimestamp = latest.timestamp, shouldModifyTimestamp {
-                timestamp = originalTimestamp.addingTimeInterval(1)
-            }
-
-            // Compare the deliverAt dates.
-            // If suggestedToUpload.deliverAt is newer than latest.deliverAt, set received to nil.
-            // If the deliverAt dates are equal, set received to true.
             if let suggestedDeliverAt = suggestedToUpload?.deliverAt,
-               let latestDeliverAt = deliverAt
+               let latestDeliverAt = latest.deliverAt
             {
-                if suggestedDeliverAt > latestDeliverAt {
-                    received = nil
-                } else if suggestedDeliverAt == latestDeliverAt {
+                let diff = suggestedDeliverAt.timeIntervalSince(latestDeliverAt)
+                debug(.nightscout, "Enacted deliverAt vs suggested deliverAt diff is \(diff) seconds")
+
+                // If the difference is less than 240 seconds (4 minutes), we consider the enacted status "fresh"
+                // so set received to true.
+                // Otherwise, if the enacted deliverAt is 240 seconds or more older, set it to false to make NS show X Not enacted.
+                if diff < 240 {
                     received = true
+                    debug(.nightscout, "Enacted deliverAt < 4 min older than suggested deliverAt -> enacted.received set to true")
+                } else {
+                    received = nil
+                    debug(.nightscout, "Enacted deliverAt > 4 min older than suggested deliverAt -> enacted.received set to nil")
                 }
             }
 
@@ -635,13 +632,13 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
                 iob: latest.iob,
                 cob: latest.cob,
                 predictions: latest.predictions,
-                deliverAt: deliverAt,
+                deliverAt: latest.deliverAt,
                 carbsReq: latest.carbsReq,
                 temp: latest.temp,
                 bg: latest.bg,
                 reservoir: latest.reservoir,
                 isf: latest.isf,
-                timestamp: timestamp,
+                timestamp: latest.timestamp,
                 tdd: latest.tdd,
                 insulin: latest.insulin,
                 current_target: current_target,
