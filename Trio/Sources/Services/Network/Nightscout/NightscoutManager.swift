@@ -580,9 +580,82 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
 
         // Gather all relevant data for OpenAPS Status
         let iob = await fetchedIOBEntry
-
         let suggestedToUpload = modifiedSuggestedDetermination ?? lastSuggestedDetermination
-        let enactedToUpload = processedEnactedDetermination ?? lastEnactedDetermination
+        var enactedToUpload: Determination?
+
+        if let latest = latestEnactedDetermination {
+            // Extract properties into mutable variables.
+            var reason = latest.reason
+            var current_target = latest.current_target
+            var minGuardBG = latest.minGuardBG
+            var minPredBG = latest.minPredBG
+            var threshold = latest.threshold
+            var timestamp = latest.timestamp
+            let deliverAt = latest.deliverAt
+            var received = latest.received
+
+            // Apply mmol conversions if needed.
+            if settingsManager.settings.units == .mmolL {
+                reason = parseReasonGlucoseValuesToMmolL(latest.reason)
+                current_target = latest.current_target?.asMmolL
+                minGuardBG = latest.minGuardBG?.asMmolL
+                minPredBG = latest.minPredBG?.asMmolL
+                threshold = latest.threshold?.asMmolL
+            }
+
+            // Conditionally adjust the timestamp.
+            let shouldModifyTimestamp = !(suggestedToUpload?.received == false)
+            if let originalTimestamp = latest.timestamp, shouldModifyTimestamp {
+                timestamp = originalTimestamp.addingTimeInterval(1)
+            }
+
+            // Compare the deliverAt dates.
+            // If suggestedToUpload.deliverAt is newer than latest.deliverAt, set received to nil.
+            // If the deliverAt dates are equal, set received to true.
+            if let suggestedDeliverAt = suggestedToUpload?.deliverAt,
+               let latestDeliverAt = deliverAt
+            {
+                if suggestedDeliverAt > latestDeliverAt {
+                    received = nil
+                } else if suggestedDeliverAt == latestDeliverAt {
+                    received = true
+                }
+            }
+
+            // Create a new Determination instance with the modified values.
+            enactedToUpload = Determination(
+                id: latest.id,
+                reason: reason,
+                units: latest.units,
+                insulinReq: latest.insulinReq,
+                eventualBG: latest.eventualBG,
+                sensitivityRatio: latest.sensitivityRatio,
+                rate: latest.rate,
+                duration: latest.duration,
+                iob: latest.iob,
+                cob: latest.cob,
+                predictions: latest.predictions,
+                deliverAt: deliverAt,
+                carbsReq: latest.carbsReq,
+                temp: latest.temp,
+                bg: latest.bg,
+                reservoir: latest.reservoir,
+                isf: latest.isf,
+                timestamp: timestamp,
+                tdd: latest.tdd,
+                insulin: latest.insulin,
+                current_target: current_target,
+                insulinForManualBolus: latest.insulinForManualBolus,
+                manualBolusErrorString: latest.manualBolusErrorString,
+                minDelta: latest.minDelta,
+                expectedDelta: latest.expectedDelta,
+                minGuardBG: minGuardBG,
+                minPredBG: minPredBG,
+                threshold: threshold,
+                carbRatio: latest.carbRatio,
+                received: received
+            )
+        }
 
         let openapsStatus = OpenAPSStatus(
             iob: iob?.first,
