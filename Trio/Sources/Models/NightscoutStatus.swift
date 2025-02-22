@@ -60,9 +60,21 @@ struct NightscoutProfileStore: JSON {
     let teamID: String
 }
 
+/*
+ struct NightscoutPresetOverride: JSON {
+     let name: String
+     let duration: Decimal?
+     let percentage: Double?
+     let target: Decimal?
+ }
+ */
+
 struct NightscoutPresetOverride: JSON {
     let name: String
     let duration: Decimal?
     let percentage: Double?
     let target: Decimal?
+    let smbMinutes: Decimal?
+    let uamMinutes: Decimal?
+    let smbIsOff: Bool
 }
