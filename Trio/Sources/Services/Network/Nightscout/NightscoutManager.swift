@@ -682,11 +682,20 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             battery: Int(batteryLevel * 100),
             isCharging: batteryState == .charging || batteryState == .full
         )
+        let userPreferences = storage.retrieve(OpenAPS.Settings.preferences, as: Preferences.self)
+        let additionalInfo: [String: Decimal] = [
+            "maxSMBBasalMinutes": userPreferences?.maxSMBBasalMinutes ?? 30,
+            "maxUAMSMBBasalMinutes": userPreferences?.maxUAMSMBBasalMinutes ?? 30
+        ]
+
+        debug(.nightscout, "Additional Info: \(additionalInfo)")
+
         let status = NightscoutStatus(
             device: NightscoutTreatment.local,
             openaps: openapsStatus,
             pump: pump,
-            uploader: uploader
+            uploader: uploader,
+            additional: additionalInfo
         )
 
         do {
