@@ -685,7 +685,9 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         let userPreferences = storage.retrieve(OpenAPS.Settings.preferences, as: Preferences.self)
         let additionalInfo: [String: Decimal] = [
             "maxSMBBasalMinutes": userPreferences?.maxSMBBasalMinutes ?? 30,
-            "maxUAMSMBBasalMinutes": userPreferences?.maxUAMSMBBasalMinutes ?? 30
+            "maxUAMSMBBasalMinutes": userPreferences?.maxUAMSMBBasalMinutes ?? 30,
+            "autosensMax": userPreferences?.autosensMax ?? 1.2,
+            "autosensMin": userPreferences?.autosensMin ?? 0.7
         ]
 
         debug(.nightscout, "Additional Info: \(additionalInfo)")
@@ -913,6 +915,8 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
                 )
                 let defaultProfile = "default"
 
+                let preferences = NightscoutPreferences(preferences: settingsManager.preferences)
+
                 let now = Date()
 
                 let bundleIdentifier = Bundle.main.bundleIdentifier ?? ""
@@ -932,7 +936,8 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
                     deviceToken: deviceToken,
                     isAPNSProduction: isAPNSProduction,
                     overridePresets: presetOverrides,
-                    teamID: teamID
+                    teamID: teamID,
+                    preferences: preferences
                 )
 
                 guard let nightscout = nightscoutAPI, isNetworkReachable else {

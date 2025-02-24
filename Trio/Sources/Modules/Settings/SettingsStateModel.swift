@@ -54,6 +54,14 @@ extension Settings {
             return items
         }
 
+        func uploadProfile() async {
+            guard let nightscoutManager = nightscoutManager else {
+                print("❌ NightscoutManager is nil in StateModel")
+                return
+            }
+            await nightscoutManager.uploadProfiles()
+        }
+
         func hideSettingsModal() {
             hideModal()
         }

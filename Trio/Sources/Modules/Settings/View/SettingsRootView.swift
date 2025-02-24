@@ -188,6 +188,30 @@ extension Settings {
                         }
                     ).listRowBackground(Color.chart)
 
+                    Section(
+                        // header: Text(""),
+                        content: {
+                            Toggle("Developer Options", isOn: $state.debugOptions)
+                            if state.debugOptions {
+                                Button {
+                                    Task {
+                                        await state.uploadProfile()
+                                    }
+                                } label: {
+                                    HStack {
+                                        Text("Upload Profile to Nightscout")
+                                            .foregroundColor(.primary)
+                                        Spacer()
+                                        Image(systemName: "chevron.right")
+                                            .foregroundColor(.secondary)
+                                            .font(.footnote)
+                                    }
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                        }
+                    ).listRowBackground(Color.chart)
+
                 } else {
                     Section(
                         header: Text("Search Results"),
