@@ -217,14 +217,14 @@ extension Adjustments.StateModel {
     @MainActor func setCurrentOverride(from IDs: [NSManagedObjectID]) async {
         do {
             guard let firstID = IDs.first else {
-                activeOverrideName = "Custom Override"
+                activeOverrideName = "🛠️ Anpassad Override"
                 currentActiveOverride = nil
                 return
             }
 
             if let overrideToEdit = try viewContext.existingObject(with: firstID) as? OverrideStored {
                 currentActiveOverride = overrideToEdit
-                activeOverrideName = overrideToEdit.name ?? "Custom Override"
+                activeOverrideName = overrideToEdit.name ?? "🛠️ Anpassad Override"
             }
         } catch {
             debugPrint(
@@ -248,7 +248,7 @@ extension Adjustments.StateModel {
 
             if let overrideToEdit = try viewContext.existingObject(with: duplicateId) as? OverrideStored {
                 currentActiveOverride = overrideToEdit
-                activeOverrideName = overrideToEdit.name ?? "Custom Override"
+                activeOverrideName = overrideToEdit.name ?? "🛠️ Anpassad Override"
             }
         } catch {
             debugPrint(

@@ -575,7 +575,7 @@ struct EditOverrideForm: View {
 
     private func saveChanges() {
         if !override.isPreset, hasChanges, name == (override.name ?? "") {
-            override.name = "Custom Override"
+            override.name = "🛠️ Anpassad Override"
         } else {
             override.name = name
         }

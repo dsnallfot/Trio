@@ -6,11 +6,21 @@ extension NSPredicate {
         NSPredicate(format: "isPreset == %@", true as NSNumber)
     }
 
+    /*
+     static var lastActiveOverride: NSPredicate {
+         let date = Date.oneDayAgo
+         return NSPredicate(
+             format: "date >= %@ AND enabled == %@",
+             date as NSDate,
+             true as NSNumber
+         )
+     }
+     */
     static var lastActiveOverride: NSPredicate {
-        let date = Date.oneDayAgo
+        let oneDayAgo = Date.oneDayAgo
         return NSPredicate(
             format: "date >= %@ AND enabled == %@",
-            date as NSDate,
+            oneDayAgo as NSDate,
             true as NSNumber
         )
     }

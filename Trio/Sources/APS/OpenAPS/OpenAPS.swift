@@ -797,8 +797,21 @@ extension OpenAPS {
         ) as? [TempTargetStored] ?? []
     }
 
+    /*
+        func fetchActiveOverrides() -> [OverrideStored] {
+            CoreDataStack.shared.fetchEntities(
+                ofType: OverrideStored.self,
+                onContext: context,
+                predicate: NSPredicate.lastActiveOverride,
+                key: "date",
+                ascending: false,
+                fetchLimit: 1
+            ) as? [OverrideStored] ?? []
+        }
+     */
     func fetchActiveOverrides() -> [OverrideStored] {
-        CoreDataStack.shared.fetchEntities(
+        let now = Date()
+        let fetchedOverrides = CoreDataStack.shared.fetchEntities(
             ofType: OverrideStored.self,
             onContext: context,
             predicate: NSPredicate.lastActiveOverride,
@@ -806,6 +819,13 @@ extension OpenAPS {
             ascending: false,
             fetchLimit: 1
         ) as? [OverrideStored] ?? []
+
+        // Daniel: Apply expiration filtering to hopefully avoid stuck override bug
+        return fetchedOverrides.filter { override in
+            guard let duration = override.duration?.doubleValue else { return false }
+            let expirationDate = override.date?.addingTimeInterval(duration) ?? Date.distantPast
+            return expirationDate > now
+        }
     }
 
     func fetchHistoricalTDDData(from date: Date) -> [[String: Any]] {

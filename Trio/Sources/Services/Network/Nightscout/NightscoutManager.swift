@@ -1223,22 +1223,53 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         }
         do {
             for var override in overrides {
-                // Fetch existing override from Nightscout
-                if let existingOverride = try await nightscout.fetchOverrideFromNightscout(withID: override.id ?? UUID()) {
-                    // If the duration has changed, delete the existing override
-                    if let existingDuration = existingOverride.duration,
-                       let newDuration = override.duration,
-                       existingDuration != newDuration
-                    {
-                        try await nightscout.deleteOverride(withID: existingOverride.id ?? UUID())
+                // Fetch existing override locally from Core Data
+                if let overrideID = override.id,
+                   let existingOverride = await overridesStorage.fetchOverrideByID(overrideID)
+                {
+                    var shouldReupload = false
 
-                        // Assign a new ID to the override before re-uploading
-                        override.id = UUID()
+                    if !existingOverride.isFault {
+                        // Check for differences in duration
+                        let existingDuration = existingOverride.duration
+                        let newDuration = override.duration // Int?
+
+                        // Check for differences in indefinite status
+                        let existingIndefinite = existingOverride.indefinite
+                        let newIndefinite = override.indefinite
+
+                        if existingIndefinite != (newIndefinite != nil) {
+                            // The indefinite status changed
+                            shouldReupload = true
+                        } else if (newIndefinite != nil) == false {
+                            // For non-indefinite overrides, compare durations
+                            if let existingDuration = existingDuration,
+                               let newDuration = newDuration
+                            {
+                                let existingDurationValue = existingDuration.intValue
+
+                                if existingDurationValue != newDuration {
+                                    shouldReupload = true
+                                }
+                            } else if (existingDuration == nil) != (newDuration == nil) {
+                                // One is nil and the other isn't
+                                shouldReupload = true
+                            }
+                        }
+
+                        if shouldReupload {
+                            try await nightscout.deleteOverride(withID: overrideID)
+                            // Assign a new ID to the override before re-uploading
+                            override.id = UUID()
+                        }
                     }
-                }
 
-                // Upload the override (whether new or updated with a new ID)
-                try await nightscout.uploadOverrides([override])
+                    // Upload the override (whether new or updated with a new ID)
+                    try await nightscout.uploadOverrides([override])
+                } else {
+                    // If no existing override is found locally, just upload it
+                    try await nightscout.uploadOverrides([override])
+                }
             }
 
             // Update as uploaded in Core Data

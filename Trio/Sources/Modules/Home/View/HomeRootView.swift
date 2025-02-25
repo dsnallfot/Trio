@@ -512,7 +512,7 @@ extension Home {
                     .font(.title)
                     .foregroundStyle(Color.primary, Color.primary)
                 VStack(alignment: .leading) {
-                    Text(latestOverride.first?.name ?? "Custom Override")
+                    Text(latestOverride.first?.name ?? "🛠️ Anpassad Override")
                         .font(.subheadline)
                         .frame(alignment: .leading)
 

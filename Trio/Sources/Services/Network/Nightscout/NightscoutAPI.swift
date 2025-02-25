@@ -457,7 +457,7 @@ extension NightscoutAPI {
         }
     }
 
-    func fetchOverrideFromNightscout(withID id: UUID) async throws -> NightscoutExercise? {
+    func deleteOverride(withID id: UUID) async throws {
         var components = URLComponents()
         components.scheme = url.scheme
         components.host = url.host
@@ -467,37 +467,9 @@ extension NightscoutAPI {
             URLQueryItem(name: "find[id][$eq]", value: id.uuidString)
         ]
 
-        guard let url = components.url else { throw URLError(.badURL) }
-
-        var request = URLRequest(url: url)
-        request.timeoutInterval = Config.timeout
-        request.httpMethod = "GET"
-
-        if let secret = secret {
-            request.addValue(secret.sha1(), forHTTPHeaderField: "api-secret")
+        guard let url = components.url else {
+            throw URLError(.badURL)
         }
-
-        let (data, response) = try await URLSession.shared.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse, (200 ... 299).contains(httpResponse.statusCode) else {
-            return nil
-        }
-
-        let existingOverrides = try JSONDecoder().decode([NightscoutExercise].self, from: data)
-        return existingOverrides.first
-    }
-
-    func deleteOverride(withID id: UUID) async {
-        var components = URLComponents()
-        components.scheme = url.scheme
-        components.host = url.host
-        components.port = url.port
-        components.path = Config.treatmentsPath
-        components.queryItems = [
-            URLQueryItem(name: "find[id][$eq]", value: id.uuidString)
-        ]
-
-        guard let url = components.url else { return }
 
         var request = URLRequest(url: url)
         request.timeoutInterval = Config.timeout
@@ -507,16 +479,14 @@ extension NightscoutAPI {
             request.addValue(secret.sha1(), forHTTPHeaderField: "api-secret")
         }
 
-        do {
-            let (_, response) = try await URLSession.shared.data(for: request)
-            guard let httpResponse = response as? HTTPURLResponse, (200 ... 299).contains(httpResponse.statusCode) else {
-                debug(.nightscout, "Failed to delete override")
-                return
-            }
-            debug(.nightscout, "Override deleted")
-        } catch {
-            debug(.nightscout, "Error deleting override: \(error.localizedDescription)")
+        let (_, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse, (200 ... 299).contains(httpResponse.statusCode) else {
+            debug(.nightscout, "Failed to delete override")
+            throw URLError(.badServerResponse)
         }
+
+        debug(.nightscout, "Override deleted")
     }
 
     func uploadOverrides(_ overrides: [NightscoutExercise]) async throws {
