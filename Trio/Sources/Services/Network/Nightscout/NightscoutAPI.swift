@@ -457,6 +457,36 @@ extension NightscoutAPI {
         }
     }
 
+    func fetchOverrideFromNightscout(withID id: UUID) async throws -> NightscoutExercise? {
+        var components = URLComponents()
+        components.scheme = url.scheme
+        components.host = url.host
+        components.port = url.port
+        components.path = Config.treatmentsPath
+        components.queryItems = [
+            URLQueryItem(name: "find[id][$eq]", value: id.uuidString)
+        ]
+
+        guard let url = components.url else { throw URLError(.badURL) }
+
+        var request = URLRequest(url: url)
+        request.timeoutInterval = Config.timeout
+        request.httpMethod = "GET"
+
+        if let secret = secret {
+            request.addValue(secret.sha1(), forHTTPHeaderField: "api-secret")
+        }
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse, (200 ... 299).contains(httpResponse.statusCode) else {
+            return nil
+        }
+
+        let existingOverrides = try JSONDecoder().decode([NightscoutExercise].self, from: data)
+        return existingOverrides.first
+    }
+
     func deleteOverride(withID id: UUID) async throws {
         var components = URLComponents()
         components.scheme = url.scheme

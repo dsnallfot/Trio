@@ -822,9 +822,26 @@ extension OpenAPS {
 
         // Daniel: Apply expiration filtering to hopefully avoid stuck override bug
         return fetchedOverrides.filter { override in
-            guard let duration = override.duration?.doubleValue else { return false }
-            let expirationDate = override.date?.addingTimeInterval(duration) ?? Date.distantPast
-            return expirationDate > now
+            let startDate = override.date ?? Date.distantPast
+            let durationMinutes = override.duration?.doubleValue ?? 0
+            let durationSeconds = durationMinutes * 60
+            let expirationDate = startDate.addingTimeInterval(durationSeconds)
+
+            let isIndefinite = override.indefinite
+            let isValid = isIndefinite || expirationDate > now
+
+//            print("""
+//            Override: \(override)
+//            Indefinite: \(isIndefinite)
+//            Start Date: \(startDate)
+//            Duration (Minutes): \(durationMinutes)
+//            Duration (Seconds): \(durationSeconds)
+//            Expiration Date: \(expirationDate)
+//            Now: \(now)
+//            Passes filter: \(isValid)
+//            """)
+//
+            return isValid
         }
     }
 

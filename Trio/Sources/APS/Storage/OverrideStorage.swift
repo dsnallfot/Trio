@@ -14,7 +14,6 @@ protocol OverrideStorage {
     func getOverrideRunsNotYetUploadedToNightscout() async -> [NightscoutExercise]
     func getPresetOverridesForNightscout() async -> [NightscoutPresetOverride]
     func fetchLatestActiveOverride() async -> NSManagedObjectID?
-    func fetchOverrideByID(_ id: UUID) async -> OverrideStored?
 }
 
 final class BaseOverrideStorage: @preconcurrency OverrideStorage, Injectable {
@@ -268,35 +267,6 @@ final class BaseOverrideStorage: @preconcurrency OverrideStorage, Injectable {
         }
     }
 
-    /*
-        func getPresetOverridesForNightscout() async -> [NightscoutPresetOverride] {
-            let results = await CoreDataStack.shared.fetchEntitiesAsync(
-                ofType: OverrideStored.self,
-                onContext: backgroundContext,
-                predicate: NSPredicate.allOverridePresets,
-                key: "orderPosition",
-                ascending: true
-            )
-
-            return await backgroundContext.perform {
-                guard let fetchedResults = results as? [OverrideStored] else { return [] }
-
-                return fetchedResults.map { overrideStored in
-                    let duration = overrideStored.duration as? Decimal != 0 ? overrideStored.duration as? Decimal : nil
-                    let percentage = overrideStored.percentage != 0 ? overrideStored.percentage : nil
-                    let target = (overrideStored.target as? Decimal) != 0 ? overrideStored.target as? Decimal : nil
-
-                    return NightscoutPresetOverride(
-                        name: overrideStored.name ?? "",
-                        duration: duration,
-                        percentage: percentage,
-                        target: target
-                    )
-                }
-            }
-        }
-     */
-
     func getPresetOverridesForNightscout() async -> [NightscoutPresetOverride] {
         let results = await CoreDataStack.shared.fetchEntitiesAsync(
             ofType: OverrideStored.self,
@@ -345,24 +315,6 @@ final class BaseOverrideStorage: @preconcurrency OverrideStorage, Injectable {
             else { return nil }
 
             return latestOverride.objectID
-        }
-    }
-
-    func fetchOverrideByID(_ id: UUID) async -> OverrideStored? {
-        let predicate = NSPredicate(format: "id == %@", id.uuidString)
-        let results = await CoreDataStack.shared.fetchEntitiesAsync(
-            ofType: OverrideStored.self,
-            onContext: backgroundContext,
-            predicate: predicate,
-            key: "date",
-            ascending: false,
-            fetchLimit: 1
-        )
-
-        return await backgroundContext.perform {
-            guard let fetchedResults = results as? [OverrideStored],
-                  let override = fetchedResults.first else { return nil }
-            return override
         }
     }
 }
