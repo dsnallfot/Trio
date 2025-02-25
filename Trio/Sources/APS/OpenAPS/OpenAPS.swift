@@ -816,12 +816,11 @@ extension OpenAPS {
             onContext: context,
             predicate: NSPredicate.lastActiveOverride,
             key: "date",
-            ascending: false,
-            fetchLimit: 1
+            ascending: false
         ) as? [OverrideStored] ?? []
 
         // Daniel: Apply expiration filtering to hopefully avoid stuck override bug
-        return fetchedOverrides.filter { override in
+        let validOverrides = fetchedOverrides.filter { override in
             let startDate = override.date ?? Date.distantPast
             let durationMinutes = override.duration?.doubleValue ?? 0
             let durationSeconds = durationMinutes * 60
@@ -843,6 +842,13 @@ extension OpenAPS {
 //
             return isValid
         }
+
+        // Ensure we only keep the most recent override
+        let mostRecentOverride = validOverrides.sorted {
+            ($0.date ?? .distantPast) > ($1.date ?? .distantPast)
+        }.first
+
+        return mostRecentOverride.map { [$0] } ?? []
     }
 
     func fetchHistoricalTDDData(from date: Date) -> [[String: Any]] {

@@ -554,11 +554,11 @@ extension Home {
             Image(systemName: "xmark.app")
                 .font(.title)
                 .confirmationDialog(
-                    "Stop the Temp Target \"\(latestTempTarget.first?.name ?? "")\"?",
+                    "Stoppa Tillfälligt mål \"\(latestTempTarget.first?.name ?? "")\"?",
                     isPresented: $isConfirmStopTempTargetShown,
                     titleVisibility: .visible
                 ) {
-                    Button("Stop", role: .destructive) {
+                    Button("Stoppa", role: .destructive) {
                         Task {
                             guard let objectID = latestTempTarget.first?.objectID else { return }
                             await state.cancelTempTarget(withID: objectID)
@@ -578,11 +578,11 @@ extension Home {
             Image(systemName: "xmark.app")
                 .font(.title)
                 .confirmationDialog(
-                    "Stop the Override \"\(latestOverride.first?.name ?? "")\"?",
+                    "Stoppa Override \"\(latestOverride.first?.name ?? "")\"?",
                     isPresented: $isConfirmStopOverridePresented,
                     titleVisibility: .visible
                 ) {
-                    Button("Stop", role: .destructive) {
+                    Button("Stoppa", role: .destructive) {
                         Task {
                             guard let objectID = latestOverride.first?.objectID else { return }
                             await state.cancelOverride(withID: objectID)

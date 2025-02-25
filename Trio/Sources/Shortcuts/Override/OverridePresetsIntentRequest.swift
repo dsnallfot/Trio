@@ -81,64 +81,6 @@ import UIKit
         }
     }
 
-    /*
-       @MainActor func enactOverride(_ preset: OverridePreset) async -> Bool {
-           // Start background task
-           var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
-           backgroundTaskID = UIApplication.shared.beginBackgroundTask(withName: "Override Upload") {
-               guard backgroundTaskID != .invalid else { return }
-               Task {
-                   // End background task when the time is about to expire
-                   UIApplication.shared.endBackgroundTask(backgroundTaskID)
-               }
-               backgroundTaskID = .invalid
-           }
-
-           // Defer block to end background task when function exits
-           defer {
-               if backgroundTaskID != .invalid {
-                   Task {
-                       UIApplication.shared.endBackgroundTask(backgroundTaskID)
-                   }
-                   backgroundTaskID = .invalid
-               }
-           }
-
-           do {
-               // Get NSManagedObjectID of Preset
-               guard let overrideID = await fetchOverrideID(preset),
-                     let overrideObject = try viewContext.existingObject(with: overrideID) as? OverrideStored
-               else { return false }
-
-               // Enable Override
-               overrideObject.enabled = true
-               overrideObject.date = Date()
-               overrideObject.isUploadedToNS = false
-
-               // Disable previous overrides if necessary, without starting a background task
-               await disableAllActiveOverrides(except: overrideID, createOverrideRunEntry: true, shouldStartBackgroundTask: false)
-
-               if viewContext.hasChanges {
-                   try viewContext.save()
-
-                   // Update State variables in OverrideView
-                   Foundation.NotificationCenter.default.post(name: .willUpdateOverrideConfiguration, object: nil)
-
-                   // Await the notification
-                   print("Waiting for notification...")
-                   await awaitNotification(.didUpdateOverrideConfiguration)
-                   print("Notification received, continuing...")
-
-                   return true
-               }
-           } catch {
-               // Handle error and ensure background task is ended
-               debugPrint("Failed to enact Override: \(error.localizedDescription)")
-           }
-
-           return false
-       }
-     */
     @MainActor func enactOverride(_ preset: OverridePreset) async -> Bool {
         // Ensure any previous background task is ended before starting a new one
         if previousTaskID != .invalid {
@@ -156,8 +98,8 @@ import UIKit
             }
             backgroundTaskID = .invalid
         }
-        previousTaskID = currentBackgroundTaskID // Store old task to ensure cleanup
-        currentBackgroundTaskID = backgroundTaskID // Store new task ID
+        previousTaskID = currentBackgroundTaskID
+        currentBackgroundTaskID = backgroundTaskID
 
         // Define a helper function to ensure proper background task cleanup
         func endBackgroundTask() {
@@ -173,6 +115,9 @@ import UIKit
         }
 
         do {
+            // **Disable all previous overrides before proceeding**
+            await disableAllActiveOverrides(createOverrideRunEntry: true, shouldStartBackgroundTask: false)
+
             // Get NSManagedObjectID of Preset
             guard let overrideID = await fetchOverrideID(preset),
                   let overrideObject = try viewContext.existingObject(with: overrideID) as? OverrideStored
@@ -182,13 +127,9 @@ import UIKit
             }
 
             // Enable Override
-            let previousState = overrideObject.enabled
             overrideObject.enabled = true
             overrideObject.date = Date()
             overrideObject.isUploadedToNS = false
-
-            // Disable previous overrides if necessary, without starting a background task
-            await disableAllActiveOverrides(except: overrideID, createOverrideRunEntry: true, shouldStartBackgroundTask: false)
 
             if viewContext.hasChanges {
                 try viewContext.save()
@@ -198,7 +139,7 @@ import UIKit
                 Foundation.NotificationCenter.default.post(name: .willUpdateOverrideConfiguration, object: nil)
             } else {
                 debugPrint("ℹ️ No changes detected in Core Data, but override is already active.")
-                endBackgroundTask() // ✅ Ensure task ends even if no changes were detected
+                endBackgroundTask()
                 return true
             }
 
@@ -213,14 +154,13 @@ import UIKit
                 debugPrint("⚠️ Skipping duplicate notification wait.")
             }
 
-            // End background task early if everything is done
             endBackgroundTask()
 
             return true
 
         } catch {
             debugPrint("❌ Failed to enact Override: \(error.localizedDescription)")
-            endBackgroundTask() // Ensure background task is ended in case of failure
+            endBackgroundTask()
             return false
         }
     }
@@ -229,96 +169,7 @@ import UIKit
         await disableAllActiveOverrides(createOverrideRunEntry: true, shouldStartBackgroundTask: true)
     }
 
-    /*
-     @MainActor func disableAllActiveOverrides(
-         except overrideID: NSManagedObjectID? = nil,
-         createOverrideRunEntry: Bool,
-         shouldStartBackgroundTask: Bool = true
-     ) async {
-         var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
-
-         if shouldStartBackgroundTask {
-             // Start background task
-             backgroundTaskID = UIApplication.shared.beginBackgroundTask(withName: "Override Cancel") {
-                 guard backgroundTaskID != .invalid else { return }
-                 Task {
-                     // End background task when the time is about to expire
-                     UIApplication.shared.endBackgroundTask(backgroundTaskID)
-                 }
-                 backgroundTaskID = .invalid
-             }
-         }
-
-         // Defer block to end background task when function exits, only if it was started
-         defer {
-             if shouldStartBackgroundTask, backgroundTaskID != .invalid {
-                 Task {
-                     UIApplication.shared.endBackgroundTask(backgroundTaskID)
-                 }
-                 backgroundTaskID = .invalid
-             }
-         }
-
-         // Get NSManagedObjectID of all active overrides
-         let ids = await overrideStorage.loadLatestOverrideConfigurations(fetchLimit: 0) // 0 = no fetch limit
-
-         do {
-             // Fetch existing OverrideStored objects
-             let results = try ids.compactMap { id in
-                 try self.viewContext.existingObject(with: id) as? OverrideStored
-             }
-
-             // Return early if no results
-             guard !results.isEmpty else { return }
-
-             // Create OverrideRunStored entry if needed
-             if createOverrideRunEntry, let canceledOverride = results.first {
-                 let newOverrideRunStored = OverrideRunStored(context: viewContext)
-                 newOverrideRunStored.id = UUID()
-                 newOverrideRunStored.name = canceledOverride.name
-                 newOverrideRunStored.startDate = canceledOverride.date ?? .distantPast
-                 newOverrideRunStored.endDate = Date()
-                 newOverrideRunStored.target = NSDecimalNumber(
-                     decimal: overrideStorage.calculateTarget(override: canceledOverride)
-                 )
-                 newOverrideRunStored.override = canceledOverride
-                 newOverrideRunStored.isUploadedToNS = false
-             }
-
-             // Disable all overrides except the one specified
-             for overrideToCancel in results {
-                 if overrideToCancel.objectID != overrideID {
-                     let endTime = overrideToCancel.date?
-                         .addingTimeInterval(TimeInterval(truncating: overrideToCancel.duration ?? 0))
-                     debugPrint(
-                         "Disabling override: \(overrideToCancel.name ?? "Unnamed") with end time: \(endTime?.description ?? "Unknown")"
-                     )
-                     overrideToCancel.enabled = false
-                     overrideToCancel.isUploadedToNS = false
-                 }
-             }
-
-             if viewContext.hasChanges {
-                 try viewContext.save()
-
-                 // Update State variables in OverrideView
-                 Foundation.NotificationCenter.default.post(name: .willUpdateOverrideConfiguration, object: nil)
-             }
-
-             // Await the notification
-             print("Waiting for notification...")
-             await awaitNotification(.didUpdateOverrideConfiguration)
-             print("Notification received, continuing...")
-
-         } catch {
-             debugPrint(
-                 "\(DebuggingIdentifiers.failed) \(#file) \(#function) Failed to disable active Overrides with error: \(error.localizedDescription)"
-             )
-         }
-     }
-     */
     @MainActor func disableAllActiveOverrides(
-        except overrideID: NSManagedObjectID? = nil,
         createOverrideRunEntry: Bool,
         shouldStartBackgroundTask: Bool = true
     ) async {
@@ -376,17 +227,15 @@ import UIKit
                 newOverrideRunStored.isUploadedToNS = false
             }
 
-            // Disable all overrides except the one specified
+            // Disable all active overrides
             for overrideToCancel in results {
-                if overrideToCancel.objectID != overrideID {
-                    let endTime = overrideToCancel.date?
-                        .addingTimeInterval(TimeInterval(truncating: overrideToCancel.duration ?? 0))
-                    debugPrint(
-                        "Disabling override: \(overrideToCancel.name ?? "Unnamed") with end time: \(endTime?.description ?? "Unknown")"
-                    )
-                    overrideToCancel.enabled = false
-                    overrideToCancel.isUploadedToNS = false
-                }
+                let endTime = overrideToCancel.date?
+                    .addingTimeInterval(TimeInterval(truncating: overrideToCancel.duration ?? 0))
+                debugPrint(
+                    "Disabling override: \(overrideToCancel.name ?? "Unnamed") with end time: \(endTime?.description ?? "Unknown")"
+                )
+                overrideToCancel.enabled = false
+                overrideToCancel.isUploadedToNS = false
             }
 
             if viewContext.hasChanges {
