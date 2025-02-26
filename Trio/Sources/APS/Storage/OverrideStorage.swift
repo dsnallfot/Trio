@@ -224,6 +224,7 @@ final class BaseOverrideStorage: @preconcurrency OverrideStorage, Injectable {
 
             return fetchedOverrides.map { override in
                 let duration = override.indefinite ? 43200 : override.duration ?? 0 // 43200 min = 30 days
+                // let duration = override.indefinite ? 1440 : override.duration ?? 0 // 1440 min = 24 h
                 return NightscoutExercise(
                     duration: Int(truncating: duration),
                     eventType: OverrideStored.EventType.nsExercise,
