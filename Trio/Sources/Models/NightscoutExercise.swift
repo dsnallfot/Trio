@@ -26,5 +26,6 @@ extension NightscoutExercise {
         case createdAt = "created_at"
         case enteredBy
         case notes
+        case id
     }
 }

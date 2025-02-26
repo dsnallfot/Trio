@@ -1222,25 +1222,11 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             return
         }
         do {
-            for var override in overrides {
-                // Fetch existing override from Nightscout
-                if let existingOverride = try await nightscout.fetchOverrideFromNightscout(withID: override.id ?? UUID()) {
-                    // If the duration has changed, delete the existing override
-                    if let existingDuration = existingOverride.duration,
-                       let newDuration = override.duration,
-                       existingDuration != newDuration
-                    {
-                        try await nightscout.deleteOverride(withID: existingOverride.id ?? UUID())
-
-                        // Assign a new ID to the override before re-uploading
-                        override.id = UUID()
-                    }
-                }
-                // Upload the override (whether new or updated with a new ID)
-                try await nightscout.uploadOverrides([override])
+            for chunk in overrides.chunks(ofCount: 100) {
+                try await nightscout.uploadOverrides(Array(chunk))
             }
 
-            // Update as uploaded in Core Data
+            // If successful, update the isUploadedToNS property of the OverrideStored objects
             await updateOverridesAsUploaded(overrides)
 
             debug(.nightscout, "Overrides uploaded")
