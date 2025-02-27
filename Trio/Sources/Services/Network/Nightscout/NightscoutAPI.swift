@@ -473,7 +473,10 @@ extension NightscoutAPI {
             throw URLError(.badURL)
         }
 
-        debug(.nightscout, "Fetching override with created_at: \(createdAt) using URL: \(url.absoluteString)")
+        debug(
+            .nightscout,
+            "OVERRIDE TEMP DEBUGGING: Fetching override with created_at: \(createdAt) using URL: \(url.absoluteString)"
+        )
 
         var request = URLRequest(url: url)
         request.timeoutInterval = Config.timeout
@@ -513,7 +516,7 @@ extension NightscoutAPI {
     }
 
     // Updated deleteOverride to match by "created_at"
-    func deleteOverride(withCreatedAt createdAt: String) async {
+    func deleteOverride(withCreatedAt createdAt: String) async throws {
         var components = URLComponents()
         components.scheme = url.scheme
         components.host = url.host
@@ -524,11 +527,14 @@ extension NightscoutAPI {
         ]
 
         guard let url = components.url else {
-            debug(.nightscout, "Invalid URL when deleting override with created_at: \(createdAt)")
-            return
+            debug(.nightscout, "OVERRIDE TEMP DEBUGGING: Invalid URL when deleting override with created_at: \(createdAt)")
+            throw URLError(.badURL)
         }
 
-        debug(.nightscout, "Attempting to delete override with created_at: \(createdAt) using URL: \(url.absoluteString)")
+        debug(
+            .nightscout,
+            "OVERRIDE TEMP DEBUGGING: Attempting to delete override with created_at: \(createdAt) using URL: \(url.absoluteString)"
+        )
 
         var request = URLRequest(url: url)
         request.timeoutInterval = Config.timeout
@@ -538,18 +544,13 @@ extension NightscoutAPI {
             request.addValue(secret.sha1(), forHTTPHeaderField: "api-secret")
         }
 
-        do {
-            let (_, response) = try await URLSession.shared.data(for: request)
-            if let httpResponse = response as? HTTPURLResponse, (200 ... 299).contains(httpResponse.statusCode) {
-                debug(.nightscout, "Successfully deleted override with created_at: \(createdAt)")
-            } else {
-                debug(
-                    .nightscout,
-                    "Failed to delete override with created_at: \(createdAt). HTTP status code: \((response as? HTTPURLResponse)?.statusCode ?? 0)"
-                )
-            }
-        } catch {
-            debug(.nightscout, "Error deleting override with created_at: \(createdAt): \(error.localizedDescription)")
+        let (_, response) = try await URLSession.shared.data(for: request)
+        if let httpResponse = response as? HTTPURLResponse, (200 ... 299).contains(httpResponse.statusCode) {
+            debug(.nightscout, "Successfully deleted override with created_at: \(createdAt)")
+        } else {
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+            debug(.nightscout, "Failed to delete override with created_at: \(createdAt). HTTP status code: \(statusCode)")
+            throw URLError(.badServerResponse)
         }
     }
 

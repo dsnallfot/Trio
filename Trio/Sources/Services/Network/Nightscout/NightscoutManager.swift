@@ -1239,18 +1239,21 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
 
     private func uploadOverrides(_ overrides: [NightscoutExercise]) async {
         guard !overrides.isEmpty, let nightscout = nightscoutAPI, isUploadEnabled else {
-            debug(.nightscout, "No overrides to upload or upload not enabled")
+            debug(.nightscout, "OVERRIDE TEMP DEBUGGING: No overrides to upload or upload not enabled")
             return
         }
         do {
-            for var override in overrides {
-                debug(.nightscout, "Processing override with created_at: \(override.created_at)")
+            for override in overrides {
+                // Ensure that the created_at value is a valid String
+                guard let createdAt = override.created_at as? String else {
+                    debug(.nightscout, "OVERRIDE TEMP DEBUGGING: Invalid created_at value for override; skipping")
+                    continue
+                }
+                debug(.nightscout, "OVERRIDE TEMP DEBUGGING: Processing override with created_at: \(createdAt)")
 
                 // Fetch existing override from Nightscout based on created_at
-                if let existingOverride = try await nightscout
-                    .fetchOverrideFromNightscout(withCreatedAt: override.created_at as! String)
-                {
-                    debug(.nightscout, "Existing override found for created_at: \(override.created_at)")
+                if let existingOverride = try await nightscout.fetchOverrideFromNightscout(withCreatedAt: createdAt) {
+                    debug(.nightscout, "OVERRIDE TEMP DEBUGGING: Existing override found for created_at: \(createdAt)")
 
                     // If the duration has changed, delete the existing override
                     if let existingDuration = existingOverride.duration,
@@ -1259,27 +1262,34 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
                     {
                         debug(
                             .nightscout,
-                            "Duration changed from \(existingDuration) to \(newDuration), deleting existing override"
+                            "OVERRIDE TEMP DEBUGGING: Duration changed from \(existingDuration) to \(newDuration), deleting existing override"
                         )
-                        try await nightscout.deleteOverride(withCreatedAt: existingOverride.created_at as! String)
-
-                        // Assign a new ID to the override before re-uploading
-                        override.id = UUID()
-                        debug(.nightscout, "Assigned new ID to override: \(override.id?.uuidString ?? "nil")")
+                        // Ensure the existing override's created_at is a valid String
+                        if let existingCreatedAt = existingOverride.created_at as? String {
+                            try await nightscout.deleteOverride(withCreatedAt: existingCreatedAt)
+                        } else {
+                            debug(
+                                .nightscout,
+                                "OVERRIDE TEMP DEBUGGING: Invalid existing override created_at; cannot delete override"
+                            )
+                        }
                     } else {
                         debug(
                             .nightscout,
-                            "No changes detected in duration for created_at: \(override.created_at); skipping deletion"
+                            "OVERRIDE TEMP DEBUGGING: No changes detected in duration for created_at: \(createdAt); skipping deletion"
                         )
                     }
                 } else {
-                    debug(.nightscout, "No existing override found for created_at: \(override.created_at), uploading as new")
+                    debug(
+                        .nightscout,
+                        "OVERRIDE TEMP DEBUGGING: No existing override found for created_at: \(createdAt), uploading as new"
+                    )
                 }
 
-                // Upload the override (whether new or updated with a new ID)
-                debug(.nightscout, "Uploading override with created_at: \(override.created_at)")
+                // Upload the override (whether new or updated)
+                debug(.nightscout, "OVERRIDE TEMP DEBUGGING: Uploading override with created_at: \(createdAt)")
                 try await nightscout.uploadOverrides([override])
-                debug(.nightscout, "Override uploaded successfully for created_at: \(override.created_at)")
+                debug(.nightscout, "OVERRIDE TEMP DEBUGGING: Override uploaded successfully for created_at: \(createdAt)")
             }
 
             // Mark overrides as uploaded in Core Data
@@ -1290,6 +1300,60 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         }
     }
 
+    /*
+     private func uploadOverrides(_ overrides: [NightscoutExercise]) async {
+         guard !overrides.isEmpty, let nightscout = nightscoutAPI, isUploadEnabled else {
+             debug(.nightscout, "No overrides to upload or upload not enabled")
+             return
+         }
+         do {
+             for var override in overrides {
+                 debug(.nightscout, "Processing override with created_at: \(override.created_at)")
+
+                 // Fetch existing override from Nightscout based on created_at
+                 if let existingOverride = try await nightscout
+                     .fetchOverrideFromNightscout(withCreatedAt: override.created_at as! String)
+                 {
+                     debug(.nightscout, "Existing override found for created_at: \(override.created_at)")
+
+                     // If the duration has changed, delete the existing override
+                     if let existingDuration = existingOverride.duration,
+                        let newDuration = override.duration,
+                        existingDuration != newDuration
+                     {
+                         debug(
+                             .nightscout,
+                             "Duration changed from \(existingDuration) to \(newDuration), deleting existing override"
+                         )
+                         try await nightscout.deleteOverride(withCreatedAt: existingOverride.created_at as! String)
+
+                         // Assign a new ID to the override before re-uploading
+                         override.id = UUID()
+                         debug(.nightscout, "Assigned new ID to override: \(override.id?.uuidString ?? "nil")")
+                     } else {
+                         debug(
+                             .nightscout,
+                             "No changes detected in duration for created_at: \(override.created_at); skipping deletion"
+                         )
+                     }
+                 } else {
+                     debug(.nightscout, "No existing override found for created_at: \(override.created_at), uploading as new")
+                 }
+
+                 // Upload the override (whether new or updated with a new ID)
+                 debug(.nightscout, "Uploading override with created_at: \(override.created_at)")
+                 try await nightscout.uploadOverrides([override])
+                 debug(.nightscout, "Override uploaded successfully for created_at: \(override.created_at)")
+             }
+
+             // Mark overrides as uploaded in Core Data
+             await updateOverridesAsUploaded(overrides)
+             debug(.nightscout, "All overrides processed and marked as uploaded")
+         } catch {
+             debug(.nightscout, "Error during override upload process: \(error.localizedDescription)")
+         }
+     }
+     */
     private func updateOverridesAsUploaded(_ overrides: [NightscoutExercise]) async {
         await backgroundContext.perform {
             let ids = overrides.map(\.id) as NSArray
@@ -1341,14 +1405,17 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         do {
             // Process each override run individually with the created_at check
             var processedOverrideRuns: [NightscoutExercise] = []
-            for var overrideRun in overrideRuns {
-                debug(.nightscout, "Processing override run with created_at: \(overrideRun.created_at)")
+            for overrideRun in overrideRuns {
+                // Ensure that the created_at value is a valid String
+                guard let createdAt = overrideRun.created_at as? String else {
+                    debug(.nightscout, "Invalid created_at value for override run; skipping")
+                    continue
+                }
+                debug(.nightscout, "OVERRIDE TEMP DEBUGGING: Processing override run with created_at: \(createdAt)")
 
                 // Fetch any existing override run using created_at
-                if let existingOverrideRun = try await nightscout
-                    .fetchOverrideFromNightscout(withCreatedAt: overrideRun.created_at as! String)
-                {
-                    debug(.nightscout, "Existing override run found for created_at: \(overrideRun.created_at)")
+                if let existingOverrideRun = try await nightscout.fetchOverrideFromNightscout(withCreatedAt: createdAt) {
+                    debug(.nightscout, "OVERRIDE TEMP DEBUGGING: Existing override run found for created_at: \(createdAt)")
                     // Check if the duration has changed
                     if let existingDuration = existingOverrideRun.duration,
                        let newDuration = overrideRun.duration,
@@ -1356,23 +1423,25 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
                     {
                         debug(
                             .nightscout,
-                            "Duration changed from \(existingDuration) to \(newDuration), deleting existing override run"
+                            "OVERRIDE TEMP DEBUGGING: Duration changed from \(existingDuration) to \(newDuration), deleting existing override run"
                         )
-                        try await nightscout.deleteOverride(withCreatedAt: existingOverrideRun.created_at as! String)
-
-                        // Assign a new ID to the override run before re-uploading
-                        overrideRun.id = UUID()
-                        debug(.nightscout, "Assigned new ID to override run: \(overrideRun.id?.uuidString ?? "nil")")
+                        // Ensure the existing override run's created_at is a valid String
+                        if let existingCreatedAt = existingOverrideRun.created_at as? String {
+                            try await nightscout.deleteOverride(withCreatedAt: existingCreatedAt)
+                        } else {
+                            debug(.nightscout, "Invalid existing override run created_at; cannot delete override run")
+                        }
+                        // Removed the assignment of a new UUID
                     } else {
                         debug(
                             .nightscout,
-                            "No changes detected in duration for created_at: \(overrideRun.created_at); skipping deletion"
+                            "OVERRIDE TEMP DEBUGGING: No changes detected in duration for created_at: \(createdAt); skipping deletion"
                         )
                     }
                 } else {
                     debug(
                         .nightscout,
-                        "No existing override run found for created_at: \(overrideRun.created_at), uploading as new"
+                        "OVERRIDE TEMP DEBUGGING: No existing override run found for created_at: \(createdAt), uploading as new"
                     )
                 }
                 processedOverrideRuns.append(overrideRun)
@@ -1380,9 +1449,9 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
 
             // Upload the processed override runs in chunks of 100
             for chunk in processedOverrideRuns.chunks(ofCount: 100) {
-                debug(.nightscout, "Uploading chunk of \(chunk.count) override runs")
+                debug(.nightscout, "OVERRIDE TEMP DEBUGGING: Uploading chunk of \(chunk.count) override runs")
                 try await nightscout.uploadOverrides(Array(chunk))
-                debug(.nightscout, "Chunk uploaded successfully")
+                debug(.nightscout, "OVERRIDE TEMP DEBUGGING: Chunk uploaded successfully")
             }
 
             // Mark override runs as uploaded in Core Data
