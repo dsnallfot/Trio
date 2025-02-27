@@ -167,11 +167,10 @@ final class BaseUserNotificationsManager: NSObject, UserNotificationsManager, In
         let content = UNMutableNotificationContent()
 
         if snoozeUntilDate > Date() {
-            titles.append(NSLocalizedString("(Snoozed)", comment: "(Snoozed)"))
-        } else {
-            content.sound = .default
-            playSoundIfNeeded()
+            return
         }
+        content.sound = .default
+        playSoundIfNeeded()
 
         titles.append(String(format: NSLocalizedString("Carbs required: %d g", comment: "Carbs required"), carbs))
 
