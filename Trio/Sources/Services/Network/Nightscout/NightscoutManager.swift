@@ -1217,82 +1217,35 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         }
     }
 
-    /*
-     private func uploadOverrides(_ overrides: [NightscoutExercise]) async {
-         guard !overrides.isEmpty, let nightscout = nightscoutAPI, isUploadEnabled else {
-             return
-         }
-         do {
-             for chunk in overrides.chunks(ofCount: 100) {
-                 try await nightscout.uploadOverrides(Array(chunk))
-             }
-
-             // If successful, update the isUploadedToNS property of the OverrideStored objects
-             await updateOverridesAsUploaded(overrides)
-
-             debug(.nightscout, "Overrides uploaded")
-         } catch {
-             debug(.nightscout, error.localizedDescription)
-         }
-     }
-     */
-
+    // TODO: Remove debug logs after some more testing
     private func uploadOverrides(_ overrides: [NightscoutExercise]) async {
         guard !overrides.isEmpty, let nightscout = nightscoutAPI, isUploadEnabled else {
             debug(.nightscout, "OVERRIDE TEMP DEBUGGING: No overrides to upload or upload not enabled")
             return
         }
         do {
+            var processedOverrides: [NightscoutExercise] = []
             for override in overrides {
-                // Ensure that the created_at value is a valid String
-                guard let createdAt = override.created_at as? String else {
+                guard let createdAtString = override.created_at as? String else {
                     debug(.nightscout, "OVERRIDE TEMP DEBUGGING: Invalid created_at value for override; skipping")
                     continue
                 }
-                debug(.nightscout, "OVERRIDE TEMP DEBUGGING: Processing override with created_at: \(createdAt)")
+                debug(.nightscout, "OVERRIDE TEMP DEBUGGING: Processing override with created_at: \(createdAtString)")
 
-                // Fetch existing override from Nightscout based on created_at
-                if let existingOverride = try await nightscout.fetchOverrideFromNightscout(withCreatedAt: createdAt) {
-                    debug(.nightscout, "OVERRIDE TEMP DEBUGGING: Existing override found for created_at: \(createdAt)")
+                // Check for an existing stored override and delete if needed (This is neccessary to delete original entry in NS when a running override gets customized with a new duration).
+                try await checkAndDeleteStoredOverride(
+                    forCreatedAt: createdAtString,
+                    newDuration: override.duration,
+                    using: nightscout
+                )
 
-                    // If the duration has changed, delete the existing override
-                    if let existingDuration = existingOverride.duration,
-                       let newDuration = override.duration,
-                       existingDuration != newDuration
-                    {
-                        debug(
-                            .nightscout,
-                            "OVERRIDE TEMP DEBUGGING: Duration changed from \(existingDuration) to \(newDuration), deleting existing override"
-                        )
-                        // Ensure the existing override's created_at is a valid String
-                        if let existingCreatedAt = existingOverride.created_at as? String {
-                            try await nightscout.deleteOverride(withCreatedAt: existingCreatedAt)
-                        } else {
-                            debug(
-                                .nightscout,
-                                "OVERRIDE TEMP DEBUGGING: Invalid existing override created_at; cannot delete override"
-                            )
-                        }
-                    } else {
-                        debug(
-                            .nightscout,
-                            "OVERRIDE TEMP DEBUGGING: No changes detected in duration for created_at: \(createdAt); skipping deletion"
-                        )
-                    }
-                } else {
-                    debug(
-                        .nightscout,
-                        "OVERRIDE TEMP DEBUGGING: No existing override found for created_at: \(createdAt), uploading as new"
-                    )
-                }
-
-                // Upload the override (whether new or updated)
-                debug(.nightscout, "OVERRIDE TEMP DEBUGGING: Uploading override with created_at: \(createdAt)")
+                debug(.nightscout, "OVERRIDE TEMP DEBUGGING: Uploading override with created_at: \(createdAtString)")
                 try await nightscout.uploadOverrides([override])
-                debug(.nightscout, "OVERRIDE TEMP DEBUGGING: Override uploaded successfully for created_at: \(createdAt)")
+                debug(.nightscout, "OVERRIDE TEMP DEBUGGING: Override uploaded successfully for created_at: \(createdAtString)")
+
+                processedOverrides.append(override)
             }
 
-            // Mark overrides as uploaded in Core Data
             await updateOverridesAsUploaded(overrides)
             debug(.nightscout, "All overrides processed and marked as uploaded")
         } catch {
@@ -1300,60 +1253,6 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         }
     }
 
-    /*
-     private func uploadOverrides(_ overrides: [NightscoutExercise]) async {
-         guard !overrides.isEmpty, let nightscout = nightscoutAPI, isUploadEnabled else {
-             debug(.nightscout, "No overrides to upload or upload not enabled")
-             return
-         }
-         do {
-             for var override in overrides {
-                 debug(.nightscout, "Processing override with created_at: \(override.created_at)")
-
-                 // Fetch existing override from Nightscout based on created_at
-                 if let existingOverride = try await nightscout
-                     .fetchOverrideFromNightscout(withCreatedAt: override.created_at as! String)
-                 {
-                     debug(.nightscout, "Existing override found for created_at: \(override.created_at)")
-
-                     // If the duration has changed, delete the existing override
-                     if let existingDuration = existingOverride.duration,
-                        let newDuration = override.duration,
-                        existingDuration != newDuration
-                     {
-                         debug(
-                             .nightscout,
-                             "Duration changed from \(existingDuration) to \(newDuration), deleting existing override"
-                         )
-                         try await nightscout.deleteOverride(withCreatedAt: existingOverride.created_at as! String)
-
-                         // Assign a new ID to the override before re-uploading
-                         override.id = UUID()
-                         debug(.nightscout, "Assigned new ID to override: \(override.id?.uuidString ?? "nil")")
-                     } else {
-                         debug(
-                             .nightscout,
-                             "No changes detected in duration for created_at: \(override.created_at); skipping deletion"
-                         )
-                     }
-                 } else {
-                     debug(.nightscout, "No existing override found for created_at: \(override.created_at), uploading as new")
-                 }
-
-                 // Upload the override (whether new or updated with a new ID)
-                 debug(.nightscout, "Uploading override with created_at: \(override.created_at)")
-                 try await nightscout.uploadOverrides([override])
-                 debug(.nightscout, "Override uploaded successfully for created_at: \(override.created_at)")
-             }
-
-             // Mark overrides as uploaded in Core Data
-             await updateOverridesAsUploaded(overrides)
-             debug(.nightscout, "All overrides processed and marked as uploaded")
-         } catch {
-             debug(.nightscout, "Error during override upload process: \(error.localizedDescription)")
-         }
-     }
-     */
     private func updateOverridesAsUploaded(_ overrides: [NightscoutExercise]) async {
         await backgroundContext.perform {
             let ids = overrides.map(\.id) as NSArray
@@ -1375,27 +1274,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             }
         }
     }
-
-    /*
-     private func uploadOverrideRuns(_ overrideRuns: [NightscoutExercise]) async {
-         guard !overrideRuns.isEmpty, let nightscout = nightscoutAPI, isUploadEnabled else {
-             return
-         }
-
-         do {
-             for chunk in overrideRuns.chunks(ofCount: 100) {
-                 try await nightscout.uploadOverrides(Array(chunk))
-             }
-
-             // If successful, update the isUploadedToNS property of the OverrideRunStored objects
-             await updateOverrideRunsAsUploaded(overrideRuns)
-
-             debug(.nightscout, "Overrides uploaded")
-         } catch {
-             debug(.nightscout, error.localizedDescription)
-         }
-     }
-     */
+    // TODO: Remove debug logs after some more testing
     private func uploadOverrideRuns(_ overrideRuns: [NightscoutExercise]) async {
         guard !overrideRuns.isEmpty, let nightscout = nightscoutAPI, isUploadEnabled else {
             debug(.nightscout, "No override runs to upload or upload not enabled")
@@ -1403,58 +1282,31 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         }
 
         do {
-            // Process each override run individually with the created_at check
             var processedOverrideRuns: [NightscoutExercise] = []
             for overrideRun in overrideRuns {
-                // Ensure that the created_at value is a valid String
-                guard let createdAt = overrideRun.created_at as? String else {
+                guard let createdAtString = overrideRun.created_at as? String else {
                     debug(.nightscout, "Invalid created_at value for override run; skipping")
                     continue
                 }
-                debug(.nightscout, "OVERRIDE TEMP DEBUGGING: Processing override run with created_at: \(createdAt)")
+                debug(.nightscout, "OVERRIDE TEMP DEBUGGING: Processing override run with created_at: \(createdAtString)")
 
-                // Fetch any existing override run using created_at
-                if let existingOverrideRun = try await nightscout.fetchOverrideFromNightscout(withCreatedAt: createdAt) {
-                    debug(.nightscout, "OVERRIDE TEMP DEBUGGING: Existing override run found for created_at: \(createdAt)")
-                    // Check if the duration has changed
-                    if let existingDuration = existingOverrideRun.duration,
-                       let newDuration = overrideRun.duration,
-                       existingDuration != newDuration
-                    {
-                        debug(
-                            .nightscout,
-                            "OVERRIDE TEMP DEBUGGING: Duration changed from \(existingDuration) to \(newDuration), deleting existing override run"
-                        )
-                        // Ensure the existing override run's created_at is a valid String
-                        if let existingCreatedAt = existingOverrideRun.created_at as? String {
-                            try await nightscout.deleteOverride(withCreatedAt: existingCreatedAt)
-                        } else {
-                            debug(.nightscout, "Invalid existing override run created_at; cannot delete override run")
-                        }
-                        // Removed the assignment of a new UUID
-                    } else {
-                        debug(
-                            .nightscout,
-                            "OVERRIDE TEMP DEBUGGING: No changes detected in duration for created_at: \(createdAt); skipping deletion"
-                        )
-                    }
-                } else {
-                    debug(
-                        .nightscout,
-                        "OVERRIDE TEMP DEBUGGING: No existing override run found for created_at: \(createdAt), uploading as new"
-                    )
-                }
+                // Check for an existing stored override and delete if needed
+                // This is neccessary when a running override is cancelled, or replaced with a new override, before its duration is over.
+                try await checkAndDeleteStoredOverride(
+                    forCreatedAt: createdAtString,
+                    newDuration: overrideRun.duration,
+                    using: nightscout
+                )
+
                 processedOverrideRuns.append(overrideRun)
             }
 
-            // Upload the processed override runs in chunks of 100
             for chunk in processedOverrideRuns.chunks(ofCount: 100) {
                 debug(.nightscout, "OVERRIDE TEMP DEBUGGING: Uploading chunk of \(chunk.count) override runs")
                 try await nightscout.uploadOverrides(Array(chunk))
                 debug(.nightscout, "OVERRIDE TEMP DEBUGGING: Chunk uploaded successfully")
             }
 
-            // Mark override runs as uploaded in Core Data
             await updateOverrideRunsAsUploaded(overrideRuns)
             debug(.nightscout, "All override runs processed and marked as uploaded")
         } catch {
@@ -1481,6 +1333,70 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
                     "\(DebuggingIdentifiers.failed) \(#file) \(#function) Failed to update isUploadedToNS: \(error.userInfo)"
                 )
             }
+        }
+    }
+    // TODO: Remove debug logs after some more testing
+    // This is needed to force re-rendering of overrides with changed durations in Nightscout main chart
+    // since just updating durations in existing entries doesn't trigger re-rendering.
+    private func checkAndDeleteStoredOverride(
+        forCreatedAt createdAtString: String,
+        newDuration: Int?,
+        using nightscout: NightscoutAPI
+    ) async throws {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+
+        // Parse the created_at string.
+        guard let jsonDate = formatter.date(from: createdAtString) else {
+            debug(.nightscout, "Could not parse override created_at string: \(createdAtString)")
+            return
+        }
+
+        // Define a tolerance window (in seconds)
+        // This is neccessary to handle very small rounding/conversion time differences when comparing dates
+        let tolerance: TimeInterval = 0.1
+        let lowerBound = jsonDate.addingTimeInterval(-tolerance)
+        let upperBound = jsonDate.addingTimeInterval(tolerance)
+
+        // Build a predicate to fetch a stored override (from OverrideStored) whose date is within the tolerance window.
+        let predicate = NSPredicate(format: "date >= %@ AND date <= %@", lowerBound as NSDate, upperBound as NSDate)
+        let results = await CoreDataStack.shared.fetchEntitiesAsync(
+            ofType: OverrideStored.self,
+            onContext: backgroundContext,
+            predicate: predicate,
+            key: "date",
+            ascending: false
+        )
+
+        let storedOverride: NightscoutExercise? = await backgroundContext.perform {
+            guard let fetched = results as? [OverrideStored],
+                  let record = fetched.first,
+                  let recordDate = record.date else { return nil }
+            let duration = record.indefinite ? 43200 : record.duration ?? 0
+            return NightscoutExercise(
+                duration: Int(truncating: duration),
+                eventType: OverrideStored.EventType.nsExercise,
+                createdAt: recordDate,
+                enteredBy: NightscoutExercise.local,
+                notes: record.name ?? "🛠️ Anpassad Override",
+                id: UUID(uuidString: record.id ?? UUID().uuidString)
+            )
+        }
+
+        if let existing = storedOverride {
+            debug(
+                .nightscout,
+                "OVERRIDE TEMP DEBUGGING: Found stored override for created_at: \(createdAtString). Stored duration: \(existing.duration ?? 0), new duration: \(newDuration ?? 0)"
+            )
+            // Only delete existing nightscout entries if the durations differ.
+            if let existingDuration = existing.duration, let newDuration = newDuration, existingDuration != newDuration {
+                debug(.nightscout, "OVERRIDE TEMP DEBUGGING: Duration changed; deleting stored override for created_at: \(createdAtString)")
+                try await nightscout.deleteOverride(withCreatedAt: createdAtString)
+            } else {
+                debug(.nightscout, "OVERRIDE TEMP DEBUGGING: Duration unchanged; skipping deletion for created_at: \(createdAtString)")
+            }
+        } else {
+            debug(.nightscout, "OVERRIDE TEMP DEBUGGING: No stored override found for created_at: \(createdAtString)")
         }
     }
 

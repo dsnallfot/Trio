@@ -456,66 +456,9 @@ extension NightscoutAPI {
             throw URLError(.badServerResponse)
         }
     }
-
-    // Updated fetchOverrideFromNightscout to match by "created_at"
-    func fetchOverrideFromNightscout(withCreatedAt createdAt: String) async throws -> NightscoutExercise? {
-        var components = URLComponents()
-        components.scheme = url.scheme
-        components.host = url.host
-        components.port = url.port
-        components.path = Config.treatmentsPath
-        components.queryItems = [
-            URLQueryItem(name: "find[created_at][$eq]", value: createdAt)
-        ]
-
-        guard let url = components.url else {
-            debug(.nightscout, "Invalid URL when fetching override with created_at: \(createdAt)")
-            throw URLError(.badURL)
-        }
-
-        debug(
-            .nightscout,
-            "OVERRIDE TEMP DEBUGGING: Fetching override with created_at: \(createdAt) using URL: \(url.absoluteString)"
-        )
-
-        var request = URLRequest(url: url)
-        request.timeoutInterval = Config.timeout
-        request.httpMethod = "GET"
-
-        if let secret = secret {
-            request.addValue(secret.sha1(), forHTTPHeaderField: "api-secret")
-        }
-
-        let (data, response) = try await URLSession.shared.data(for: request)
-
-        // Add raw JSON debug printing here
-        do {
-            let dataString = String(data: data, encoding: .utf8) ?? "Unable to convert data to string"
-            debug(.nightscout, "Raw JSON response: \(dataString)")
-            let existingOverrides = try JSONCoding.decoder.decode([NightscoutExercise].self, from: data)
-
-            guard let httpResponse = response as? HTTPURLResponse, (200 ... 299).contains(httpResponse.statusCode) else {
-                debug(
-                    .nightscout,
-                    "Failed to fetch override. HTTP response code: \((response as? HTTPURLResponse)?.statusCode ?? 0)"
-                )
-                return nil
-            }
-
-            if let found = existingOverrides.first {
-                debug(.nightscout, "Found override with created_at: \(createdAt)")
-            } else {
-                debug(.nightscout, "No override found with created_at: \(createdAt)")
-            }
-
-            return existingOverrides.first
-        } catch {
-            debug(.nightscout, "Decoding error: \(error.localizedDescription)")
-            throw error
-        }
-    }
-
-    // Updated deleteOverride to match by "created_at"
+    // TODO: Remove debug logs after some more testing
+    // The delete func is needed to force re-rendering of overrides with changed durations in Nightscout main chart
+    // since just updating durations in existing entries doesn't trigger re-rendering.
     func deleteOverride(withCreatedAt createdAt: String) async throws {
         var components = URLComponents()
         components.scheme = url.scheme
@@ -554,7 +497,6 @@ extension NightscoutAPI {
         }
     }
 
-    // Upload remains largely the same, but we now call the new methods
     func uploadOverrides(_ overrides: [NightscoutExercise]) async throws {
         var components = URLComponents()
         components.scheme = url.scheme
