@@ -456,6 +456,7 @@ extension NightscoutAPI {
             throw URLError(.badServerResponse)
         }
     }
+
     // TODO: Remove debug logs after some more testing
     // The delete func is needed to force re-rendering of overrides with changed durations in Nightscout main chart
     // since just updating durations in existing entries doesn't trigger re-rendering.
