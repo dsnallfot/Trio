@@ -80,7 +80,7 @@ extension Settings {
                             let versionNumber = Bundle.main.releaseVersionNumber ?? "Unknown"
                             let buildNumber = Bundle.main.buildVersionNumber ?? "Unknown"
 
-                            Group {
+                            NavigationLink(destination: SubmodulesView(buildDetails: buildDetails)) {
                                 HStack {
                                     Image(appIcons.appIcon.rawValue)
                                         .resizable()
