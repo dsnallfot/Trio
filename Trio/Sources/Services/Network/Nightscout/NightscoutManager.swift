@@ -1217,33 +1217,31 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         }
     }
 
-    // TODO: Remove debug logs after some more testing
     private func uploadOverrides(_ overrides: [NightscoutExercise]) async {
         guard !overrides.isEmpty, let nightscout = nightscoutAPI, isUploadEnabled else {
-            debug(.nightscout, "OVERRIDE TEMP DEBUGGING: No overrides to upload or upload not enabled")
             return
         }
         do {
             var processedOverrides: [NightscoutExercise] = []
             for override in overrides {
                 guard let createdAtString = override.created_at as? String else {
-                    debug(.nightscout, "OVERRIDE TEMP DEBUGGING: Invalid created_at value for override; skipping")
                     continue
                 }
-                debug(.nightscout, "OVERRIDE TEMP DEBUGGING: Processing override with created_at: \(createdAtString)")
 
                 // Check for an existing stored override and delete if needed (This is neccessary to delete original entry in NS when a running override gets customized with a new duration).
-                try await overridesStorage.checkAndDeleteStoredOverride(
+                try await overridesStorage.checkIfShouldDeleteNightscoutOverrideEntry(
                     forCreatedAt: createdAtString,
                     newDuration: override.duration,
                     using: nightscout
                 )
 
-                debug(.nightscout, "OVERRIDE TEMP DEBUGGING: Uploading override with created_at: \(createdAtString)")
                 try await nightscout.uploadOverrides([override])
-                debug(.nightscout, "OVERRIDE TEMP DEBUGGING: Override uploaded successfully for created_at: \(createdAtString)")
 
                 processedOverrides.append(override)
+            }
+
+            for chunk in processedOverrides.chunks(ofCount: 100) {
+                try await nightscout.uploadOverrides(Array(chunk))
             }
 
             await updateOverridesAsUploaded(overrides)
@@ -1275,10 +1273,8 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         }
     }
 
-    // TODO: Remove debug logs after some more testing
     private func uploadOverrideRuns(_ overrideRuns: [NightscoutExercise]) async {
         guard !overrideRuns.isEmpty, let nightscout = nightscoutAPI, isUploadEnabled else {
-            debug(.nightscout, "No override runs to upload or upload not enabled")
             return
         }
 
@@ -1286,14 +1282,12 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             var processedOverrideRuns: [NightscoutExercise] = []
             for overrideRun in overrideRuns {
                 guard let createdAtString = overrideRun.created_at as? String else {
-                    debug(.nightscout, "Invalid created_at value for override run; skipping")
                     continue
                 }
-                debug(.nightscout, "OVERRIDE TEMP DEBUGGING: Processing override run with created_at: \(createdAtString)")
 
                 // Check for an existing stored override and delete if needed
                 // This is neccessary when a running override is cancelled, or replaced with a new override, before its duration is over.
-                try await overridesStorage.checkAndDeleteStoredOverride(
+                try await overridesStorage.checkIfShouldDeleteNightscoutOverrideEntry(
                     forCreatedAt: createdAtString,
                     newDuration: overrideRun.duration,
                     using: nightscout
@@ -1303,9 +1297,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             }
 
             for chunk in processedOverrideRuns.chunks(ofCount: 100) {
-                debug(.nightscout, "OVERRIDE TEMP DEBUGGING: Uploading chunk of \(chunk.count) override runs")
                 try await nightscout.uploadOverrides(Array(chunk))
-                debug(.nightscout, "OVERRIDE TEMP DEBUGGING: Chunk uploaded successfully")
             }
 
             await updateOverrideRunsAsUploaded(overrideRuns)
