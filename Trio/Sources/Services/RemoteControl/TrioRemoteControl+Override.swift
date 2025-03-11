@@ -135,17 +135,18 @@ extension TrioRemoteControl {
 
                 for canceledOverride in results where canceledOverride.enabled {
                     debug(.remoteControl, "🚫 Cancelling override: \(canceledOverride.name ?? "Unnamed")")
-                    
+
                     let startDate = canceledOverride.date ?? .distantPast
                     let endDate: Date
                     if !canceledOverride.indefinite, let durationNumber = canceledOverride.duration {
-                        let plannedEndDate = startDate.addingTimeInterval(TimeInterval(truncating: durationNumber))
+                        // Duration is in minutes; convert to seconds.
+                        let plannedEndDate = startDate.addingTimeInterval(TimeInterval(truncating: durationNumber) * 60)
                         // If current time is later than planned end date, use planned end date; else, use current time.
                         endDate = Date() > plannedEndDate ? plannedEndDate : Date()
                     } else {
                         endDate = Date()
                     }
-                    
+
                     let newOverrideRunStored = OverrideRunStored(context: self.viewContext)
                     newOverrideRunStored.id = UUID()
                     newOverrideRunStored.name = canceledOverride.name
@@ -159,7 +160,7 @@ extension TrioRemoteControl {
 
                     canceledOverride.enabled = false
                     canceledOverride.isUploadedToNS = false
-                    
+
                     debug(.remoteControl, "Override \(canceledOverride.name ?? "Unnamed") cancelled. Planned end: \(endDate)")
                 }
 
