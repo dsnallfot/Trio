@@ -229,15 +229,16 @@ import UIKit
 
             // Disable all active overrides
             for overrideToCancel in results {
-                if let startDate = overrideToCancel.date,
+                // If the override is non-indefinite and already expired, skip it.
+                if !overrideToCancel.indefinite,
+                   let startDate = overrideToCancel.date,
                    let duration = overrideToCancel.duration,
                    Date() > startDate.addingTimeInterval(TimeInterval(truncating: duration))
                 {
-                    // This override has already expired. Handle accordingly.
                     debugPrint("Override \(overrideToCancel.name ?? "Unnamed") already expired.")
-                    continue // Or adjust as needed.
+                    continue // Skip this expired override.
                 }
-                // Proceed to cancel active override
+                // Proceed to cancel active override.
                 overrideToCancel.enabled = false
                 overrideToCancel.isUploadedToNS = false
             }
