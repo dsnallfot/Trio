@@ -1,3 +1,4 @@
+
 import CoreData
 import Foundation
 import UIKit
@@ -213,40 +214,48 @@ import UIKit
                 return
             }
 
-            // Create OverrideRunStored entry if needed
-            if createOverrideRunEntry, let canceledOverride = results.first {
-                let newOverrideRunStored = OverrideRunStored(context: viewContext)
-                newOverrideRunStored.id = UUID()
-                newOverrideRunStored.name = canceledOverride.name
-                newOverrideRunStored.startDate = canceledOverride.date ?? .distantPast
-                newOverrideRunStored.endDate = Date()
-                newOverrideRunStored.target = NSDecimalNumber(
-                    decimal: overrideStorage.calculateTarget(override: canceledOverride)
-                )
-                newOverrideRunStored.override = canceledOverride
-                newOverrideRunStored.isUploadedToNS = false
-            }
-
-            // Disable all active overrides
+            // Process each active override
             for overrideToCancel in results {
-                // If the override is non-indefinite and already expired, skip it.
-                if !overrideToCancel.indefinite,
-                   let startDate = overrideToCancel.date,
-                   let duration = overrideToCancel.duration,
-                   Date() > startDate.addingTimeInterval(TimeInterval(truncating: duration))
-                {
-                    debugPrint("Override \(overrideToCancel.name ?? "Unnamed") already expired.")
-                    continue // Skip this expired override.
+                // Create an OverrideRunStored entry if needed
+                if createOverrideRunEntry, let startDate = overrideToCancel.date {
+                    let newOverrideRunStored = OverrideRunStored(context: viewContext)
+                    newOverrideRunStored.id = UUID()
+                    newOverrideRunStored.name = overrideToCancel.name
+
+                    if !overrideToCancel.indefinite, let durationNumber = overrideToCancel.duration {
+                        // Calculate planned end date based on the original duration.
+                        let plannedEndDate = startDate.addingTimeInterval(TimeInterval(truncating: durationNumber))
+                        // If the override has already run its full duration, keep the planned end date;
+                        // otherwise, use the current time.
+                        newOverrideRunStored.endDate = Date() > plannedEndDate ? plannedEndDate : Date()
+                    } else {
+                        // For indefinite overrides, always use the current time as the end date.
+                        newOverrideRunStored.endDate = Date()
+                    }
+
+                    newOverrideRunStored.startDate = startDate
+                    newOverrideRunStored.target = NSDecimalNumber(
+                        decimal: overrideStorage.calculateTarget(override: overrideToCancel)
+                    )
+                    newOverrideRunStored.override = overrideToCancel
+                    newOverrideRunStored.isUploadedToNS = false
                 }
-                // Proceed to cancel active override.
+
+                // Disable the override.
+                // For non-indefinite overrides that have already run their full duration, we leave their start date untouched.
                 overrideToCancel.enabled = false
                 overrideToCancel.isUploadedToNS = false
+
+                let plannedEndTime = overrideToCancel.date?
+                    .addingTimeInterval(TimeInterval(truncating: overrideToCancel.duration ?? 0))
+                debugPrint(
+                    "Disabling override: \(overrideToCancel.name ?? "Unnamed") with planned end time: \(plannedEndTime?.description ?? "Unknown")"
+                )
             }
 
             if viewContext.hasChanges {
                 try viewContext.save()
                 debugPrint("✅ Overrides successfully disabled and saved.")
-
                 // Notify that override state has changed
                 Foundation.NotificationCenter.default.post(name: .willUpdateOverrideConfiguration, object: nil)
             }
@@ -255,9 +264,6 @@ import UIKit
             debugPrint("⌛ Waiting for notification...")
             await awaitNotification(.didUpdateOverrideConfiguration)
             debugPrint("✅ Notification received, continuing...")
-
-            // Explicitly end background task after notification
-            endBackgroundTask()
 
         } catch {
             debugPrint(

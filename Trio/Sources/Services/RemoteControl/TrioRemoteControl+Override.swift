@@ -135,54 +135,32 @@ extension TrioRemoteControl {
 
                 for canceledOverride in results where canceledOverride.enabled {
                     debug(.remoteControl, "🚫 Cancelling override: \(canceledOverride.name ?? "Unnamed")")
-
-                    if let startDate = canceledOverride.date {
-                        if canceledOverride.indefinite {
-                            // For indefinite overrides, simply use the current time as endDate.
-                            let newOverrideRunStored = OverrideRunStored(context: self.viewContext)
-                            newOverrideRunStored.id = UUID()
-                            newOverrideRunStored.name = canceledOverride.name
-                            newOverrideRunStored.startDate = startDate
-                            newOverrideRunStored.endDate = Date()
-                            newOverrideRunStored.target = NSDecimalNumber(
-                                decimal: self.overrideStorage.calculateTarget(override: canceledOverride)
-                            )
-                            newOverrideRunStored.override = canceledOverride
-                            newOverrideRunStored.isUploadedToNS = false
-                        } else if let durationNumber = canceledOverride.duration {
-                            // Calculate planned expiration time for non-indefinite overrides.
-                            let plannedDurationInterval = TimeInterval(truncating: durationNumber)
-                            let plannedEndDate = startDate.addingTimeInterval(plannedDurationInterval)
-
-                            // If current time exceeds the planned end date, use the planned end date.
-                            let actualEndDate = Date() > plannedEndDate ? plannedEndDate : Date()
-
-                            let newOverrideRunStored = OverrideRunStored(context: self.viewContext)
-                            newOverrideRunStored.id = UUID()
-                            newOverrideRunStored.name = canceledOverride.name
-                            newOverrideRunStored.startDate = startDate
-                            newOverrideRunStored.endDate = actualEndDate
-                            newOverrideRunStored.target = NSDecimalNumber(
-                                decimal: self.overrideStorage.calculateTarget(override: canceledOverride)
-                            )
-                            newOverrideRunStored.override = canceledOverride
-                            newOverrideRunStored.isUploadedToNS = false
-                        } else {
-                            debug(
-                                .remoteControl,
-                                "⚠️ Missing duration for override \(canceledOverride.name ?? "Unnamed"). Skipping duration adjustment."
-                            )
-                        }
+                    
+                    let startDate = canceledOverride.date ?? .distantPast
+                    let endDate: Date
+                    if !canceledOverride.indefinite, let durationNumber = canceledOverride.duration {
+                        let plannedEndDate = startDate.addingTimeInterval(TimeInterval(truncating: durationNumber))
+                        // If current time is later than planned end date, use planned end date; else, use current time.
+                        endDate = Date() > plannedEndDate ? plannedEndDate : Date()
                     } else {
-                        debug(
-                            .remoteControl,
-                            "⚠️ Missing start date for override \(canceledOverride.name ?? "Unnamed"). Skipping duration adjustment."
-                        )
+                        endDate = Date()
                     }
+                    
+                    let newOverrideRunStored = OverrideRunStored(context: self.viewContext)
+                    newOverrideRunStored.id = UUID()
+                    newOverrideRunStored.name = canceledOverride.name
+                    newOverrideRunStored.startDate = startDate
+                    newOverrideRunStored.endDate = endDate
+                    newOverrideRunStored.target = NSDecimalNumber(
+                        decimal: self.overrideStorage.calculateTarget(override: canceledOverride)
+                    )
+                    newOverrideRunStored.override = canceledOverride
+                    newOverrideRunStored.isUploadedToNS = false
 
-                    // Disable the override
                     canceledOverride.enabled = false
                     canceledOverride.isUploadedToNS = false
+                    
+                    debug(.remoteControl, "Override \(canceledOverride.name ?? "Unnamed") cancelled. Planned end: \(endDate)")
                 }
 
                 debug(.remoteControl, "💾 Checking if Core Data has changes before saving...")
