@@ -95,7 +95,10 @@ extension BasalProfileEditor {
 
                         Task.detached(priority: .low) {
                             debug(.nightscout, "Attempting to upload basal rates to Nightscout")
-                            await self.nightscout.uploadProfiles()
+                            await self.nightscout.uploadProfiles(
+                                alsoUploadNote: true,
+                                note: "Basalprofil ändrades i Trio"
+                            )
                         }
                     case .failure:
                         // Handle the error, show error message

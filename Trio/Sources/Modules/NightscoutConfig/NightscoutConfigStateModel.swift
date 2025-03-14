@@ -75,7 +75,7 @@ extension NightscoutConfig {
                     if enabled {
                         debug(.nightscout, "Upload has been enabled by the user.")
                         Task {
-                            await self.nightscoutManager.uploadProfiles()
+                            await self.nightscoutManager.uploadProfiles(alsoUploadNote: false, note: "")
                         }
                     } else {
                         debug(.nightscout, "Upload has been disabled by the user.")
@@ -384,7 +384,7 @@ extension NightscoutConfig {
 
                         Task.detached(priority: .low) {
                             debug(.nightscout, "Attempting to upload DIA to Nightscout after import review")
-                            await self.nightscoutManager.uploadProfiles()
+                            await self.nightscoutManager.uploadProfiles(alsoUploadNote: false, note: "")
                         }
                     } receiveValue: {}
                     .store(in: &lifetime)

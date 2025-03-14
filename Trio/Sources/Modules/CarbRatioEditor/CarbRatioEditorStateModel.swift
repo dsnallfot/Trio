@@ -71,7 +71,7 @@ extension CarbRatioEditor {
             initialItems = items.map { Item(rateIndex: $0.rateIndex, timeIndex: $0.timeIndex) }
             Task.detached(priority: .low) {
                 debug(.nightscout, "Attempting to upload CRs to Nightscout")
-                await self.nightscout.uploadProfiles()
+                await self.nightscout.uploadProfiles(alsoUploadNote: true, note: "CR-profil ändrades i Trio")
             }
         }
 

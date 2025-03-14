@@ -20,7 +20,7 @@ protocol NightscoutManager: GlucoseSource {
     func uploadOverrides() async
     func uploadTempTargets() async
     func uploadManualGlucose() async
-    func uploadProfiles() async
+    func uploadProfiles(alsoUploadNote: Bool, note: String) async
     func uploadNoteTreatment(note: String) async
     func importSettings() async -> ScheduledNightscoutProfile?
     var cgmURL: URL? { get }
@@ -781,7 +781,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         }
     }
 
-    func uploadProfiles() async {
+    func uploadProfiles(alsoUploadNote: Bool = false, note: String = "Profilinställningar uppdaterades") async {
         if isUploadEnabled {
             do {
                 guard let sensitivities = await storage.retrieveAsync(
@@ -951,6 +951,11 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
                 do {
                     try await nightscout.uploadProfile(profileStore)
                     debug(.nightscout, "Profile uploaded")
+
+                    // If alsoUploadNote is true, call the uploadNoteTreatment function with the provided note
+                    if alsoUploadNote {
+                        await uploadNoteTreatment(note: note)
+                    }
                 } catch {
                     debug(.nightscout, "NightscoutManager uploadProfile: \(error.localizedDescription)")
                 }

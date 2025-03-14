@@ -148,7 +148,7 @@ extension Adjustments.StateModel {
         async let resetState: () = resetStateVariables()
         _ = await (storeOverride, resetState)
         setupOverridePresetsArray()
-        await nightscoutManager.uploadProfiles()
+        await nightscoutManager.uploadProfiles(alsoUploadNote: false, note: "")
     }
 
     // MARK: - Override Preset Management
@@ -179,7 +179,7 @@ extension Adjustments.StateModel {
     func invokeOverridePresetDeletion(_ objectID: NSManagedObjectID) async {
         await overrideStorage.deleteOverridePreset(objectID)
         setupOverridePresetsArray()
-        await nightscoutManager.uploadProfiles()
+        await nightscoutManager.uploadProfiles(alsoUploadNote: false, note: "")
     }
 
     // MARK: - Update Latest Override Configuration

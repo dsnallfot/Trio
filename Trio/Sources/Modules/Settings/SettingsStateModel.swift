@@ -59,7 +59,10 @@ extension Settings {
                 print("❌ NightscoutManager is nil in StateModel")
                 return
             }
-            await nightscoutManager.uploadProfiles()
+            await nightscoutManager.uploadProfiles(
+                alsoUploadNote: true,
+                note: "Profilinställningar laddades upp från Trio"
+            )
         }
 
         func hideSettingsModal() {

@@ -21,7 +21,7 @@ extension TrioRemoteControl {
         }
 
         if shouldUploadProfiles {
-            await nightscoutManager.uploadProfiles()
+            await nightscoutManager.uploadProfiles(alsoUploadNote: true, note: "APNS-inställningar ändrades i Trio")
         } else {
             debug(.remoteControl, "No changes detected in device token or APNS environment.")
         }

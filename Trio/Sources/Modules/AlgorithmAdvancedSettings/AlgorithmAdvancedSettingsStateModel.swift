@@ -67,7 +67,10 @@ extension AlgorithmAdvancedSettings {
 
                         Task.detached(priority: .low) {
                             debug(.nightscout, "Attempting to upload DIA to Nightscout")
-                            await self.nightscout.uploadProfiles()
+                            await self.nightscout.uploadProfiles(
+                                alsoUploadNote: true,
+                                note: "DIA-profil ändrades i Trio"
+                            )
                         }
                     } receiveValue: {}
                     .store(in: &lifetime)
