@@ -57,21 +57,37 @@ extension CarbRatioEditor {
             guard hasChanges else { return }
             shouldDisplaySaving = true
 
-            let schedule = items.enumerated().map { _, item -> CarbRatioEntry in
-                let fotmatter = DateFormatter()
-                fotmatter.timeZone = TimeZone(secondsFromGMT: 0)
-                fotmatter.dateFormat = "HH:mm:ss"
+            let formatter = DateFormatter()
+            formatter.timeZone = TimeZone(secondsFromGMT: 0)
+            formatter.dateFormat = "HH:mm"
+
+            let schedule = items.map { item -> CarbRatioEntry in
                 let date = Date(timeIntervalSince1970: self.timeValues[item.timeIndex])
                 let minutes = Int(date.timeIntervalSince1970 / 60)
                 let rate = self.rateValues[item.rateIndex]
-                return CarbRatioEntry(start: fotmatter.string(from: date), offset: minutes, ratio: rate)
+                return CarbRatioEntry(start: formatter.string(from: date), offset: minutes, ratio: rate)
             }
+
+            let changes: [(String, Decimal, Decimal)] = items.compactMap { newItem in
+                guard let oldItem = initialItems.first(where: { $0.timeIndex == newItem.timeIndex }),
+                      oldItem.rateIndex != newItem.rateIndex else { return nil }
+                let date = Date(timeIntervalSince1970: self.timeValues[newItem.timeIndex])
+                let timeString = formatter.string(from: date)
+                let oldRate = rateValues[oldItem.rateIndex]
+                let newRate = rateValues[newItem.rateIndex]
+                return (timeString, oldRate, newRate)
+            }
+
+            let changesString = changes.map { "\($0.0) \($0.1)➔\($0.2)" }.joined(separator: ", ")
+            let finalNote = "CR-profil ändrades: \(changesString) g/E"
+
             let profile = CarbRatios(units: .grams, schedule: schedule)
             provider.saveProfile(profile)
             initialItems = items.map { Item(rateIndex: $0.rateIndex, timeIndex: $0.timeIndex) }
+
             Task.detached(priority: .low) {
                 debug(.nightscout, "Attempting to upload CRs to Nightscout")
-                await self.nightscout.uploadProfiles(alsoUploadNote: true, note: "CR-profil ändrades i Trio")
+                await self.nightscout.uploadProfiles(alsoUploadNote: true, note: finalNote)
             }
         }
 

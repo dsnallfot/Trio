@@ -10,6 +10,7 @@ extension BasalProfileEditor {
         var initialItems: [Item] = []
         var items: [Item] = []
         var total: Decimal = 0.0
+        var initialTotal: Decimal = 0.0
         var showAlert: Bool = false
         var chartData: [BasalProfile]? = []
 
@@ -38,6 +39,7 @@ extension BasalProfileEditor {
             initialItems = items.map { Item(rateIndex: $0.rateIndex, timeIndex: $0.timeIndex) }
 
             calcTotal()
+            initialTotal = total
         }
 
         func calcTotal() {
@@ -75,15 +77,33 @@ extension BasalProfileEditor {
             guard hasChanges else { return }
 
             syncInProgress = true
+
+            let formatter = DateFormatter()
+            formatter.timeZone = TimeZone(secondsFromGMT: 0)
+            formatter.dateFormat = "HH:mm"
+
+            // Prepare profiles for upload
             let profile = items.map { item -> BasalProfileEntry in
-                let formatter = DateFormatter()
-                formatter.timeZone = TimeZone(secondsFromGMT: 0)
-                formatter.dateFormat = "HH:mm:ss"
                 let date = Date(timeIntervalSince1970: self.timeValues[item.timeIndex])
                 let minutes = Int(date.timeIntervalSince1970 / 60)
                 let rate = self.rateValues[item.rateIndex]
                 return BasalProfileEntry(start: formatter.string(from: date), minutes: minutes, rate: rate)
             }
+
+            // Calculate total before changes
+            let totalBefore = initialTotal
+
+            // Capture changes
+            let changes: [(String, Decimal, Decimal)] = items.compactMap { newItem in
+                guard let oldItem = initialItems.first(where: { $0.timeIndex == newItem.timeIndex }),
+                      oldItem.rateIndex != newItem.rateIndex else { return nil }
+                let date = Date(timeIntervalSince1970: self.timeValues[newItem.timeIndex])
+                let timeString = formatter.string(from: date)
+                let oldRate = rateValues[oldItem.rateIndex]
+                let newRate = rateValues[newItem.rateIndex]
+                return (timeString, oldRate, newRate)
+            }
+
             provider.saveProfile(profile)
                 .receive(on: DispatchQueue.main)
                 .sink { completion in
@@ -92,20 +112,28 @@ extension BasalProfileEditor {
                     case .finished:
                         // Successfully saved and synced
                         self.initialItems = self.items.map { Item(rateIndex: $0.rateIndex, timeIndex: $0.timeIndex) }
+                        self.calcTotal()
+
+                        let totalAfter = self.total
+
+                        // Build changes string
+                        let changesString = changes.map { "\($0.0) \($0.1)➔\($0.2)" }.joined(separator: ", ")
+                        let changesTotalString = "\(totalBefore)➔\(totalAfter)"
+
+                        let finalNote = "Basalprofil ändrades: \(changesString), Dygn: \(changesTotalString) E"
 
                         Task.detached(priority: .low) {
                             debug(.nightscout, "Attempting to upload basal rates to Nightscout")
                             await self.nightscout.uploadProfiles(
                                 alsoUploadNote: true,
-                                note: "Basalprofil ändrades i Trio"
+                                note: finalNote
                             )
                         }
+
                     case .failure:
-                        // Handle the error, show error message
                         self.showAlert = true
                     }
                 } receiveValue: {
-                    // Handle any successful value if needed
                     print("We were successful")
                 }
                 .store(in: &lifetime)

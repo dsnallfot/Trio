@@ -67,26 +67,44 @@ extension ISFEditor {
             guard hasChanges else { return }
             shouldDisplaySaving.toggle()
 
+            let formatter = DateFormatter()
+            formatter.timeZone = TimeZone(secondsFromGMT: 0)
+            formatter.dateFormat = "HH:mm"
+
             let sensitivities = items.map { item -> InsulinSensitivityEntry in
-                let fotmatter = DateFormatter()
-                fotmatter.timeZone = TimeZone(secondsFromGMT: 0)
-                fotmatter.dateFormat = "HH:mm:ss"
                 let date = Date(timeIntervalSince1970: self.timeValues[item.timeIndex])
                 let minutes = Int(date.timeIntervalSince1970 / 60)
                 let rate = self.rateValues[item.rateIndex]
-                return InsulinSensitivityEntry(sensitivity: rate, offset: minutes, start: fotmatter.string(from: date))
+                return InsulinSensitivityEntry(sensitivity: rate, offset: minutes, start: formatter.string(from: date))
             }
+
+            let changes: [(String, String, String)] = items.compactMap { newItem in
+                guard let oldItem = initialItems.first(where: { $0.timeIndex == newItem.timeIndex }),
+                      oldItem.rateIndex != newItem.rateIndex else { return nil }
+                let date = Date(timeIntervalSince1970: self.timeValues[newItem.timeIndex])
+                let timeString = formatter.string(from: date)
+                let oldRate = units == .mgdL ? rateValues[oldItem.rateIndex].description : rateValues[oldItem.rateIndex]
+                    .formattedAsMmolL
+                let newRate = units == .mgdL ? rateValues[newItem.rateIndex].description : rateValues[newItem.rateIndex]
+                    .formattedAsMmolL
+                return (timeString, oldRate, newRate)
+            }
+
+            let changesString = changes.map { "\($0.0) \($0.1)➔\($0.2)" }.joined(separator: ", ")
+            let finalNote = "ISF-profil ändrades: \(changesString) mmol/L/E"
+
             let profile = InsulinSensitivities(
                 units: .mgdL,
                 userPreferredUnits: .mgdL,
                 sensitivities: sensitivities
             )
+
             provider.saveProfile(profile)
             initialItems = items.map { Item(rateIndex: $0.rateIndex, timeIndex: $0.timeIndex) }
 
             Task.detached(priority: .low) {
                 debug(.nightscout, "Attempting to upload ISF to Nightscout")
-                await self.nightscout.uploadProfiles(alsoUploadNote: true, note: "ISF-profil ändrades i Trio")
+                await self.nightscout.uploadProfiles(alsoUploadNote: true, note: finalNote)
             }
         }
 
