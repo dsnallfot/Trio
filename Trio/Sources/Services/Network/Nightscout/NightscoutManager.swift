@@ -924,6 +924,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
                 let isAPNSProduction = UserDefaults.standard.bool(forKey: "isAPNSProduction")
                 let presetOverrides = await overridesStorage.getPresetOverridesForNightscout()
                 let teamID = Bundle.main.object(forInfoDictionaryKey: "TeamID") as? String ?? ""
+                let expireDate = BuildDetails.shared.calculateExpirationDate()
 
                 let profileStore = NightscoutProfileStore(
                     defaultProfile: defaultProfile,
@@ -937,7 +938,8 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
                     isAPNSProduction: isAPNSProduction,
                     overridePresets: presetOverrides,
                     teamID: teamID,
-                    preferences: preferences
+                    preferences: preferences,
+                    expirationDate: expireDate
                 )
 
                 guard let nightscout = nightscoutAPI, isNetworkReachable else {
@@ -950,6 +952,9 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
 
                 do {
                     try await nightscout.uploadProfile(profileStore)
+
+                    BuildDetails.shared.recordUploadedExpireDate(expireDate: expireDate)
+
                     debug(.nightscout, "Profile uploaded")
 
                     // If alsoUploadNote is true, call the uploadNoteTreatment function with the provided note

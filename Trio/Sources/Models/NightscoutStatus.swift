@@ -60,6 +60,7 @@ struct NightscoutProfileStore: JSON {
     let overridePresets: [NightscoutPresetOverride]?
     let teamID: String
     let preferences: NightscoutPreferences
+    let expirationDate: Date?
 }
 
 /*
