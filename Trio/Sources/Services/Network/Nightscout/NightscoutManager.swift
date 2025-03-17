@@ -517,9 +517,14 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             return
         }
 
-        // For Suggested Determination, fetch the last un-uploaded one.
-        async let suggestedDeterminationID = determinationStorage
-            .fetchLastDeterminationObjectID(predicate: NSPredicate.suggestedDeterminationsNotYetUploadedToNightscout)
+        /*
+         // For Suggested Determination, fetch the last un-uploaded one.
+         async let suggestedDeterminationID = determinationStorage
+             .fetchLastDeterminationObjectID(predicate: NSPredicate.suggestedDeterminationsNotYetUploadedToNightscout)
+         */
+
+        // For Suggested Determination, fetch the absolute newest one (ignoring isUploadedToNS)
+        let fetchedSuggestedDetermination = await determinationStorage.fetchLatestSuggestedDetermination()
 
         // For Enacted Determination, always fetch the absolute latest record (regardless of upload status and age).
         let latestEnactedDetermination = await determinationStorage.fetchLatestEnactedDetermination()
@@ -530,9 +535,12 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         async let fetchedIOBEntry = storage.retrieveAsync(OpenAPS.Monitor.iob, as: [IOBEntry].self)
         async let fetchedPumpStatus = storage.retrieveAsync(OpenAPS.Monitor.status, as: PumpStatus.self)
 
-        // Retrieve the full Suggested Determination object from its ID.
-        let fetchedSuggestedDetermination = await determinationStorage
-            .getOrefDeterminationNotYetUploadedToNightscout(suggestedDeterminationID)
+        /*
+         // Retrieve the full Suggested Determination object from its ID.
+         let fetchedSuggestedDetermination = await determinationStorage
+             .getOrefDeterminationNotYetUploadedToNightscout(suggestedDeterminationID)
+         */
+        // (Using the above new method, we already have the absolute newest suggested determination.)
 
         // Guard: if both suggested and enacted are nil, abort.
         guard latestEnactedDetermination != nil || fetchedSuggestedDetermination != nil else {
@@ -559,7 +567,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             // Check whether the last suggestion that was uploaded is the same that is fetched again when we are attempting to upload the enacted determination
             // Apparently we are too fast; so the flag update is not fast enough to have the predicate filter last suggestion out
             // If this check is truthy, set suggestion to nil so it's not uploaded again
-            if let lastSuggested = lastSuggestedDetermination, lastSuggested.deliverAt == suggestion.deliverAt {
+            if let latestSuggested = lastSuggestedDetermination, latestSuggested.deliverAt == suggestion.deliverAt {
                 modifiedSuggestedDetermination = nil
             } else {
                 modifiedSuggestedDetermination = suggestion
@@ -717,8 +725,8 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             }
 
             // Update local caches.
-            if let lastSuggested = fetchedSuggestedDetermination {
-                lastSuggestedDetermination = lastSuggested
+            if let latestSuggested = fetchedSuggestedDetermination {
+                lastSuggestedDetermination = latestSuggested
             }
             if let latestEnacted = processedEnactedDetermination {
                 lastEnactedDetermination = latestEnacted

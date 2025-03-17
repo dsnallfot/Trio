@@ -11,7 +11,9 @@ protocol DeterminationStorage {
         for data: (id: UUID, forecastID: NSManagedObjectID, forecastValueIDs: [NSManagedObjectID]),
         in context: NSManagedObjectContext
     ) async -> (UUID, Forecast?, [ForecastValue])
-    func getOrefDeterminationNotYetUploadedToNightscout(_ determinationIds: [NSManagedObjectID]) async -> Determination?
+    func getOrefDeterminationNotYetUploadedToNightscout(_ determinationIds: [NSManagedObjectID]) async
+        -> Determination? // Daniel: No longer used due to uploading the latest suggested/enacted determainations regardless of isuploaded flag
+    func fetchLatestSuggestedDetermination() async -> Determination?
     func fetchLatestEnactedDetermination() async -> Determination?
 }
 
@@ -140,6 +142,7 @@ final class BaseDeterminationStorage: DeterminationStorage, Injectable {
         return forecastValuesList.isEmpty ? nil : forecastValuesList
     }
 
+    // Daniel: No longer used due to uploading the latest suggested/enacted determainations regardless of isuploaded flag
     func getOrefDeterminationNotYetUploadedToNightscout(_ determinationIds: [NSManagedObjectID]) async -> Determination? {
         var result: Determination?
 
@@ -200,6 +203,71 @@ final class BaseDeterminationStorage: DeterminationStorage, Injectable {
             }
 
             return result
+        }
+    }
+
+    func fetchLatestSuggestedDetermination() async -> Determination? {
+        // Build a predicate that only cares about the date (ignoring the isUploadedToNS flag)
+        let predicate = NSPredicate(format: "deliverAt >= %@", Date.oneDayAgo as NSDate)
+
+        // Fetch the latest suggested determination (sorted by deliverAt descending)
+        let results = await CoreDataStack.shared.fetchEntitiesAsync(
+            ofType: OrefDetermination.self,
+            onContext: backgroundContext,
+            predicate: predicate,
+            key: "deliverAt",
+            ascending: false,
+            fetchLimit: 1
+        )
+
+        guard let fetchedResults = results as? [OrefDetermination],
+              let latestDetermination = fetchedResults.first
+        else {
+            return nil
+        }
+
+        // Parse forecast values as before
+        let predictions = Predictions(
+            iob: await parseForecastValues(ofType: "iob", from: latestDetermination.objectID),
+            zt: await parseForecastValues(ofType: "zt", from: latestDetermination.objectID),
+            cob: await parseForecastValues(ofType: "cob", from: latestDetermination.objectID),
+            uam: await parseForecastValues(ofType: "uam", from: latestDetermination.objectID)
+        )
+
+        // Map the Core Data object to your Determination struct.
+        return await backgroundContext.perform {
+            Determination(
+                id: latestDetermination.id ?? UUID(),
+                reason: latestDetermination.reason ?? "",
+                units: latestDetermination.smbToDeliver as Decimal?,
+                insulinReq: self.decimal(from: latestDetermination.insulinReq),
+                eventualBG: latestDetermination.eventualBG as? Int,
+                sensitivityRatio: self.decimal(from: latestDetermination.sensitivityRatio),
+                rate: self.decimal(from: latestDetermination.rate),
+                duration: self.decimal(from: latestDetermination.duration),
+                iob: self.decimal(from: latestDetermination.iob),
+                cob: Decimal(latestDetermination.cob),
+                predictions: predictions,
+                deliverAt: latestDetermination.deliverAt,
+                carbsReq: latestDetermination.carbsRequired != 0 ? Decimal(latestDetermination.carbsRequired) : nil,
+                temp: TempType(rawValue: latestDetermination.temp ?? "absolute"),
+                bg: self.decimal(from: latestDetermination.glucose),
+                reservoir: self.decimal(from: latestDetermination.reservoir),
+                isf: self.decimal(from: latestDetermination.insulinSensitivity),
+                timestamp: latestDetermination.timestamp,
+                tdd: self.decimal(from: latestDetermination.totalDailyDose),
+                insulin: nil,
+                current_target: self.decimal(from: latestDetermination.currentTarget),
+                insulinForManualBolus: self.decimal(from: latestDetermination.insulinForManualBolus),
+                manualBolusErrorString: self.decimal(from: latestDetermination.manualBolusErrorString),
+                minDelta: self.decimal(from: latestDetermination.minDelta),
+                expectedDelta: self.decimal(from: latestDetermination.expectedDelta),
+                minGuardBG: nil,
+                minPredBG: nil,
+                threshold: self.decimal(from: latestDetermination.threshold),
+                carbRatio: self.decimal(from: latestDetermination.carbRatio),
+                received: latestDetermination.enacted
+            )
         }
     }
 

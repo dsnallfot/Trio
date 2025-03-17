@@ -32,6 +32,7 @@ extension NSPredicate {
         return NSPredicate(format: "deliverAt >= %@", date as NSDate)
     }
 
+    // Daniel: No longer used due to fetching latest enacted regardless of isuploaded flag
     static var enactedDeterminationsNotYetUploadedToNightscout: NSPredicate {
         NSPredicate(
             format: "deliverAt >= %@ AND isUploadedToNS == %@ AND enacted == %@",
@@ -41,6 +42,7 @@ extension NSPredicate {
         )
     }
 
+    // Daniel: No longer used due to fetching latest suggestion regardless of isuploaded flag
     static var suggestedDeterminationsNotYetUploadedToNightscout: NSPredicate {
         NSPredicate(
             format: "deliverAt >= %@ AND isUploadedToNS == %@ AND (enacted == %@ OR enacted == nil OR enacted != %@)",
