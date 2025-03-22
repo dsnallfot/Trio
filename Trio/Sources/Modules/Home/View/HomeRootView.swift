@@ -463,7 +463,7 @@ extension Home {
                 if state.totalInsulinDisplayType == .totalDailyDose {
                     Spacer()
                     HStack {
-                        Text("TDD:")
+                        Text("TDD")
                             .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
                             .foregroundColor(.secondary) // ✅ Makes "TDD" text secondary
                         Text(
@@ -482,7 +482,7 @@ extension Home {
                 } else {
                     Spacer()
                     HStack {
-                        Text("TINS:")
+                        Text("TINS")
                             .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
                             .foregroundColor(.secondary) // ✅ Makes "TINS" text secondary
                         Text(
