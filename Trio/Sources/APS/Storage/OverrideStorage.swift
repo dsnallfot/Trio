@@ -228,8 +228,8 @@ final class BaseOverrideStorage: @preconcurrency OverrideStorage, Injectable {
             guard let fetchedOverrides = results as? [OverrideStored] else { return [] }
 
             return fetchedOverrides.map { override in
-                let duration = override.indefinite ? 43200 : override.duration ?? 0 // 43200 min = 30 days
-                // let duration = override.indefinite ? 1440 : override.duration ?? 0 // 1440 min = 24 h
+                // let duration = override.indefinite ? 43200 : override.duration ?? 0 // 43200 min = 30 days
+                let duration = override.indefinite ? 1440 : override.duration ?? 0 // 1440 min = 24 h
                 return NightscoutExercise(
                     duration: Int(truncating: duration),
                     eventType: OverrideStored.EventType.nsExercise,
@@ -309,7 +309,8 @@ final class BaseOverrideStorage: @preconcurrency OverrideStorage, Injectable {
             guard let fetched = results as? [OverrideStored],
                   let record = fetched.first,
                   let recordDate = record.date else { return nil }
-            let duration = record.indefinite ? 43200 : record.duration ?? 0
+            // let duration = record.indefinite ? 43200 : record.duration ?? 0
+            let duration = record.indefinite ? 1440 : record.duration ?? 0
             return NightscoutExercise(
                 duration: Int(truncating: duration),
                 eventType: OverrideStored.EventType.nsExercise,
