@@ -53,7 +53,6 @@ struct AppShortcuts: AppShortcutsProvider {
             phrases: [
                 "Avbryt override i \(.applicationName)",
                 "Avbryter en aktiv override i \(.applicationName)"
-
             ],
             shortTitle: "Cancel Override",
             systemImageName: "xmark.circle.fill"
@@ -63,10 +62,19 @@ struct AppShortcuts: AppShortcutsProvider {
             phrases: [
                 "Avbryt tillfälligt mål i \(.applicationName)",
                 "Avbryter ett tillfälligt mål i \(.applicationName)"
-
             ],
             shortTitle: "Cancel Temp Target",
             systemImageName: "xmark.circle.fill"
+        )
+        // Daniel: Added delete carb entry app shortcut for testing otherwise remote triggered automations
+        AppShortcut(
+            intent: DeleteCarbEntryIntent(),
+            phrases: [
+                "Radera kh vid angiven tid i \(.applicationName)",
+                "\(.applicationName) ta bort kh"
+            ],
+            shortTitle: "Delete Carbs",
+            systemImageName: "trash.fill"
         )
     }
 }

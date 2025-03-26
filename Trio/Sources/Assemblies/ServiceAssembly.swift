@@ -35,3 +35,12 @@ final class ServiceAssembly: Assembly {
         }
     }
 }
+
+// Daniel: Added to be able to assemble and resolve datatable provider in delete carb shortcut
+final class DataTableAssembly: Assembly {
+    func assemble(container: Container) {
+        container.register(DataTable.Provider.self) { resolver in
+            DataTable.Provider(resolver: resolver)
+        }
+    }
+}

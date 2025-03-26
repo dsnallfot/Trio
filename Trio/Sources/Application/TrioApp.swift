@@ -26,7 +26,8 @@ import Swinject
         APSAssembly(),
         NetworkAssembly(),
         UIAssembly(),
-        SecurityAssembly()
+        SecurityAssembly(),
+        DataTableAssembly() // Daniel: Added to be able to assemble and resolve datatable provider in delete carb shortcut
     ], parent: nil, defaultObjectScope: .container)
 
     var resolver: Resolver {
