@@ -2,19 +2,20 @@ import AppIntents
 import CoreData
 import Foundation
 import HealthKit
+import UIKit
 
 // Daniel: Added appintent to be able to delete meal entries via remote triggered automation
 @available(iOS 16.0, *) struct DeleteCarbEntryIntent: AppIntent {
     static var title: LocalizedStringResource = "Delete Carbs"
     static var description = IntentDescription("Deletes a carb entry based on a specified date and time.")
 
-    @Parameter(title: "Date", description: "The date and time (hh:mm:ss) for the carb entry to delete")  var date: Date
+    @Parameter(title: "Date", description: "The date and time (hh:mm:ss) for the carb entry to delete") var date: Date
 
     static var parameterSummary: some ParameterSummary {
         Summary("Delete carb entry at \(\.$date)")
     }
 
-    @MainActor  func perform() async throws -> some ProvidesDialog {
+    @MainActor func perform() async throws -> some ProvidesDialog {
         debugPrint("DeleteCarbEntryIntent started at \(Date())")
 
         let resolver = TrioApp.resolver
@@ -103,6 +104,27 @@ import HealthKit
     /// Deletes entries from remote services using the provided provider.
     func deleteFromServices(_ treatmentObjectID: NSManagedObjectID, provider: DataTable.Provider) async {
         debugPrint("deleteFromServices started for objectID: \(treatmentObjectID)")
+
+        // Request background time on the main actor.
+        let bgTaskID: UIBackgroundTaskIdentifier = await MainActor.run {
+            var taskID: UIBackgroundTaskIdentifier = .invalid
+            taskID = UIApplication.shared.beginBackgroundTask(withName: "DeleteCarbEntry") {
+                // This closure is called if the background time expires.
+                Task { @MainActor in
+                    UIApplication.shared.endBackgroundTask(taskID)
+                }
+            }
+            return taskID
+        }
+
+        // Ensure the background task is ended when we're done.
+        defer {
+            Task { @MainActor in
+                UIApplication.shared.endBackgroundTask(bgTaskID)
+                debugPrint("Background task ended for deleteFromServices")
+            }
+        }
+
         let taskContext = CoreDataStack.shared.newTaskContext()
         taskContext.name = "deleteContext"
         taskContext.transactionAuthor = "deleteCarbsFromServices"
@@ -124,7 +146,6 @@ import HealthKit
                         AppleHealthConfig.healthFatObject,
                         AppleHealthConfig.healthProteinObject
                     ]
-
                     for sampleType in healthObjectsToDelete {
                         if let validSampleType = sampleType {
                             debugPrint(
