@@ -400,7 +400,7 @@ extension Home {
                 HStack {
                     // Image(systemName: "syringe.fill")
                     Text("IOB")
-                        .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
+                        .font(.callout).fontWeight(.bold).fontDesign(.rounded)
                         .foregroundColor(Color.insulin)
                     Text(
                         (
@@ -409,7 +409,7 @@ extension Home {
                         ) +
                             NSLocalizedString(" E", comment: "Insulin unit")
                     )
-                    .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
+                    .font(.callout).fontWeight(.bold).fontDesign(.rounded)
                 }
 
                 Spacer()
@@ -417,7 +417,7 @@ extension Home {
                 HStack {
                     // Image(systemName: "fork.knife")
                     Text("COB")
-                        .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
+                        .font(.callout).fontWeight(.bold).fontDesign(.rounded)
                         .foregroundColor(.loopYellow)
                     Text(
                         (
@@ -427,83 +427,92 @@ extension Home {
                         ) +
                             NSLocalizedString(" g", comment: "gram of carbs")
                     )
-                    .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
+                    .font(.callout).fontWeight(.bold).fontDesign(.rounded)
                 }
 
                 Spacer()
 
-                HStack {
-                    if state.pumpSuspended {
-                        Text("Pump suspended")
-                            .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
-                            .foregroundColor(.loopGray)
-                    } else if let tempBasalString = tempBasalString {
-                        Image(systemName: "drop.circle.fill")
-                            .font(.subheadline)
-                            .foregroundColor(Color.insulin.opacity(0.8))
-                        if tempBasalString.count > 5 {
-                            Text(tempBasalString)
-                                .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.85)
-                                .truncationMode(.tail)
-                                .allowsTightening(true)
-                        } else {
-                            // Short strings can just display normally
-                            Text(tempBasalString).font(.footnote).fontWeight(.bold).fontDesign(.rounded)
-                        }
-                    } else {
-                        Image(systemName: "drop.circle")
-                            .font(.subheadline)
-                            .foregroundColor(Color.insulin.opacity(0.8))
-                        Text("No Data")
-                            .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
-                    }
-                }
-                if state.totalInsulinDisplayType == .totalDailyDose {
-                    Spacer()
+                if state.maxIOB == 0.0 {
                     HStack {
-                        Text("TDD")
-                            .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
-                            .foregroundColor(.secondary) // ✅ Makes "TDD" text secondary
-                        Text(
-                            (
-                                Formatter.decimalFormatterWithTwoFractionDigits
-                                    .string(from: (
-                                        state.determinationsFromPersistence.first?
-                                            .totalDailyDose ?? 0
-                                    ) as NSNumber) ??
-                                    "0"
-                            ) +
-                                NSLocalizedString(" E", comment: "Insulin unit")
-                        )
-                        .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
-                    }
+                        Image(systemName: "exclamationmark.circle.fill")
+                        Text("MaxIOB: 0 U")
+                    }.bold()
+                        .foregroundStyle(Color.red)
+                        .font(.callout)
                 } else {
-                    Spacer()
                     HStack {
-                        Text("TINS")
-                            .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
-                            .foregroundColor(.secondary) // ✅ Makes "TINS" text secondary
-                        Text(
-                            "\(state.roundedTotalBolus)" +
-                                NSLocalizedString(
-                                    " E",
-                                    comment: "Unit in number of units delivered (keep the space character!)"
-                                )
-                        )
-                        .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
-                        .onChange(of: state.hours) {
-                            state.roundedTotalBolus = state.calculateTINS()
-                        }
-                        .onAppear {
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                                state.roundedTotalBolus = state.calculateTINS()
+                        if state.pumpSuspended {
+                            Text("Pump suspended")
+                                .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
+                                .foregroundColor(.loopGray)
+                        } else if let tempBasalString = tempBasalString {
+                            Image(systemName: "drop.circle")
+                                .font(.callout)
+                                .foregroundColor(Color.insulin.opacity(0.8))
+                            if tempBasalString.count > 5 {
+                                Text(tempBasalString)
+                                    .font(.callout).fontWeight(.bold).fontDesign(.rounded)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.85)
+                                    .truncationMode(.tail)
+                                    .allowsTightening(true)
+                            } else {
+                                // Short strings can just display normally
+                                Text(tempBasalString).font(.callout).fontWeight(.bold).fontDesign(.rounded)
                             }
+                        } else {
+                            Image(systemName: "drop.circle")
+                                .font(.callout)
+                                .foregroundColor(Color.insulin.opacity(0.8))
+                            Text("No Data")
+                                .font(.callout).fontWeight(.bold).fontDesign(.rounded)
                         }
                     }
+                    /* if state.totalInsulinDisplayType == .totalDailyDose {
+                     Spacer()
+                     HStack {
+                     Text("TDD")
+                     .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
+                     .foregroundColor(.secondary) // ✅ Makes "TDD" text secondary
+                     Text(
+                     (
+                     Formatter.decimalFormatterWithTwoFractionDigits
+                     .string(from: (
+                     state.determinationsFromPersistence.first?
+                     .totalDailyDose ?? 0
+                     ) as NSNumber) ??
+                     "0"
+                     ) +
+                     NSLocalizedString(" E", comment: "Insulin unit")
+                     )
+                     .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
+                     }
+                     } else {
+                     Spacer()
+                     HStack {
+                     Text("TINS")
+                     .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
+                     .foregroundColor(.secondary) // ✅ Makes "TINS" text secondary
+                     Text(
+                     "\(state.roundedTotalBolus)" +
+                     NSLocalizedString(
+                     " E",
+                     comment: "Unit in number of units delivered (keep the space character!)"
+                     )
+                     )
+                     .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
+                     .onChange(of: state.hours) {
+                     state.roundedTotalBolus = state.calculateTINS()
+                     }
+                     .onAppear {
+                     DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                     state.roundedTotalBolus = state.calculateTINS()
+                     }
+                     }
+                     }
+                     } */
                 }
-            }.padding(.horizontal, 10)
+            }.padding(.horizontal, 15)
         }
 
         @ViewBuilder func adjustmentsOverrideView(_ overrideString: String) -> some View {

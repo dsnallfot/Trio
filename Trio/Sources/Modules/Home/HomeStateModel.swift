@@ -55,6 +55,7 @@ extension Home {
         var alarm: GlucoseAlarm?
         var manualTempBasal = false
         var isSmoothingEnabled = false
+        var maxIOB: Decimal = 0.0
         var maxValue: Decimal = 1.2
         var lowGlucose: Decimal = 70
         var highGlucose: Decimal = 180
@@ -375,6 +376,7 @@ extension Home {
             lowTTlowersSens = settingsManager.preferences.lowTemptargetLowersSensitivity
             settingHalfBasalTarget = settingsManager.preferences.halfBasalExerciseTarget
             maxValue = settingsManager.preferences.autosensMax
+            maxIOB = settingsManager.preferences.maxIOB
         }
 
         func addPump(_ type: PumpConfig.PumpType) {
@@ -603,6 +605,7 @@ extension Home.StateModel:
         highTTraisesSens = settingsManager.preferences.highTemptargetRaisesSensitivity
         isExerciseModeActive = settingsManager.preferences.exerciseMode
         lowTTlowersSens = settingsManager.preferences.lowTemptargetLowersSensitivity
+        maxIOB = settingsManager.preferences.maxIOB
     }
 
     func pumpSettingsDidChange(_: PumpSettings) {
