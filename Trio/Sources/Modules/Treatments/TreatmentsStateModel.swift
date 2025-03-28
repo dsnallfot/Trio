@@ -548,6 +548,9 @@ extension Treatments {
                 self.id_ = UUID().uuidString
             }
 
+            // Use default note "📱" if note is empty
+            let finalNote = note.isEmpty ? "📱" : note
+
             let carbsToStore = [CarbsEntry(
                 id: id_,
                 createdAt: now,
@@ -555,7 +558,7 @@ extension Treatments {
                 carbs: carbs,
                 fat: fat,
                 protein: protein,
-                note: note,
+                note: finalNote,
                 enteredBy: CarbsEntry.local,
                 isFPU: false,
                 fpuID: fat > 0 || protein > 0 ? UUID().uuidString : nil
