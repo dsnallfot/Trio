@@ -354,7 +354,30 @@ final class BaseCarbsStorage: CarbsStorage, Injectable {
             }
 
             return carbEntries.map { result in
-                NightscoutTreatment(
+                let originalNote = result.note ?? ""
+                // Regex pattern to capture the note text and the "Inlagt av:" portion.
+                // Pattern breakdown:
+                //   ^(.*?)           -> capture any text at the start (non-greedy) as the note text.
+                //   \s*Inlagt av:\s* -> match "Inlagt av:" with optional surrounding whitespace.
+                //   (.*)$            -> capture the rest of the line as the enteredBy text.
+                let pattern = "^(.*?)\\s*Inlagt av:\\s*(.*)$"
+                var cleanedNote = originalNote
+                var enteredBy: String = CarbsEntry.local
+
+                if let regex = try? NSRegularExpression(pattern: pattern, options: []) {
+                    let range = NSRange(originalNote.startIndex..., in: originalNote)
+                    if let match = regex.firstMatch(in: originalNote, options: [], range: range),
+                       let noteRange = Range(match.range(at: 1), in: originalNote),
+                       let enteredByRange = Range(match.range(at: 2), in: originalNote)
+                    {
+                        // The note is the text before "Inlagt av:".
+                        cleanedNote = String(originalNote[noteRange]).trimmingCharacters(in: .whitespacesAndNewlines)
+                        // The enteredBy value is the text after "Inlagt av:".
+                        enteredBy = String(originalNote[enteredByRange]).trimmingCharacters(in: .whitespacesAndNewlines)
+                    }
+                }
+
+                return NightscoutTreatment(
                     duration: nil,
                     rawDuration: nil,
                     rawRate: nil,
@@ -362,14 +385,14 @@ final class BaseCarbsStorage: CarbsStorage, Injectable {
                     rate: nil,
                     eventType: .nsCarbCorrection,
                     createdAt: result.date,
-                    enteredBy: CarbsEntry.local,
+                    enteredBy: enteredBy,
                     bolus: nil,
                     insulin: nil,
-                    notes: result.note,
+                    notes: cleanedNote,
                     carbs: Decimal(result.carbs),
                     fat: Decimal(result.fat),
                     protein: Decimal(result.protein),
-                    foodType: result.note,
+                    foodType: cleanedNote,
                     targetTop: nil,
                     targetBottom: nil,
                     id: result.id?.uuidString

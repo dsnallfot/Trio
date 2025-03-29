@@ -47,6 +47,11 @@ import Swinject
     ) var note: String?
 
     @Parameter(
+        title: "Inlagt av",
+        description: "Ange namn"
+    ) var enteredBy: String?
+
+    @Parameter(
         title: "Bekräfta innan registrering",
         description: "Om aktiverad, så måste du konfirmera innan registrering.",
         default: true
@@ -58,6 +63,7 @@ import Swinject
                 \.$fatQuantity
                 \.$proteinQuantity
                 \.$note
+                \.$enteredBy
                 \.$confirmBeforeApplying
             }
         }, otherwise: {
@@ -65,6 +71,7 @@ import Swinject
                 \.$fatQuantity
                 \.$proteinQuantity
                 \.$note
+                \.$enteredBy
                 \.$confirmBeforeApplying
             }
         })
@@ -91,7 +98,8 @@ import Swinject
                 fatQuantity,
                 proteinQuantity,
                 dateAdded,
-                note
+                note,
+                enteredBy
             )
             return .result(
                 dialog: IntentDialog(stringLiteral: finalQuantityCarbsDisplay)
