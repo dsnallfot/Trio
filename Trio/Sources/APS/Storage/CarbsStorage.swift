@@ -402,11 +402,11 @@ final class BaseCarbsStorage: CarbsStorage, Injectable {
                     enteredBy: CarbsEntry.local,
                     bolus: nil,
                     insulin: nil,
-                    notes: result.note,
+                    notes: "Fett/Protein", // result.note,
                     carbs: Decimal(result.carbs),
                     fat: Decimal(result.fat),
                     protein: Decimal(result.protein),
-                    foodType: result.note,
+                    foodType: "", // result.note,
                     targetTop: nil,
                     targetBottom: nil,
                     id: result.fpuID?.uuidString
