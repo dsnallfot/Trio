@@ -512,7 +512,7 @@ final class BaseAPSManager: APSManager, Injectable {
 
         guard let pump = pumpManager else { return }
 
-        // unable to do temp basal during manual temp basal 😁
+        // unable to do temp basal during manual temp basal
         if isManualTempBasal {
             processError(APSError.manualBasalTemp(message: "Loop ej möjlig under manuell temp basal"))
             return
@@ -581,7 +581,7 @@ final class BaseAPSManager: APSManager, Injectable {
             throw APSError.apsError(message: "Pump ej inställd")
         }
 
-        // Unable to do temp basal during manual temp basal 😁
+        // Unable to do temp basal during manual temp basal
         if isManualTempBasal {
             throw APSError.manualBasalTemp(message: "Loop ej möjlig under manuell temp basal")
         }
@@ -834,7 +834,7 @@ final class BaseAPSManager: APSManager, Injectable {
         }
     }
 
-    // TODO: - Refactor this whole shit here...
+    // TODO: - Refactor this whole thing here...
 
     // Add to statistics.JSON for upload to NS.
     private func statistics() async {
