@@ -358,10 +358,10 @@ final class BaseCarbsStorage: CarbsStorage, Injectable {
                 // Regex pattern breakdown:
                 //   ^(.*?)             -> capture any text at the start (non-greedy) as the note text.
                 //   \s*Inlagt av:\s*   -> match "Inlagt av:" with optional surrounding whitespace.
-                //   Trio\s*\(          -> match "Trio" followed by optional whitespace and an opening parenthesis.
-                //   (.*?)              -> capture any text (non-greedy) inside the parentheses.
-                //   \)\s*$             -> match a closing parenthesis followed by optional whitespace until the end.
-                let pattern = "^(.*?)\\s*Inlagt av:\\s*Trio\\s*\\((.*?)\\)\\s*$"
+                //   (Trio\s*\(.*?\))   -> capture "Trio" followed by optional whitespace, an opening parenthesis,
+                //                         any text non-greedily, and a closing parenthesis.
+                //   \s*$               -> match any trailing whitespace until the end.
+                let pattern = "^(.*?)\\s*Inlagt av:\\s*(Trio\\s*\\(.*?\\))\\s*$"
                 var cleanedNote = originalNote
                 var enteredBy: String = CarbsEntry.local
 
@@ -373,7 +373,7 @@ final class BaseCarbsStorage: CarbsStorage, Injectable {
                     {
                         // The note is the text before "Inlagt av:".
                         cleanedNote = String(originalNote[noteRange]).trimmingCharacters(in: .whitespacesAndNewlines)
-                        // The enteredBy value is the text inside the parentheses.
+                        // The enteredBy value is the entire text starting with "Trio" including the parentheses.
                         enteredBy = String(originalNote[enteredByRange]).trimmingCharacters(in: .whitespacesAndNewlines)
                     }
                 }
