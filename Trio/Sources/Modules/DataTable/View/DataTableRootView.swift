@@ -604,7 +604,7 @@ extension DataTable {
                         in: note,
                         options: [],
                         range: range,
-                        withTemplate: "• Inlagt av: $1"
+                        withTemplate: "• $1"
                     ) ?? note
                     HStack {
                         Image(systemName: "pencil.circle")
