@@ -88,22 +88,33 @@ import Swinject
         context.perform {
             let fetchRequest: NSFetchRequest<PumpEventStored> = PumpEventStored.fetchRequest()
             // Look for the most recent bolus (e.g. within the last 10 minutes).
-            let twentyMinutesAgo = Date().addingTimeInterval(-10 * 60)
+            let tenMinutesAgo = Date().addingTimeInterval(-10 * 60)
             fetchRequest.predicate = NSPredicate(
                 format: "type == %@ AND timestamp >= %@",
                 PumpEventStored.EventType.bolus.rawValue,
-                twentyMinutesAgo as NSDate
+                tenMinutesAgo as NSDate
             )
             fetchRequest.sortDescriptors = [NSSortDescriptor(key: "timestamp", ascending: false)]
             fetchRequest.fetchLimit = 1
+
             do {
                 let events = try context.fetch(fetchRequest)
-                if let latestBolus = events.first {
-                    latestBolus.note = "Trio (\(noteText))"
-                    try context.save()
+                print("updateLatestBolusNote: Fetched \(events.count) bolus event(s) from Core Data")
+
+                guard let latestBolus = events.first else {
+                    print("updateLatestBolusNote: No recent bolus events found within the time window.")
+                    return
                 }
+
+                // Log the previous note value
+                print("updateLatestBolusNote: Previous note = \(latestBolus.note ?? "nil")")
+
+                latestBolus.note = "Trio (\(noteText))"
+                try context.save()
+
+                print("updateLatestBolusNote: Updated note successfully to: \(latestBolus.note ?? "nil")")
             } catch {
-                print("Error updating bolus note: \(error)")
+                print("updateLatestBolusNote: Error updating bolus note: \(error)")
             }
         }
     }

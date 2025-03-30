@@ -297,26 +297,34 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
 
         return await context.perform { [self] in
             guard let fetchedPumpEvents = results as? [PumpEventStored] else { return [] }
-
             return fetchedPumpEvents.map { event in
                 switch event.type {
                 case PumpEvent.bolus.rawValue:
-                    // eventType determines whether bolus is external, SMB or manual (administered via app by user)
                     let eventType = determineBolusEventType(for: event)
-                    // Use event.note as enteredBy if it's not empty; otherwise, use pendingRemoteBolusNote if available and fresh.
                     let enteredBy: String = {
-                        if let note = event.note?.trimmingCharacters(in: .whitespacesAndNewlines), !note.isEmpty {
+                        // First, check for a pending remote note.
+                        if let pending = TrioRemoteControl.pendingRemoteBolusNote,
+                           let eventTimestamp = event.timestamp
+                        {
+                            let timeDifference = abs(eventTimestamp.timeIntervalSince(pending.timestamp))
+                            print(
+                                "Nightscout upload: Pending note found (\(pending.note)) with time diff = \(timeDifference) seconds"
+                            )
+                            if timeDifference < 300 { // 300 seconds = 5 minutes
+                                // Clear the pending note after use.
+                                TrioRemoteControl.pendingRemoteBolusNote = nil
+                                print("Nightscout upload: Using pending note and clearing it.")
+                                return "Trio (\(pending.note))"
+                            }
+                        }
+                        // Then, check for an existing event.note if it's not empty or the default.
+                        if let note = event.note?.trimmingCharacters(in: .whitespacesAndNewlines),
+                           !note.isEmpty, note != NightscoutTreatment.local
+                        {
+                            print("Nightscout upload: Using event.note = \(note)")
                             return note
                         }
-                        // Check for a pending remote note:
-                        if let pending = TrioRemoteControl.pendingRemoteBolusNote,
-                           let eventTimestamp = event.timestamp,
-                           abs(eventTimestamp.timeIntervalSince(pending.timestamp)) < 300
-                        { // 300 seconds = 5 minutes
-                            // Clear pending note after use.
-                            TrioRemoteControl.pendingRemoteBolusNote = nil
-                            return "Trio (\(pending.note))"
-                        }
+                        // Fallback to the default.
                         return NightscoutTreatment.local
                     }()
 
