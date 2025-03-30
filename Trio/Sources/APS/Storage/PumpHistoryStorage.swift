@@ -303,10 +303,19 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
                 case PumpEvent.bolus.rawValue:
                     // eventType determines whether bolus is external, SMB or manual (administered via app by user)
                     let eventType = determineBolusEventType(for: event)
-                    // Use event.note as enteredBy if it's not empty; otherwise, use NightscoutTreatment.local.
+                    // Use event.note as enteredBy if it's not empty; otherwise, use pendingRemoteBolusNote if available and fresh.
                     let enteredBy: String = {
                         if let note = event.note?.trimmingCharacters(in: .whitespacesAndNewlines), !note.isEmpty {
                             return note
+                        }
+                        // Check for a pending remote note:
+                        if let pending = TrioRemoteControl.pendingRemoteBolusNote,
+                           let eventTimestamp = event.timestamp,
+                           abs(eventTimestamp.timeIntervalSince(pending.timestamp)) < 300
+                        { // 300 seconds = 5 minutes
+                            // Clear pending note after use.
+                            TrioRemoteControl.pendingRemoteBolusNote = nil
+                            return "Trio (\(pending.note))"
                         }
                         return NightscoutTreatment.local
                     }()

@@ -99,7 +99,7 @@ import Swinject
             do {
                 let events = try context.fetch(fetchRequest)
                 if let latestBolus = events.first {
-                    latestBolus.note = "Trio(\(noteText))"
+                    latestBolus.note = "Trio (\(noteText))"
                     try context.save()
                 }
             } catch {

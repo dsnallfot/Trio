@@ -596,8 +596,8 @@ extension DataTable {
                         .moveDisabled(true)
                 }
                 if let note = meal.note, !note.isEmpty {
-                    // Pattern captures anything inside Trio(...)
-                    let pattern = "Inlagt av: Trio\\((.*?)\\)"
+                    // Updated regex pattern to allow optional whitespace between "Trio" and "(".
+                    let pattern = "Inlagt av: Trio\\s*\\((.*?)\\)"
                     let regex = try? NSRegularExpression(pattern: pattern, options: [])
                     let range = NSRange(note.startIndex ..< note.endIndex, in: note)
                     let updatedNote = regex?.stringByReplacingMatches(
@@ -607,12 +607,13 @@ extension DataTable {
                         withTemplate: "• Inlagt av: $1"
                     ) ?? note
                     HStack {
-                        Image(systemName: "square.and.pencil")
+                        Image(systemName: "pencil.circle")
+                            .foregroundColor(.clear)
                         Text(updatedNote)
+                            .foregroundColor(.secondary)
                         Spacer()
                     }
                     .padding(.top, 5)
-                    .foregroundColor(.secondary)
                 }
             }
             .swipeActions {

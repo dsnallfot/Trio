@@ -51,7 +51,8 @@ extension TrioRemoteControl {
         await apsManager.enactBolus(amount: Double(truncating: bolusAmount as NSNumber), isSMB: false, callback: nil)
 
         // Daniel: Add the note from the remote command
-        updateLatestBolusNote(with: pushMessage.user)
+        // Instead of updating the event immediately, save the note for later use.
+        TrioRemoteControl.pendingRemoteBolusNote = (note: pushMessage.user, timestamp: Date())
 
         debug(
             .remoteControl,
@@ -98,7 +99,7 @@ extension TrioRemoteControl {
             do {
                 let events = try context.fetch(fetchRequest)
                 if let latestBolus = events.first {
-                    latestBolus.note = "Trio(\(noteText))"
+                    latestBolus.note = "Trio (\(noteText))"
                     try context.save()
                 }
             } catch {

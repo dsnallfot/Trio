@@ -29,7 +29,7 @@ import Foundation
                     if let note = note, !note.isEmpty,
                        let enteredBy = enteredBy, !enteredBy.isEmpty
                     {
-                        return "\(note) Inlagt av: Trio(\(enteredBy))"
+                        return "\(note) Inlagt av: Trio (\(enteredBy))"
                     } else {
                         return (note?.isEmpty ?? true) ? "✨" : note!
                     }

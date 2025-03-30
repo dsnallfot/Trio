@@ -4,6 +4,7 @@ import Swinject
 import UserNotifications
 
 class TrioRemoteControl: Injectable {
+    static var pendingRemoteBolusNote: (note: String, timestamp: Date)?
     static let shared = TrioRemoteControl()
 
     @Injected() internal var tempTargetsStorage: TempTargetsStorage!

@@ -20,7 +20,7 @@ extension TrioRemoteControl {
         let proteinDecimal = pushMessage.protein != nil ? Decimal(pushMessage.protein!) : nil
         let notes: String
         if let pushNotes = pushMessage.notes, !pushNotes.isEmpty {
-            notes = pushNotes + " Inlagt av: Trio(" + pushMessage.user + ")"
+            notes = pushNotes + " Inlagt av: Trio (" + pushMessage.user + ")"
         } else {
             notes = "📲"
         }

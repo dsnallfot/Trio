@@ -355,12 +355,13 @@ final class BaseCarbsStorage: CarbsStorage, Injectable {
 
             return carbEntries.map { result in
                 let originalNote = result.note ?? ""
-                // Regex pattern to capture the note text and the "Inlagt av:" portion.
-                // Pattern breakdown:
-                //   ^(.*?)           -> capture any text at the start (non-greedy) as the note text.
-                //   \s*Inlagt av:\s* -> match "Inlagt av:" with optional surrounding whitespace.
-                //   (.*)$            -> capture the rest of the line as the enteredBy text.
-                let pattern = "^(.*?)\\s*Inlagt av:\\s*(.*)$"
+                // Regex pattern breakdown:
+                //   ^(.*?)             -> capture any text at the start (non-greedy) as the note text.
+                //   \s*Inlagt av:\s*   -> match "Inlagt av:" with optional surrounding whitespace.
+                //   Trio\s*\(          -> match "Trio" followed by optional whitespace and an opening parenthesis.
+                //   (.*?)              -> capture any text (non-greedy) inside the parentheses.
+                //   \)\s*$             -> match a closing parenthesis followed by optional whitespace until the end.
+                let pattern = "^(.*?)\\s*Inlagt av:\\s*Trio\\s*\\((.*?)\\)\\s*$"
                 var cleanedNote = originalNote
                 var enteredBy: String = CarbsEntry.local
 
@@ -372,7 +373,7 @@ final class BaseCarbsStorage: CarbsStorage, Injectable {
                     {
                         // The note is the text before "Inlagt av:".
                         cleanedNote = String(originalNote[noteRange]).trimmingCharacters(in: .whitespacesAndNewlines)
-                        // The enteredBy value is the text after "Inlagt av:".
+                        // The enteredBy value is the text inside the parentheses.
                         enteredBy = String(originalNote[enteredByRange]).trimmingCharacters(in: .whitespacesAndNewlines)
                     }
                 }
