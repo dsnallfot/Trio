@@ -34,14 +34,18 @@ final class BaseFetchTreatmentsManager: FetchTreatmentsManager, Injectable {
                     async let carbs = self.nightscoutManager.fetchCarbs()
                     async let tempTargets = self.nightscoutManager.fetchTempTargets()
 
-                    // Filter and store if not from "Trio"
-                    let filteredCarbs = await carbs.filter { $0.enteredBy != CarbsEntry.local }
+                    // Filter out entries that are either CarbEntry.local or contain "Trio"
+                    let filteredCarbs = await carbs.filter {
+                        $0.enteredBy != CarbsEntry.local && !($0.enteredBy?.contains("Trio") ?? false)
+                    }
                     if filteredCarbs.isNotEmpty {
                         await self.carbsStorage.storeCarbs(filteredCarbs, areFetchedFromRemote: true)
                     }
 
                     // Filter and store if not from Trio
-                    let filteredTargets = await tempTargets.filter { $0.enteredBy != TempTarget.local }
+                    let filteredTargets = await tempTargets.filter {
+                        $0.enteredBy != TempTarget.local && !($0.enteredBy?.contains("Trio") ?? false)
+                    }
                     if filteredTargets.isNotEmpty {
                         // Sort temp targets by creation date
                         let sortedTargets = filteredTargets.sorted { $0.createdAt < $1.createdAt }
