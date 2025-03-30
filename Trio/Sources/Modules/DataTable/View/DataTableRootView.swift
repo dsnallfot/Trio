@@ -515,7 +515,7 @@ extension DataTable {
                     Text("Temp Basal")
                     Text(
                         (Formatter.decimalFormatterWithTwoFractionDigits.string(from: rate) ?? "0") +
-                            NSLocalizedString(" U/hr", comment: "Unit insulin per hour")
+                            NSLocalizedString(" E/h", comment: "Unit insulin per hour")
                     )
                     .foregroundColor(.secondary)
                     if tempBasal.duration > 0 {
@@ -540,7 +540,7 @@ extension DataTable {
                             alertMessage = Formatter.dateFormatter
                                 .string(from: item.timestamp ?? Date()) + " • " +
                                 (Formatter.decimalFormatterWithTwoFractionDigits.string(from: item.bolus?.amount ?? 0) ?? "0") +
-                                NSLocalizedString(" U", comment: "Insulin unit")
+                                NSLocalizedString(" E", comment: "Insulin unit")
 
                             if let bolus = item.bolus {
                                 // Add text snippet, so that alert message is more descriptive for SMBs
@@ -576,14 +576,14 @@ extension DataTable {
                 HStack {
                     if meal.isFPU {
                         Image(systemName: "circle.fill").foregroundColor(Color.orange.opacity(0.5))
-                        Text("Fat / Protein")
+                        Text("Fett/Protein")
                         Text(
                             (Formatter.decimalFormatterWithTwoFractionDigits.string(for: meal.carbs) ?? "0") +
                                 NSLocalizedString(" g", comment: "gram of carbs")
                         )
                     } else {
                         Image(systemName: "circle.fill").foregroundColor(Color.loopYellow)
-                        Text("Carbs")
+                        Text("Kolhydrater")
                         Text(
                             (Formatter.decimalFormatterWithTwoFractionDigits.string(for: meal.carbs) ?? "0") +
                                 NSLocalizedString(" g", comment: "gram of carb equilvalents")
@@ -595,12 +595,24 @@ extension DataTable {
                     Text(Formatter.dateFormatter.string(from: meal.date ?? Date()))
                         .moveDisabled(true)
                 }
-                if let note = meal.note, note != "" {
+                if let note = meal.note, !note.isEmpty {
+                    // Pattern captures anything inside Trio(...)
+                    let pattern = "Inlagt av: Trio\\((.*?)\\)"
+                    let regex = try? NSRegularExpression(pattern: pattern, options: [])
+                    let range = NSRange(note.startIndex ..< note.endIndex, in: note)
+                    let updatedNote = regex?.stringByReplacingMatches(
+                        in: note,
+                        options: [],
+                        range: range,
+                        withTemplate: "• Inlagt av: $1"
+                    ) ?? note
                     HStack {
                         Image(systemName: "square.and.pencil")
-                        Text(note)
+                        Text(updatedNote)
                         Spacer()
-                    }.padding(.top, 5).foregroundColor(.secondary)
+                    }
+                    .padding(.top, 5)
+                    .foregroundColor(.secondary)
                 }
             }
             .swipeActions {
@@ -613,7 +625,7 @@ extension DataTable {
 
                         // meal is carb-only
                         if meal.fpuID == nil {
-                            alertTitle = "Delete Carbs?"
+                            alertTitle = "Radera Kolhydrater?"
                             alertMessage = Formatter.dateFormatter
                                 .string(from: meal.date ?? Date()) + " • " +
                                 (Formatter.decimalFormatterWithTwoFractionDigits.string(for: meal.carbs) ?? "0") +

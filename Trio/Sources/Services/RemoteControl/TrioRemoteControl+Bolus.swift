@@ -1,3 +1,4 @@
+import CoreData
 import Foundation
 
 extension TrioRemoteControl {
@@ -49,6 +50,9 @@ extension TrioRemoteControl {
 
         await apsManager.enactBolus(amount: Double(truncating: bolusAmount as NSNumber), isSMB: false, callback: nil)
 
+        // Daniel: Add the note from the remote command
+        updateLatestBolusNote(with: pushMessage.user)
+
         debug(
             .remoteControl,
             "Fjärrkommando behandlades framgångsrikt. \(pushMessage.humanReadableDescription())"
@@ -75,6 +79,32 @@ extension TrioRemoteControl {
             title: "Remote Bolus",
             body: notificationBody
         )
+    }
+
+    // Daneil: Hack to upload the user as enteredBy to NS
+    private func updateLatestBolusNote(with noteText: String) {
+        let context = CoreDataStack.shared.newTaskContext()
+        context.perform {
+            let fetchRequest: NSFetchRequest<PumpEventStored> = PumpEventStored.fetchRequest()
+            // Look for the most recent bolus (e.g. within the last 10 minutes).
+            let tenMinutesAgo = Date().addingTimeInterval(-10 * 60)
+            fetchRequest.predicate = NSPredicate(
+                format: "type == %@ AND timestamp >= %@",
+                PumpEventStored.EventType.bolus.rawValue,
+                tenMinutesAgo as NSDate
+            )
+            fetchRequest.sortDescriptors = [NSSortDescriptor(key: "timestamp", ascending: false)]
+            fetchRequest.fetchLimit = 1
+            do {
+                let events = try context.fetch(fetchRequest)
+                if let latestBolus = events.first {
+                    latestBolus.note = "Trio(\(noteText))"
+                    try context.save()
+                }
+            } catch {
+                print("Error updating bolus note: \(error)")
+            }
+        }
     }
 
     private func fetchCurrentIOB() async -> Decimal {

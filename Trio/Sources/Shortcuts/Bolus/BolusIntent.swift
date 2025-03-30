@@ -1,4 +1,5 @@
 import AppIntents
+import CoreData
 import Foundation
 import Intents
 import Swinject
@@ -25,6 +26,12 @@ import Swinject
     ) var bolusQuantity: Double
 
     @Parameter(
+        title: LocalizedStringResource("Inlagt av", table: "ShortcutsDetail"),
+        description: LocalizedStringResource("Valfri text att bifoga med bolusen", table: "ShortcutsDetail"),
+        default: ""
+    ) var inlagtAv: String
+
+    @Parameter(
         title: LocalizedStringResource("Bekräfta innan dosering", table: "ShortcutsDetail"),
         description: LocalizedStringResource("Om aktiverad, så måste du konfirmera innan dosering.", table: "ShortcutsDetail"),
         default: true
@@ -32,11 +39,11 @@ import Swinject
 
     static var parameterSummary: some ParameterSummary {
         When(\.$confirmBeforeApplying, .equalTo, true, {
-            Summary("Ger \(\.$bolusQuantity) E", table: "ShortcutsDetail") {
+            Summary("Ger \(\.$bolusQuantity) E, anteckning: \(\.$inlagtAv)", table: "ShortcutsDetail") {
                 \.$confirmBeforeApplying
             }
         }, otherwise: {
-            Summary("Omedelbar dosering \(\.$bolusQuantity) E", table: "ShortcutsDetail") {
+            Summary("Omedelbar dosering \(\.$bolusQuantity) E, anteckning: \(\.$inlagtAv)", table: "ShortcutsDetail") {
                 \.$confirmBeforeApplying
             }
         })
@@ -45,13 +52,13 @@ import Swinject
     @MainActor func perform() async throws -> some ProvidesDialog {
         do {
             let amount: Double = bolusQuantity
-
             let bolusFormatted = amount.formatted()
+
             if confirmBeforeApplying {
                 try await requestConfirmation(
                     result: .result(
                         dialog: IntentDialog(LocalizedStringResource(
-                            "Vill du vill ge \(bolusFormatted) E insulin?",
+                            "Vill du ge \(bolusFormatted) E insulin?",
                             table: "ShortcutsDetail"
                         ))
                     )
@@ -59,12 +66,45 @@ import Swinject
             }
 
             let finalBolusDisplay = try await BolusIntentRequest().bolus(amount)
+
+            // Daniel: After the bolus is enacted, if the user entered some text under Inlagt av,
+            // update the most recent bolus event with the note.
+            if !inlagtAv.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                // Schedule an asynchronous Core Data update.
+                updateLatestBolusNote(with: inlagtAv)
+            }
+
             return .result(
                 dialog: IntentDialog(finalBolusDisplay)
             )
-
         } catch {
             throw error
+        }
+    }
+
+    // Daniel: Hack to upload enteredBy with for instance Mamma or Pappa when shortcuts used for bolus
+    func updateLatestBolusNote(with noteText: String) {
+        let context = CoreDataStack.shared.newTaskContext()
+        context.perform {
+            let fetchRequest: NSFetchRequest<PumpEventStored> = PumpEventStored.fetchRequest()
+            // Look for the most recent bolus (e.g. within the last 10 minutes).
+            let twentyMinutesAgo = Date().addingTimeInterval(-10 * 60)
+            fetchRequest.predicate = NSPredicate(
+                format: "type == %@ AND timestamp >= %@",
+                PumpEventStored.EventType.bolus.rawValue,
+                twentyMinutesAgo as NSDate
+            )
+            fetchRequest.sortDescriptors = [NSSortDescriptor(key: "timestamp", ascending: false)]
+            fetchRequest.fetchLimit = 1
+            do {
+                let events = try context.fetch(fetchRequest)
+                if let latestBolus = events.first {
+                    latestBolus.note = "Trio(\(noteText))"
+                    try context.save()
+                }
+            } catch {
+                print("Error updating bolus note: \(error)")
+            }
         }
     }
 }

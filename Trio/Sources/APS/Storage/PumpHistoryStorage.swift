@@ -301,8 +301,16 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
             return fetchedPumpEvents.map { event in
                 switch event.type {
                 case PumpEvent.bolus.rawValue:
-                    // eventType determines whether bolus is external, smb or manual (=administered via app by user)
+                    // eventType determines whether bolus is external, SMB or manual (administered via app by user)
                     let eventType = determineBolusEventType(for: event)
+                    // Use event.note as enteredBy if it's not empty; otherwise, use NightscoutTreatment.local.
+                    let enteredBy: String = {
+                        if let note = event.note?.trimmingCharacters(in: .whitespacesAndNewlines), !note.isEmpty {
+                            return note
+                        }
+                        return NightscoutTreatment.local
+                    }()
+
                     return NightscoutTreatment(
                         duration: nil,
                         rawDuration: nil,
@@ -311,7 +319,7 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
                         rate: nil,
                         eventType: eventType,
                         createdAt: event.timestamp,
-                        enteredBy: NightscoutTreatment.local,
+                        enteredBy: enteredBy,
                         bolus: nil,
                         insulin: event.bolus?.amount as Decimal?,
                         notes: nil,
@@ -437,7 +445,6 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
                         targetTop: nil,
                         targetBottom: nil
                     )
-
                 default:
                     return nil
                 }
