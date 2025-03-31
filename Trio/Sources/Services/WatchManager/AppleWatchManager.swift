@@ -615,6 +615,9 @@ final class BaseWatchManager: NSObject, WCSessionDelegate, Injectable, WatchMana
                 // Acknowledge success or error of bolus
                 self.sendAcknowledgment(toWatch: success, message: message)
             }
+            // Daniel: Reuse pending note from trio remote bolus hack
+            TrioRemoteControl.pendingRemoteBolusNote = (note: "⌚️", timestamp: Date())
+            print("Watch Bolus: Saved pendingWatchBolusNote = ⌚️ at \(Date())")
             debug(.watchManager, "📱 Enacted bolus via APS Manager: \(amount)U")
         }
     }

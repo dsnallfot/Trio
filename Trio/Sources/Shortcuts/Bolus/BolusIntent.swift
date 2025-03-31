@@ -72,6 +72,8 @@ import Swinject
             if !inlagtAv.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 // Schedule an asynchronous Core Data update.
                 updateLatestBolusNote(with: inlagtAv)
+            } else {
+                updateLatestBolusNote(with: "✨")
             }
 
             return .result(
