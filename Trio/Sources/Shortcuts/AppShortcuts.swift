@@ -76,5 +76,14 @@ struct AppShortcuts: AppShortcutsProvider {
             shortTitle: "Delete Carbs",
             systemImageName: "trash.fill"
         )
+        AppShortcut(
+            intent: ToggleClosedLoopIntent(),
+            phrases: [
+                "Toggle closed loop in \(.applicationName)",
+                "\(.applicationName) toggle closed loop"
+            ],
+            shortTitle: "Toggle Closed Loop",
+            systemImageName: "switch.2"
+        )
     }
 }

@@ -258,6 +258,7 @@
 		65070A332BFDCB83006F213F /* TidepoolStartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65070A322BFDCB83006F213F /* TidepoolStartView.swift */; };
 		6545DD692D70D026007B0D70 /* AppVersionChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6545DD682D70D024007B0D70 /* AppVersionChecker.swift */; };
 		6545DD6B2D70D495007B0D70 /* SubmodulesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6545DD6A2D70D493007B0D70 /* SubmodulesView.swift */; };
+		65EB4DCE2D9C35B800DF61E0 /* ToggleClosedLoopIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65EB4DCD2D9C35B600DF61E0 /* ToggleClosedLoopIntent.swift */; };
 		6632A0DC746872439A858B44 /* ISFEditorDataFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79BDA519C9B890FD9A5DFCF3 /* ISFEditorDataFlow.swift */; };
 		69A31254F2451C20361D172F /* TreatmentsStateModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 223EC0494F55A91E3EA69EF4 /* TreatmentsStateModel.swift */; };
 		69B9A368029F7EB39F525422 /* CarbRatioEditorStateModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64AA5E04A2761F6EEA6568E1 /* CarbRatioEditorStateModel.swift */; };
@@ -991,6 +992,7 @@
 		6545DD652D70CFBB007B0D70 /* blacklisted-versions.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "blacklisted-versions.json"; sourceTree = "<group>"; };
 		6545DD682D70D024007B0D70 /* AppVersionChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppVersionChecker.swift; sourceTree = "<group>"; };
 		6545DD6A2D70D493007B0D70 /* SubmodulesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubmodulesView.swift; sourceTree = "<group>"; };
+		65EB4DCD2D9C35B600DF61E0 /* ToggleClosedLoopIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToggleClosedLoopIntent.swift; sourceTree = "<group>"; };
 		67F94DD2853CF42BA4E30616 /* BasalProfileEditorDataFlow.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BasalProfileEditorDataFlow.swift; sourceTree = "<group>"; };
 		680C4420C9A345D46D90D06C /* ManualTempBasalProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ManualTempBasalProvider.swift; sourceTree = "<group>"; };
 		6B1A8D012B14D88B00E76752 /* UniformTypeIdentifiers.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UniformTypeIdentifiers.framework; path = System/Library/Frameworks/UniformTypeIdentifiers.framework; sourceTree = SDKROOT; };
@@ -2681,6 +2683,7 @@
 		CE7CA34B2A064973004BE681 /* State */ = {
 			isa = PBXGroup;
 			children = (
+				65EB4DCD2D9C35B600DF61E0 /* ToggleClosedLoopIntent.swift */,
 				CE7CA34C2A064973004BE681 /* ListStateIntent.swift */,
 				CE7CA34D2A064973004BE681 /* StateIntentRequest.swift */,
 				CE7CA3572A064E2F004BE681 /* ListStateView.swift */,
@@ -3648,6 +3651,7 @@
 				3811DE4225C9D4A100A708ED /* SettingsDataFlow.swift in Sources */,
 				CEE9A6562BBB418300EB5194 /* CalibrationsRootView.swift in Sources */,
 				3811DE2525C9D48300A708ED /* MainRootView.swift in Sources */,
+				65EB4DCE2D9C35B800DF61E0 /* ToggleClosedLoopIntent.swift in Sources */,
 				CE94598229E9E3D30047C9C6 /* WatchConfigProvider.swift in Sources */,
 				DD1745322C55AE6000211FAC /* TargetBehavoirStateModel.swift in Sources */,
 				38E44535274E411700EC9A94 /* Disk+Data.swift in Sources */,
