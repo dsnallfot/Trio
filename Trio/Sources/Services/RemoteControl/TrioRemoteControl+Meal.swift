@@ -22,7 +22,7 @@ extension TrioRemoteControl {
         if let pushNotes = pushMessage.notes, !pushNotes.isEmpty {
             notes = pushNotes + " Inlagt av: Trio (" + pushMessage.user + ")"
         } else {
-            notes = "📲"
+            notes = " Inlagt av: Trio (📲)"
         }
 
         let settings = await TrioApp.resolver.resolve(SettingsManager.self)?.settings
