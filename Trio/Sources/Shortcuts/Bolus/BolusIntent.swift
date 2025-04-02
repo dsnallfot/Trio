@@ -5,24 +5,15 @@ import Intents
 import Swinject
 
 @available(iOS 16.0,*) struct BolusIntent: AppIntent {
-    // Title of the action in the Shortcuts app
     static var title = LocalizedStringResource("Ge bolus", table: "ShortcutsDetail")
-
-    // Description of the action in the Shortcuts app
     static var description = IntentDescription(.init("Tillåt att bolus skickas till appen", table: "ShortcutsDetail"))
 
     @Parameter(
         title: LocalizedStringResource("Mängd", table: "ShortcutsDetail"),
         description: LocalizedStringResource("Bolusmängd i E", table: "ShortcutsDetail"),
         controlStyle: .field,
-        /// The 200 upperBound does nothing here, the true max is set based on pump max
-        /// An upperBound is specificed so that we can usethe lowerBound of 0, which ensures no negatives are allowed
-        /// A preferred approach would be to just block negatives and not specify an upperBound here, since it is implemented elsewhere
         inclusiveRange: (lowerBound: 0, upperBound: 200),
-        requestValueDialog: IntentDialog(LocalizedStringResource(
-            "Bolusmängd (enheter insulin)?",
-            table: "ShortcutsDetail"
-        ))
+        requestValueDialog: IntentDialog(LocalizedStringResource("Bolusmängd (enheter insulin)?", table: "ShortcutsDetail"))
     ) var bolusQuantity: Double
 
     @Parameter(
@@ -65,66 +56,27 @@ import Swinject
                 )
             }
 
-            let finalBolusDisplay = try await BolusIntentRequest().bolus(amount)
-
-            // Daniel: After the bolus is enacted, if the user entered some text under Inlagt av,
-            // update the most recent bolus event with the note.
+            // Set the pending note first using the shared variable.
             if !inlagtAv.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                // Schedule an asynchronous Core Data update.
                 updateLatestBolusNote(with: inlagtAv)
             } else {
                 updateLatestBolusNote(with: "✨")
             }
+            // Introduce a brief delay (e.g., 200 ms) to ensure the note is in place.
+            try? await Task.sleep(nanoseconds: 200_000_000)
 
-            return .result(
-                dialog: IntentDialog(finalBolusDisplay)
-            )
+            // Now enact the bolus.
+            let finalBolusDisplay = try await BolusIntentRequest().bolus(amount)
+
+            return .result(dialog: IntentDialog(finalBolusDisplay))
         } catch {
             throw error
         }
     }
 
-    // Daniel: Hack to upload enteredBy with for instance Mamma or Pappa when shortcuts used for bolus
+    // This method now simply sets the shared pending note.
     func updateLatestBolusNote(with noteText: String) {
         TrioRemoteControl.pendingRemoteBolusNote = (note: noteText, timestamp: Date())
         print("Shortcuts: Set pendingRemoteBolusNote = \(noteText) at \(Date())")
     }
-
-    /*
-     func updateLatestBolusNote(with noteText: String) {
-         let context = CoreDataStack.shared.newTaskContext()
-         context.perform {
-             let fetchRequest: NSFetchRequest<PumpEventStored> = PumpEventStored.fetchRequest()
-             // Look for the most recent bolus (e.g. within the last 10 minutes).
-             let tenMinutesAgo = Date().addingTimeInterval(-10 * 60)
-             fetchRequest.predicate = NSPredicate(
-                 format: "type == %@ AND timestamp >= %@",
-                 PumpEventStored.EventType.bolus.rawValue,
-                 tenMinutesAgo as NSDate
-             )
-             fetchRequest.sortDescriptors = [NSSortDescriptor(key: "timestamp", ascending: false)]
-             fetchRequest.fetchLimit = 1
-
-             do {
-                 let events = try context.fetch(fetchRequest)
-                 print("updateLatestBolusNote: Fetched \(events.count) bolus event(s) from Core Data")
-
-                 guard let latestBolus = events.first else {
-                     print("updateLatestBolusNote: No recent bolus events found within the time window.")
-                     return
-                 }
-
-                 // Log the previous note value
-                 print("updateLatestBolusNote: Previous note = \(latestBolus.note ?? "nil")")
-
-                 latestBolus.note = "Trio (\(noteText))"
-                 try context.save()
-
-                 print("updateLatestBolusNote: Updated note successfully to: \(latestBolus.note ?? "nil")")
-             } catch {
-                 print("updateLatestBolusNote: Error updating bolus note: \(error)")
-             }
-         }
-     }
-     */
 }

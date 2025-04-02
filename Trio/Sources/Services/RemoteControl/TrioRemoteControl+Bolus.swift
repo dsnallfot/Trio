@@ -9,7 +9,6 @@ extension TrioRemoteControl {
         }
 
         let maxBolus = await TrioApp.resolver.resolve(SettingsManager.self)?.pumpSettings.maxBolus ?? Decimal(0)
-
         if bolusAmount > maxBolus {
             await logError(
                 "Kommandot avvisades: bolusmängden (\(bolusAmount) enheter) överskrider det maximalt tillåtna (\(maxBolus) enheter).",
@@ -29,7 +28,6 @@ extension TrioRemoteControl {
         }
 
         let totalRecentBolusAmount = await fetchTotalRecentBolusAmount(since: Date(timeIntervalSince1970: pushMessage.timestamp))
-
         if totalRecentBolusAmount >= bolusAmount * 0.2 {
             await logError(
                 "Kommandot avvisades: bolusdoser som totalt överstiger 20% av den begärda mängden har levererats sedan kommandot skickades.",
@@ -48,35 +46,41 @@ extension TrioRemoteControl {
             return
         }
 
-        await apsManager.enactBolus(amount: Double(truncating: bolusAmount as NSNumber), isSMB: false, callback: nil)
-
-        // Daniel: Add the note from the remote command
-        // Instead of updating the event immediately, save the note for later use.
+        // Save the pending note BEFORE enacting the bolus.
         TrioRemoteControl.pendingRemoteBolusNote = (note: pushMessage.user, timestamp: Date())
         print("Remote Bolus: Saved pendingRemoteBolusNote = \(pushMessage.user) at \(Date())")
+
+        // Introduce a brief delay (e.g., 200 milliseconds) to ensure the note is set.
+        try? await Task.sleep(nanoseconds: 200_000_000)
+
+        await apsManager.enactBolus(amount: Double(truncating: bolusAmount as NSNumber), isSMB: false, callback: nil)
 
         debug(
             .remoteControl,
             "Fjärrkommando behandlades framgångsrikt. \(pushMessage.humanReadableDescription())"
         )
-        // Format the bolus amount to 2 decimal places
+
+        // Format the bolus amount to 2 decimal places.
         let numberFormatter = NumberFormatter()
         numberFormatter.minimumFractionDigits = 2
         numberFormatter.maximumFractionDigits = 2
         numberFormatter.numberStyle = .decimal
         let formattedBolusAmount = numberFormatter.string(from: bolusAmount as NSNumber) ?? "\(bolusAmount)"
+
         var notificationBody = "Bolus: \(formattedBolusAmount) E\n"
         notificationBody += "Inlagt av: \(pushMessage.user)\n"
-        // Convert timestamp to HH:mm:ss format
+
+        // Convert timestamp to HH:mm:ss format.
         let date = Date(timeIntervalSince1970: pushMessage.timestamp)
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "HH:mm:ss"
         let formattedTime = dateFormatter.string(from: date)
         notificationBody += "Tid: \(formattedTime)\n"
 
-        // Trim trailing newline, if present
+        // Trim trailing newline.
         notificationBody = notificationBody.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
-        // Send success notification
+
+        // Send success notification.
         notificationManager.notifyTrioRemoteControl(
             title: "Remote Bolus",
             body: notificationBody
