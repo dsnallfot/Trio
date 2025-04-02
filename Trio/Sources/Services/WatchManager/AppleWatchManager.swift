@@ -611,18 +611,22 @@ final class BaseWatchManager: NSObject, WCSessionDelegate, Injectable, WatchMana
     /// - Parameter amount: The requested bolus amount in units
     private func handleBolusRequest(_ amount: Decimal) {
         Task {
-            // Daniel: Reuse pending note from trio remote bolus hack
+            // Save the pending note first
             TrioRemoteControl.pendingRemoteBolusNote = (note: "⌚️", timestamp: Date())
             print("Watch Bolus: Saved pendingWatchBolusNote = ⌚️ at \(Date())")
-
+            
+            // Introduce a brief delay (e.g., 200 milliseconds) to ensure the note is set
+            try? await Task.sleep(nanoseconds: 200_000_000)
+            
+            // Now enact the bolus
             await apsManager.enactBolus(amount: Double(amount), isSMB: false) { success, message in
                 // Acknowledge success or error of bolus
                 self.sendAcknowledgment(toWatch: success, message: message)
             }
+            
             debug(.watchManager, "📱 Enacted bolus via APS Manager: \(amount)U")
         }
     }
-
     /// Handles carbs entry requests received from the Watch
     /// - Parameters:
     ///   - amount: The carbs amount in grams
