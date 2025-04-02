@@ -310,10 +310,10 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
                             print(
                                 "Nightscout upload: Pending note found (\(pending.note)) with time diff = \(timeDifference) seconds"
                             )
-                            if timeDifference < 300 { // 300 seconds = 5 minutes
-                                // Clear the pending note after use.
-                                TrioRemoteControl.pendingRemoteBolusNote = nil
-                                print("Nightscout upload: Using pending note and clearing it.")
+                            if timeDifference < 180 { // 180 seconds = 3 minutes
+                                // Daniel: Comment out clearing of the pending note below due to duplicates (that shouldnt but still do happen sometimes) using nil when i want them to use the note.
+                                // TrioRemoteControl.pendingRemoteBolusNote = nil
+                                //print("Nightscout upload: Using pending note and clearing it.")
                                 return "Trio (\(pending.note))"
                             }
                         }

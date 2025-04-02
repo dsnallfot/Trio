@@ -14,7 +14,7 @@ class TrioRemoteControl: Injectable {
     @Injected() internal var settings: SettingsManager!
     @Injected() public var notificationManager: BaseUserNotificationsManager!
 
-    private let timeWindow: TimeInterval = 600 // Defines how old messages that are accepted, 10 minutes
+    private let timeWindow: TimeInterval = 300 // Defines how old messages that are accepted, 5 minutes
 
     internal let pumpHistoryFetchContext: NSManagedObjectContext
     internal let viewContext: NSManagedObjectContext
