@@ -288,7 +288,7 @@ final class BaseAPSManager: APSManager, Injectable {
         isLooping.send(false)
 
         if let error = error {
-            let errorDescription = "Loop slutfördes inte: \(error.localizedDescription)"
+            let errorDescription = "⚠️ Loop slutfördes inte: \(error.localizedDescription)"
             warning(.apsManager, errorDescription)
             // Daniel: Added to upload loop failure reasons as a note to Nightscout
             await nightscout.uploadErrors(withNotes: errorDescription)
