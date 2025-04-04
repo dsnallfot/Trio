@@ -96,8 +96,8 @@ struct CarbEntryEditorView: View {
                 action: {
                     guard let entryToEdit = entryToEdit else { return }
 
-                    // Append a star ✩ for each edit
-                    editedNote += "✩"
+                    // prefix a star ✩ for each edit
+                    editedNote = "✩" + editedNote
 
                     state.updateEntry(
                         entryToEdit,
@@ -164,7 +164,7 @@ struct CarbEntryEditorView: View {
 
                     HStack {
                         Image(systemName: "square.and.pencil")
-                        TextFieldWithToolBarString(text: $editedNote, placeholder: "Note...", maxLength: 25)
+                        TextFieldWithToolBarString(text: $editedNote, placeholder: "Note...", maxLength: 35)
                     }
                 }.listRowBackground(Color.chart)
 

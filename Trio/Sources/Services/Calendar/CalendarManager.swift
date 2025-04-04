@@ -379,6 +379,10 @@ final class BaseCalendarManager: CalendarManager, Injectable {
             event.endDate = Date(timeIntervalSinceNow: 60 * 10)
             event.calendar = calendar
 
+            debugPrint(
+                "\(DebuggingIdentifiers.succeeded) \(#file) \(#function) Creating calendar event: \(event.title ?? "No title") @ \(event.startDate)"
+            )
+
             try eventStore.save(event, span: .thisEvent)
 
             previousDeterminationId = determinationId
