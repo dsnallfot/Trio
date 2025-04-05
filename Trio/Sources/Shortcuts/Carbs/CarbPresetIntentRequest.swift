@@ -25,13 +25,11 @@ import Foundation
                 fat: Decimal(quantityFat),
                 protein: Decimal(quantityProtein),
                 note: {
-                    // If note and enteredBy are both non-empty, append the enteredBy string - this will later be parsed and uploaded to NS as enteredBy.
-                    if let note = note, !note.isEmpty,
-                       let enteredBy = enteredBy, !enteredBy.isEmpty
-                    {
-                        return "\(note) Inlagt av: Trio (\(enteredBy))"
+                    let noteText = (note?.isEmpty ?? true) ? "✨" : note!
+                    if let enteredBy = enteredBy, !enteredBy.isEmpty {
+                        return "\(noteText) Inlagt av: Trio (\(enteredBy))"
                     } else {
-                        return (note?.isEmpty ?? true) ? "✨" : note!
+                        return noteText
                     }
                 }(),
                 enteredBy: CarbsEntry.local,
