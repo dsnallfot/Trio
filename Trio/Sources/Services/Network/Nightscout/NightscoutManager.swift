@@ -517,6 +517,8 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             return
         }
 
+        let oref2Data = await storage.retrieveAsync(OpenAPS.Monitor.oref2_variables, as: Oref2_variables.self)
+
         /*
          // For Suggested Determination, fetch the last un-uploaded one.
          async let suggestedDeterminationID = determinationStorage
@@ -705,7 +707,8 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             openaps: openapsStatus,
             pump: pump,
             uploader: uploader,
-            additional: additionalInfo
+            additional: additionalInfo,
+            oref2: oref2Data
         )
 
         do {
@@ -1001,8 +1004,56 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         await uploadManualGlucose(glucoseStorage.getManualGlucoseNotYetUploadedToNightscout())
     }
 
+    /*
+     func uploadPumpHistory() async {
+         await uploadPumpHistory(pumpHistoryStorage.getPumpHistoryNotYetUploadedToNightscout())
+     }
+     */
+
+    // MARK: - Upload: Pump History with Deduplication
+
     func uploadPumpHistory() async {
-        await uploadPumpHistory(pumpHistoryStorage.getPumpHistoryNotYetUploadedToNightscout())
+        let allTreatments = await pumpHistoryStorage.getPumpHistoryNotYetUploadedToNightscout(using: backgroundContext)
+        debugPrint("Total treatments fetched for upload: \(allTreatments.count)")
+
+        // Group by `id + createdAt` to detect duplicates
+        var treatmentGroups: [String: [NightscoutTreatment]] = [:]
+        for treatment in allTreatments {
+            let key = "\(treatment.id ?? "")-\((treatment.createdAt ?? .distantPast).timeIntervalSince1970)"
+            treatmentGroups[key, default: []].append(treatment)
+        }
+
+        // Extract the unique treatment to upload
+        let uniqueTreatments = treatmentGroups.values.compactMap { group -> NightscoutTreatment? in
+            if group.count > 1 {
+                debugPrint("⚠️ Duplicate treatments detected and filtered out: \(group.map { $0.id ?? "nil" })")
+            }
+            return group.first
+        }
+
+        debugPrint("Unique treatments after filtering: \(uniqueTreatments.count)")
+
+        guard !uniqueTreatments.isEmpty,
+              let nightscout = nightscoutAPI,
+              isUploadEnabled
+        else {
+            return
+        }
+
+        do {
+            for chunk in uniqueTreatments.chunks(ofCount: 100) {
+                try await nightscout.uploadTreatments(Array(chunk))
+            }
+
+            // Flatten all treatments in all duplicate groups to be marked as uploaded
+            let allToMarkAsUploaded = treatmentGroups.values.flatMap { $0 }
+            await updatePumpEventStoredsAsUploaded(allToMarkAsUploaded)
+
+            debug(.nightscout, "✅ Pump treatments uploaded (including duplicates marked as uploaded)")
+        } catch {
+            debug(.nightscout, "❌ Failed to upload pump treatments: \(error.localizedDescription)")
+            // Don't mark anything as uploaded if upload failed
+        }
     }
 
     func uploadCarbs() async {
@@ -1113,38 +1164,50 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         }
     }
 
-    private func uploadPumpHistory(_ treatments: [NightscoutTreatment]) async {
-        guard !treatments.isEmpty, let nightscout = nightscoutAPI, isUploadEnabled else {
-            return
-        }
+    /*
+     private func uploadPumpHistory(_ treatments: [NightscoutTreatment]) async {
+         guard !treatments.isEmpty, let nightscout = nightscoutAPI, isUploadEnabled else {
+             return
+         }
 
-        do {
-            for chunk in treatments.chunks(ofCount: 100) {
-                try await nightscout.uploadTreatments(Array(chunk))
-            }
+         do {
+             for chunk in treatments.chunks(ofCount: 100) {
+                 try await nightscout.uploadTreatments(Array(chunk))
+             }
 
-            await updatePumpEventStoredsAsUploaded(treatments)
+             await updatePumpEventStoredsAsUploaded(treatments)
 
-            debug(.nightscout, "Treatments uploaded")
-        } catch {
-            debug(.nightscout, error.localizedDescription)
-        }
-    }
+             debug(.nightscout, "Treatments uploaded")
+         } catch {
+             debug(.nightscout, error.localizedDescription)
+         }
+     }
+     */
 
     private func updatePumpEventStoredsAsUploaded(_ treatments: [NightscoutTreatment]) async {
         await backgroundContext.perform {
-            let ids = treatments.map(\.id) as NSArray
+            let ids = treatments.compactMap(\.id)
+            debugPrint("🟡 Attempting to mark as uploaded. IDs: \(ids)")
+
             let fetchRequest: NSFetchRequest<PumpEventStored> = PumpEventStored.fetchRequest()
-            fetchRequest.predicate = NSPredicate(format: "id IN %@", ids)
+            fetchRequest.predicate = NSPredicate(format: "id IN %@", ids as NSArray)
 
             do {
                 let results = try self.backgroundContext.fetch(fetchRequest)
+                debugPrint("🔵 Found \(results.count) PumpEventStored entries matching IDs")
+                debugPrint("🔍 Fetched IDs: \(results.compactMap(\.id))")
+
                 for result in results {
                     result.isUploadedToNS = true
                 }
 
-                guard self.backgroundContext.hasChanges else { return }
+                guard self.backgroundContext.hasChanges else {
+                    debugPrint("⚠️ No changes to save in background context — nothing marked as uploaded.")
+                    return
+                }
+
                 try self.backgroundContext.save()
+                debugPrint("✅ Successfully saved isUploadedToNS updates for pump events.")
             } catch let error as NSError {
                 debugPrint(
                     "\(DebuggingIdentifiers.failed) \(#file) \(#function) Failed to update isUploadedToNS: \(error.userInfo)"

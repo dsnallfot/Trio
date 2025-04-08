@@ -6,6 +6,7 @@ struct NightscoutStatus: JSON {
     let pump: NSPumpStatus
     let uploader: Uploader
     var additional: [String: Decimal]?
+    let oref2: Oref2_variables?
 }
 
 struct OpenAPSStatus: JSON {
