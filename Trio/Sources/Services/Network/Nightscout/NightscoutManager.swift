@@ -1552,7 +1552,8 @@ extension BaseNightscoutManager {
             "Eventual BG\\s*-?\\d+\\.?\\d*\\s*>&\\s*-?\\d+\\.?\\d*\\s*but\\s*Min\\.\\s*Delta\\s*-?\\d+\\.?\\d*\\s*<\\s*Exp\\.\\s*Delta\\s*-?\\d+\\.?\\d*",
             // Eventual BG X > Y but Min. Delta A < Exp. Delta B
             "\\S+\\s+\\d+\\s*>\\s*\\d+%\\s+of\\s+BG\\s+\\d+", // maxDelta x > y% of BG z
-            "-?\\d+\\.?\\d*-\\d+\\.?\\d* in range" // New pattern: "105-80 in range"
+            "-?\\d+\\.?\\d*-\\d+\\.?\\d* in range", // New pattern: "105-80 in range"
+            "maxDelta\\s+(\\d+)\\s*>\\s*(\\d+)%\\s+of\\s+BG\\s+(\\d+)"
         ]
         let pattern = patterns.joined(separator: "|")
         let regex = try! NSRegularExpression(pattern: pattern)
@@ -1572,15 +1573,15 @@ extension BaseNightscoutManager {
             guard let range = Range(match.range, in: normalizedReason) else { continue }
             let glucoseValueString = String(normalizedReason[range])
 
-            if glucoseValueString.contains(" in range") {
+            if glucoseValueString.contains(" inom mål") {
                 // Handle "105-80 in range: no temp required"
                 let values = glucoseValueString.components(separatedBy: "-")
                 if values.count == 2 {
                     let firstValue = values[0].trimmingCharacters(in: .whitespaces)
-                    let secondPart = values[1].components(separatedBy: " in range")[0].trimmingCharacters(in: .whitespaces)
+                    let secondPart = values[1].components(separatedBy: " inom mål")[0].trimmingCharacters(in: .whitespaces)
                     let formattedFirstValue = convertToMmolL(firstValue)
                     let formattedSecondValue = convertToMmolL(secondPart)
-                    let formattedString = "\(formattedFirstValue)-\(formattedSecondValue) in range"
+                    let formattedString = "\(formattedFirstValue)-\(formattedSecondValue) inom mål"
                     updatedReason.replaceSubrange(range, with: formattedString)
                 }
             } else if glucoseValueString.contains("Eventual BG"), glucoseValueString.contains(">"),
@@ -1588,7 +1589,7 @@ extension BaseNightscoutManager {
             {
                 // Handle "Eventual BG X > Y but Min. Delta A < Exp. Delta B"
                 let regexSubPattern =
-                    "Eventual BG\\s*(-?\\d+\\.?\\d*)\\s*>&\\s*(-?\\d+\\.?\\d*)\\s*but\\s*Min\\.\\s*Delta\\s*(-?\\d+\\.?\\d*)\\s*<\\s*Exp\\.\\s*Delta\\s*(-?\\d+\\.?\\d*)"
+                    #"Eventual BG\s*(-?\d+(?:\.\d+)?)\s*>\s*(-?\d+(?:\.\d+)?)\s*but\s*Min\. Delta\s*(-?\d+(?:\.\d+)?)\s*<\s*Exp\. Delta\s*(-?\d+(?:\.\d+)?)"#
                 let subRegex = try! NSRegularExpression(pattern: regexSubPattern)
 
                 if let subMatch = subRegex.firstMatch(
@@ -1601,7 +1602,7 @@ extension BaseNightscoutManager {
                     let expDelta = String(glucoseValueString[Range(subMatch.range(at: 4), in: glucoseValueString)!])
 
                     let formattedString =
-                        "Prognos BG: \(convertToMmolL(bg1))>\(convertToMmolL(bg2)) men min. delta \(convertToMmolL(minDelta))<exp. delta \(convertToMmolL(expDelta))"
+                        "Prognos BG: \(convertToMmolL(bg1))>\(convertToMmolL(bg2)) men min. delta \(convertToMmolL(minDelta))<förv. delta \(convertToMmolL(expDelta))"
                     updatedReason.replaceSubrange(range, with: formattedString)
                 }
             } else if glucoseValueString.contains("→") {
@@ -1640,7 +1641,7 @@ extension BaseNightscoutManager {
 
             } else if glucoseValueString.contains(">=") {
                 // Handle "Eventual BG X >= Y"
-                let eventBGPattern = "Eventual BG\\s*(-?\\d+\\.?\\d*)\\s*>?=\\s*(-?\\d+\\.?\\d*)"
+                let eventBGPattern = #"Eventual BG\s*(-?\d+(?:\.\d+)?)\s*>=\s*(-?\d+(?:\.\d+)?)"#
 
                 let eventBGRegex = try! NSRegularExpression(pattern: eventBGPattern)
                 if let eventBGMatch = eventBGRegex.firstMatch(
@@ -1655,6 +1656,26 @@ extension BaseNightscoutManager {
 
                     let formattedString = "Prognos BG: \(formattedBG)≥\(formattedTarget)"
                     updatedReason.replaceSubrange(range, with: formattedString)
+                }
+
+            } else if glucoseValueString.starts(with: "maxDelta") {
+                // Handle "maxDelta 25 > 15% of BG 158"
+                let pattern = "maxDelta\\s+(\\d+)\\s*>\\s*(\\d+)%\\s+of\\s+BG\\s+(\\d+)"
+                let subRegex = try! NSRegularExpression(pattern: pattern)
+                if let match = subRegex.firstMatch(
+                    in: glucoseValueString,
+                    range: NSRange(glucoseValueString.startIndex..., in: glucoseValueString)
+                ),
+                    match.numberOfRanges == 4
+                {
+                    let value1 = String(glucoseValueString[Range(match.range(at: 1), in: glucoseValueString)!])
+                    let percentage = String(glucoseValueString[Range(match.range(at: 2), in: glucoseValueString)!])
+                    let bg = String(glucoseValueString[Range(match.range(at: 3), in: glucoseValueString)!])
+
+                    let formattedValue1 = convertToMmolL(value1)
+                    let formattedBG = convertToMmolL(bg)
+                    let formatted = "Max delta \(formattedValue1)>\(percentage)% av BG \(formattedBG)"
+                    updatedReason.replaceSubrange(range, with: formatted)
                 }
 
             } else if glucoseValueString.contains(">"), glucoseValueString.contains("BG") {
