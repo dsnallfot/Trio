@@ -18,7 +18,7 @@ struct LoopStatusView: View {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Current Loop Status").bold()
+                        Text("Senaste Loop").bold()
 
                         Text(statusTitle)
                             .font(.headline)
@@ -73,12 +73,12 @@ struct LoopStatusView: View {
                             .fixedSize(horizontal: false, vertical: true)
 
                     } else {
-                        Text("Latest Raw Algorithm Output")
+                        Text("Senaste beräkningar")
                             .bold()
                             .padding(.top)
 
                         Text(
-                            "Trio is currently using these metrics and values as determined by the oref algorithm:"
+                            "Trio använder dessa värden som beräknats av oref algoritmen:"
                         )
                         .font(.subheadline)
                         .lineLimit(nil)
@@ -92,7 +92,7 @@ struct LoopStatusView: View {
                             shouldParseToMmolL: state.units == .mmolL
                         )
 
-                        Text("Current Algorithm Reasoning").bold().padding(.top)
+                        Text("Algoritmens slutsats").bold().padding(.top)
 
                         Text(
                             self
@@ -177,9 +177,9 @@ struct LoopStatusView: View {
     private func setStatusTitle() {
         if let determination = state.determinationsFromPersistence.first {
             statusTitle =
-                "Enacted at \(Formatter.dateFormatter.string(from: determination.deliverAt ?? Date()))"
+                "Utförd \(Formatter.dateFormatter.string(from: determination.deliverAt ?? Date()))"
         } else {
-            statusTitle = "Not enacted."
+            statusTitle = "Ej utförd."
         }
     }
 

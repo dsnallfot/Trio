@@ -1547,10 +1547,12 @@ extension BaseNightscoutManager {
             "Target:\\s*-?\\d+\\.?\\d*", // Target pattern
             "(?:minPredBG|minGuardBG|IOBpredBG|COBpredBG|UAMpredBG)\\s+-?\\d+\\.?\\d*(?:<-?\\d+\\.?\\d*)?", // minPredBG, etc.
             "minGuardBG\\s+-?\\d+\\.?\\d*<-?\\d+\\.?\\d*", // minGuardBG x<y
+            // 1. Specialized case for "Eventual BG … but Min. Delta …"
+            "Eventual BG\\s*-?\\d+\\.?\\d*\\s*>\\s*-?\\d+\\.?\\d*\\s*but\\s*Min\\.\\s*Delta\\s*-?\\d+\\.?\\d*\\s*<\\s*Exp\\.\\s*Delta\\s*-?\\d+\\.?\\d*",
+            // Eventual BG X > Y but Min. Delta A < Exp. Delta B
+            // 2. Generic cases
             "Eventual BG\\s+-?\\d+\\.?\\d*\\s*>=\\s*-?\\d+\\.?\\d*", // Eventual BG x >= target
             "Eventual BG\\s+-?\\d+\\.?\\d*\\s*<\\s*-?\\d+\\.?\\d*", // Eventual BG x < target
-            "Eventual BG\\s*-?\\d+\\.?\\d*\\s*>&\\s*-?\\d+\\.?\\d*\\s*but\\s*Min\\.\\s*Delta\\s*-?\\d+\\.?\\d*\\s*<\\s*Exp\\.\\s*Delta\\s*-?\\d+\\.?\\d*",
-            // Eventual BG X > Y but Min. Delta A < Exp. Delta B
             "\\S+\\s+\\d+\\s*>\\s*\\d+%\\s+of\\s+BG\\s+\\d+", // maxDelta x > y% of BG z
             "-?\\d+\\.?\\d*-\\d+\\.?\\d* in range", // New pattern: "105-80 in range"
             "maxDelta\\s+(\\d+)\\s*>\\s*(\\d+)%\\s+of\\s+BG\\s+(\\d+)"
@@ -1584,9 +1586,7 @@ extension BaseNightscoutManager {
                     let formattedString = "\(formattedFirstValue)-\(formattedSecondValue) inom mål"
                     updatedReason.replaceSubrange(range, with: formattedString)
                 }
-            } else if glucoseValueString.contains("Eventual BG"), glucoseValueString.contains(">"),
-                      glucoseValueString.contains("but Min. Delta")
-            {
+            } else if glucoseValueString.contains("Eventual BG"), glucoseValueString.contains("but Min. Delta") {
                 // Handle "Eventual BG X > Y but Min. Delta A < Exp. Delta B"
                 let regexSubPattern =
                     #"Eventual BG\s*(-?\d+(?:\.\d+)?)\s*>\s*(-?\d+(?:\.\d+)?)\s*but\s*Min\. Delta\s*(-?\d+(?:\.\d+)?)\s*<\s*Exp\. Delta\s*(-?\d+(?:\.\d+)?)"#
