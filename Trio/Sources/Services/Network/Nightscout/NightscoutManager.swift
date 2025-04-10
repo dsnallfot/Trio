@@ -1540,21 +1540,32 @@ extension BaseNightscoutManager {
         let normalizedReason = reason
             .replacingOccurrences(of: "&lt;", with: "<")
             .replacingOccurrences(of: "&gt;", with: ">")
+
+        // Rearranged pattern array with specialized "Eventual BG ... but Min. Delta ... < Exp. Delta ..." first.
         let patterns = [
-            "ISF:\\s*-?\\d+\\.?\\d*→-?\\d+\\.?\\d*", // ISF with arrow
-            "Dev:\\s*-?\\d+\\.?\\d*", // Dev pattern
-            "BGI:\\s*-?\\d+\\.?\\d*", // BGI pattern
-            "Target:\\s*-?\\d+\\.?\\d*", // Target pattern
-            "(?:minPredBG|minGuardBG|IOBpredBG|COBpredBG|UAMpredBG)\\s+-?\\d+\\.?\\d*(?:<-?\\d+\\.?\\d*)?", // minPredBG, etc.
-            "minGuardBG\\s+-?\\d+\\.?\\d*<-?\\d+\\.?\\d*", // minGuardBG x<y
-            // 1. Specialized case for "Eventual BG … but Min. Delta …"
+            // 0. Specialized case for "Eventual BG … but Min. Delta … < Exp. Delta …"
             "Eventual BG\\s*-?\\d+\\.?\\d*\\s*>\\s*-?\\d+\\.?\\d*\\s*but\\s*Min\\.\\s*Delta\\s*-?\\d+\\.?\\d*\\s*<\\s*Exp\\.\\s*Delta\\s*-?\\d+\\.?\\d*",
-            // Eventual BG X > Y but Min. Delta A < Exp. Delta B
-            // 2. Generic cases
-            "Eventual BG\\s+-?\\d+\\.?\\d*\\s*>=\\s*-?\\d+\\.?\\d*", // Eventual BG x >= target
-            "Eventual BG\\s+-?\\d+\\.?\\d*\\s*<\\s*-?\\d+\\.?\\d*", // Eventual BG x < target
-            "\\S+\\s+\\d+\\s*>\\s*\\d+%\\s+of\\s+BG\\s+\\d+", // maxDelta x > y% of BG z
-            "-?\\d+\\.?\\d*-\\d+\\.?\\d* in range", // New pattern: "105-80 in range"
+            // 1. ISF with arrow
+            "ISF:\\s*-?\\d+\\.?\\d*→-?\\d+\\.?\\d*",
+            // 2. Dev pattern
+            "Dev:\\s*-?\\d+\\.?\\d*",
+            // 3. BGI pattern
+            "BGI:\\s*-?\\d+\\.?\\d*",
+            // 4. Target pattern
+            "Target:\\s*-?\\d+\\.?\\d*",
+            // 5. Patterns for minPredBG, minGuardBG, etc.
+            "(?:minPredBG|minGuardBG|IOBpredBG|COBpredBG|UAMpredBG)\\s+-?\\d+\\.?\\d*(?:<-?\\d+\\.?\\d*)?",
+            // 6. minGuardBG x<y
+            "minGuardBG\\s+-?\\d+\\.?\\d*<-?\\d+\\.?\\d*",
+            // 7. Generic cases for Eventual BG with >=
+            "Eventual BG\\s+-?\\d+\\.?\\d*\\s*>=\\s*-?\\d+\\.?\\d*",
+            // 8. Generic cases for Eventual BG with <
+            "Eventual BG\\s+-?\\d+\\.?\\d*\\s*<\\s*-?\\d+\\.?\\d*",
+            // 9. maxDelta x > y% of BG z
+            "\\S+\\s+\\d+\\s*>\\s*\\d+%\\s+of\\s+BG\\s+\\d+",
+            // 10. "in range" case, e.g., "105-80 in range"
+            "-?\\d+\\.?\\d*-\\d+\\.?\\d* in range",
+            // 11. maxDelta numeric pattern
             "maxDelta\\s+(\\d+)\\s*>\\s*(\\d+)%\\s+of\\s+BG\\s+(\\d+)"
         ]
         let pattern = patterns.joined(separator: "|")
@@ -1576,7 +1587,7 @@ extension BaseNightscoutManager {
             let glucoseValueString = String(normalizedReason[range])
 
             if glucoseValueString.contains(" inom mål") {
-                // Handle "105-80 in range: no temp required"
+                // Handle "105-80 in range" (no temp required)
                 let values = glucoseValueString.components(separatedBy: "-")
                 if values.count == 2 {
                     let firstValue = values[0].trimmingCharacters(in: .whitespaces)
@@ -1586,7 +1597,10 @@ extension BaseNightscoutManager {
                     let formattedString = "\(formattedFirstValue)-\(formattedSecondValue) inom mål"
                     updatedReason.replaceSubrange(range, with: formattedString)
                 }
-            } else if glucoseValueString.contains("Eventual BG"), glucoseValueString.contains("but Min. Delta") {
+            } else if glucoseValueString.contains("Eventual BG"),
+                      glucoseValueString.contains("but Min. Delta"),
+                      glucoseValueString.contains("Exp. Delta")
+            {
                 // Handle "Eventual BG X > Y but Min. Delta A < Exp. Delta B"
                 let regexSubPattern =
                     #"Eventual BG\s*(-?\d+(?:\.\d+)?)\s*>\s*(-?\d+(?:\.\d+)?)\s*but\s*Min\. Delta\s*(-?\d+(?:\.\d+)?)\s*<\s*Exp\. Delta\s*(-?\d+(?:\.\d+)?)"#
@@ -1614,8 +1628,9 @@ extension BaseNightscoutManager {
                 let secondValue = convertToMmolL(secondNumber)
                 let formattedString = "ISF: \(firstValue)→\(secondValue)"
                 updatedReason.replaceSubrange(range, with: formattedString)
-
-            } else if glucoseValueString.contains("Eventual BG"), glucoseValueString.contains("<") {
+            } else if glucoseValueString.contains("Eventual BG"),
+                      glucoseValueString.contains("<")
+            {
                 // Handle Eventual BG XX < target
                 let parts = glucoseValueString.components(separatedBy: "<")
                 if parts.count == 2 {
@@ -1626,7 +1641,6 @@ extension BaseNightscoutManager {
                     let formattedString = "Prognos BG: \(formattedBGPart)<\(formattedTargetValue)"
                     updatedReason.replaceSubrange(range, with: formattedString)
                 }
-
             } else if glucoseValueString.contains("<") {
                 // Handle minGuardBG (or minPredBG, etc.) x < y
                 let parts = glucoseValueString.components(separatedBy: "<")
@@ -1638,11 +1652,9 @@ extension BaseNightscoutManager {
                     let formattedString = "minGuardBG \(formattedFirstValue)<\(formattedSecondValue)"
                     updatedReason.replaceSubrange(range, with: formattedString)
                 }
-
             } else if glucoseValueString.contains(">=") {
                 // Handle "Eventual BG X >= Y"
                 let eventBGPattern = #"Eventual BG\s*(-?\d+(?:\.\d+)?)\s*>=\s*(-?\d+(?:\.\d+)?)"#
-
                 let eventBGRegex = try! NSRegularExpression(pattern: eventBGPattern)
                 if let eventBGMatch = eventBGRegex.firstMatch(
                     in: glucoseValueString,
@@ -1650,14 +1662,11 @@ extension BaseNightscoutManager {
                 ) {
                     let bgValue = String(glucoseValueString[Range(eventBGMatch.range(at: 1), in: glucoseValueString)!])
                     let targetValue = String(glucoseValueString[Range(eventBGMatch.range(at: 2), in: glucoseValueString)!])
-
                     let formattedBG = convertToMmolL(bgValue)
                     let formattedTarget = convertToMmolL(targetValue)
-
                     let formattedString = "Prognos BG: \(formattedBG)≥\(formattedTarget)"
                     updatedReason.replaceSubrange(range, with: formattedString)
                 }
-
             } else if glucoseValueString.starts(with: "maxDelta") {
                 // Handle "maxDelta 25 > 15% of BG 158"
                 let pattern = "maxDelta\\s+(\\d+)\\s*>\\s*(\\d+)%\\s+of\\s+BG\\s+(\\d+)"
@@ -1665,19 +1674,15 @@ extension BaseNightscoutManager {
                 if let match = subRegex.firstMatch(
                     in: glucoseValueString,
                     range: NSRange(glucoseValueString.startIndex..., in: glucoseValueString)
-                ),
-                    match.numberOfRanges == 4
-                {
+                ), match.numberOfRanges == 4 {
                     let value1 = String(glucoseValueString[Range(match.range(at: 1), in: glucoseValueString)!])
                     let percentage = String(glucoseValueString[Range(match.range(at: 2), in: glucoseValueString)!])
                     let bg = String(glucoseValueString[Range(match.range(at: 3), in: glucoseValueString)!])
-
                     let formattedValue1 = convertToMmolL(value1)
                     let formattedBG = convertToMmolL(bg)
                     let formatted = "Max delta \(formattedValue1)>\(percentage)% av BG \(formattedBG)"
                     updatedReason.replaceSubrange(range, with: formatted)
                 }
-
             } else if glucoseValueString.contains(">"), glucoseValueString.contains("BG") {
                 // Handle "maxDelta 37 > 20% of BG 95" style
                 let localPattern = "(\\d+) > (\\d+)% of BG (\\d+)"
@@ -1690,37 +1695,29 @@ extension BaseNightscoutManager {
                     let range1 = Range(localMatch.range(at: 1), in: glucoseValueString)!
                     let range2 = Range(localMatch.range(at: 2), in: glucoseValueString)!
                     let range3 = Range(localMatch.range(at: 3), in: glucoseValueString)!
-
                     let firstValue = convertToMmolL(String(glucoseValueString[range1]))
                     let thirdValue = convertToMmolL(String(glucoseValueString[range3]))
-
                     let oldSnippet =
                         "\(glucoseValueString[range1])>\(glucoseValueString[range2])% of BG \(glucoseValueString[range3])"
                     let newSnippet = "\(firstValue)>\(glucoseValueString[range2])% of BG \(thirdValue)"
-
                     let replaced = glucoseValueString.replacingOccurrences(of: oldSnippet, with: newSnippet)
                     updatedReason.replaceSubrange(range, with: replaced)
                 }
-
             } else {
-                // Handle everything else, e.g., "minPredBG 39", etc.
+                // Handle everything else, e.g. "minPredBG 39", etc.
                 let parts = glucoseValueString.components(separatedBy: .whitespaces)
                 if parts.count >= 2 {
                     var metric = parts[0]
                     let value = parts[1]
-
-                    // Add ":" to the metric only if it doesn't already end with ":"
                     if !metric.hasSuffix(":") {
                         metric += ":"
                     }
-
                     let formattedValue = convertToMmolL(value)
                     let formattedString = "\(metric) \(formattedValue)"
                     updatedReason.replaceSubrange(range, with: formattedString)
                 }
             }
         }
-
         return updatedReason
     }
 }
