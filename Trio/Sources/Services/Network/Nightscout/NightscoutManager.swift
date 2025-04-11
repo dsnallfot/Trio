@@ -538,13 +538,13 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         async let fetchedPumpStatus = storage.retrieveAsync(OpenAPS.Monitor.status, as: PumpStatus.self)
 
         /*
-        // Kör tester för parseReasonGlucoseValuesToMmolL i debug-läge om enheter är mmol/L
-        #if DEBUG
-            if settingsManager.settings.units == .mmolL {
-                await testParseReasonGlucoseValuesToMmolL()
-            }
-        #endif
-        */
+         // Kör tester för parseReasonGlucoseValuesToMmolL i debug-läge om enheter är mmol/L
+         #if DEBUG
+             if settingsManager.settings.units == .mmolL {
+                 await testParseReasonGlucoseValuesToMmolL()
+             }
+         #endif
+         */
         /*
          // Retrieve the full Suggested Determination object from its ID.
          let fetchedSuggestedDetermination = await determinationStorage
@@ -1616,9 +1616,9 @@ extension BaseNightscoutManager {
 
                     let formattedString = "\(formattedFirstValue)-\(formattedSecondValue) inom mål"
                     updatedReason.replaceSubrange(range, with: formattedString)
-                } /*else {
-                    debug(.nightscout, "⚠️ Kunde inte matcha 'inom mål'-mönster för: \(glucoseValueString)")
-                }*/
+                } /* else {
+                     debug(.nightscout, "⚠️ Kunde inte matcha 'inom mål'-mönster för: \(glucoseValueString)")
+                 } */
             } else if glucoseValueString.contains("Eventual BG"),
                       glucoseValueString.contains("but Min. Delta"),
                       glucoseValueString.contains("Exp. Delta")
