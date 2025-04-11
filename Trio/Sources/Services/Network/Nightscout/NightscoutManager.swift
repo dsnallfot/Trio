@@ -538,6 +538,14 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         async let fetchedPumpStatus = storage.retrieveAsync(OpenAPS.Monitor.status, as: PumpStatus.self)
 
         /*
+        // Kör tester för parseReasonGlucoseValuesToMmolL i debug-läge om enheter är mmol/L
+        #if DEBUG
+            if settingsManager.settings.units == .mmolL {
+                await testParseReasonGlucoseValuesToMmolL()
+            }
+        #endif
+        */
+        /*
          // Retrieve the full Suggested Determination object from its ID.
          let fetchedSuggestedDetermination = await determinationStorage
              .getOrefDeterminationNotYetUploadedToNightscout(suggestedDeterminationID)
@@ -1544,7 +1552,7 @@ extension BaseNightscoutManager {
         // Rearranged pattern array with specialized "Eventual BG ... but Min. Delta ... < Exp. Delta ..." first.
         let patterns = [
             // 0. Specialized case for "Eventual BG … but Min. Delta … < Exp. Delta …"
-            "Eventual BG\\s*-?\\d+\\.?\\d*\\s*>\\s*-?\\d+\\.?\\d*\\s*but\\s*Min\\.\\s*Delta\\s*-?\\d+\\.?\\d*\\s*<\\s*Exp\\.\\s*Delta\\s*-?\\d+\\.?\\d*",
+            "Eventual BG\\s*-?\\d+\\s*>\\s*-?\\d+\\s*but\\s*Min\\.\\s*Delta\\s*-?\\d+\\.?\\d{0,2}\\s*<\\s*Exp\\.\\s*Delta\\s*-?\\d+\\.?\\d{0,2}",
             // 1. ISF with arrow
             "ISF:\\s*-?\\d+\\.?\\d*→-?\\d+\\.?\\d*",
             // 2. Dev pattern
@@ -1563,8 +1571,8 @@ extension BaseNightscoutManager {
             "Eventual BG\\s+-?\\d+\\.?\\d*\\s*<\\s*-?\\d+\\.?\\d*",
             // 9. maxDelta x > y% of BG z
             "\\S+\\s+\\d+\\s*>\\s*\\d+%\\s+of\\s+BG\\s+\\d+",
-            // 10. "in range" case, e.g., "105-80 in range"
-            "-?\\d+\\.?\\d*-\\d+\\.?\\d* in range",
+            // 10. "in range" case, e.g., "105-80 inom mål"
+            "-?\\d+\\.?\\d*-\\d+\\.?\\d* inom mål",
             // 11. maxDelta numeric pattern
             "maxDelta\\s+(\\d+)\\s*>\\s*(\\d+)%\\s+of\\s+BG\\s+(\\d+)"
         ]
@@ -1587,23 +1595,37 @@ extension BaseNightscoutManager {
             let glucoseValueString = String(normalizedReason[range])
 
             if glucoseValueString.contains(" inom mål") {
-                // Handle "105-80 in range" (no temp required)
-                let values = glucoseValueString.components(separatedBy: "-")
-                if values.count == 2 {
-                    let firstValue = values[0].trimmingCharacters(in: .whitespaces)
-                    let secondPart = values[1].components(separatedBy: " inom mål")[0].trimmingCharacters(in: .whitespaces)
+                // Handle "105-80 inom mål" from JavaScript: o(Gt,i)+"-"+o(Ct,i)+" inom mål"
+                let regexSubPattern = #"(-?\d+\.?\d*)-(-?\d+\.?\d*)\s*inom\s+mål"#
+                let subRegex = try! NSRegularExpression(pattern: regexSubPattern)
+
+                if let subMatch = subRegex.firstMatch(
+                    in: glucoseValueString,
+                    range: NSRange(glucoseValueString.startIndex..., in: glucoseValueString)
+                ) {
+                    let firstValue = String(glucoseValueString[Range(subMatch.range(at: 1), in: glucoseValueString)!])
+                    let secondValue = String(glucoseValueString[Range(subMatch.range(at: 2), in: glucoseValueString)!])
+
                     let formattedFirstValue = convertToMmolL(firstValue)
-                    let formattedSecondValue = convertToMmolL(secondPart)
+                    let formattedSecondValue = convertToMmolL(secondValue)
+
+                    debug(
+                        .nightscout,
+                        "Konverterar 'inom mål': \(firstValue) → \(formattedFirstValue), \(secondValue) → \(formattedSecondValue)"
+                    )
+
                     let formattedString = "\(formattedFirstValue)-\(formattedSecondValue) inom mål"
                     updatedReason.replaceSubrange(range, with: formattedString)
-                }
+                } /*else {
+                    debug(.nightscout, "⚠️ Kunde inte matcha 'inom mål'-mönster för: \(glucoseValueString)")
+                }*/
             } else if glucoseValueString.contains("Eventual BG"),
                       glucoseValueString.contains("but Min. Delta"),
                       glucoseValueString.contains("Exp. Delta")
             {
                 // Handle "Eventual BG X > Y but Min. Delta A < Exp. Delta B"
                 let regexSubPattern =
-                    #"Eventual BG\s*(-?\d+(?:\.\d+)?)\s*>\s*(-?\d+(?:\.\d+)?)\s*but\s*Min\. Delta\s*(-?\d+(?:\.\d+)?)\s*<\s*Exp\. Delta\s*(-?\d+(?:\.\d+)?)"#
+                    #"Eventual BG\s*(-?\d+)\s*>\s*(-?\d+)\s*but\s*Min\. Delta\s*(-?\d+\.?\d{0,2})\s*<\s*Exp\. Delta\s*(-?\d+\.?\d{0,2})"#
                 let subRegex = try! NSRegularExpression(pattern: regexSubPattern)
 
                 if let subMatch = subRegex.firstMatch(
@@ -1616,7 +1638,7 @@ extension BaseNightscoutManager {
                     let expDelta = String(glucoseValueString[Range(subMatch.range(at: 4), in: glucoseValueString)!])
 
                     let formattedString =
-                        "Prognos BG: \(convertToMmolL(bg1))>\(convertToMmolL(bg2)) men min. delta \(convertToMmolL(minDelta))<förv. delta \(convertToMmolL(expDelta))"
+                        "Prognos BG: \(convertToMmolL(bg1))>\(convertToMmolL(bg2)) men min delta \(convertToMmolL(minDelta))<förv delta \(convertToMmolL(expDelta))"
                     updatedReason.replaceSubrange(range, with: formattedString)
                 }
             } else if glucoseValueString.contains("→") {
@@ -1719,5 +1741,36 @@ extension BaseNightscoutManager {
             }
         }
         return updatedReason
+    }
+
+    private func testParseReasonGlucoseValuesToMmolL() {
+        // Kör bara i debug-läge
+        #if DEBUG
+            let testCases = [
+                "Eventual BG -123 > 456 but Min. Delta -12.34 < Exp. Delta 56.78",
+                "Eventual BG 100 > 80 but Min. Delta 0.5 < Exp. Delta -1.23",
+                "Eventual BG -50 > -10 but Min. Delta 0 < Exp. Delta 0.0",
+                "Eventual BG 200 > 150 but Min. Delta 1.0 < Exp. Delta 2",
+                "Eventual BG -123 &gt; 456 but Min. Delta -12.34 &lt; Exp. Delta 56.78",
+                "Eventual BG 100 &gt; 80 but Min. Delta 0.5 &lt; Exp. Delta -1.23",
+                "Eventual BG -50 &gt; -10 but Min. Delta 0 &lt; Exp. Delta 0.0",
+                "Eventual BG 200 &gt; 150 but Min. Delta 1.0 &lt; Exp. Delta 2",
+                "ISF: 54→59",
+                "Dev: -38",
+                "maxDelta 37 > 20% of BG 95",
+                "105-80 inom mål",
+                "Eventual BG 110 >= 100",
+                "Eventual BG 56 < 100"
+            ]
+
+            debug(.nightscout, "🔍 Startar tester för parseReasonGlucoseValuesToMmolL")
+
+            for (index, testString) in testCases.enumerated() {
+                let result = parseReasonGlucoseValuesToMmolL(testString)
+                debug(.nightscout, "Test \(index + 1): Input: '\(testString)' → Output: '\(result)'")
+            }
+
+            debug(.nightscout, "✅ Test av parseReasonGlucoseValuesToMmolL slutförd")
+        #endif
     }
 }
