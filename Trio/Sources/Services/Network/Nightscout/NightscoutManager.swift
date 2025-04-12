@@ -538,13 +538,13 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         async let fetchedPumpStatus = storage.retrieveAsync(OpenAPS.Monitor.status, as: PumpStatus.self)
 
         /*
-         // Kör tester för parseReasonGlucoseValuesToMmolL i debug-läge om enheter är mmol/L
-         #if DEBUG
-             if settingsManager.settings.units == .mmolL {
-                 await testParseReasonGlucoseValuesToMmolL()
-             }
-         #endif
-         */
+        // Kör tester för parseReasonGlucoseValuesToMmolL i debug-läge om enheter är mmol/L
+        #if DEBUG
+            if settingsManager.settings.units == .mmolL {
+                await testParseReasonGlucoseValuesToMmolL()
+            }
+        #endif
+        */
         /*
          // Retrieve the full Suggested Determination object from its ID.
          let fetchedSuggestedDetermination = await determinationStorage
@@ -1553,8 +1553,8 @@ extension BaseNightscoutManager {
         let patterns = [
             // 0. Specialized case for "Eventual BG … but Min. Delta … < Exp. Delta …"
             "Eventual BG\\s*-?\\d+\\s*>\\s*-?\\d+\\s*but\\s*Min\\.\\s*Delta\\s*-?\\d+\\.?\\d{0,2}\\s*<\\s*Exp\\.\\s*Delta\\s*-?\\d+\\.?\\d{0,2}",
-            // 1. ISF with arrow
-            "ISF:\\s*-?\\d+\\.?\\d*→-?\\d+\\.?\\d*",
+            // 1. ISF or Target with arrow
+            "(?:ISF|Target):\\s*-?\\d+\\.?\\d*→-?\\d+\\.?\\d*",
             // 2. Dev pattern
             "Dev:\\s*-?\\d+\\.?\\d*",
             // 3. BGI pattern
@@ -1638,17 +1638,20 @@ extension BaseNightscoutManager {
                     let expDelta = String(glucoseValueString[Range(subMatch.range(at: 4), in: glucoseValueString)!])
 
                     let formattedString =
-                        "Prognos BG: \(convertToMmolL(bg1))>\(convertToMmolL(bg2)) men min delta \(convertToMmolL(minDelta))<förv delta \(convertToMmolL(expDelta))"
+                        "Prognos BG: \(convertToMmolL(bg1))>\(convertToMmolL(bg2)) men min delta \(convertToMmolL(minDelta)) mindre än exp delta \(convertToMmolL(expDelta))" // Tog bort < här eftersom den skapade ngt märkligt trunkeringsproblem i NS/MongoDB
                     updatedReason.replaceSubrange(range, with: formattedString)
                 }
             } else if glucoseValueString.contains("→") {
-                // Handle ISF: X→Y
+                // Handle ISF: X→Y or Target: X→Y
                 let values = glucoseValueString.components(separatedBy: "→")
-                let firstNumber = values[0].components(separatedBy: ":")[1].trimmingCharacters(in: .whitespaces)
+                let prefixAndFirstNumber = values[0].components(separatedBy: ":")
+                guard prefixAndFirstNumber.count == 2 else { continue }
+                let prefix = prefixAndFirstNumber[0].trimmingCharacters(in: .whitespaces)
+                let firstNumber = prefixAndFirstNumber[1].trimmingCharacters(in: .whitespaces)
                 let secondNumber = values[1].trimmingCharacters(in: .whitespaces)
                 let firstValue = convertToMmolL(firstNumber)
                 let secondValue = convertToMmolL(secondNumber)
-                let formattedString = "ISF: \(firstValue)→\(secondValue)"
+                let formattedString = "\(prefix): \(firstValue)→\(secondValue)"
                 updatedReason.replaceSubrange(range, with: formattedString)
             } else if glucoseValueString.contains("Eventual BG"),
                       glucoseValueString.contains("<")
@@ -1751,6 +1754,8 @@ extension BaseNightscoutManager {
                 "Eventual BG 100 > 80 but Min. Delta 0.5 < Exp. Delta -1.23",
                 "Eventual BG -50 > -10 but Min. Delta 0 < Exp. Delta 0.0",
                 "Eventual BG 200 > 150 but Min. Delta 1.0 < Exp. Delta 2",
+                "Eventual BG 112 > 100 but Min. Delta -2.00 < Exp. Delta 0",
+                "Eventual BG 111 > 100 but Min. Delta -0.67 < Exp. Delta 0",
                 "Eventual BG -123 &gt; 456 but Min. Delta -12.34 &lt; Exp. Delta 56.78",
                 "Eventual BG 100 &gt; 80 but Min. Delta 0.5 &lt; Exp. Delta -1.23",
                 "Eventual BG -50 &gt; -10 but Min. Delta 0 &lt; Exp. Delta 0.0",
