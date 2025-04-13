@@ -537,14 +537,13 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         async let fetchedIOBEntry = storage.retrieveAsync(OpenAPS.Monitor.iob, as: [IOBEntry].self)
         async let fetchedPumpStatus = storage.retrieveAsync(OpenAPS.Monitor.status, as: PumpStatus.self)
 
-        /*
         // Kör tester för parseReasonGlucoseValuesToMmolL i debug-läge om enheter är mmol/L
         #if DEBUG
             if settingsManager.settings.units == .mmolL {
                 await testParseReasonGlucoseValuesToMmolL()
             }
         #endif
-        */
+
         /*
          // Retrieve the full Suggested Determination object from its ID.
          let fetchedSuggestedDetermination = await determinationStorage
@@ -1553,27 +1552,29 @@ extension BaseNightscoutManager {
         let patterns = [
             // 0. Specialized case for "Eventual BG … but Min. Delta … < Exp. Delta …"
             "Eventual BG\\s*-?\\d+\\s*>\\s*-?\\d+\\s*but\\s*Min\\.\\s*Delta\\s*-?\\d+\\.?\\d{0,2}\\s*<\\s*Exp\\.\\s*Delta\\s*-?\\d+\\.?\\d{0,2}",
-            // 1. ISF or Target with arrow
+            // 1. New case for "minDelta X>expectedDelta Y"  // NEW
+            "and minDelta\\s+-?\\d+\\s*>\\s*expectedDelta\\s+-?\\d+",
+            // 2. ISF or Target with arrow
             "(?:ISF|Target):\\s*-?\\d+\\.?\\d*→-?\\d+\\.?\\d*",
-            // 2. Dev pattern
+            // 3. Dev pattern
             "Dev:\\s*-?\\d+\\.?\\d*",
-            // 3. BGI pattern
+            // 4. BGI pattern
             "BGI:\\s*-?\\d+\\.?\\d*",
-            // 4. Target pattern
+            // 5. Target pattern
             "Target:\\s*-?\\d+\\.?\\d*",
-            // 5. Patterns for minPredBG, minGuardBG, etc.
+            // 6. Patterns for minPredBG, minGuardBG, etc.
             "(?:minPredBG|minGuardBG|IOBpredBG|COBpredBG|UAMpredBG)\\s+-?\\d+\\.?\\d*(?:<-?\\d+\\.?\\d*)?",
-            // 6. minGuardBG x<y
+            // 7. minGuardBG x<y
             "minGuardBG\\s+-?\\d+\\.?\\d*<-?\\d+\\.?\\d*",
-            // 7. Generic cases for Eventual BG with >=
-            "Eventual BG\\s+-?\\d+\\.?\\d*\\s*>=\\s*-?\\d+\\.?\\d*",
-            // 8. Generic cases for Eventual BG with <
+            // 8. Generic cases for Eventual BG with ≥
+            "Eventual BG\\s+-?\\d+\\.?\\d*\\s*≥\\s*-?\\d+\\.?\\d*",
+            // 9. Generic cases for Eventual BG with <
             "Eventual BG\\s+-?\\d+\\.?\\d*\\s*<\\s*-?\\d+\\.?\\d*",
-            // 9. maxDelta x > y% of BG z
+            // 10. maxDelta x > y% of BG z
             "\\S+\\s+\\d+\\s*>\\s*\\d+%\\s+of\\s+BG\\s+\\d+",
-            // 10. "in range" case, e.g., "105-80 inom mål"
+            // 11. "in range" case, e.g., "105-80 inom mål"
             "-?\\d+\\.?\\d*-\\d+\\.?\\d* inom mål",
-            // 11. maxDelta numeric pattern
+            // 12. maxDelta numeric pattern
             "maxDelta\\s+(\\d+)\\s*>\\s*(\\d+)%\\s+of\\s+BG\\s+(\\d+)"
         ]
         let pattern = patterns.joined(separator: "|")
@@ -1638,7 +1639,26 @@ extension BaseNightscoutManager {
                     let expDelta = String(glucoseValueString[Range(subMatch.range(at: 4), in: glucoseValueString)!])
 
                     let formattedString =
-                        "Prognos BG: \(convertToMmolL(bg1))>\(convertToMmolL(bg2)) men min delta \(convertToMmolL(minDelta)) mindre än exp delta \(convertToMmolL(expDelta))" // Tog bort < här eftersom den skapade ngt märkligt trunkeringsproblem i NS/MongoDB
+                        "Prognos BG: \(convertToMmolL(bg1))>\(convertToMmolL(bg2)) men min delta \(convertToMmolL(minDelta))<exp delta \(convertToMmolL(expDelta))" // Tog bort < här eftersom den skapade ngt märkligt trunkeringsproblem i NS/MongoDB
+                    updatedReason.replaceSubrange(range, with: formattedString)
+                }
+            } else if glucoseValueString.contains("minDelta"),
+                      glucoseValueString.contains("expectedDelta")
+            { // NEW
+                // Handle "and minDelta X>expectedDelta Y"
+                let regexSubPattern =
+                    #"and minDelta\s*(-?\d+)\s*>\s*expectedDelta\s*(-?\d+)"#
+                let subRegex = try! NSRegularExpression(pattern: regexSubPattern)
+
+                if let subMatch = subRegex.firstMatch(
+                    in: glucoseValueString,
+                    range: NSRange(glucoseValueString.startIndex..., in: glucoseValueString)
+                ) {
+                    let minDelta = String(glucoseValueString[Range(subMatch.range(at: 1), in: glucoseValueString)!])
+                    let expDelta = String(glucoseValueString[Range(subMatch.range(at: 2), in: glucoseValueString)!])
+
+                    let formattedString =
+                        "och min delta \(convertToMmolL(minDelta))>exp delta \(convertToMmolL(expDelta))"
                     updatedReason.replaceSubrange(range, with: formattedString)
                 }
             } else if glucoseValueString.contains("→") {
@@ -1677,9 +1697,9 @@ extension BaseNightscoutManager {
                     let formattedString = "minGuardBG \(formattedFirstValue)<\(formattedSecondValue)"
                     updatedReason.replaceSubrange(range, with: formattedString)
                 }
-            } else if glucoseValueString.contains(">=") {
+            } else if glucoseValueString.contains("≥") {
                 // Handle "Eventual BG X >= Y"
-                let eventBGPattern = #"Eventual BG\s*(-?\d+(?:\.\d+)?)\s*>=\s*(-?\d+(?:\.\d+)?)"#
+                let eventBGPattern = #"Eventual BG\s*(-?\d+(?:\.\d+)?)\s*≥\s*(-?\d+(?:\.\d+)?)"#
                 let eventBGRegex = try! NSRegularExpression(pattern: eventBGPattern)
                 if let eventBGMatch = eventBGRegex.firstMatch(
                     in: glucoseValueString,
@@ -1750,6 +1770,7 @@ extension BaseNightscoutManager {
         // Kör bara i debug-läge
         #if DEBUG
             let testCases = [
+                "Eventual BG 111 ≥ 100",
                 "Eventual BG -123 > 456 but Min. Delta -12.34 < Exp. Delta 56.78",
                 "Eventual BG 100 > 80 but Min. Delta 0.5 < Exp. Delta -1.23",
                 "Eventual BG -50 > -10 but Min. Delta 0 < Exp. Delta 0.0",

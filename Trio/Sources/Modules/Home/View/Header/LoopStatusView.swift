@@ -191,7 +191,7 @@ struct LoopStatusView: View {
             .replacingOccurrences(of: "&gt;", with: ">")
         let patterns = [
             "minGuardBG\\s*-?\\d+\\.?\\d*<-?\\d+\\.?\\d*", // minGuardBG x<y
-            "Eventual BG\\s*-?\\d+\\.?\\d*\\s*>=\\s*-?\\d+\\.?\\d*", // Eventual BG x >= target
+            "Eventual BG\\s*-?\\d+\\.?\\d*\\s*≥\\s*-?\\d+\\.?\\d*", // Eventual BG x ≥ target
             "Eventual BG\\s*-?\\d+\\.?\\d*\\s*<\\s*-?\\d+\\.?\\d*", // Eventual BG x < target
             "(\\S+)\\s+(-?\\d+\\.?\\d*)\\s*>\\s*(\\d+)%\\s+of\\s+BG\\s+(-?\\d+\\.?\\d*)", // maxDelta x > y% of BG z
             "Eventual BG\\s*-?\\d+\\.?\\d*\\s*>&\\s*-?\\d+\\.?\\d*\\s*but\\s*Min\\.\\s*Delta\\s*-?\\d+\\.?\\d*\\s*<\\s*Exp\\.\\s*Delta\\s*-?\\d+\\.?\\d*",
@@ -281,9 +281,9 @@ struct LoopStatusView: View {
                         let formattedString = "minGuardBG \(formattedFirstValue)<\(formattedSecondValue)"
                         updatedConclusion.replaceSubrange(range, with: formattedString)
                     }
-                } else if matchedString.contains(">=") {
-                    // Handle "Eventual BG X >= Y"
-                    let eventBGPattern = "Eventual BG\\s*(-?\\d+\\.?\\d*)\\s*>?=\\s*(-?\\d+\\.?\\d*)"
+                } else if matchedString.contains("≥") {
+                    // Handle "Eventual BG X ≥ Y"
+                    let eventBGPattern = "Eventual BG\\s*(-?\\d+\\.?\\d*)\\s*≥\\s*(-?\\d+\\.?\\d*)"
 
                     let eventBGRegex = try! NSRegularExpression(pattern: eventBGPattern)
                     if let eventBGMatch = eventBGRegex.firstMatch(
