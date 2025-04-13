@@ -111,16 +111,16 @@ struct TagCloudView: View {
      - Returns:
        A string with glucose values converted to mmol/L.
 
-     - Glucose tags handled: `ISF:`, `Target:`, `minPredBG`, `minGuardBG`, `IOBpredBG`, `COBpredBG`, `UAMpredBG`, `Dev:`, `maxDelta`, `BGI`.
+     - Glucose tags handled: `ISF:`, `Mål:`, `minPredBG`, `minGuardBG`, `IOBpredBG`, `COBpredBG`, `UAMpredBG`, `Dev:`, `maxDelta`, `BGI`.
      */
 
     // TODO: Consolidate all mmol parsing methods (in TagCloudView, NightscoutManager and HomeRootView) to one central func
     private func formatGlucoseTags(_ tag: String, isMmolL: Bool) -> String {
         let patterns = [
-            "(?:ISF|Target):\\s*-?\\d+\\.?\\d*→-?\\d+\\.?\\d*",
+            "(?:ISF|Mål):\\s*-?\\d+\\.?\\d*→-?\\d+\\.?\\d*",
             "Dev:\\s*-?\\d+\\.?\\d*",
             "BGI:\\s*-?\\d+\\.?\\d*",
-            "Target:\\s*-?\\d+\\.?\\d*",
+            "Mål:\\s*-?\\d+\\.?\\d*",
             "(?:minPredBG|minGuardBG|IOBpredBG|COBpredBG|UAMpredBG)\\s*-?\\d+\\.?\\d*"
         ]
         let pattern = patterns.joined(separator: "|")
@@ -144,7 +144,7 @@ struct TagCloudView: View {
             let glucoseValueString = String(tag[range])
 
             if glucoseValueString.contains("→") {
-                // -- Handle ISF: X→Y or Target: X→Y
+                // -- Handle ISF: X→Y or Mål: X→Y
                 let values = glucoseValueString.components(separatedBy: "→")
                 let prefixAndFirstNumber = values[0].components(separatedBy: ":")
                 guard prefixAndFirstNumber.count == 2 else { continue }
@@ -170,11 +170,11 @@ struct TagCloudView: View {
                 let formattedString = "BGI: \(formattedValue)"
                 updatedTag.replaceSubrange(range, with: formattedString)
 
-            } else if glucoseValueString.starts(with: "Target:") {
+            } else if glucoseValueString.starts(with: "Mål:") {
                 // -- Handle Target
                 let value = glucoseValueString.components(separatedBy: ":")[1].trimmingCharacters(in: .whitespaces)
                 let formattedValue = convertToMmolL(value)
-                let formattedString = "Target: \(formattedValue)"
+                let formattedString = "Mål: \(formattedValue)"
                 updatedTag.replaceSubrange(range, with: formattedString)
 
             } else {

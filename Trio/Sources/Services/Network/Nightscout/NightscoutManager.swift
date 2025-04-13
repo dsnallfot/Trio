@@ -536,14 +536,14 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         async let fetchedReservoir = Decimal(from: storage.retrieveRawAsync(OpenAPS.Monitor.reservoir) ?? "0")
         async let fetchedIOBEntry = storage.retrieveAsync(OpenAPS.Monitor.iob, as: [IOBEntry].self)
         async let fetchedPumpStatus = storage.retrieveAsync(OpenAPS.Monitor.status, as: PumpStatus.self)
-
-        // Kör tester för parseReasonGlucoseValuesToMmolL i debug-läge om enheter är mmol/L
-        #if DEBUG
-            if settingsManager.settings.units == .mmolL {
-                await testParseReasonGlucoseValuesToMmolL()
-            }
-        #endif
-
+        /*
+         // Kör tester för parseReasonGlucoseValuesToMmolL i debug-läge om enheter är mmol/L
+         #if DEBUG
+             if settingsManager.settings.units == .mmolL {
+                 await testParseReasonGlucoseValuesToMmolL()
+             }
+         #endif
+         */
         /*
          // Retrieve the full Suggested Determination object from its ID.
          let fetchedSuggestedDetermination = await determinationStorage
@@ -1554,14 +1554,14 @@ extension BaseNightscoutManager {
             "Eventual BG\\s*-?\\d+\\s*>\\s*-?\\d+\\s*but\\s*Min\\.\\s*Delta\\s*-?\\d+\\.?\\d{0,2}\\s*<\\s*Exp\\.\\s*Delta\\s*-?\\d+\\.?\\d{0,2}",
             // 1. New case for "minDelta X>expectedDelta Y"  // NEW
             "and minDelta\\s+-?\\d+\\s*>\\s*expectedDelta\\s+-?\\d+",
-            // 2. ISF or Target with arrow
-            "(?:ISF|Target):\\s*-?\\d+\\.?\\d*→-?\\d+\\.?\\d*",
+            // 2. ISF or Mål with arrow
+            "(?:ISF|Mål):\\s*-?\\d+\\.?\\d*→-?\\d+\\.?\\d*",
             // 3. Dev pattern
             "Dev:\\s*-?\\d+\\.?\\d*",
             // 4. BGI pattern
             "BGI:\\s*-?\\d+\\.?\\d*",
-            // 5. Target pattern
-            "Target:\\s*-?\\d+\\.?\\d*",
+            // 5. Mål pattern
+            "Mål:\\s*-?\\d+\\.?\\d*",
             // 6. Patterns for minPredBG, minGuardBG, etc.
             "(?:minPredBG|minGuardBG|IOBpredBG|COBpredBG|UAMpredBG)\\s+-?\\d+\\.?\\d*(?:<-?\\d+\\.?\\d*)?",
             // 7. minGuardBG x<y
@@ -1662,7 +1662,7 @@ extension BaseNightscoutManager {
                     updatedReason.replaceSubrange(range, with: formattedString)
                 }
             } else if glucoseValueString.contains("→") {
-                // Handle ISF: X→Y or Target: X→Y
+                // Handle ISF: X→Y or Mål: X→Y
                 let values = glucoseValueString.components(separatedBy: "→")
                 let prefixAndFirstNumber = values[0].components(separatedBy: ":")
                 guard prefixAndFirstNumber.count == 2 else { continue }
