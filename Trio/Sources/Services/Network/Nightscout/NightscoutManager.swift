@@ -735,8 +735,8 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             }
 
             // Update local caches.
-            if let latestSuggested = fetchedSuggestedDetermination {
-                lastSuggestedDetermination = latestSuggested
+            if let parsedSuggested = modifiedSuggestedDetermination {
+                lastSuggestedDetermination = parsedSuggested
             }
             if let latestEnacted = processedEnactedDetermination {
                 lastEnactedDetermination = latestEnacted
@@ -1639,7 +1639,7 @@ extension BaseNightscoutManager {
                     let expDelta = String(glucoseValueString[Range(subMatch.range(at: 4), in: glucoseValueString)!])
 
                     let formattedString =
-                        "Prognos BG: \(convertToMmolL(bg1))>\(convertToMmolL(bg2)) men min delta \(convertToMmolL(minDelta))<exp delta \(convertToMmolL(expDelta))" // Tog bort < här eftersom den skapade ngt märkligt trunkeringsproblem i NS/MongoDB
+                        "Prognos BG: \(convertToMmolL(bg1))>\(convertToMmolL(bg2)) men min delta \(convertToMmolL(minDelta)) mindre än exp delta \(convertToMmolL(expDelta))" // Tog bort < här eftersom den skapade ngt märkligt trunkeringsproblem i NS/MongoDB
                     updatedReason.replaceSubrange(range, with: formattedString)
                 }
             } else if glucoseValueString.contains("minDelta"),
