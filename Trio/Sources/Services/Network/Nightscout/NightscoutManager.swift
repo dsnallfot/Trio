@@ -1554,8 +1554,8 @@ extension BaseNightscoutManager {
             "Eventual BG\\s*-?\\d+\\s*>\\s*-?\\d+\\s*but\\s*Min\\.\\s*Delta\\s*-?\\d+\\.?\\d{0,2}\\s*<\\s*Exp\\.\\s*Delta\\s*-?\\d+\\.?\\d{0,2}",
             // 1. New case for "minDelta X>expectedDelta Y"  // NEW
             "and minDelta\\s+-?\\d+\\s*>\\s*expectedDelta\\s+-?\\d+",
-            // 2. ISF or Mål with arrow
-            "(?:ISF|Mål):\\s*-?\\d+\\.?\\d*→-?\\d+\\.?\\d*",
+            // 2. ISF or Mål with one or two arrows
+            "(?:ISF|Mål):\\s*-?\\d+\\.?\\d*(?:→-?\\d+\\.?\\d*)+",
             // 3. Dev pattern
             "Dev:\\s*-?\\d+\\.?\\d*",
             // 4. BGI pattern
@@ -1662,17 +1662,17 @@ extension BaseNightscoutManager {
                     updatedReason.replaceSubrange(range, with: formattedString)
                 }
             } else if glucoseValueString.contains("→") {
-                // Handle ISF: X→Y or Mål: X→Y
-                let values = glucoseValueString.components(separatedBy: "→")
-                let prefixAndFirstNumber = values[0].components(separatedBy: ":")
-                guard prefixAndFirstNumber.count == 2 else { continue }
-                let prefix = prefixAndFirstNumber[0].trimmingCharacters(in: .whitespaces)
-                let firstNumber = prefixAndFirstNumber[1].trimmingCharacters(in: .whitespaces)
-                let secondNumber = values[1].trimmingCharacters(in: .whitespaces)
-                let firstValue = convertToMmolL(firstNumber)
-                let secondValue = convertToMmolL(secondNumber)
-                let formattedString = "\(prefix): \(firstValue)→\(secondValue)"
-                updatedReason.replaceSubrange(range, with: formattedString)
+                // Handle ISF: X→Y… or Mål: X→Y→Z…
+                let parts = glucoseValueString.components(separatedBy: ":")
+                guard parts.count == 2 else { continue }
+                let targetOrISF = parts[0].trimmingCharacters(in: .whitespaces)
+                let values = parts[1]
+                    .components(separatedBy: "→")
+                    .map { $0.trimmingCharacters(in: .whitespaces) }
+                let convertedValues = values.map { convertToMmolL($0) }
+                let joined = convertedValues.joined(separator: "→")
+                let rebuilt = "\(targetOrISF): \(joined)"
+                updatedReason.replaceSubrange(range, with: rebuilt)
             } else if glucoseValueString.contains("Eventual BG"),
                       glucoseValueString.contains("<")
             {
@@ -1782,6 +1782,9 @@ extension BaseNightscoutManager {
                 "Eventual BG -50 &gt; -10 but Min. Delta 0 &lt; Exp. Delta 0.0",
                 "Eventual BG 200 &gt; 150 but Min. Delta 1.0 &lt; Exp. Delta 2",
                 "ISF: 54→59",
+                "ISF: 66",
+                "Mål: 100→110",
+                "Mål: 100→110→120",
                 "Dev: -38",
                 "maxDelta 37 > 20% of BG 95",
                 "105-80 inom mål",
