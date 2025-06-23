@@ -59,6 +59,10 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         settingsManager.settings.isUploadEnabled
     }
 
+    private var isErrorUploadEnabled: Bool {
+        settingsManager.settings.isErrorUploadEnabled
+    }
+
     private var isDownloadEnabled: Bool {
         settingsManager.settings.isDownloadEnabled
     }
@@ -1156,7 +1160,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             targetTop: nil,
             targetBottom: nil
         )
-        guard let nightscout = nightscoutAPI, isNetworkReachable, isUploadEnabled else {
+        guard let nightscout = nightscoutAPI, isNetworkReachable, isErrorUploadEnabled else {
             if !isNetworkReachable {
                 debug(.nightscout, "Network issues; aborting upload of bolus error note")
             }

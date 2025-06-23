@@ -2,6 +2,7 @@
   "units" : "mg/dL",
   "closedLoop" : false,
   "isUploadEnabled" : false,
+  "isErrorUploadEnabled" : false
   "isDownloadEnabled" : false,
   "useLocalGlucoseSource" : false,
   "localGlucosePort" : 8080,

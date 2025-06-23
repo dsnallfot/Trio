@@ -85,5 +85,14 @@ struct AppShortcuts: AppShortcutsProvider {
             shortTitle: "Toggle Closed Loop",
             systemImageName: "switch.2"
         )
+        AppShortcut(
+            intent: ToggleUploadErrorsIntent(),
+            phrases: [
+                "Toggle Pump Error Upload \(.applicationName)",
+                "\(.applicationName) toggle pump error upload"
+            ],
+            shortTitle: "Toggle Pump Error Upload",
+            systemImageName: "exclamationmark.triangle"
+        )
     }
 }

@@ -47,6 +47,36 @@ struct NightscoutUploadView: View {
                 }
             )
 
+            SettingInputSection(
+                decimalValue: $decimalPlaceholder,
+                booleanValue: $state.isErrorUploadEnabled,
+                shouldDisplayHint: $shouldDisplayHint,
+                selectedVerboseHint: Binding(
+                    get: { selectedVerboseHint },
+                    set: {
+                        selectedVerboseHint = $0.map { AnyView($0) }
+                        hintLabel = "Allow Uploading of Pump Errors"
+                        shouldDisplayHint = true
+                    }
+                ),
+                units: state.units,
+                type: .boolean,
+                label: "Allow Uploading of Pump Errors to Nightscout",
+                miniHint: "Enable uploading of Pump Errors to Nightscout.",
+                verboseHint:
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Default: OFF").bold()
+                    Text(
+                        "The Upload of Pump Errors toggle enables uploading of errors from your Pump such as:"
+                    )
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("• Pump busy bolusing")
+                        Text("• Pump not connected")
+                        Text("• Other communication errors")
+                    }
+                }
+            )
+
             if state.changeUploadGlucose {
                 SettingInputSection(
                     decimalValue: $decimalPlaceholder,

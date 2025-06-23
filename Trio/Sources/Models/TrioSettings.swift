@@ -19,6 +19,7 @@ struct TrioSettings: JSON, Equatable {
     var units: GlucoseUnits = .mgdL
     var closedLoop: Bool = false
     var isUploadEnabled: Bool = false
+    var isErrorUploadEnabled: Bool = false
     var isDownloadEnabled: Bool = false
     var useLocalGlucoseSource: Bool = false
     var localGlucosePort: Int = 8080
@@ -90,6 +91,10 @@ extension TrioSettings: Decodable {
 
         if let isUploadEnabled = try? container.decode(Bool.self, forKey: .isUploadEnabled) {
             settings.isUploadEnabled = isUploadEnabled
+        }
+
+        if let isErrorUploadEnabled = try? container.decode(Bool.self, forKey: .isErrorUploadEnabled) {
+            settings.isErrorUploadEnabled = isErrorUploadEnabled
         }
 
         if let isDownloadEnabled = try? container.decode(Bool.self, forKey: .isDownloadEnabled) {
