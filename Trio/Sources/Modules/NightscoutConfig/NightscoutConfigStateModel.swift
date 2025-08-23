@@ -84,6 +84,16 @@ extension NightscoutConfig {
                     }
                 }
                 .store(in: &lifetime)
+
+            $isErrorUploadEnabled
+                .dropFirst()
+                .removeDuplicates()
+                .sink { [weak self] enabled in
+                    guard let self = self else { return }
+                    debug(.nightscout, "Pump‑error upload toggle changed to \(enabled ? "ON" : "OFF")")
+                    // Lägg till eventuell automatiskt uppladdning av fel här, om så önskas.
+                }
+                .store(in: &lifetime)
         }
 
         func connect() {

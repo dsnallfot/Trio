@@ -31,6 +31,7 @@ extension Home {
         var targetProfiles: [TargetProfile] = []
         var timerDate = Date()
         var closedLoop = false
+        var isErrorUploadEnabled = false
         var pumpSuspended = false
         var isLooping = false
         var statusTitle = ""
@@ -355,6 +356,7 @@ extension Home {
             units = settingsManager.settings.units
             allowManualTemp = !settingsManager.settings.closedLoop
             closedLoop = settingsManager.settings.closedLoop
+            isErrorUploadEnabled = settingsManager.settings.isErrorUploadEnabled
             lastLoopDate = apsManager.lastLoopDate
             alarm = provider.glucoseStorage.alarm
             manualTempBasal = apsManager.isManualTempBasal
@@ -577,6 +579,7 @@ extension Home.StateModel:
     func settingsDidChange(_ settings: TrioSettings) {
         allowManualTemp = !settings.closedLoop
         closedLoop = settingsManager.settings.closedLoop
+        isErrorUploadEnabled = settingsManager.settings.isErrorUploadEnabled
         units = settingsManager.settings.units
         manualTempBasal = apsManager.isManualTempBasal
         isSmoothingEnabled = settingsManager.settings.smoothGlucose
