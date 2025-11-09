@@ -136,7 +136,7 @@ struct LoopStatusView: View {
                 LoopStatusHelpView(state: state, helpSheetDetent: $helpSheetDetent, isHelpSheetPresented: $isHelpSheetPresented)
             }
         }
-        .presentationDetents([.height(sheetContentHeight)])
+        .presentationDetents([sheetContentHeight > 0 ? .height(sheetContentHeight) : .fraction(0.9), .large])
         .presentationDragIndicator(.visible)
         .onPreferenceChange(ContentSizeKey.self) { newSize in
             sheetContentHeight = newSize.height
