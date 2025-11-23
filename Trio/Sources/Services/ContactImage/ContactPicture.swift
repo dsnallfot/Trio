@@ -256,6 +256,7 @@ struct ContactPicture: View {
         case .trend: state.trend
         case .fifteenMinBg: state.fifteenMinBg
         case .lastLoopDate: state.lastLoopDate.map({ formatter.string(from: $0) })
+        case .lastBGDate: state.lastBGDate.map({ formatter.string(from: $0) })
         case .cob: state.cobText
         case .iob: state.iobText
         case .fifteenLabel: state.fifteenLabel

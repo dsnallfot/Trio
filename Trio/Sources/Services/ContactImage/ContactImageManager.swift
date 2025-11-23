@@ -228,9 +228,10 @@ final class BaseContactImageManager: NSObject, ContactImageManager, Injectable {
         // Get NSManagedObjects on MainActor
         let glucoseObjects: [GlucoseStored] = await CoreDataStack.shared
             .getNSManagedObject(with: glucoseValuesIds, context: viewContext)
+        let lastGlucose = glucoseObjects.first
         let determinationObjects: [OrefDetermination] = await CoreDataStack.shared
             .getNSManagedObject(with: determinationIds, context: viewContext)
-        let lastDetermination = determinationObjects.last
+        let lastDetermination = determinationObjects.first
 
         if let firstGlucoseValue = glucoseObjects.first {
             let value = settingsManager.settings.units == .mgdL
@@ -276,6 +277,8 @@ final class BaseContactImageManager: NSObject, ContactImageManager, Injectable {
         }
 
         state.lastLoopDate = lastDetermination?.timestamp
+
+        state.lastBGDate = lastGlucose?.date
 
         let iobValue = lastDetermination?.iob as? Decimal ?? 0.0
         state.iob = iobValue

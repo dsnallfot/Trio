@@ -124,6 +124,7 @@ enum ContactImageValue: String, JSON, CaseIterable, Identifiable, Codable {
     case trend
     case fifteenMinBg
     case lastLoopDate
+    case lastBGDate
     case cob
     case iob
     case ring
@@ -148,6 +149,8 @@ enum ContactImageValue: String, JSON, CaseIterable, Identifiable, Codable {
             return NSLocalizedString("15 Min Trend", comment: "")
         case .lastLoopDate:
             return NSLocalizedString("Last Loop Time", comment: "")
+        case .lastBGDate:
+            return NSLocalizedString("Last BG Time", comment: "")
         case .cob:
             return NSLocalizedString("COB", comment: "")
         case .iob:

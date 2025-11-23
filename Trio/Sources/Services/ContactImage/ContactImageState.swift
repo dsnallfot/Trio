@@ -6,6 +6,7 @@ struct ContactImageState: Codable {
     var delta: String?
     var fifteenMinBg: String?
     var lastLoopDate: Date?
+    var lastBGDate: Date?
     var iob: Decimal?
     var iobText: String?
     var cob: Decimal?
