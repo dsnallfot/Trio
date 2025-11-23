@@ -252,8 +252,8 @@ final class BaseContactImageManager: NSObject, ContactImageManager, Injectable {
                     ? Decimal(latestGlucoseValue)
                     : Decimal(latestGlucoseValue).asMmolL
 
-                // Calculate fifteenMinBg: latest glucose + delta * 2.5
-                let fifteenMinBgDecimal = latestGlucoseConverted + (deltaConverted * Decimal(2.5))
+                // Calculate fifteenMinBg: latest glucose + delta * 2 (WIth G7 ive changed this to 10 min)
+                let fifteenMinBgDecimal = latestGlucoseConverted + (deltaConverted * Decimal(2))
 
                 let bgFormatter = NumberFormatter()
                 bgFormatter.numberStyle = .decimal
