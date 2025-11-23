@@ -308,9 +308,10 @@ final class BaseContactImageManager: NSObject, ContactImageManager, Injectable {
 
         state.highGlucoseColorValue = units == .mgdL ? highGlucoseColorValue : highGlucoseColorValue.asMmolL
         state.lowGlucoseColorValue = units == .mgdL ? lowGlucoseColorValue : lowGlucoseColorValue.asMmolL
-        state
-            .targetGlucose = await getCurrentGlucoseTarget() ??
-            (settingsManager.settings.units == .mgdL ? Decimal(100) : 100.asMmolL)
+        // ✅ Hämta target i mg/dL (som din settings/NS typiskt lagrar) och konvertera vid behov
+        let targetMgdl = await getCurrentGlucoseTarget() ?? Decimal(100)
+        state.targetGlucose = units == .mgdL ? targetMgdl : targetMgdl.asMmolL
+
         state.glucoseColorScheme = settingsManager.settings.glucoseColorScheme
 
         // Daniel: Additional labels
