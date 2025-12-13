@@ -63,7 +63,7 @@ enum DataTable {
         }
     }
 
-    class Treatment: Identifiable, Hashable, Equatable {
+    struct Treatment: Identifiable, Hashable, Equatable {
         let id: String
         let idPumpEvent: String?
         let units: GlucoseUnits
@@ -206,7 +206,7 @@ enum DataTable {
         }
     }
 
-    class Glucose: Identifiable, Hashable, Equatable {
+    struct Glucose: Identifiable, Hashable, Equatable {
         static func == (lhs: DataTable.Glucose, rhs: DataTable.Glucose) -> Bool {
             lhs.glucose == rhs.glucose
         }

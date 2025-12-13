@@ -85,7 +85,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
     private var lastSuggestedDetermination: Determination?
 
     // Queue for handling Core Data change notifications
-    private let queue = DispatchQueue(label: "BaseNightscoutManager.queue", qos: .background)
+    private let queue = DispatchQueue(label: "BaseNightscoutManager.queue", qos: .utility)
     private var coreDataPublisher: AnyPublisher<Set<NSManagedObjectID>, Never>?
     private var subscriptions = Set<AnyCancellable>()
 
@@ -240,7 +240,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
 
     func registerSubscribers() {
         glucoseStorage.updatePublisher
-            .receive(on: DispatchQueue.global(qos: .background))
+            .receive(on: DispatchQueue.global(qos: .utility))
             .sink { [weak self] _ in
                 guard let self = self else { return }
                 Task {
@@ -253,7 +253,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         /// 1. To ensure that any upload flag updates have properly been performed, and in subsequent fetching processes only truly unuploaded data is fetched
         /// 2. To not spam the user's NS site with a high number of uploads in a very short amount of time (less than 1sec)
         orefDeterminationSubject
-            .debounce(for: .seconds(2), scheduler: DispatchQueue.global(qos: .background))
+            .debounce(for: .seconds(1), scheduler: DispatchQueue.global(qos: .utility))
             .sink { [weak self] in
                 guard let self = self else { return }
                 Task {
@@ -263,7 +263,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             .store(in: &subscriptions)
 
         uploadOverridesSubject
-            .debounce(for: .seconds(2), scheduler: DispatchQueue.global(qos: .background))
+            .debounce(for: .seconds(2), scheduler: DispatchQueue.global(qos: .utility))
             .sink { [weak self] in
                 guard let self = self else { return }
                 Task {
@@ -273,7 +273,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             .store(in: &subscriptions)
 
         uploadPumpHistorySubject
-            .debounce(for: .seconds(2), scheduler: DispatchQueue.global(qos: .background))
+            .debounce(for: .seconds(2), scheduler: DispatchQueue.global(qos: .utility))
             .sink { [weak self] in
                 guard let self = self else { return }
                 Task {
@@ -283,7 +283,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             .store(in: &subscriptions)
 
         uploadCarbsSubject
-            .debounce(for: .seconds(2), scheduler: DispatchQueue.global(qos: .background))
+            .debounce(for: .seconds(2), scheduler: DispatchQueue.global(qos: .utility))
             .sink { [weak self] in
                 guard let self = self else { return }
                 Task {
