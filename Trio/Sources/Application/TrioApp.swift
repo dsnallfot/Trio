@@ -103,6 +103,55 @@ import Swinject
                 debug(.nightscout, "Failed to handle expire date change: \(error)")
             }
         }
+        // After everything is initialized (Core Data + services), send a Nightscout note
+        Task {
+            await TrioApp.sendStartupNoteToNightscout()
+        }
+    }
+
+    private static func sendStartupNoteToNightscout() async {
+        // --- Dedupe: avoid spamming NS if we restart multiple times in a short window ---
+        let key = "lastNightscoutStartupNoteDate"
+        let cooldown: TimeInterval = 2 * 60 // 2 minutes
+
+        if let last = UserDefaults.standard.object(forKey: key) as? Date,
+           Date().timeIntervalSince(last) < cooldown
+        {
+            debug(.nightscout, "Startup note skipped (cooldown active).")
+            return
+        }
+
+        // --- Resolve NightscoutManager, and wait a bit for it to become "ready" ---
+        // (Sometimes the manager exists but configuration isn't loaded yet.)
+        let maxAttempts = 10
+        for attempt in 1 ... maxAttempts {
+            guard let nightscoutManager = resolver.resolve(NightscoutManager.self) else {
+                debug(.nightscout, "Startup note: NightscoutManager not resolved yet (attempt \(attempt)/\(maxAttempts)).")
+                try? await Task.sleep(nanoseconds: 300_000_000) // 0.3s
+                continue
+            }
+
+            // Heuristic for "ready": has a configured URL (adjust if your code uses another readiness signal)
+            if nightscoutManager.cgmURL == nil {
+                debug(.nightscout, "Startup note: NightscoutManager not ready (cgmURL nil) (attempt \(attempt)/\(maxAttempts)).")
+                try? await Task.sleep(nanoseconds: 500_000_000) // 0.5s
+                continue
+            }
+
+            // Build a useful message
+            // let version = Bundle.main.releaseVersionNumber ?? "?"
+            // let build = Bundle.main.buildVersionNumber ?? "?"
+            let note = "Trio startades om"
+
+            debug(.nightscout, "Uploading startup note to Nightscout: \(note)")
+            await nightscoutManager.uploadNoteTreatment(note: note)
+
+            // mark sent
+            UserDefaults.standard.set(Date(), forKey: key)
+            return
+        }
+
+        debug(.nightscout, "Startup note: giving up after \(maxAttempts) attempts (Nightscout not ready).")
     }
 
     var body: some Scene {
