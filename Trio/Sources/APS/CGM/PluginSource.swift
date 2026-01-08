@@ -5,10 +5,17 @@ import G7SensorKit
 import LibreTransmitter
 import LoopKit
 import LoopKitUI
+import Swinject
 
 final class PluginSource: GlucoseSource {
     private let processQueue = DispatchQueue(label: "DexcomSource.processQueue")
     private let glucoseStorage: GlucoseStorage!
+    private let nightscoutManager: NightscoutManager?
+
+    // Prevent spamming the same note repeatedly
+    private var lastUploadedNote: (message: String, date: Date)?
+    private let noteThrottleInterval: TimeInterval = 10 * 60
+
     var glucoseManager: FetchGlucoseManager?
 
     var cgmManager: CGMManagerUI?
@@ -20,6 +27,8 @@ final class PluginSource: GlucoseSource {
     init(glucoseStorage: GlucoseStorage, glucoseManager: FetchGlucoseManager) {
         self.glucoseStorage = glucoseStorage
         self.glucoseManager = glucoseManager
+
+        nightscoutManager = TrioApp.resolver.resolve(NightscoutManager.self)
 
         cgmManager = glucoseManager.cgmManager
         cgmManager?.delegateQueue = processQueue
@@ -161,7 +170,7 @@ extension PluginSource: CGMManagerDelegate {
     }
 
     func cgmManager(_: CGMManager, didUpdate status: CGMManagerStatus) {
-        debug(.deviceManager, "DEBUG DID UPDATE STATE")
+        debug(.deviceManager, "CGM status updated: hasValidSensorSession=\(status.hasValidSensorSession)")
         processQueue.async {
             if self.cgmHasValidSensorSession != status.hasValidSensorSession {
                 self.cgmHasValidSensorSession = status.hasValidSensorSession
@@ -169,8 +178,70 @@ extension PluginSource: CGMManagerDelegate {
         }
     }
 
+    // Här kan en logg som ser ut såhär skapas vid sensorfel: 2026-01-08T00:38:32+0100 [DeviceManager] PluginSource.swift - readCGMResult(readingResult:) - 197 - DEV: PLUGIN CGM - Process CGM Reading Result launched with error(G7SensorKit.AlgorithmError.unreliableState(temporarySensorIssue))
     private func readCGMResult(readingResult: CGMReadingResult) -> Result<[BloodGlucose], Error> {
-        debug(.deviceManager, "PLUGIN CGM - Process CGM Reading Result launched with \(readingResult)")
+        let debugMessage = "PLUGIN CGM - Process CGM Reading Result launched with \(readingResult)"
+        debug(.deviceManager, debugMessage)
+
+        // If this is a Dexcom G7 error, optionally upload a user-friendly note to Nightscout.
+        // NOTE: G7SensorKit.AlgorithmError is internal (not public), so we can't type-cast to it here.
+        // Instead we parse the string representation, which (per logs) looks like:
+        // error(G7SensorKit.AlgorithmError.unreliableState(temporarySensorIssue))
+        if case let .error(err) = readingResult {
+            // Only attempt this mapping when the active manager is a G7 manager
+            guard cgmManager is G7CGMManager else { return .failure(err) }
+
+            let errString = String(describing: err)
+
+            // Extract the token inside unreliableState(...)
+            let stateToken: String? = {
+                guard let range = errString.range(of: "unreliableState(") else { return nil }
+                let after = errString[range.upperBound...]
+                // token ends at the first ')'
+                guard let end = after.firstIndex(of: ")") else { return nil }
+                return String(after[..<end])
+            }()
+
+            let note: String?
+            if let token = stateToken {
+                switch token {
+                case "temporarySensorIssue":
+                    note = "⚠️ Dexcom G7: Tillfälligt sensorfel!"
+                case "ok":
+                    note = nil
+                case "stopped":
+                    note = "⛔️ Dexcom G7: Sensor stoppades"
+                case "warmup":
+                    note = "⚠️ Dexcom G7: Sensor värms upp"
+                case "expired":
+                    note = "⛔️ Dexcom G7: Sensor löpt ut!"
+                case "sensorFailed":
+                    note = "⛔️ Dexcom G7: Kritiskt fel - sensorbyte krävs!"
+                default:
+                    note = "⚠️ Dexcom G7: Okänt fel"
+                }
+            } else {
+                // Not an unreliableState(...) string, but still a G7 error
+                note = "⚠️ Dexcom G7: Okänt fel"
+            }
+
+            if let note = note {
+                let now = Date()
+                let shouldUpload: Bool
+                if let last = lastUploadedNote {
+                    shouldUpload = (last.message != note) || (now.timeIntervalSince(last.date) > noteThrottleInterval)
+                } else {
+                    shouldUpload = true
+                }
+
+                if shouldUpload {
+                    lastUploadedNote = (note, now)
+                    Task { [weak self] in
+                        await self?.nightscoutManager?.uploadNoteTreatment(note: note)
+                    }
+                }
+            }
+        }
 
         if glucoseManager?.glucoseSource == nil {
             debug(
