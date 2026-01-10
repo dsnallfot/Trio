@@ -13,7 +13,7 @@ protocol FetchGlucoseManager: SourceInfoProvider {
     func updateGlucoseSource(cgmGlucoseSourceType: CGMType, cgmGlucosePluginId: String, newManager: CGMManagerUI?)
     func deleteGlucoseSource()
     func removeCalibrations()
-    var glucoseSource: GlucoseSource! { get }
+    var glucoseSource: GlucoseSource? { get }
     var cgmManager: CGMManagerUI? { get }
     var cgmGlucoseSourceType: CGMType { get set }
     var cgmGlucosePluginId: String { get }
@@ -77,7 +77,7 @@ final class BaseFetchGlucoseManager: FetchGlucoseManager, Injectable {
         subscribe()
     }
 
-    var glucoseSource: GlucoseSource!
+    var glucoseSource: GlucoseSource?
 
     func removeCalibrations() {
         calibrationService.removeAllCalibrations()
@@ -179,7 +179,8 @@ final class BaseFetchGlucoseManager: FetchGlucoseManager, Injectable {
 
         Publishers.CombineLatest(
             Just(glucoseStorage.syncDate()),
-            glucoseSource.fetchIfNeeded()
+            glucoseSource?.fetchIfNeeded()
+                ?? Empty<[BloodGlucose], Never>().eraseToAnyPublisher()
         )
         .eraseToAnyPublisher()
         .receive(on: processQueue)
@@ -314,7 +315,7 @@ final class BaseFetchGlucoseManager: FetchGlucoseManager, Injectable {
     }
 
     func sourceInfo() -> [String: Any]? {
-        glucoseSource.sourceInfo()
+        glucoseSource?.sourceInfo()
     }
 
     private func overcalibrate(entries: [BloodGlucose]) -> [BloodGlucose] {

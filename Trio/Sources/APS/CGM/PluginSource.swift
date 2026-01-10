@@ -24,6 +24,13 @@ final class PluginSource: GlucoseSource {
 
     private var promise: Future<[BloodGlucose], Error>.Promise?
 
+    // --- Diagnostics: measure "push w/o awaiting fetch" frequency ---
+    private var directStoredCount: Int = 0 // hadPromise == false
+    private var timerFetchStoredCount: Int = 0 // hadPromise == true
+
+    private var lastCounterLogAt: Date = .distantPast
+    private let counterLogInterval: TimeInterval = 10 * 60 // logga summering max var 10:e minut
+
     init(glucoseStorage: GlucoseStorage, glucoseManager: FetchGlucoseManager) {
         self.glucoseStorage = glucoseStorage
         self.glucoseManager = glucoseManager
@@ -121,9 +128,53 @@ extension PluginSource: CGMManagerDelegate {
     }
 
     func cgmManager(_: CGMManager, hasNew readingResult: CGMReadingResult) {
-        dispatchPrecondition(condition: .onQueue(processQueue))
-        promise?(readCGMResult(readingResult: readingResult))
-        debug(.deviceManager, "CGM PLUGIN - Direct return done")
+        // Convert the reading into Trio's BloodGlucose model (or an error)
+        let result = readCGMResult(readingResult: readingResult)
+
+        // If a fetch() call is currently awaiting a value, fulfill it.
+        // (We clear the stored promise to avoid accidentally completing it more than once.)
+        let hadPromise = (promise != nil)
+        let currentPromise = promise
+        promise = nil
+        currentPromise?(result)
+
+        // IMPORTANT:
+        // CGM managers can push readings at arbitrary times. If no fetch() is currently awaiting
+        // (i.e. `promise` is nil), the reading would otherwise be dropped, leading to missed
+        // "New glucose found" and missed loop cycles.
+        // To avoid that, we also store the glucose immediately on every successful push.
+        if case let .success(values) = result, !values.isEmpty {
+            // ✅ Store immediately so pushes aren't lost
+            glucoseManager?.updateGlucoseStore(newBloodGlucose: values)
+
+            // 1) Extra “försäkring”: logga explicit när Direct return done sker med hadPromise=false,
+            // så du kan mäta exakt hur ofta det händer och om det korrelerar med andra loggar.
+            if hadPromise {
+                debug(.deviceManager, "CGM PLUGIN - Direct return done (hadPromise=true) ✅ (timer/fetch was awaiting)")
+            } else {
+                warning(
+                    .deviceManager,
+                    "CGM PLUGIN - Direct return done (hadPromise=false) 🟡 Stored immediately (no fetch awaiting)"
+                )
+            }
+
+            // 2) Superlätt räknare: antal directStored / antal timerFetchStored
+            if hadPromise {
+                timerFetchStoredCount += 1
+            } else {
+                directStoredCount += 1
+            }
+
+            // Periodisk summering (för att inte spamma loggen)
+            let now = Date()
+            if now.timeIntervalSince(lastCounterLogAt) > counterLogInterval {
+                debug(
+                    .deviceManager,
+                    "CGM PLUGIN - Counters: directStored=\(directStoredCount), timerFetchStored=\(timerFetchStoredCount)"
+                )
+                lastCounterLogAt = now
+            }
+        }
     }
 
     func cgmManager(_: LoopKit.CGMManager, hasNew events: [LoopKit.PersistedCgmEvent]) {

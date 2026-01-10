@@ -34,9 +34,6 @@ import Swinject
         TrioApp.assembler.resolver
     }
 
-    // Temp static var
-    // Use to backward compatibility with old Dependencies logic on Logger
-    // TODO: Remove var after update "Use Dependencies" logic in Logger
     static var resolver: Resolver {
         TrioApp.assembler.resolver
     }
