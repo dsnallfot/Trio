@@ -30,6 +30,8 @@ final class BaseCarbsStorage: CarbsStorage, Injectable {
 
     private let updateSubject = PassthroughSubject<Void, Never>()
 
+    private let settingsProvider = PickerSettingsProvider.shared
+
     var updatePublisher: AnyPublisher<Void, Never> {
         updateSubject.eraseToAnyPublisher()
     }
@@ -125,13 +127,40 @@ final class BaseCarbsStorage: CarbsStorage, Injectable {
     }
 
     /**
-     Processes fat and protein entries to generate future carb equivalents, ensuring each equivalent is at least 1.0 grams.
+     Converts fat and protein into delayed carb-equivalent entries (FPU handling).
 
-     - The function calculates the equivalent carb dosage size and adjusts the interval to ensure each equivalent is at least 1.0 grams.
-     - Creates future carb entries based on the adjusted carb equivalent size and interval.
+     Behavior:
+
+          - Calculates carb equivalents from fat and protein
+            ((fat × 9 + protein × 4) / 10 × adjustment factor).
+          - Rounds down to whole grams.
+          - Drops values below 10 g.
+          - Caps total equivalents at 99 g.
+          - Splits into up to 3 entries.
+          - Caps each entry at 33 g.
+          - Distributes grams as evenly as possible.
+
+          Timing:
+
+          - First entry is scheduled after the configured delay
+            (default: 60 minutes) from the carb entry timestamp.
+          - Additional entries are spaced 30 minutes apart.
+
+          Example (default):
+
+          - Carb entry at T
+          - 1st equivalent at T + 60 min
+          - 2nd equivalent at T + 90 min
+          - 3rd equivalent at T + 120 min
+
+          Generated entries:
+
+          - Are marked with `isFPU = true`
+          - Contain only carbs (fat and protein set to 0)
+          - Share the same `fpuID` as the original carb entry
 
      - Parameters:
-       - entries: An array of `CarbsEntry` objects representing the carbohydrate entries to be processed.
+       - entries: An array of `CarbsEntry` objects representing the carb equivalent entries to be processed.
        - fat: The amount of fat in the last entry.
        - protein: The amount of protein in the last entry.
        - createdAt: The creation date of the last entry.
@@ -145,43 +174,46 @@ final class BaseCarbsStorage: CarbsStorage, Injectable {
         createdAt: Date,
         actualDate: Date?
     ) -> ([CarbsEntry], Decimal) {
-        let interval = settings.settings.minuteInterval
-        let timeCap = settings.settings.timeCap
-        let adjustment = settings.settings.individualAdjustmentFactor
-        let delay = settings.settings.delay
+        let trioSettings = settings.settings
+        let providerSettings = settingsProvider.settings
 
+        let adjustment = trioSettings.individualAdjustmentFactor.clamp(to: providerSettings.individualAdjustmentFactor)
+
+        let delayMinutes = trioSettings.delay.clamp(to: providerSettings.delay)
+
+        // Constraints
+        let maxTotalGrams = 99
+        let maxEntries = 3
+        let maxPerEntry = 33
+        let minPerEntry = 10
+        let spacing: TimeInterval = 30 * 60
+
+        // kcal -> carb equivalents (kcal/10 * adjustment), rounded down to whole grams
         let kcal = protein * 4 + fat * 9
-        let carbEquivalents = (kcal / 10) * adjustment
-        let fpus = carbEquivalents / 10
-        var computedDuration = calculateComputedDuration(fpus: fpus, timeCap: timeCap)
+        let rawEquivalents = Int((kcal / 10) * adjustment)
+        let totalGrams = min(maxTotalGrams, max(0, rawEquivalents))
 
-        var carbEquivalentSize: Decimal = carbEquivalents / Decimal(computedDuration)
-        carbEquivalentSize /= Decimal(60 / interval)
-
-        if carbEquivalentSize < 1.0 {
-            carbEquivalentSize = 1.0
-            computedDuration = Int(carbEquivalents / carbEquivalentSize)
+        guard totalGrams >= minPerEntry else {
+            return ([], Decimal(totalGrams))
         }
 
-        let roundedEquivalent: Double = round(Double(carbEquivalentSize * 10)) / 10
-        carbEquivalentSize = Decimal(roundedEquivalent)
-        var numberOfEquivalents = carbEquivalents / carbEquivalentSize
+        let amounts = splitIntoCarbEquivalents(
+            total: totalGrams,
+            maxEntries: maxEntries,
+            maxPerEntry: maxPerEntry,
+            minPerEntry: minPerEntry
+        )
 
-        var useDate = actualDate ?? createdAt
+        let baseDate = actualDate ?? createdAt
+        let start = baseDate.addingTimeInterval(TimeInterval(delayMinutes * 60))
         let fpuID = entries.first?.fpuID ?? UUID().uuidString
-        var futureCarbArray = [CarbsEntry]()
-        var firstIndex = true
 
-        while carbEquivalents > 0, numberOfEquivalents > 0 {
-            useDate = firstIndex ? useDate.addingTimeInterval(delay.minutes.timeInterval) : useDate
-                .addingTimeInterval(interval.minutes.timeInterval)
-            firstIndex = false
-
-            let eachCarbEntry = CarbsEntry(
+        let futureEntries: [CarbsEntry] = amounts.enumerated().map { idx, grams in
+            CarbsEntry(
                 id: UUID().uuidString,
                 createdAt: createdAt,
-                actualDate: useDate,
-                carbs: carbEquivalentSize,
+                actualDate: start.addingTimeInterval(TimeInterval(idx) * spacing),
+                carbs: Decimal(grams),
                 fat: 0,
                 protein: 0,
                 note: nil,
@@ -189,11 +221,62 @@ final class BaseCarbsStorage: CarbsStorage, Injectable {
                 isFPU: true,
                 fpuID: fpuID
             )
-            futureCarbArray.append(eachCarbEntry)
-            numberOfEquivalents -= 1
         }
 
-        return (futureCarbArray, carbEquivalents)
+        let totalScheduled = futureEntries.reduce(into: Decimal(0)) { $0 += $1.carbs }
+        return (futureEntries, totalScheduled)
+    }
+
+    /**
+     Splits a total carb-equivalent value into multiple integer entries.
+
+     - Returns no entries if `total` is below `minPerEntry`.
+     - Limits output to `maxEntries`.
+     - Caps each entry at `maxPerEntry`.
+     - Distributes grams evenly (difference ≤ 1 g).
+     - Merges or removes entries below `minPerEntry`.
+
+     - Returns:
+       Integer gram values representing the split carb equivalents.
+     */
+    private func splitIntoCarbEquivalents(
+        total: Int,
+        maxEntries: Int,
+        maxPerEntry: Int,
+        minPerEntry: Int
+    ) -> [Int] {
+        guard total >= minPerEntry else { return [] }
+
+        // Choose an entry count that *guarantees* each entry can be <= maxPerEntry
+        let needed = (total + maxPerEntry - 1) / maxPerEntry
+        let count = min(maxEntries, max(1, needed))
+
+        // Even split (difference between buckets is at most 1)
+        func evenSplit(_ total: Int, count: Int) -> [Int] {
+            let base = total / count
+            let rem = total % count
+            return (0 ..< count).map { base + ($0 < rem ? 1 : 0) }
+        }
+
+        var buckets = evenSplit(total, count: count)
+
+        // Enforce minPerEntry by merging any too-small tail bucket into the previous one
+        // This should be rare, but it keeps the invariant
+        if buckets.count > 1 {
+            for i in stride(from: buckets.count - 1, through: 1, by: -1) {
+                let v = buckets[i]
+                guard v > 0, v < minPerEntry else { continue }
+                buckets[i - 1] += v
+                buckets[i] = 0
+            }
+            buckets = buckets.filter { $0 > 0 }
+        }
+
+        // Guarantee not to exceed maxPerEntry if merging a reduced count
+        // Clamp as final guard here
+        buckets = buckets.map { min(maxPerEntry, $0) }.filter { $0 >= minPerEntry }
+
+        return buckets
     }
 
     private func saveCarbEquivalents(entries: [CarbsEntry], areFetchedFromRemote: Bool) async {

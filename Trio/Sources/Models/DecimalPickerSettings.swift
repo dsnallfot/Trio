@@ -156,3 +156,17 @@ struct PickerSetting {
         case hour
     }
 }
+
+extension Decimal {
+    func clamp(to setting: PickerSetting) -> Decimal {
+        min(max(self, setting.min), setting.max)
+    }
+}
+
+extension Int {
+    func clamp(to setting: PickerSetting) -> Int {
+        let minInt = Int(truncating: NSDecimalNumber(decimal: setting.min))
+        let maxInt = Int(truncating: NSDecimalNumber(decimal: setting.max))
+        return Swift.min(Swift.max(self, minInt), maxInt)
+    }
+}
