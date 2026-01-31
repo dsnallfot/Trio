@@ -62,17 +62,45 @@ extension TargetsEditor {
             guard hasChanges else { return }
             shouldDisplaySaving.toggle()
 
+            let formatter = DateFormatter()
+            formatter.timeZone = TimeZone(secondsFromGMT: 0)
+            formatter.dateFormat = "HH:mm"
+
+            let entryFormatter = DateFormatter()
+            entryFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+            entryFormatter.dateFormat = "HH:mm:ss"
+
             let targets = items.map { item -> BGTargetEntry in
-                let formatter = DateFormatter()
-                formatter.timeZone = TimeZone(secondsFromGMT: 0)
-                formatter.dateFormat = "HH:mm:ss"
                 let date = Date(timeIntervalSince1970: self.timeValues[item.timeIndex])
                 let minutes = Int(date.timeIntervalSince1970 / 60)
                 let low = self.rateValues[item.lowIndex]
                 let high = low
-                return BGTargetEntry(low: low, high: high, start: formatter.string(from: date), offset: minutes)
+                return BGTargetEntry(low: low, high: high, start: entryFormatter.string(from: date), offset: minutes)
             }
             let profile = BGTargets(units: .mgdL, userPreferredUnits: .mgdL, targets: targets)
+
+            // Capture changes (compare by timeIndex) and build a note similar to the basal profile editor
+            let changes: [(String, String, String)] = items.compactMap { newItem in
+                guard let oldItem = initialItems.first(where: { $0.timeIndex == newItem.timeIndex }) else { return nil }
+                guard oldItem.lowIndex != newItem.lowIndex || oldItem.highIndex != newItem.highIndex else { return nil }
+
+                let date = Date(timeIntervalSince1970: self.timeValues[newItem.timeIndex])
+                let timeString = formatter.string(from: date)
+
+                let oldLowMgdl = rateValues[oldItem.lowIndex]
+                let newLowMgdl = rateValues[newItem.lowIndex]
+
+                let oldLow = String(format: "%.1f", NSDecimalNumber(decimal: oldLowMgdl.asMmolL).doubleValue)
+                let newLow = String(format: "%.1f", NSDecimalNumber(decimal: newLowMgdl.asMmolL).doubleValue)
+
+                return (timeString, oldLow, newLow)
+            }
+
+            let changesString = changes.map { "\($0.0) \($0.1)➔\($0.2)" }.joined(separator: ", ")
+            let finalNote = changesString.isEmpty
+                ? "Målprofil ändrades i Trio"
+                : "Målprofil ändrades: \(changesString) mmol/L"
+
             provider.saveProfile(profile)
             initialItems = items.map { Item(lowIndex: $0.lowIndex, highIndex: $0.highIndex, timeIndex: $0.timeIndex) }
 
@@ -84,7 +112,7 @@ extension TargetsEditor {
 
             Task.detached(priority: .low) {
                 debug(.nightscout, "Attempting to upload targets to Nightscout")
-                await self.nightscout.uploadProfiles(alsoUploadNote: true, note: "Mål-profil ändrades i Trio")
+                await self.nightscout.uploadProfiles(alsoUploadNote: true, note: finalNote)
             }
         }
 
