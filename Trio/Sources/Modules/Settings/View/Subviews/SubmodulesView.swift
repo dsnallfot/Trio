@@ -12,7 +12,7 @@ struct SubmodulesView: View {
             }
         }
         .listStyle(.insetGrouped)
-        .navigationTitle("Submodules")
+        .navigationTitle("Submoduler")
         .navigationBarTitleDisplayMode(.inline)
     }
 }

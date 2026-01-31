@@ -107,7 +107,7 @@ extension CarbRatioEditor {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(action: { state.add() }) {
                         HStack {
-                            Text("Add Ratio")
+                            Text("Lägg till")
                             Image(systemName: "plus")
                         }
                     }.disabled(!state.canAdd)
@@ -128,7 +128,7 @@ extension CarbRatioEditor {
                                 (
                                     self.rateFormatter
                                         .string(from: state.rateValues[i] as NSNumber) ?? ""
-                                ) + " g/U"
+                                ) + " g/E"
                             ).tag(i)
                         }
                     }
@@ -151,7 +151,7 @@ extension CarbRatioEditor {
             }
             .padding(.top)
             .scrollContentBackground(.hidden).background(appState.trioBackgroundColor(for: colorScheme))
-            .navigationTitle("Set Ratio")
+            .navigationTitle("Ange kvot")
             .navigationBarTitleDisplayMode(.automatic)
         }
 
@@ -163,7 +163,7 @@ extension CarbRatioEditor {
                         HStack {
                             Text("Ratio").foregroundColor(.secondary)
                             Text(
-                                "\(rateFormatter.string(from: state.rateValues[item.rateIndex] as NSNumber) ?? "0") g/U"
+                                "\(rateFormatter.string(from: state.rateValues[item.rateIndex] as NSNumber) ?? "0") g/E"
                             )
                             Spacer()
                             Text("starts at").foregroundColor(.secondary)

@@ -19,27 +19,27 @@ struct TherapySettingsView: BaseView {
     var body: some View {
         Form {
             Section(
-                header: Text("Basic Settings"),
+                header: Text("Allmänna inställningar"),
                 content: {
-                    Text("Units and Limits").navigationLink(to: .unitsAndLimits, from: self)
+                    Text("Enheter & gränsvärden").navigationLink(to: .unitsAndLimits, from: self)
                 }
             )
             .listRowBackground(Color.chart)
 
             Section(
-                header: Text("Basic Insulin Rates & Targets"),
+                header: Text("Insulin och målinställningar"),
                 content: {
-                    Text("Basal Rates").navigationLink(to: .basalProfileEditor, from: self)
-                    Text("Insulin Sensitivities").navigationLink(to: .isfEditor, from: self)
-                    Text("Carb Ratios").navigationLink(to: .crEditor, from: self)
-                    Text("Glucose Targets").navigationLink(to: .targetsEditor, from: self)
+                    Text("Basalinställningar").navigationLink(to: .basalProfileEditor, from: self)
+                    Text("Insulinkänslighet").navigationLink(to: .isfEditor, from: self)
+                    Text("Insulinkvoter").navigationLink(to: .crEditor, from: self)
+                    Text("Målglukos").navigationLink(to: .targetsEditor, from: self)
                 }
             )
             .listRowBackground(Color.chart)
         }
         .scrollContentBackground(.hidden)
         .background(appState.trioBackgroundColor(for: colorScheme))
-        .navigationTitle("Therapy Settings")
+        .navigationTitle("Behandling")
         .navigationBarTitleDisplayMode(.automatic)
     }
 }

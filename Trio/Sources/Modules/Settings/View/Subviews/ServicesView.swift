@@ -20,12 +20,12 @@ struct ServicesView: BaseView {
     var body: some View {
         Form {
             Section(
-                header: Text("Connected Services"),
+                header: Text("Anslutna tjänster"),
                 content: {
                     Text("Nightscout").navigationLink(to: .nighscoutConfig, from: self)
                     Text("Tidepool").navigationLink(to: .tidepoolConfig, from: self)
                     if HKHealthStore.isHealthDataAvailable() {
-                        Text("Apple Health").navigationLink(to: .healthkit, from: self)
+                        Text("Apple hälsa").navigationLink(to: .healthkit, from: self)
                     }
                 }
             )
@@ -33,7 +33,7 @@ struct ServicesView: BaseView {
         }
         .scrollContentBackground(.hidden)
         .background(appState.trioBackgroundColor(for: colorScheme))
-        .navigationTitle("Services")
+        .navigationTitle("Tjänster")
         .navigationBarTitleDisplayMode(.automatic)
     }
 }

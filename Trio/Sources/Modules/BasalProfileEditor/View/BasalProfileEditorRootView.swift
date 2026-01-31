@@ -126,7 +126,7 @@ extension BasalProfileEditor {
                     }.listRowBackground(Color.tabBar)
                 }
 
-                Section(header: Text("Schedule")) {
+                Section(header: Text("Schema")) {
                     if !state.items.isEmpty {
                         basalScheduleChart.padding(.vertical)
                     }
@@ -142,7 +142,7 @@ extension BasalProfileEditor {
                         Spacer()
                         Text(rateFormatter.string(from: state.total as NSNumber) ?? "0")
                             .foregroundColor(.primary) +
-                            Text(" U/day")
+                            Text(" E/dag")
                             .foregroundColor(.secondary)
                     }
                 }.listRowBackground(Color.chart)
@@ -174,13 +174,13 @@ extension BasalProfileEditor {
                 state.calculateChartData()
             }
             .scrollContentBackground(.hidden).background(appState.trioBackgroundColor(for: colorScheme))
-            .navigationTitle("Basal Profile")
+            .navigationTitle("Basalinställningar")
             .navigationBarTitleDisplayMode(.automatic)
             .toolbar(content: {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(action: { state.add() }) {
                         HStack {
-                            Text("Add Rate")
+                            Text("Lägg till")
                             Image(systemName: "plus")
                         }
                     }.disabled(!state.canAdd)
@@ -197,13 +197,13 @@ extension BasalProfileEditor {
         private func pickers(for index: Int) -> some View {
             Form {
                 Section {
-                    Picker(selection: $state.items[index].rateIndex, label: Text("Rate")) {
+                    Picker(selection: $state.items[index].rateIndex, label: Text("Värde")) {
                         ForEach(0 ..< state.rateValues.count, id: \.self) { i in
                             Text(
                                 (
                                     self.rateFormatter
                                         .string(from: state.rateValues[i] as NSNumber) ?? ""
-                                ) + " U/hr"
+                                ) + " E/h"
                             ).tag(i)
                         }
                     }
@@ -211,7 +211,7 @@ extension BasalProfileEditor {
                 }.listRowBackground(Color.chart)
 
                 Section {
-                    Picker(selection: $state.items[index].timeIndex, label: Text("Time")) {
+                    Picker(selection: $state.items[index].timeIndex, label: Text("Tid")) {
                         ForEach(state.availableTimeIndices(index), id: \.self) { i in
                             Text(
                                 self.dateFormatter

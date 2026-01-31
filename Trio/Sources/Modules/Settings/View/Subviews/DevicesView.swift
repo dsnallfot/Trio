@@ -19,18 +19,18 @@ struct DevicesView: BaseView {
     var body: some View {
         Form {
             Section(
-                header: Text("Setup & Configuraton"),
+                header: Text("Ställ in och konfigurera"),
                 content: {
-                    Text("Insulin Pump").navigationLink(to: .pumpConfig, from: self)
-                    Text("Continuous Glucose Monitor").navigationLink(to: .cgm, from: self)
-                    Text("Smart Watch").navigationLink(to: .watch, from: self)
+                    Text("Insulinpump").navigationLink(to: .pumpConfig, from: self)
+                    Text("Kontinuerlig glukosmätare").navigationLink(to: .cgm, from: self)
+                    Text("Smartwatch").navigationLink(to: .watch, from: self)
                 }
             )
             .listRowBackground(Color.chart)
         }
         .scrollContentBackground(.hidden)
         .background(appState.trioBackgroundColor(for: colorScheme))
-        .navigationTitle("Devices")
+        .navigationTitle("Hårdvara")
         .navigationBarTitleDisplayMode(.automatic)
     }
 }

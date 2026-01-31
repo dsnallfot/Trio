@@ -83,13 +83,13 @@ extension TargetsEditor {
             .safeAreaInset(edge: .bottom, spacing: 30) { saveButton }
             .scrollContentBackground(.hidden).background(appState.trioBackgroundColor(for: colorScheme))
             .onAppear(perform: configureView)
-            .navigationTitle("Glucose Targets")
+            .navigationTitle("Målglukos")
             .navigationBarTitleDisplayMode(.automatic)
             .toolbar(content: {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(action: { state.add() }) {
                         HStack {
-                            Text("Add Target")
+                            Text("Lägg till mål")
                             Image(systemName: "plus")
                         }
                     }.disabled(!state.canAdd)
@@ -116,7 +116,7 @@ extension TargetsEditor {
                 Section {
                     Picker(
                         selection: $state.items[index].lowIndex,
-                        label: Text("Target ")
+                        label: Text("Mål ")
                     ) {
                         ForEach(0 ..< state.rateValues.count, id: \.self) { i in
                             Text(state.units == .mgdL ? state.rateValues[i].description : state.rateValues[i].formattedAsMmolL)
@@ -141,7 +141,7 @@ extension TargetsEditor {
             }
             .padding(.top)
             .scrollContentBackground(.hidden).background(appState.trioBackgroundColor(for: colorScheme))
-            .navigationTitle("Set Target")
+            .navigationTitle("Ange mål")
             .navigationBarTitleDisplayMode(.automatic)
         }
 
@@ -157,7 +157,7 @@ extension TargetsEditor {
                             )
                             Text("\(state.units.rawValue)").foregroundColor(.secondary)
                             Spacer()
-                            Text("starts at").foregroundColor(.secondary)
+                            Text("startar").foregroundColor(.secondary)
                             Text(
                                 "\(dateFormatter.string(from: Date(timeIntervalSince1970: state.timeValues[item.timeIndex])))"
                             )

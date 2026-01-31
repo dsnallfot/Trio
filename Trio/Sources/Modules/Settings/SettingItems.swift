@@ -30,12 +30,12 @@ struct FilteredSettingItem: Identifiable {
 
 enum SettingItems {
     static let trioConfig = [
-        SettingItem(title: "Devices", view: .devices),
-        SettingItem(title: "Therapy", view: .therapySettings),
-        SettingItem(title: "Algorithm", view: .algorithmSettings),
-        SettingItem(title: "Features", view: .featureSettings),
-        SettingItem(title: "Notifications", view: .notificationSettings),
-        SettingItem(title: "Services", view: .serviceSettings)
+        SettingItem(title: "Hårdvara", view: .devices),
+        SettingItem(title: "Behandling", view: .therapySettings),
+        SettingItem(title: "Algoritm", view: .algorithmSettings),
+        SettingItem(title: "Funktioner", view: .featureSettings),
+        SettingItem(title: "Notifieringar", view: .notificationSettings),
+        SettingItem(title: "Tjänster", view: .serviceSettings)
     ]
 
     static let devicesItems = [

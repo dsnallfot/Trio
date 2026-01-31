@@ -19,19 +19,19 @@ struct AlgorithmSettings: BaseView {
     var body: some View {
         Form {
             Section(
-                header: Text("Oref Algorithm"),
+                header: Text("Oref algoritm"),
                 content: {
                     Text("Autosens").navigationLink(to: .autosensSettings, from: self)
-                    Text("Super Micro Bolus (SMB)").navigationLink(to: .smbSettings, from: self)
-                    Text("Dynamic Settings").navigationLink(to: .dynamicISF, from: self)
-                    Text("Target Behavior").navigationLink(to: .targetBehavior, from: self)
-                    Text("Additionals").navigationLink(to: .algorithmAdvancedSettings, from: self)
+                    Text("Super mikrobolus (SMB)").navigationLink(to: .smbSettings, from: self)
+                    Text("Dynamiska inställningar").navigationLink(to: .dynamicISF, from: self)
+                    Text("Målbeteende").navigationLink(to: .targetBehavior, from: self)
+                    Text("Extra").navigationLink(to: .algorithmAdvancedSettings, from: self)
                 }
             ).listRowBackground(Color.chart)
         }
         .scrollContentBackground(.hidden)
         .background(appState.trioBackgroundColor(for: colorScheme))
-        .navigationTitle("Algorithm Settings")
+        .navigationTitle("Algoritm")
         .navigationBarTitleDisplayMode(.automatic)
     }
 }

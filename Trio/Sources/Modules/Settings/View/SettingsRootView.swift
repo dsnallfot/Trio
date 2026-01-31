@@ -46,7 +46,7 @@ extension Settings {
 
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
-                        Text("Latest version: \(version)")
+                        Text("Senaste version: \(version)")
                             .font(.footnote)
                             .foregroundColor(updateColor)
                         Image(systemName: versionIconName)
@@ -54,7 +54,7 @@ extension Settings {
                     }
                     if versionInfo.isBlacklisted {
                         HStack {
-                            Text("Warning: Known issues. Update now.")
+                            Text("Varning: Kända fel. Uppdatera snarast.")
                                 .font(.footnote)
                                 .foregroundColor(.red)
                             Image(systemName: "exclamationmark.octagon.fill")
@@ -63,7 +63,7 @@ extension Settings {
                     }
                 }
             } else {
-                Text("Latest version: Fetching...")
+                Text("Senaste version: Söker...")
                     .font(.footnote)
                     .foregroundColor(.secondary)
             }
@@ -121,13 +121,13 @@ extension Settings {
                             get: { selectedVerboseHint },
                             set: {
                                 selectedVerboseHint = $0.map { AnyView($0) }
-                                hintLabel = "Closed Loop"
+                                hintLabel = "Sluten Loop"
                             }
                         ),
                         units: state.units,
                         type: .boolean,
-                        label: "Closed Loop",
-                        miniHint: "Enable automated insulin delivery.",
+                        label: "Sluten Loop",
+                        miniHint: "Aktivera automatisk insulintillförsel.",
                         verboseHint: VStack(alignment: .leading, spacing: 10) {
                             Text(
                                 "Running Trio in closed loop mode requires an active CGM sensor session and a connected pump. This enables automated insulin delivery."
@@ -136,11 +136,11 @@ extension Settings {
                                 "Before enabling, dial in your settings (basal / insulin sensitivity / carb ratio), and familiarize yourself with the app."
                             )
                         },
-                        headerText: "Automated Insulin Delivery"
+                        headerText: "Automatisk insulintillförsel"
                     )
 
                     Section(
-                        header: Text("Trio Configuration"),
+                        header: Text("Trio Konfiguration"),
                         content: {
                             ForEach(SettingItems.trioConfig) { item in
                                 Text(item.title).navigationLink(to: item.view, from: self)
@@ -156,7 +156,7 @@ extension Settings {
                                 showShareSheet.toggle()
                             } label: {
                                 HStack {
-                                    Text("Share Logs")
+                                    Text("Dela loggar")
                                         .foregroundColor(.primary)
                                     Spacer()
                                     Image(systemName: "chevron.right")
@@ -172,7 +172,7 @@ extension Settings {
                                 }
                             } label: {
                                 HStack {
-                                    Text("Submit Ticket on GitHub")
+                                    Text("Registrera en ticket på GitHub")
                                         .foregroundColor(.primary)
                                     Spacer()
                                     Image(systemName: "chevron.right")
@@ -220,7 +220,7 @@ extension Settings {
                                 }
                             } label: {
                                 HStack {
-                                    Text("Trio Website")
+                                    Text("Trio Webbsida")
                                         .foregroundColor(.primary)
                                     Spacer()
                                     Image(systemName: "chevron.right")
@@ -235,7 +235,7 @@ extension Settings {
                     Section(
                         // header: Text(""),
                         content: {
-                            Toggle("Developer Options", isOn: $state.debugOptions)
+                            Toggle("Avancerade alternativ", isOn: $state.debugOptions)
                             if state.debugOptions {
                                 Button {
                                     Task {
@@ -243,7 +243,7 @@ extension Settings {
                                     }
                                 } label: {
                                     HStack {
-                                        Text("Upload Profile to Nightscout")
+                                        Text("Ladda upp profil till Nighscout")
                                             .foregroundColor(.primary)
                                         Spacer()
                                         Image(systemName: "chevron.right")
@@ -258,7 +258,7 @@ extension Settings {
 
                 } else {
                     Section(
-                        header: Text("Search Results"),
+                        header: Text("Sökresultat"),
                         content: {
                             if filteredItems.isNotEmpty {
                                 ForEach(filteredItems) { filteredItem in
@@ -272,11 +272,11 @@ extension Settings {
                                     }.navigationLink(to: filteredItem.settingItem.view, from: self)
                                 }
                             } else {
-                                Text("No settings matching your search query")
+                                Text("Inga inställningar matchar din sökning")
                                     +
                                     Text(" »\(searchText)« ").bold()
                                     +
-                                    Text("found.")
+                                    Text("hittades.")
                             }
                         }
                     ).listRowBackground(Color.chart)

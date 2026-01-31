@@ -124,7 +124,7 @@ extension ISFEditor {
                         ForEach(0 ..< state.rateValues.count, id: \.self) { i in
                             Text(
                                 state.units == .mgdL ? state.rateValues[i].description : state.rateValues[i]
-                                    .formattedAsMmolL + " \(state.units.rawValue)/U"
+                                    .formattedAsMmolL + " \(state.units.rawValue)/E"
                             ).tag(i)
                         }
                     }
@@ -146,7 +146,7 @@ extension ISFEditor {
             }
             .padding(.top)
             .scrollContentBackground(.hidden).background(appState.trioBackgroundColor(for: colorScheme))
-            .navigationTitle("Set Rate")
+            .navigationTitle("Ange värde")
             .navigationBarTitleDisplayMode(.automatic)
         }
 
@@ -162,7 +162,7 @@ extension ISFEditor {
                             Text("Rate").foregroundColor(.secondary)
 
                             Text(
-                                displayValue + " \(state.units.rawValue)/U"
+                                displayValue + " \(state.units.rawValue)/E"
                             )
                             Spacer()
                             Text("starts at").foregroundColor(.secondary)

@@ -19,28 +19,28 @@ struct FeatureSettingsView: BaseView {
     var body: some View {
         Form {
             Section(
-                header: Text("Trio Features"),
+                header: Text("Trio funktioner"),
                 content: {
-                    Text("Bolus Calculator").navigationLink(to: .bolusCalculatorConfig, from: self)
-                    Text("Meal Settings").navigationLink(to: .mealSettings, from: self)
-                    Text("Shortcuts").navigationLink(to: .shortcutsConfig, from: self)
-                    Text("Remote Control").navigationLink(to: .remoteControlConfig, from: self)
+                    Text("Boluskalkylator").navigationLink(to: .bolusCalculatorConfig, from: self)
+                    Text("Måltidsinställningar").navigationLink(to: .mealSettings, from: self)
+                    Text("Genvägar").navigationLink(to: .shortcutsConfig, from: self)
+                    Text("Fjärrstyrning").navigationLink(to: .remoteControlConfig, from: self)
                 }
             )
             .listRowBackground(Color.chart)
 
             Section(
-                header: Text("Trio Personalization"),
+                header: Text("Trio personalisering"),
                 content: {
-                    Text("User Interface").navigationLink(to: .userInterfaceSettings, from: self)
-                    Text("App Icons").navigationLink(to: .iconConfig, from: self)
+                    Text("Användargränssnitt").navigationLink(to: .userInterfaceSettings, from: self)
+                    Text("Appikoner").navigationLink(to: .iconConfig, from: self)
                 }
             )
             .listRowBackground(Color.chart)
         }
         .scrollContentBackground(.hidden)
         .background(appState.trioBackgroundColor(for: colorScheme))
-        .navigationTitle("Feature Settings")
+        .navigationTitle("Funktioner")
         .navigationBarTitleDisplayMode(.automatic)
     }
 }
