@@ -101,6 +101,39 @@ import Swinject
                 note,
                 enteredBy
             )
+            // 1) Upload newly registered carbs directly to Nightscout.
+            // 2) Trigger a basal sync so calculations (COB/IOB/etc) update immediately.
+            // 3) Upload device status after sync so Nightscout gets fresh deviceStatus.
+            do {
+                let resolver = TrioApp.resolver
+
+                let nightscoutManager: NightscoutManager? = resolver.resolve(NightscoutManager.self)
+                let apsManager: APSManager? = resolver.resolve(APSManager.self)
+
+                if let nightscoutManager {
+                    debugPrint("Uploading carbs to Nightscout after addCarbs...")
+                    await nightscoutManager.uploadCarbs()
+                    debugPrint("Carbs upload to Nightscout finished.")
+                } else {
+                    debugPrint("NightscoutManager not available; skipping carbs upload.")
+                }
+
+                if let apsManager {
+                    debugPrint("Triggering basal sync after carbs upload...")
+                    await apsManager.determineBasalSync()
+                    debugPrint("Basal sync triggered after carbs upload.")
+
+                    if let nightscoutManager {
+                        debugPrint("Uploading deviceStatus to Nightscout after basal sync...")
+                        await nightscoutManager.uploadDeviceStatus()
+                        debugPrint("deviceStatus upload to Nightscout finished.")
+                    } else {
+                        debugPrint("NightscoutManager not available; skipping deviceStatus upload.")
+                    }
+                } else {
+                    debugPrint("APSManager not available; skipping basal sync and deviceStatus upload.")
+                }
+            }
             return .result(
                 dialog: IntentDialog(stringLiteral: finalQuantityCarbsDisplay)
             )
