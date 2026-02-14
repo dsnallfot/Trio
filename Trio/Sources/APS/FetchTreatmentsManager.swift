@@ -26,8 +26,8 @@ final class BaseFetchTreatmentsManager: FetchTreatmentsManager, Injectable {
             .receive(on: processQueue)
             .sink { [weak self] _ in
                 guard let self = self else { return }
-                debug(.nightscout, "FetchTreatmentsManager heartbeat")
-                debug(.nightscout, "Start fetching carbs and temptargets")
+                // Daniel: Minska loggning // debug(.nightscout, "FetchTreatmentsManager heartbeat")
+                // Daniel: Minska loggning // debug(.nightscout, "Start fetching carbs and temptargets")
 
                 Task {
                     // Fetch carbs and temp targets concurrently

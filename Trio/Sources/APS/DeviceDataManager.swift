@@ -241,7 +241,7 @@ final class BaseDeviceDataManager: DeviceDataManager, Injectable {
             return
         }
 
-        debug(.deviceManager, "Start updating the pump data")
+        // Daniel: Minska loggning // debug(.deviceManager, "Start updating the pump data")
         processQueue.safeSync {
             pumpManager.ensureCurrentPumpData { _ in
                 debug(.deviceManager, "Pump data updated.")
@@ -530,14 +530,14 @@ extension BaseDeviceDataManager: PumpManagerDelegate {
     func pumpManager(
         _: PumpManager,
         didReadReservoirValue units: Double,
-        at date: Date,
+        at _: Date,
         completion: @escaping (Result<
             (newValue: ReservoirValue, lastValue: ReservoirValue?, areStoredValuesContinuous: Bool),
             Error
         >) -> Void
     ) {
         dispatchPrecondition(condition: .onQueue(processQueue))
-        debug(.deviceManager, "Reservoir Value \(units), at: \(date)")
+        // Daniel: Minska loggning // debug(.deviceManager, "Reservoir Value \(units), at: \(date)")
         storage.save(Decimal(units), as: OpenAPS.Monitor.reservoir)
         broadcaster.notify(PumpReservoirObserver.self, on: processQueue) {
             $0.pumpReservoirDidChange(Decimal(units))

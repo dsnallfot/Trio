@@ -313,11 +313,11 @@ final class BaseWatchManager: NSObject, WCSessionDelegate, Injectable, WatchMana
             watchState.bolusIncrement = self.settingsManager.preferences.bolusIncrement
             watchState.confirmBolusFaster = self.settingsManager.settings.confirmBolusFaster
 
-            debug(
-                .watchManager,
+            // Daniel: Minska loggning // debug(
+            //    .watchManager,
 
-                "📱 Setup WatchState - currentGlucose: \(watchState.currentGlucose ?? "nil"), trend: \(watchState.trend ?? "nil"), delta: \(watchState.delta ?? "nil"), values: \(watchState.glucoseValues.count)"
-            )
+            //    "📱 Setup WatchState - currentGlucose: \(watchState.currentGlucose ?? "nil"), trend: \(watchState.trend ?? "nil"), delta: \(watchState.delta ?? "nil"), values: \(watchState.glucoseValues.count)"
+            // )
 
             return watchState
         }
@@ -379,12 +379,12 @@ final class BaseWatchManager: NSObject, WCSessionDelegate, Injectable, WatchMana
         guard let session = session else { return }
 
         guard session.isPaired else {
-            debug(.watchManager, "⌚️❌ No Watch is paired")
+            // Daniel: Minska loggning // debug(.watchManager, "⌚️❌ No Watch is paired")
             return
         }
 
         guard session.isWatchAppInstalled else {
-            debug(.watchManager, "⌚️❌ Trio Watch app is")
+            // Daniel: Minska loggning // debug(.watchManager, "⌚️❌ Trio Watch app is")
             return
         }
 

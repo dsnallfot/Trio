@@ -298,7 +298,7 @@ final class BaseAPSManager: APSManager, Injectable {
             }
             processError(error)
         } else {
-            debug(.apsManager, "Loop lyckades")
+            // Daniel: Minska loggning // debug(.apsManager, "Loop lyckades")
             lastLoopDate = Date()
             lastError.send(nil)
         }
@@ -464,7 +464,7 @@ final class BaseAPSManager: APSManager, Injectable {
 
         do {
             try await pump.enactBolus(units: roundedAmount, automatic: isSMB)
-            debug(.apsManager, "Bolus lyckades")
+            // Daniel: Minska loggning // debug(.apsManager, "Bolus lyckades")
             if !isSMB {
                 await determineBasalSync()
             }
@@ -489,7 +489,7 @@ final class BaseAPSManager: APSManager, Injectable {
 
     func cancelBolus(_ callback: ((Bool, String) -> Void)?) async {
         guard let pump = pumpManager, pump.status.pumpStatus.bolusing else { return }
-        debug(.apsManager, "Abcryt bolus")
+        debug(.apsManager, "Avbryt bolus")
         do {
             _ = try await pump.cancelBolus()
             debug(.apsManager, "Bolus avbröts")
@@ -524,7 +524,7 @@ final class BaseAPSManager: APSManager, Injectable {
 
         do {
             try await pump.enactTempBasal(unitsPerHour: roundedAmout, for: duration)
-            debug(.apsManager, "Temp basal lyckades")
+            // Daniel: Minska loggning // debug(.apsManager, "Temp basal lyckades")
         } catch {
             debug(.apsManager, "Temp basal misslyckades med felorsak: \(error.localizedDescription)")
             processError(APSError.pumpError(error))

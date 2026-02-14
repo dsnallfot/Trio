@@ -72,33 +72,37 @@ final class JavaScriptWorker {
         contextPoolLock.unlock()
     }
 
-    private func outputLogs(for fileName: String, message: String) {
-        let logs = message.trimmingCharacters(in: .whitespacesAndNewlines)
+    private func outputLogs(
+        for _: String,
+        message _: String
+    ) {} // Daniel: Stäng av den massiva loggningen från javascriptfilerna här tillsvidare för att se hur kill/omstarter pga för mkt diskwrites förändras - aktivera igen om underligheter dyker upp, men realtidsstatus + 90 dagars historik på determination m.m. finns i NS/LF
+    /*
+         let logs = message.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        if logs.isEmpty { return }
+         if logs.isEmpty { return }
 
-        if fileName == "autosens.js" {
-            let sanitizedLogs = logs.split(separator: "\n").map { logLine in
-                logLine.replacingOccurrences(
-                    of: "^[-+=x!]|u\\(|\\)|\\d{1,2}h$",
-                    with: "",
-                    options: .regularExpression
-                )
-            }.joined(separator: "\n")
+         if fileName == "autosens.js" {
+             let sanitizedLogs = logs.split(separator: "\n").map { logLine in
+                 logLine.replacingOccurrences(
+                     of: "^[-+=x!]|u\\(|\\)|\\d{1,2}h$",
+                     with: "",
+                     options: .regularExpression
+                 )
+             }.joined(separator: "\n")
 
-            sanitizedLogs.split(separator: "\n").forEach { logLine in
-                if !logLine.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    debug(.openAPS, "\(fileName): \(logLine)")
-                }
-            }
-        } else {
-            logs.split(separator: "\n").forEach { logLine in
-                if !logLine.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    debug(.openAPS, "\(fileName): \(logLine)")
-                }
-            }
-        }
-    }
+             sanitizedLogs.split(separator: "\n").forEach { logLine in
+                 if !logLine.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                     debug(.openAPS, "\(fileName): \(logLine)")
+                 }
+             }
+         } else {
+             logs.split(separator: "\n").forEach { logLine in
+                 if !logLine.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                     debug(.openAPS, "\(fileName): \(logLine)")
+                 }
+             }
+         }
+     }*/
 
     @discardableResult func evaluate(script: Script) -> JSValue! {
         let context = getContext()

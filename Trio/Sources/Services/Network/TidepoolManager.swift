@@ -373,7 +373,7 @@ extension BaseTidepoolManager {
                     case let .failure(error):
                         debug(.nightscout, "Error synchronizing pump events data: \(String(describing: error))")
                     case .success:
-                        debug(.nightscout, "Success synchronizing pump events data. Upload to Tidepool complete.")
+                        // Daniel: Minska loggning // debug(.nightscout, "Success synchronizing pump events data. Upload to Tidepool complete.")
                         Task {
                             let pumpEventType = events.map { $0.type.mapEventTypeToPumpEventType() }
                             let pumpEvents = events.filter { _ in pumpEventType.contains(pumpEventType) }
@@ -590,7 +590,7 @@ extension BaseTidepoolManager {
                 tidepoolService.uploadGlucoseData(chunk) { result in
                     switch result {
                     case .success:
-                        debug(.nightscout, "Success synchronizing glucose data")
+                        // Daniel: Minska loggning // debug(.nightscout, "Success synchronizing glucose data")
 
                         // After successful upload, update the isUploadedToTidepool flag in Core Data
                         Task {

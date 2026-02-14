@@ -682,7 +682,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             version: Bundle.main.releaseVersionNumber ?? "Unknown"
         )
 
-        debug(.nightscout, "To be uploaded openapsStatus: \(openapsStatus)")
+        // Daniel: Minska loggning // debug(.nightscout, "To be uploaded openapsStatus: \(openapsStatus)")
 
         // Gather all relevant data for NS Status
         let battery = await fetchedBattery
@@ -711,7 +711,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             "autosensMin": userPreferences?.autosensMin ?? 0.7
         ]
 
-        debug(.nightscout, "Additional Info: \(additionalInfo)")
+        // Daniel: Minska loggning // debug(.nightscout, "Additional Info: \(additionalInfo)")
 
         let status = NightscoutStatus(
             device: NightscoutTreatment.local,
@@ -724,18 +724,18 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
 
         do {
             try await nightscout.uploadDeviceStatus(status)
-            debug(.nightscout, "NSDeviceStatus with Determination uploaded")
+            // Daniel: Minska loggning // debug(.nightscout, "NSDeviceStatus with Determination uploaded")
 
             // Mark the suggested determination as uploaded.
             if let suggested = fetchedSuggestedDetermination {
                 await updateOrefDeterminationAsUploaded([suggested])
-                debug(.nightscout, "Flagged last fetched suggested determination as uploaded")
+                // Daniel: Minska loggning // debug(.nightscout, "Flagged last fetched suggested determination as uploaded")
             }
 
             // Mark the enacted determination as uploaded (if available).
             if let enacted = latestEnactedDetermination {
                 await updateOrefDeterminationAsUploaded([enacted])
-                debug(.nightscout, "Flagged latest enacted determination as uploaded")
+                // Daniel: Minska loggning // debug(.nightscout, "Flagged latest enacted determination as uploaded")
             }
 
             // Update local caches.
@@ -921,7 +921,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
                 // Round the result to one decimal place
                 carbsHr = Decimal(round(Double(carbsHr) * 10.0)) / 10
 
-                debug(.nightscout, "Final calculated carbsHr: \(carbsHr)")
+                // Daniel: Minska loggning // debug(.nightscout, "Final calculated carbsHr: \(carbsHr)")
 
                 let scheduledProfile = ScheduledNightscoutProfile(
                     dia: settingsManager.pumpSettings.insulinActionCurve,
@@ -977,7 +977,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
 
                     BuildDetails.shared.recordUploadedExpireDate(expireDate: expireDate)
 
-                    debug(.nightscout, "Profile uploaded")
+                    // Daniel: Minska loggning // debug(.nightscout, "Profile uploaded")
 
                     // If alsoUploadNote is true, call the uploadNoteTreatment function with the provided note
                     if alsoUploadNote {
@@ -1060,7 +1060,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             let allToMarkAsUploaded = treatmentGroups.values.flatMap { $0 }
             await updatePumpEventStoredsAsUploaded(allToMarkAsUploaded)
 
-            debug(.nightscout, "✅ Pump treatments uploaded (including duplicates marked as uploaded)")
+            // Daniel: Minska loggning // debug(.nightscout, "✅ Pump treatments uploaded (including duplicates marked as uploaded)")
         } catch {
             debug(.nightscout, "❌ Failed to upload pump treatments: \(error.localizedDescription)")
             // Don't mark anything as uploaded if upload failed
@@ -1096,7 +1096,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             // If successful, update the isUploadedToNS property of the GlucoseStored objects
             await updateGlucoseAsUploaded(glucose)
 
-            debug(.nightscout, "Glucose uploaded")
+            // Daniel: Minska loggning // debug(.nightscout, "Glucose uploaded")
         } catch {
             debug(.nightscout, "Upload of glucose failed: \(error.localizedDescription)")
         }
@@ -1134,7 +1134,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
                 try await nightscout.uploadTreatments(Array(chunk))
             }
 
-            debug(.nightscout, "Treatments uploaded")
+            // Daniel: Minska loggning // debug(.nightscout, "Treatments uploaded")
         } catch {
             debug(.nightscout, error.localizedDescription)
         }
@@ -1240,7 +1240,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             // If successful, update the isUploadedToNS property of the GlucoseStored objects
             await updateManualGlucoseAsUploaded(treatments)
 
-            debug(.nightscout, "Treatments uploaded")
+            // Daniel: Minska loggning // debug(.nightscout, "Treatments uploaded")
         } catch {
             debug(.nightscout, error.localizedDescription)
         }
@@ -1281,7 +1281,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             // If successful, update the isUploadedToNS property of the CarbEntryStored objects
             await updateCarbsAsUploaded(treatments)
 
-            debug(.nightscout, "Treatments uploaded")
+            // Daniel: Minska loggning // debug(.nightscout, "Treatments uploaded")
         } catch {
             debug(.nightscout, error.localizedDescription)
         }
@@ -1337,7 +1337,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             }
 
             await updateOverridesAsUploaded(overrides)
-            debug(.nightscout, "All overrides processed and marked as uploaded")
+            // Daniel: Minska loggning // debug(.nightscout, "All overrides processed and marked as uploaded")
         } catch {
             debug(.nightscout, "Error during override upload process: \(error.localizedDescription)")
         }
@@ -1393,7 +1393,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             }
 
             await updateOverrideRunsAsUploaded(overrideRuns)
-            debug(.nightscout, "All override runs processed and marked as uploaded")
+            // Daniel: Minska loggning // debug(.nightscout, "All override runs processed and marked as uploaded")
         } catch {
             debug(.nightscout, "Error during override run upload process: \(error.localizedDescription)")
         }
@@ -1434,7 +1434,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             // If successful, update the isUploadedToNS property of the TempTargetStored objects
             await updateTempTargetsAsUploaded(tempTargets)
 
-            debug(.nightscout, "Temp Targets uploaded")
+            // Daniel: Minska loggning // debug(.nightscout, "Temp Targets uploaded")
         } catch {
             debug(.nightscout, error.localizedDescription)
         }
@@ -1475,7 +1475,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             // If successful, update the isUploadedToNS property of the TempTargetRunStored objects
             await updateTempTargetRunsAsUploaded(tempTargetRuns)
 
-            debug(.nightscout, "Temp Target Runs uploaded")
+            // Daniel: Minska loggning // debug(.nightscout, "Temp Target Runs uploaded")
         } catch {
             debug(.nightscout, error.localizedDescription)
         }
@@ -1614,10 +1614,10 @@ extension BaseNightscoutManager {
                     let formattedFirstValue = convertToMmolL(firstValue)
                     let formattedSecondValue = convertToMmolL(secondValue)
 
-                    debug(
-                        .nightscout,
-                        "Konverterar 'inom mål': \(firstValue) → \(formattedFirstValue), \(secondValue) → \(formattedSecondValue)"
-                    )
+                    /* debug(
+                         .nightscout,
+                         "Konverterar 'inom mål': \(firstValue) → \(formattedFirstValue), \(secondValue) → \(formattedSecondValue)"
+                     ) */
 
                     let formattedString = "\(formattedFirstValue)-\(formattedSecondValue) inom mål"
                     updatedReason.replaceSubrange(range, with: formattedString)
