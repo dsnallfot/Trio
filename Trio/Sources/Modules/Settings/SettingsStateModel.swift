@@ -14,6 +14,7 @@ extension Settings {
         @Published var closedLoop = false
         @Published var isErrorUploadEnabled = false
         @Published var debugOptions = false
+        @Published var uploadPumpSettings = false
         @Published var serviceUIType: ServiceUI.Type?
         @Published var setupTidepool = false
 
@@ -27,6 +28,7 @@ extension Settings {
 
             subscribeSetting(\.debugOptions, on: $debugOptions) { debugOptions = $0 }
             subscribeSetting(\.closedLoop, on: $closedLoop) { closedLoop = $0 }
+            subscribeSetting(\.uploadPumpSettings, on: $uploadPumpSettings) { uploadPumpSettings = $0 }
             subscribeSetting(\.isErrorUploadEnabled, on: $isErrorUploadEnabled) { isErrorUploadEnabled = $0 }
 
             broadcaster.register(SettingsObserver.self, observer: self)

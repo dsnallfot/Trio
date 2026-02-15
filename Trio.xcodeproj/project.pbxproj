@@ -256,6 +256,7 @@
 		63E890B4D951EAA91C071D5C /* BasalProfileEditorStateModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAFF91130F2FCCC7EBBA11AD /* BasalProfileEditorStateModel.swift */; };
 		642F76A05A4FF530463A9FD0 /* NightscoutConfigRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8782B44544F38F2B2D82C38E /* NightscoutConfigRootView.swift */; };
 		65070A332BFDCB83006F213F /* TidepoolStartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65070A322BFDCB83006F213F /* TidepoolStartView.swift */; };
+		6540760C2F4145F000DD4CC1 /* TrioSettingsAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6540760B2F4145ED00DD4CC1 /* TrioSettingsAdapter.swift */; };
 		6545DD692D70D026007B0D70 /* AppVersionChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6545DD682D70D024007B0D70 /* AppVersionChecker.swift */; };
 		6545DD6B2D70D495007B0D70 /* SubmodulesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6545DD6A2D70D493007B0D70 /* SubmodulesView.swift */; };
 		6549E3592E09902A0042C2F1 /* ToggleUploadErrors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6549E3582E0990220042C2F1 /* ToggleUploadErrors.swift */; };
@@ -990,6 +991,7 @@
 		60744C3E9BB3652895C908CC /* DataTableProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DataTableProvider.swift; sourceTree = "<group>"; };
 		64AA5E04A2761F6EEA6568E1 /* CarbRatioEditorStateModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CarbRatioEditorStateModel.swift; sourceTree = "<group>"; };
 		65070A322BFDCB83006F213F /* TidepoolStartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TidepoolStartView.swift; sourceTree = "<group>"; };
+		6540760B2F4145ED00DD4CC1 /* TrioSettingsAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrioSettingsAdapter.swift; sourceTree = "<group>"; };
 		6545DD652D70CFBB007B0D70 /* blacklisted-versions.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "blacklisted-versions.json"; sourceTree = "<group>"; };
 		6545DD682D70D024007B0D70 /* AppVersionChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppVersionChecker.swift; sourceTree = "<group>"; };
 		6545DD6A2D70D493007B0D70 /* SubmodulesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubmodulesView.swift; sourceTree = "<group>"; };
@@ -1806,6 +1808,7 @@
 				DDC9B9962CFD2332003E7721 /* Nightscout */,
 				38FE826925CC82DB001FF17A /* NetworkService.swift */,
 				CE1F6DDA2BAE08B60064EB8D /* TidepoolManager.swift */,
+				6540760B2F4145ED00DD4CC1 /* TrioSettingsAdapter.swift */,
 			);
 			path = Network;
 			sourceTree = "<group>";
@@ -3949,6 +3952,7 @@
 				38E44522274E3DDC00EC9A94 /* NetworkReachabilityManager.swift in Sources */,
 				CE7CA34F2A064973004BE681 /* BaseIntentsRequest.swift in Sources */,
 				E592A3772CEEC038009A472C /* ContactImageStateModel.swift in Sources */,
+				6540760C2F4145F000DD4CC1 /* TrioSettingsAdapter.swift in Sources */,
 				E592A3782CEEC038009A472C /* ContactImageDataFlow.swift in Sources */,
 				DDAA29852D2D1D9E006546A1 /* AdjustmentsRootView+TempTargets.swift in Sources */,
 				E592A3792CEEC038009A472C /* ContactImageRootView.swift in Sources */,

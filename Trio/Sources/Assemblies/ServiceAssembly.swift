@@ -33,6 +33,7 @@ final class ServiceAssembly: Assembly {
                 LiveActivityBridge(resolver: r)
             }
         }
+        container.register(TrioSettingsAdapter.self) { r in TrioSettingsAdapter(resolver: r) }
     }
 }
 

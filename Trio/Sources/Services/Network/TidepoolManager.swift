@@ -5,6 +5,7 @@ import HealthKit
 import LoopKit
 import LoopKitUI
 import Swinject
+import TidepoolServiceKit
 
 protocol TidepoolManager {
     func addTidepoolService(service: Service)
@@ -26,8 +27,27 @@ final class BaseTidepoolManager: TidepoolManager, Injectable {
     @Injected() private var storage: FileStorage!
     @Injected() private var pumpHistoryStorage: PumpHistoryStorage!
     @Injected() private var apsManager: APSManager!
+    @Injected() private var settingsAdapter: TrioSettingsAdapter!
+    @Injected() private var settingsManager: SettingsManager!
+
+    // Lazy access to avoid circular dependency (TidepoolManager ↔ FetchGlucoseManager)
+    private var resolver: Resolver?
 
     private let processQueue = DispatchQueue(label: "BaseNetworkManager.processQueue")
+
+    /// Pending debounce work item for settings upload; cancelled and rescheduled
+    /// each time an observer fires, so rapid changes coalesce into one upload.
+    /// - Important: Only access from `processQueue` to ensure thread safety.
+    private var pendingSettingsUpload: DispatchWorkItem?
+
+    /// Delay before a debounced settings upload fires.
+    private static let settingsUploadDebounceDelay: TimeInterval = 1.5
+
+    /// Last-seen therapy-relevant TrioSettings values.
+    /// Used to filter `settingsDidChange` so UI-only changes don't trigger uploads.
+    private var lastClosedLoop: Bool?
+    private var lastUnits: GlucoseUnits?
+    private var lastUploadPumpSettings: Bool?
     private var tidepoolService: RemoteDataService? {
         didSet {
             if let tidepoolService = tidepoolService {
@@ -48,6 +68,7 @@ final class BaseTidepoolManager: TidepoolManager, Injectable {
     @PersistedProperty(key: "TidepoolState") var rawTidepoolManager: Service.RawValue?
 
     init(resolver: Resolver) {
+        self.resolver = resolver
         injectServices(resolver)
         loadTidepoolManager()
 
@@ -132,6 +153,23 @@ final class BaseTidepoolManager: TidepoolManager, Injectable {
                 await self.uploadGlucose()
             }
         }.store(in: &subscriptions)
+
+        // Register for settings change notifications
+        broadcaster.register(SettingsObserver.self, observer: self)
+        broadcaster.register(PreferencesObserver.self, observer: self)
+        broadcaster.register(BGTargetsObserver.self, observer: self)
+        broadcaster.register(BasalProfileObserver.self, observer: self)
+        broadcaster.register(PumpSettingsObserver.self, observer: self)
+        broadcaster.register(CarbRatiosObserver.self, observer: self)
+        broadcaster.register(InsulinSensitivitiesObserver.self, observer: self)
+        broadcaster.register(TempTargetsObserver.self, observer: self)
+
+        // Trigger settings upload when overrides are activated or deactivated.
+        // Uses CoreData publisher (not NotificationCenter) because
+        // .didUpdateOverrideConfiguration is only posted on cancellation, not activation.
+        coreDataPublisher?.filterByEntityName("OverrideStored").sink { [weak self] _ in
+            self?.scheduleSettingsUpload()
+        }.store(in: &subscriptions)
     }
 
     func sourceInfo() -> [String: Any]? {
@@ -144,14 +182,18 @@ final class BaseTidepoolManager: TidepoolManager, Injectable {
             await uploadInsulin()
             await uploadCarbs()
             await uploadGlucose()
+            await uploadSettings()
         }
     }
 }
 
 extension BaseTidepoolManager: ServiceDelegate {
     var hostIdentifier: String {
-        // TODO: shouldn't this rather be `org.nightscout.Trio` ?
-        "com.loopkit.Loop" // To check
+        // TODO: Using "org.nightscout.Trio" would be technically more correct, but Tidepool
+        // doesn't have a mapping for it and would display the device as "unknown".
+        // With "com.loopkit.Loop", Tidepool displays it as "DIY Loop".
+        // The proper fix would be to request Tidepool add a mapping for "org.nightscout.Trio" : Trio.
+        "com.loopkit.Loop"
     }
 
     var hostVersion: String {
@@ -624,6 +666,119 @@ extension BaseTidepoolManager {
                 )
             }
         }
+    }
+}
+
+/// Settings Upload Functionality
+extension BaseTidepoolManager {
+    /// Debounces settings upload requests.
+    /// Cancels any pending upload and schedules a new one after the debounce delay.
+    /// This prevents redundant uploads when multiple settings observers fire in rapid succession.
+    /// All access to `pendingSettingsUpload` is serialized on `processQueue`.
+    private func scheduleSettingsUpload() {
+        processQueue.async { [weak self] in
+            guard let self = self else { return }
+            self.pendingSettingsUpload?.cancel()
+            let workItem = DispatchWorkItem { [weak self] in
+                guard let self = self else { return }
+                Task {
+                    await self.uploadSettings()
+                }
+            }
+            self.pendingSettingsUpload = workItem
+            self.processQueue.asyncAfter(
+                deadline: .now() + Self.settingsUploadDebounceDelay,
+                execute: workItem
+            )
+        }
+    }
+
+    func uploadSettings() async {
+        // Check if upload is enabled via toggle
+        guard let tidepoolService = self.tidepoolService as? TidepoolService,
+              settingsManager.settings.uploadPumpSettings
+        else {
+            return
+        }
+
+        // Get CGM device info (lazily resolved to avoid circular dependency)
+        let fetchGlucoseManager = resolver?.resolve(FetchGlucoseManager.self)
+        let cgmDevice = fetchGlucoseManager?.cgmManager?.cgmManagerStatus.device
+
+        // Convert Trio settings to StoredSettings format using adapter
+        guard let settings = settingsAdapter.createStoredSettings(cgmDevice: cgmDevice) else {
+            return
+        }
+
+        tidepoolService.uploadSettingsData([settings]) { result in
+            switch result {
+            case .success:
+                debug(.service, "Settings uploaded to Tidepool (syncId: \(settings.syncIdentifier))")
+            case let .failure(error):
+                debug(.service, "Failed to upload settings to Tidepool: \(error)")
+            }
+        }
+    }
+}
+
+// MARK: - Settings Change Observers
+
+extension BaseTidepoolManager: SettingsObserver {
+    func settingsDidChange(_ settings: TrioSettings) {
+        // Only trigger upload when therapy-relevant properties change.
+        // TrioSettings has ~56 properties, most are UI-only (badges, colors, etc.).
+        let closedLoopChanged = lastClosedLoop != settings.closedLoop
+        let unitsChanged = lastUnits != settings.units
+        let uploadJustEnabled = settings.uploadPumpSettings && lastUploadPumpSettings == false
+
+        lastClosedLoop = settings.closedLoop
+        lastUnits = settings.units
+        lastUploadPumpSettings = settings.uploadPumpSettings
+
+        guard closedLoopChanged || unitsChanged || uploadJustEnabled else { return }
+        scheduleSettingsUpload()
+    }
+}
+
+extension BaseTidepoolManager: PreferencesObserver {
+    func preferencesDidChange(_: Preferences) {
+        scheduleSettingsUpload()
+    }
+}
+
+extension BaseTidepoolManager: BGTargetsObserver {
+    func bgTargetsDidChange(_: BGTargets) {
+        scheduleSettingsUpload()
+    }
+}
+
+extension BaseTidepoolManager: BasalProfileObserver {
+    func basalProfileDidChange(_: [BasalProfileEntry]) {
+        scheduleSettingsUpload()
+    }
+}
+
+extension BaseTidepoolManager: PumpSettingsObserver {
+    func pumpSettingsDidChange(_: PumpSettings) {
+        scheduleSettingsUpload()
+    }
+}
+
+extension BaseTidepoolManager: CarbRatiosObserver {
+    func carbRatiosDidChange(_: CarbRatios) {
+        scheduleSettingsUpload()
+    }
+}
+
+extension BaseTidepoolManager: InsulinSensitivitiesObserver {
+    func insulinSensitivitiesDidChange(_: InsulinSensitivities) {
+        scheduleSettingsUpload()
+    }
+}
+
+extension BaseTidepoolManager: TempTargetsObserver {
+    func tempTargetsDidUpdate(_: [TempTarget]) {
+        scheduleSettingsUpload()
     }
 }
 

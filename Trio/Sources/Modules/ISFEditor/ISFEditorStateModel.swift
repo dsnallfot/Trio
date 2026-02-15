@@ -6,6 +6,7 @@ extension ISFEditor {
     @Observable final class StateModel: BaseStateModel<Provider> {
         @ObservationIgnored @Injected() var determinationStorage: DeterminationStorage!
         @ObservationIgnored @Injected() private var nightscout: NightscoutManager!
+        @ObservationIgnored @Injected() private var broadcaster: Broadcaster!
 
         var items: [Item] = []
         var initialItems: [Item] = []
@@ -101,6 +102,12 @@ extension ISFEditor {
 
             provider.saveProfile(profile)
             initialItems = items.map { Item(rateIndex: $0.rateIndex, timeIndex: $0.timeIndex) }
+
+            DispatchQueue.main.async {
+                self.broadcaster.notify(InsulinSensitivitiesObserver.self, on: .main) {
+                    $0.insulinSensitivitiesDidChange(profile)
+                }
+            }
 
             Task.detached(priority: .low) {
                 debug(.nightscout, "Attempting to upload ISF to Nightscout")
