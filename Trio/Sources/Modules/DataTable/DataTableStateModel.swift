@@ -75,6 +75,7 @@ extension DataTable {
                     // Delete from Nightscout
                     if let id = glucoseToDelete.id?.uuidString {
                         self.provider.deleteManualGlucoseFromNightscout(withID: id)
+                        self.provider.deleteGlucoseFromNightscout(withID: id)
                     }
 
                     // Delete from Apple Health

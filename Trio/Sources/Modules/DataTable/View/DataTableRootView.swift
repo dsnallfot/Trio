@@ -443,7 +443,7 @@ extension DataTable {
                     Form {
                         Section {
                             HStack {
-                                Text("New Glucose")
+                                Text("Fingerstick")
                                 TextFieldWithToolBar(
                                     text: $state.manualGlucose,
                                     placeholder: " ... ",

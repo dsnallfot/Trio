@@ -333,14 +333,14 @@ final class BaseGlucoseStorage: GlucoseStorage, Injectable {
                     enteredBy: CarbsEntry.local,
                     bolus: nil,
                     insulin: nil,
-                    notes: "Trio User",
+                    notes: nil,
                     carbs: nil,
                     fat: nil,
                     protein: nil,
                     foodType: nil,
                     targetTop: nil,
                     targetBottom: nil,
-                    glucoseType: "Manual",
+                    glucoseType: "Fingerstick",
                     glucose: self.settingsManager.settings
                         .units == .mgdL ? (self.glucoseFormatter.string(from: Int(result.glucose) as NSNumber) ?? "")
                         : (self.glucoseFormatter.string(from: Decimal(result.glucose).asMmolL as NSNumber) ?? ""),

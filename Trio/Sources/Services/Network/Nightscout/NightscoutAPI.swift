@@ -207,6 +207,38 @@ extension NightscoutAPI {
         debugPrint("Delete successful for ID \(id)")
     }
 
+    func deleteGlucose(withId id: String) async throws {
+        var components = URLComponents()
+        components.scheme = url.scheme
+        components.host = url.host
+        components.port = url.port
+        components.path = Config.uploadEntriesPath
+        components.queryItems = [
+            URLQueryItem(name: "find[_id][$eq]", value: id)
+        ]
+
+        guard let url = components.url else {
+            throw URLError(.badURL)
+        }
+
+        var request = URLRequest(url: url)
+        request.allowsConstrainedNetworkAccess = false
+        request.timeoutInterval = Config.timeout
+        request.httpMethod = "DELETE"
+
+        if let secret = secret {
+            request.addValue(secret.sha1(), forHTTPHeaderField: "api-secret")
+        }
+
+        let (_, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse, (200 ... 299).contains(httpResponse.statusCode) else {
+            throw URLError(.badServerResponse)
+        }
+
+        debugPrint("Delete successful for ID \(id)")
+    }
+
     func deleteInsulin(withId id: String) async throws {
         var components = URLComponents()
         components.scheme = url.scheme

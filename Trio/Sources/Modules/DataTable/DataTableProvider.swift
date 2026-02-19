@@ -42,6 +42,13 @@ extension DataTable {
             }
         }
 
+        func deleteGlucoseFromNightscout(withID id: String) {
+            Task.detached { [weak self] in
+                guard let self = self else { return }
+                await self.nightscoutManager.deleteGlucose(withID: id)
+            }
+        }
+
         func deleteGlucoseFromHealth(withSyncID id: String) {
             Task.detached { [weak self] in
                 guard let self = self else { return }

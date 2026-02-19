@@ -12,6 +12,7 @@ protocol NightscoutManager: GlucoseSource {
     func deleteCarbs(withID id: String) async
     func deleteInsulin(withID id: String) async
     func deleteManualGlucose(withID id: String) async
+    func deleteGlucose(withID id: String) async
     func uploadDeviceStatus() async
     func uploadErrors(withNotes notes: String) async
     func uploadGlucose() async
@@ -458,6 +459,19 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             debug(
                 .nightscout,
                 "\(DebuggingIdentifiers.failed) Failed to delete Manual Glucose from Nightscout with error: \(error.localizedDescription)"
+            )
+        }
+    }
+
+    func deleteGlucose(withID id: String) async {
+        guard let nightscout = nightscoutAPI, isUploadEnabled else { return }
+
+        do {
+            try await nightscout.deleteGlucose(withId: id)
+        } catch {
+            debug(
+                .nightscout,
+                "\(DebuggingIdentifiers.failed) Failed to delete CGM Glucose from Nightscout with error: \(error.localizedDescription)"
             )
         }
     }
