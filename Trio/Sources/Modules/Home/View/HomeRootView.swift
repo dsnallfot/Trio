@@ -1062,7 +1062,7 @@ extension Home {
                 tabBar()
 
                 if state.waitForSuggestion {
-                    CustomProgressView(text: "Updating IOB...")
+                    CustomProgressView(text: "Uppdaterar IOB...")
                 }
             }
         }

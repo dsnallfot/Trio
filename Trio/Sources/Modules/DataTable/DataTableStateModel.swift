@@ -106,12 +106,16 @@ extension DataTable {
         /// - **Parameter**: NSManagedObjectID to be able to transfer the object safely from one thread to another thread
         func invokeCarbDeletionTask(_ treatmentObjectID: NSManagedObjectID, isFpuOrComplexMeal: Bool = false) {
             Task {
-                await deleteCarbs(treatmentObjectID, isFpuOrComplexMeal: isFpuOrComplexMeal)
-
+                // Turn on the spinner state before starting the async work
                 await MainActor.run {
-                    carbEntryDeleted = true
-                    waitForSuggestion = true
+                    self.carbEntryDeleted = true
+                    self.waitForSuggestion = true
                 }
+
+                // Perform the deletion + determineBasalSync chain
+                await deleteCarbs(treatmentObjectID, isFpuOrComplexMeal: isFpuOrComplexMeal)
+                // We intentionally do NOT turn off waitForSuggestion here.
+                // It will be cleared in determinationDidUpdate once determineBasalSync() completes.
             }
         }
 
@@ -209,12 +213,16 @@ extension DataTable {
         /// - **Parameter**: NSManagedObjectID to be able to transfer the object safely from one thread to another thread
         func invokeInsulinDeletionTask(_ treatmentObjectID: NSManagedObjectID) {
             Task {
-                await invokeInsulinDeletion(treatmentObjectID)
-
+                // Turn on the spinner state before starting the async work
                 await MainActor.run {
-                    insulinEntryDeleted = true
-                    waitForSuggestion = true
+                    self.insulinEntryDeleted = true
+                    self.waitForSuggestion = true
                 }
+
+                // Perform the deletion + determineBasalSync chain
+                await invokeInsulinDeletion(treatmentObjectID)
+                // We intentionally do NOT turn off waitForSuggestion here.
+                // It will be cleared in determinationDidUpdate once determineBasalSync() completes.
             }
         }
 
@@ -224,6 +232,11 @@ extension DataTable {
 
                 guard authenticated else {
                     debugPrint("\(DebuggingIdentifiers.failed) \(#file) \(#function) Authentication Error")
+                    // No determineBasalSync will run in this path, so make sure to turn off the spinner state.
+                    await MainActor.run {
+                        self.waitForSuggestion = false
+                        self.insulinEntryDeleted = false
+                    }
                     return
                 }
 
@@ -235,10 +248,18 @@ extension DataTable {
 
                 // Perform a determine basal sync to update iob
                 await apsManager.determineBasalSync()
+                // When determineBasalSync completes, a Determination is expected to be broadcast
+                // which will trigger determinationDidUpdate and clear waitForSuggestion.
             } catch {
                 debugPrint(
                     "\(DebuggingIdentifiers.failed) \(#file) \(#function) Error while Insulin Deletion Task: \(error.localizedDescription)"
                 )
+                // In case of an unexpected error, also turn off the spinner state as
+                // determineBasalSync (and thus determinationDidUpdate) may never run.
+                await MainActor.run {
+                    self.waitForSuggestion = false
+                    self.insulinEntryDeleted = false
+                }
             }
         }
 

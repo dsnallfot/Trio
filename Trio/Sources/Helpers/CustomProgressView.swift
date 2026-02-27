@@ -44,9 +44,9 @@ struct CustomProgressView: View {
 }
 
 enum ProgressText: String {
-    case updatingIOB = "Updating IOB ..."
-    case updatingCOB = "Updating COB ..."
-    case updatingHistory = "Updating History ..."
-    case updatingTreatments = "Updating Treatments ..."
-    case updatingIOBandCOB = "Updating IOB and COB ..."
+    case updatingIOB = "Uppdaterar IOB ..."
+    case updatingCOB = "Uppdaterar COB ..."
+    case updatingHistory = "Uppdaterar Historik ..."
+    case updatingTreatments = "Uppdaterar Behnadlingar ..."
+    case updatingIOBandCOB = "Uppdaterar IOB och COB ..."
 }

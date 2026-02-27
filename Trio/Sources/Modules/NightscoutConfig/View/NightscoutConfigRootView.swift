@@ -174,7 +174,7 @@ extension NightscoutConfig {
                 .blur(radius: state.importStatus == .running ? 5 : 0)
 
                 if state.importStatus == .running {
-                    CustomProgressView(text: "Importing Profile...")
+                    CustomProgressView(text: "Importerar Profil...")
                 }
             }
             .fullScreenCover(isPresented: $state.isImportResultReviewPresented, content: {
@@ -186,7 +186,7 @@ extension NightscoutConfig {
                     shouldDisplayHint: $shouldDisplayHint,
                     hintLabel: hintLabel ?? "",
                     hintText: selectedVerboseHint ?? AnyView(EmptyView()),
-                    sheetTitle: "Help"
+                    sheetTitle: "Hjälp"
                 )
             }
             .navigationBarTitle("Nightscout")
