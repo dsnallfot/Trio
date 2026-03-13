@@ -222,7 +222,7 @@ jobs:
   build:
     name: Build
     needs: [check_certs, check_alive_and_permissions, check_latest_from_upstream, day_in_month]
-    runs-on: macos-15
+    runs-on: macos-26
     permissions:
       contents: write
     if:
@@ -240,7 +240,7 @@ jobs:
         if: |
           needs.check_alive_and_permissions.outputs.WORKFLOW_PERMISSION == 'true' &&
           vars.SCHEDULED_SYNC != 'false'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           token: ${{ secrets.GH_PAT }}
           ref: ${{ env.TARGET_BRANCH }}
@@ -280,7 +280,7 @@ jobs:
           echo "NEW_COMMITS=${{ steps.sync.outputs.has_new_commits }}" >> $GITHUB_OUTPUT
 
       - name: Checkout Repo for building
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           token: ${{ secrets.GH_PAT }}
           submodules: recursive
