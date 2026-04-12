@@ -93,7 +93,12 @@ extension TrioRemoteControl {
             "Remote måltid behandlades framgångsrikt. \(pushMessage.humanReadableDescription())"
         )
         // Construct the notification body
-        var notificationBody = !notes.isEmpty ? "\(notes)\n" : ""
+        let cleanedNotes = notes
+            .components(separatedBy: " Inlagt av")
+            .first?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+
+        var notificationBody = !cleanedNotes.isEmpty ? "\(cleanedNotes)\n" : ""
 
         // Create a number formatter for consistent decimal formatting
         let numberFormatter = NumberFormatter()
