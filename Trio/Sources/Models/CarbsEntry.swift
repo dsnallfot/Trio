@@ -42,13 +42,18 @@ extension CarbsEntry {
 
 extension CarbsEntry {
     func convertSyncCarb(operation: LoopKit.Operation = .create) -> SyncCarbObject {
+        let parsedUUID = id.flatMap(UUID.init(uuidString:))
+        if parsedUUID == nil {
+            debug(.nightscout, "Invalid or missing UUID for CarbsEntry with id: \(String(describing: id))")
+        }
+        
         SyncCarbObject(
             absorptionTime: nil,
             createdByCurrentApp: true,
             foodType: nil,
             grams: Double(carbs),
             startDate: createdAt,
-            uuid: UUID(uuidString: id!),
+            uuid: parsedUUID,
             provenanceIdentifier: enteredBy ?? "Trio",
             syncIdentifier: id,
             syncVersion: nil,

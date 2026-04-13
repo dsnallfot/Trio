@@ -249,7 +249,7 @@ extension BaseTidepoolManager {
                         debug(.nightscout, "Success synchronizing carbs data. Upload to Tidepool complete.")
                         // After successful upload, update the isUploadedToTidepool flag in Core Data
                         Task {
-                            await self.updateCarbsAsUploaded(carbs)
+                            await self.updateCarbsAsUploaded(Array(chunk))
                         }
                     }
                 }
@@ -346,11 +346,12 @@ extension BaseTidepoolManager {
                     result
                         .append(contentsOf: self.processTempBasalEvent(event, existingTempBasalEntries: existingTempBasalEntries))
                 case .bolus:
+                    guard let amount = event.amount else { return result }
                     let bolusDoseEntry = DoseEntry(
                         type: .bolus,
                         startDate: event.timestamp,
                         endDate: event.timestamp,
-                        value: Double(event.amount!),
+                        value: Double(amount),
                         unit: .units,
                         deliveredUnits: nil,
                         syncIdentifier: event.id,
