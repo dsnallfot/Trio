@@ -92,8 +92,12 @@ class TrioRemoteControl: Injectable {
             }
             // Then execute the meal command.
             await handleMealCommand(pushMessage)
-            // Finally start the override.
-            await handleStartOverrideCommand(pushMessage)
+            // Finally start the override, if one was included.
+            if let overrideName = pushMessage.overrideName,
+               !overrideName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            {
+                await handleStartOverrideCommand(pushMessage)
+            }
         case .startOverride:
             await handleStartOverrideCommand(pushMessage)
         case .cancelOverride:
