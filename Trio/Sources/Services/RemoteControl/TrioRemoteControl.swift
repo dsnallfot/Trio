@@ -79,24 +79,24 @@ class TrioRemoteControl: Injectable {
         case .cancelTempTarget:
             await cancelTempTarget(pushMessage)
         case .meal:
+            // Execute meal command first.
+            await handleMealCommand(pushMessage)
+            // Then execute the bolus command.
             if pushMessage.bolusAmount != nil {
-                // Execute bolus command first.
                 await handleBolusCommand(pushMessage)
             }
-            // Then execute the meal command.
-            await handleMealCommand(pushMessage)
+
         case .combo:
-            if pushMessage.bolusAmount != nil {
-                // Execute bolus command first.
-                await handleBolusCommand(pushMessage)
-            }
-            // Then execute the meal command.
             await handleMealCommand(pushMessage)
-            // Finally start the override, if one was included.
+
             if let overrideName = pushMessage.overrideName,
                !overrideName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             {
                 await handleStartOverrideCommand(pushMessage)
+            }
+
+            if pushMessage.bolusAmount != nil {
+                await handleBolusCommand(pushMessage)
             }
         case .startOverride:
             await handleStartOverrideCommand(pushMessage)

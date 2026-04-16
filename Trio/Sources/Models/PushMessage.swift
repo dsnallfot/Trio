@@ -130,7 +130,14 @@ struct PushMessage: Codable, Sendable {
             let proteinDesc = protein != nil ? "\(protein!)g protein" : "unknown protein"
             let bolusDesc = bolusAmount != nil ? "\(bolusAmount!) U" : "no bolus"
             let noteDesc = notes != nil ? "\(notes!)" : ""
-            description += "Combo \(noteDesc)\nBolus: \(bolusDesc), \(carbsDesc), \(fatDesc), \(proteinDesc)."
+
+            var comboDescription = "Combo \(noteDesc)\nBolus: \(bolusDesc), \(carbsDesc), \(fatDesc), \(proteinDesc)."
+
+            if let override = overrideName, !override.isEmpty {
+                comboDescription += "\nOverride: \(override)."
+            }
+
+            description += comboDescription
         case .startOverride:
             if let override = overrideName {
                 description += "Start Override: \(override)."
