@@ -273,8 +273,64 @@ final class BaseOverrideStorage: @preconcurrency OverrideStorage, Injectable {
         }
     }
 
-    // This is needed to force re-rendering of overrides with changed durations in Nightscout main chart
-    // since just updating durations in existing entries doesn't trigger re-rendering.
+    /*
+     // This is needed to force re-rendering of overrides with changed durations in Nightscout main chart
+     // since just updating durations in existing entries doesn't trigger re-rendering.
+     func checkIfShouldDeleteNightscoutOverrideEntry(
+         forCreatedAt createdAtString: String,
+         newDuration: Int?,
+         using nightscout: NightscoutAPI
+     ) async throws {
+         let formatter = ISO8601DateFormatter()
+         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+
+         // Parse the created_at string.
+         guard let jsonDate = formatter.date(from: createdAtString) else {
+             return
+         }
+
+         // Define a tolerance window (in seconds)
+         // This is neccessary to handle very small rounding/conversion time differences
+         // when comparing dates between core data and NightscoutExercise json
+         let tolerance: TimeInterval = 0.1
+         let lowerBound = jsonDate.addingTimeInterval(-tolerance)
+         let upperBound = jsonDate.addingTimeInterval(tolerance)
+
+         // Build a predicate to fetch a stored override (from OverrideStored) whose date is within the tolerance window.
+         let predicate = NSPredicate(format: "date >= %@ AND date <= %@", lowerBound as NSDate, upperBound as NSDate)
+         let results = await CoreDataStack.shared.fetchEntitiesAsync(
+             ofType: OverrideStored.self,
+             onContext: backgroundContext,
+             predicate: predicate,
+             key: "date",
+             ascending: false
+         )
+
+         let storedOverride: NightscoutExercise? = await backgroundContext.perform {
+             guard let fetched = results as? [OverrideStored],
+                   let record = fetched.first,
+                   let recordDate = record.date else { return nil }
+             // let duration = record.indefinite ? 43200 : record.duration ?? 0
+             let duration = record.indefinite ? 1440 : record.duration ?? 0
+             return NightscoutExercise(
+                 duration: Int(truncating: duration),
+                 eventType: OverrideStored.EventType.nsExercise,
+                 createdAt: recordDate,
+                 enteredBy: NightscoutExercise.local,
+                 notes: record.name ?? "🛠️ Anpassad Override",
+                 id: UUID(uuidString: record.id ?? UUID().uuidString)
+             )
+         }
+
+         if let existing = storedOverride {
+             // Only delete existing nightscout entries if the durations differ.
+             if let existingDuration = existing.duration, let newDuration = newDuration, existingDuration != newDuration {
+                 try await nightscout.deleteNightscoutOverride(withCreatedAt: createdAtString)
+             }
+         }
+     }
+
+     */
     func checkIfShouldDeleteNightscoutOverrideEntry(
         forCreatedAt createdAtString: String,
         newDuration: Int?,
@@ -283,49 +339,65 @@ final class BaseOverrideStorage: @preconcurrency OverrideStorage, Injectable {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
 
-        // Parse the created_at string.
         guard let jsonDate = formatter.date(from: createdAtString) else {
             return
         }
 
-        // Define a tolerance window (in seconds)
-        // This is neccessary to handle very small rounding/conversion time differences
-        // when comparing dates between core data and NightscoutExercise json
         let tolerance: TimeInterval = 0.1
         let lowerBound = jsonDate.addingTimeInterval(-tolerance)
         let upperBound = jsonDate.addingTimeInterval(tolerance)
 
-        // Build a predicate to fetch a stored override (from OverrideStored) whose date is within the tolerance window.
-        let predicate = NSPredicate(format: "date >= %@ AND date <= %@", lowerBound as NSDate, upperBound as NSDate)
-        let results = await CoreDataStack.shared.fetchEntitiesAsync(
-            ofType: OverrideStored.self,
+        // First prefer a matching OverrideRunStored, since it represents the actual executed run
+        // and therefore the real duration if an override ended early.
+        let runPredicate = NSPredicate(
+            format: "startDate >= %@ AND startDate <= %@",
+            lowerBound as NSDate,
+            upperBound as NSDate
+        )
+        let runResults = await CoreDataStack.shared.fetchEntitiesAsync(
+            ofType: OverrideRunStored.self,
             onContext: backgroundContext,
-            predicate: predicate,
-            key: "date",
-            ascending: false
+            predicate: runPredicate,
+            key: "startDate",
+            ascending: false,
+            fetchLimit: 1
         )
 
-        let storedOverride: NightscoutExercise? = await backgroundContext.perform {
-            guard let fetched = results as? [OverrideStored],
-                  let record = fetched.first,
-                  let recordDate = record.date else { return nil }
-            // let duration = record.indefinite ? 43200 : record.duration ?? 0
-            let duration = record.indefinite ? 1440 : record.duration ?? 0
-            return NightscoutExercise(
-                duration: Int(truncating: duration),
-                eventType: OverrideStored.EventType.nsExercise,
-                createdAt: recordDate,
-                enteredBy: NightscoutExercise.local,
-                notes: record.name ?? "🛠️ Anpassad Override",
-                id: UUID(uuidString: record.id ?? UUID().uuidString)
+        let existingDurationToCompare: Int? = await backgroundContext.perform {
+            if let fetchedRuns = runResults as? [OverrideRunStored],
+               let run = fetchedRuns.first,
+               let startDate = run.startDate
+            {
+                let endDate = run.endDate ?? Date()
+                let durationInMinutes = max(1, Int(endDate.timeIntervalSince(startDate) / 60))
+                return durationInMinutes
+            }
+
+            // Fall back to OverrideStored only if no OverrideRunStored was found.
+            let overridePredicate = NSPredicate(
+                format: "date >= %@ AND date <= %@",
+                lowerBound as NSDate,
+                upperBound as NSDate
             )
+
+            let request: NSFetchRequest<OverrideStored> = OverrideStored.fetchRequest()
+            request.predicate = overridePredicate
+            request.sortDescriptors = [NSSortDescriptor(key: "date", ascending: false)]
+            request.fetchLimit = 1
+
+            do {
+                let fetchedOverrides = try self.backgroundContext.fetch(request)
+                guard let record = fetchedOverrides.first else { return nil }
+                let duration = record.indefinite ? 1440 : Int(truncating: record.duration ?? 0)
+                return duration
+            } catch {
+                debugPrint("❌ Failed to fetch OverrideStored for Nightscout delete check: \(error.localizedDescription)")
+                return nil
+            }
         }
 
-        if let existing = storedOverride {
-            // Only delete existing nightscout entries if the durations differ.
-            if let existingDuration = existing.duration, let newDuration = newDuration, existingDuration != newDuration {
-                try await nightscout.deleteNightscoutOverride(withCreatedAt: createdAtString)
-            }
+        if let existingDurationToCompare, let newDuration, existingDurationToCompare != newDuration {
+            try await nightscout.deleteNightscoutOverride(withCreatedAt: createdAtString)
         }
     }
 

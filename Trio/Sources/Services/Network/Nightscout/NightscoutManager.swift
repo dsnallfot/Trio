@@ -1334,14 +1334,12 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
                     continue
                 }
 
-                // Check for an existing stored override and delete if needed (This is neccessary to delete original entry in NS when a running override gets customized with a new duration).
+                // Check for an existing stored override and delete if needed
                 try await overridesStorage.checkIfShouldDeleteNightscoutOverrideEntry(
                     forCreatedAt: createdAtString,
                     newDuration: override.duration,
                     using: nightscout
                 )
-
-                try await nightscout.uploadOverrides([override])
 
                 processedOverrides.append(override)
             }
@@ -1351,11 +1349,46 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             }
 
             await updateOverridesAsUploaded(overrides)
-            // Daniel: Minska loggning // debug(.nightscout, "All overrides processed and marked as uploaded")
         } catch {
             debug(.nightscout, "Error during override upload process: \(error.localizedDescription)")
         }
     }
+
+    /*
+     private func uploadOverrides(_ overrides: [NightscoutExercise]) async {
+         guard !overrides.isEmpty, let nightscout = nightscoutAPI, isUploadEnabled else {
+             return
+         }
+         do {
+             var processedOverrides: [NightscoutExercise] = []
+             for override in overrides {
+                 guard let createdAtString = override.created_at as? String else {
+                     continue
+                 }
+
+                 // Check for an existing stored override and delete if needed (This is neccessary to delete original entry in NS when a running override gets customized with a new duration).
+                 try await overridesStorage.checkIfShouldDeleteNightscoutOverrideEntry(
+                     forCreatedAt: createdAtString,
+                     newDuration: override.duration,
+                     using: nightscout
+                 )
+
+                 try await nightscout.uploadOverrides([override])
+
+                 processedOverrides.append(override)
+             }
+
+             for chunk in processedOverrides.chunks(ofCount: 100) {
+                 try await nightscout.uploadOverrides(Array(chunk))
+             }
+
+             await updateOverridesAsUploaded(overrides)
+             // Daniel: Minska loggning // debug(.nightscout, "All overrides processed and marked as uploaded")
+         } catch {
+             debug(.nightscout, "Error during override upload process: \(error.localizedDescription)")
+         }
+     }
+     */
 
     private func updateOverridesAsUploaded(_ overrides: [NightscoutExercise]) async {
         await backgroundContext.perform {
