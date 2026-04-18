@@ -126,7 +126,7 @@ struct PushMessage: Codable, Sendable {
             description += "Meal \(noteDesc)\n\(carbsDesc), \(fatDesc), \(proteinDesc)."
         case .deleteMeal:
             let timestampDesc = scheduledTime != nil ? "\(scheduledTime!)" : "\(timestamp)"
-            description = "Meal deleted at timestamp"
+            description = "Meal deleted at timestamp \(timestampDesc)"
         case .combo:
             let carbsDesc = carbs != nil ? "\(carbs!)g carbs" : "unknown carbs"
             let fatDesc = fat != nil ? "\(fat!)g fat" : "unknown fat"
