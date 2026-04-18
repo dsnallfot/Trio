@@ -1,4 +1,7 @@
+import CoreData
 import Foundation
+import HealthKit
+import UIKit
 
 extension TrioRemoteControl {
     func handleMealCommand(_ pushMessage: PushMessage) async {
@@ -167,5 +170,175 @@ extension TrioRemoteControl {
             title: "Remote Måltid",
             body: notificationBody
         )
+    }
+
+    func handleDeleteMealCommand(_ pushMessage: PushMessage) async {
+        let resolver = TrioApp.resolver
+        let provider: DataTable.Provider = resolver.resolve(DataTable.Provider.self) ?? DataTable.Provider(resolver: resolver)
+
+        let deletionTimestamp = pushMessage.scheduledTime ?? pushMessage.timestamp
+        let targetDate = Date(timeIntervalSince1970: deletionTimestamp)
+
+        let calendar = Calendar.current
+        let components = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: targetDate)
+        guard let startDate = calendar.date(from: components) else {
+            await logError(
+                "Kommandot avvisades: ogiltig tidsstämpel för måltidsradering.",
+                pushMessage: pushMessage
+            )
+            return
+        }
+
+        let endDate = startDate.addingTimeInterval(60)
+
+        let backgroundContext = CoreDataStack.shared.newTaskContext()
+        var matchingEntries: [CarbEntryStored] = []
+
+        do {
+            try await backgroundContext.perform {
+                let request: NSFetchRequest<CarbEntryStored> = CarbEntryStored.fetchRequest()
+                request.predicate = NSPredicate(format: "date >= %@ AND date < %@", startDate as NSDate, endDate as NSDate)
+                request.fetchLimit = 1
+                matchingEntries = try backgroundContext.fetch(request)
+            }
+        } catch {
+            await logError(
+                "Kommandot avvisades: kunde inte söka efter måltid att radera. \(error.localizedDescription)",
+                pushMessage: pushMessage
+            )
+            return
+        }
+
+        guard let fetchedObjectID = matchingEntries.first?.objectID else {
+            await logError(
+                "Kommandot avvisades: ingen matchande måltid hittades för den angivna tiden.",
+                pushMessage: pushMessage
+            )
+            return
+        }
+
+        let mainContext = CoreDataStack.shared.persistentContainer.viewContext
+        let entryToDelete: CarbEntryStored
+
+        do {
+            entryToDelete = try await mainContext.perform {
+                guard let entry = try mainContext.existingObject(with: fetchedObjectID) as? CarbEntryStored else {
+                    throw NSError(
+                        domain: "TrioRemoteControl",
+                        code: 1,
+                        userInfo: [NSLocalizedDescriptionKey: "Failed to re-fetch entry on main context"]
+                    )
+                }
+                return entry
+            }
+        } catch {
+            await logError(
+                "Kommandot avvisades: kunde inte läsa måltiden som skulle raderas. \(error.localizedDescription)",
+                pushMessage: pushMessage
+            )
+            return
+        }
+
+        let treatmentObjectID = entryToDelete.objectID
+
+        await deleteMealFromServices(treatmentObjectID, provider: provider)
+        await carbsStorage.deleteCarbsEntryStored(treatmentObjectID)
+
+        if let apsManager: APSManager = resolver.resolve(APSManager.self) {
+            await apsManager.determineBasalSync()
+        }
+
+        debug(
+            .remoteControl,
+            "Remote måltidsradering behandlades framgångsrikt. \(pushMessage.humanReadableDescription())"
+        )
+
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "HH:mm:ss"
+        let formattedTime = dateFormatter.string(from: startDate)
+
+        notificationManager.notifyTrioRemoteControl(
+            title: "Remote Radera Måltid",
+            body: "Tid: \(formattedTime)\nInlagt av: \(pushMessage.user)"
+        )
+    }
+
+    private func deleteMealFromServices(_ treatmentObjectID: NSManagedObjectID, provider: DataTable.Provider) async {
+        debugPrint("deleteFromServices started for objectID: \(treatmentObjectID)")
+
+        // Request background time on the main actor.
+        let bgTaskID: UIBackgroundTaskIdentifier = await MainActor.run {
+            var taskID: UIBackgroundTaskIdentifier = .invalid
+            taskID = UIApplication.shared.beginBackgroundTask(withName: "DeleteCarbEntry") {
+                // This closure is called if the background time expires.
+                Task { @MainActor in
+                    UIApplication.shared.endBackgroundTask(taskID)
+                }
+            }
+            return taskID
+        }
+
+        // Ensure the background task is ended when we're done.
+        defer {
+            Task { @MainActor in
+                UIApplication.shared.endBackgroundTask(bgTaskID)
+                debugPrint("Background task ended for deleteFromServices")
+            }
+        }
+
+        let taskContext = CoreDataStack.shared.newTaskContext()
+        taskContext.name = "deleteContext"
+        taskContext.transactionAuthor = "deleteCarbsFromServices"
+
+        await taskContext.perform {
+            do {
+                guard let carbEntry = try taskContext.existingObject(with: treatmentObjectID) as? CarbEntryStored else {
+                    debugPrint("Carb entry for deletion not found in deleteFromServices.")
+                    return
+                }
+                debugPrint("Deleting remote services for carbEntry: \(carbEntry)")
+
+                // If the entry has an FPU ID, delete FPU-related remote data.
+                if let fpuID = carbEntry.fpuID {
+                    debugPrint("Deleting FPU related entries for fpuID: \(fpuID.uuidString)")
+                    provider.deleteCarbsFromNightscout(withID: fpuID.uuidString)
+
+                    let healthObjectsToDelete: [HKSampleType?] = [
+                        AppleHealthConfig.healthFatObject,
+                        AppleHealthConfig.healthProteinObject
+                    ]
+                    for sampleType in healthObjectsToDelete {
+                        if let validSampleType = sampleType {
+                            debugPrint(
+                                "Deleting meal data from Health for fpuID: \(fpuID.uuidString) and sampleType: \(validSampleType)"
+                            )
+                            provider.deleteMealDataFromHealth(byID: fpuID.uuidString, sampleType: validSampleType)
+                        }
+                    }
+                }
+
+                // Delete carb entries if they exist.
+                if let id = carbEntry.id, let entryDate = carbEntry.date {
+                    debugPrint("Deleting carb entry remote services for id: \(id.uuidString)")
+                    provider.deleteCarbsFromNightscout(withID: id.uuidString)
+
+                    if let sampleType = AppleHealthConfig.healthCarbObject {
+                        debugPrint("Deleting carb meal data from Health for id: \(id.uuidString)")
+                        provider.deleteMealDataFromHealth(byID: id.uuidString, sampleType: sampleType)
+                    }
+
+                    debugPrint("Deleting carb entry from Tidepool for id: \(id.uuidString)")
+                    provider.deleteCarbsFromTidepool(
+                        withSyncId: id,
+                        carbs: Decimal(carbEntry.carbs),
+                        at: entryDate,
+                        enteredBy: CarbsEntry.local
+                    )
+                }
+            } catch {
+                debugPrint("Error in deleteFromServices: \(error.localizedDescription)")
+            }
+        }
+        debugPrint("deleteFromServices finished for objectID: \(treatmentObjectID)")
     }
 }

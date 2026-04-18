@@ -85,6 +85,8 @@ class TrioRemoteControl: Injectable {
             if pushMessage.bolusAmount != nil {
                 await handleBolusCommand(pushMessage)
             }
+        case .deleteMeal:
+            await handleDeleteMealCommand(pushMessage)
 
         case .combo:
             await handleMealCommand(pushMessage)
@@ -114,6 +116,7 @@ extension TrioRemoteControl {
         case tempTarget = "temp_target"
         case cancelTempTarget = "cancel_temp_target"
         case meal
+        case deleteMeal
         case combo
         case startOverride = "start_override"
         case cancelOverride = "cancel_override"
@@ -128,6 +131,8 @@ extension TrioRemoteControl {
                 return "Avbryt temporärt mål"
             case .meal:
                 return "Måltid"
+            case .deleteMeal:
+                return "Radera Måltid"
             case .combo:
                 return "Kombination"
             case .startOverride:
