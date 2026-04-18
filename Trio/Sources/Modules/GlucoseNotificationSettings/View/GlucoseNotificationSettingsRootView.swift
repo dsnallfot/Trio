@@ -169,6 +169,30 @@ extension GlucoseNotificationSettings {
 
                 SettingInputSection(
                     decimalValue: $decimalPlaceholder,
+                    booleanValue: $state.notificationsRemote,
+                    shouldDisplayHint: $shouldDisplayHint,
+                    selectedVerboseHint: Binding(
+                        get: { selectedVerboseHint },
+                        set: {
+                            selectedVerboseHint = $0.map { AnyView($0) }
+                            hintLabel = "Always Notify Remote Commands"
+                        }
+                    ),
+                    units: state.units,
+                    type: .boolean,
+                    label: "Always Notify Remote Commands",
+                    miniHint: "Always Notify Remote Commands.",
+                    verboseHint:
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Default: OFF").bold()
+                        Text(
+                            "With iOS Trio Notifications enabled, you can let Trio display received remote command Notifications in iOS Notification Center as a Banner, List and on the Lock Screen. It allows you to refer to Trio Information at a glance and troubleshoot any informational issue. Set iOS Notifications Banner Style to Persistent to display banners in the app until dismissed."
+                        )
+                    }
+                )
+
+                SettingInputSection(
+                    decimalValue: $decimalPlaceholder,
                     booleanValue: $state.glucoseBadge,
                     shouldDisplayHint: $shouldDisplayHint,
                     selectedVerboseHint: Binding(

@@ -36,6 +36,7 @@ struct TrioSettings: JSON, Equatable {
     var notificationsCgm: Bool = true
     var notificationsCarb: Bool = true
     var notificationsAlgorithm: Bool = true
+    var notificationsRemote: Bool = false
     var glucoseNotificationsOption: GlucoseNotificationsOption = .onlyAlarmLimits
     var useAlarmSound: Bool = false
     var addSourceInfoToGlucoseNotifications: Bool = false
@@ -208,6 +209,10 @@ extension TrioSettings: Decodable {
 
         if let notificationsAlgorithm = try? container.decode(Bool.self, forKey: .notificationsAlgorithm) {
             settings.notificationsAlgorithm = notificationsAlgorithm
+        }
+
+        if let notificationsRemote = try? container.decode(Bool.self, forKey: .notificationsRemote) {
+            settings.notificationsRemote = notificationsRemote
         }
 
         if let glucoseNotificationsOption = try? container.decode(

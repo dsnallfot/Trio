@@ -33,6 +33,9 @@ extension TrioRemoteControl {
             .remoteControl,
             "Remote Temp Target behandlades framgångsrikt. \(pushMessage.humanReadableDescription())"
         )
+
+        guard settings.settings.notificationsRemote else { return }
+
         var notificationBody = "Temp target aktiverades: \(targetValue) i \(durationInMinutes) minuter.\n"
         notificationBody += "Inlagt av: \(pushMessage.user)\n"
         // Convert timestamp to HH:mm:ss format

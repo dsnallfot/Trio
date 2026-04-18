@@ -13,6 +13,7 @@ extension GlucoseNotificationSettings {
         @Published var notificationsCgm = true
         @Published var notificationsCarb = true
         @Published var notificationsAlgorithm = true
+        @Published var notificationsRemote = false
 
         var units: GlucoseUnits = .mgdL
 
@@ -24,6 +25,7 @@ extension GlucoseNotificationSettings {
             subscribeSetting(\.notificationsCgm, on: $notificationsCgm) { notificationsCgm = $0 }
             subscribeSetting(\.notificationsCarb, on: $notificationsCarb) { notificationsCarb = $0 }
             subscribeSetting(\.notificationsAlgorithm, on: $notificationsAlgorithm) { notificationsAlgorithm = $0 }
+            subscribeSetting(\.notificationsRemote, on: $notificationsRemote) { notificationsRemote = $0 }
 
             subscribeSetting(\.glucoseBadge, on: $glucoseBadge) { glucoseBadge = $0 }
             subscribeSetting(\.glucoseNotificationsOption, on: $glucoseNotificationsOption) { glucoseNotificationsOption = $0 }

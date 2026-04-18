@@ -60,6 +60,8 @@ extension TrioRemoteControl {
             "Fjärrkommando behandlades framgångsrikt. \(pushMessage.humanReadableDescription())"
         )
 
+        guard settings.settings.notificationsRemote else { return }
+
         // Format the bolus amount to 2 decimal places.
         let numberFormatter = NumberFormatter()
         numberFormatter.minimumFractionDigits = 2

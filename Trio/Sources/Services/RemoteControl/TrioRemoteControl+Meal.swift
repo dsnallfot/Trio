@@ -28,10 +28,10 @@ extension TrioRemoteControl {
             notes = " Inlagt av: Trio (📲)"
         }
 
-        let settings = await TrioApp.resolver.resolve(SettingsManager.self)?.settings
-        let maxCarbs = settings?.maxCarbs ?? Decimal(0)
-        let maxFat = settings?.maxFat ?? Decimal(0)
-        let maxProtein = settings?.maxProtein ?? Decimal(0)
+        let settingsSelf = await TrioApp.resolver.resolve(SettingsManager.self)?.settings
+        let maxCarbs = settingsSelf?.maxCarbs ?? Decimal(0)
+        let maxFat = settingsSelf?.maxFat ?? Decimal(0)
+        let maxProtein = settingsSelf?.maxProtein ?? Decimal(0)
 
         if let carbs = carbsDecimal, carbs > maxCarbs {
             await logError(
@@ -129,6 +129,9 @@ extension TrioRemoteControl {
             .remoteControl,
             "Remote måltid behandlades framgångsrikt. \(pushMessage.humanReadableDescription())"
         )
+
+        guard settings.settings.notificationsRemote else { return }
+
         // Construct the notification body
         let cleanedNotes = notes
             .components(separatedBy: " Inlagt av")

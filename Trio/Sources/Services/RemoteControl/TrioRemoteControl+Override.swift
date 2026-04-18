@@ -10,6 +10,9 @@ extension TrioRemoteControl {
             .remoteControl,
             "Remote Override behandlades framgångsrikt. \(pushMessage.humanReadableDescription())"
         )
+
+        guard settings.settings.notificationsRemote else { return }
+
         var notificationBody = "Pågående override avbröts.\n"
         notificationBody += "Inlagt av: \(pushMessage.user)\n"
         // Convert timestamp to HH:mm:ss format
