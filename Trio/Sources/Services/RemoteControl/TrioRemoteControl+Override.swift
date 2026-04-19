@@ -112,6 +112,8 @@ extension TrioRemoteControl {
                 debug(.remoteControl, "⌛ Waiting for didUpdateOverrideConfiguration after remote override save...")
                 await awaitNotification(.didUpdateOverrideConfiguration)
                 debug(.remoteControl, "✅ Notification received. Override is now active.")
+                
+                guard settings.settings.notificationsRemote else { return }
 
                 var notificationBody = "\(pushMessage.overrideName ?? "Anpassad override") aktiverades\n"
                 notificationBody += "Inlagt av: \(pushMessage.user)\n"
