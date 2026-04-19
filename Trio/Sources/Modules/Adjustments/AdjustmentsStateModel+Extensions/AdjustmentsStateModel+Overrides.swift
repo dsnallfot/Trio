@@ -50,6 +50,7 @@ extension Adjustments.StateModel {
                         let newOverrideRunStored = OverrideRunStored(context: self.viewContext)
                         newOverrideRunStored.id = UUID()
                         newOverrideRunStored.name = canceledOverride.name
+                        newOverrideRunStored.enteredBy = canceledOverride.enteredBy
                         newOverrideRunStored.startDate = canceledOverride.date ?? .distantPast
                         newOverrideRunStored.endDate = Date()
                         newOverrideRunStored

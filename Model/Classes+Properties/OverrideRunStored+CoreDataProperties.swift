@@ -13,6 +13,7 @@ public extension OverrideRunStored {
     @NSManaged var startDate: Date?
     @NSManaged var target: NSDecimalNumber?
     @NSManaged var override: OverrideStored?
+    @NSManaged var enteredBy: String?
 }
 
 extension OverrideRunStored: Identifiable {}

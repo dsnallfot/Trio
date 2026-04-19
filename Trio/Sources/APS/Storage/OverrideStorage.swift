@@ -180,6 +180,7 @@ final class BaseOverrideStorage: @preconcurrency OverrideStorage, Injectable {
         newOverride.percentage = override.percentage
         newOverride.smbIsOff = override.smbIsOff
         newOverride.name = override.name
+        newOverride.enteredBy = override.enteredBy
         newOverride.isPreset = false // no Preset
         newOverride.date = override.date
         newOverride.enabled = override.enabled
@@ -234,7 +235,7 @@ final class BaseOverrideStorage: @preconcurrency OverrideStorage, Injectable {
                     duration: Int(truncating: duration),
                     eventType: OverrideStored.EventType.nsExercise,
                     createdAt: override.date ?? Date(),
-                    enteredBy: NightscoutExercise.local,
+                    enteredBy: override.enteredBy ?? NightscoutExercise.local,
                     notes: override.name ?? "🛠️ Anpassad Override",
                     id: UUID(uuidString: override.id ?? UUID().uuidString)
                 )
@@ -261,11 +262,12 @@ final class BaseOverrideStorage: @preconcurrency OverrideStorage, Injectable {
             return fetchedOverrideRuns.map { overrideRun in
                 var durationInMinutes = (overrideRun.endDate?.timeIntervalSince(overrideRun.startDate ?? Date()) ?? 1) / 60
                 durationInMinutes = durationInMinutes < 1 ? 1 : durationInMinutes
+                let resolvedEnteredBy = overrideRun.enteredBy ?? overrideRun.override?.enteredBy ?? NightscoutExercise.local
                 return NightscoutExercise(
                     duration: Int(durationInMinutes),
                     eventType: OverrideStored.EventType.nsExercise,
                     createdAt: (overrideRun.startDate ?? overrideRun.override?.date) ?? Date(),
-                    enteredBy: NightscoutExercise.local,
+                    enteredBy: resolvedEnteredBy,
                     notes: overrideRun.name ?? "🛠️ Anpassad Override",
                     id: overrideRun.id
                 )
@@ -315,7 +317,7 @@ final class BaseOverrideStorage: @preconcurrency OverrideStorage, Injectable {
                 duration: Int(truncating: duration),
                 eventType: OverrideStored.EventType.nsExercise,
                 createdAt: recordDate,
-                enteredBy: NightscoutExercise.local,
+                enteredBy: record.enteredBy ?? NightscoutExercise.local,
                 notes: record.name ?? "🛠️ Anpassad Override",
                 id: UUID(uuidString: record.id ?? UUID().uuidString)
             )

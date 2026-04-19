@@ -221,6 +221,7 @@ import UIKit
                     let newOverrideRunStored = OverrideRunStored(context: viewContext)
                     newOverrideRunStored.id = UUID()
                     newOverrideRunStored.name = overrideToCancel.name
+                    newOverrideRunStored.enteredBy = overrideToCancel.enteredBy
                     newOverrideRunStored.startDate = startDate
 
                     let endDate: Date

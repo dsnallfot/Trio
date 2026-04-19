@@ -28,6 +28,7 @@ public extension OverrideStored {
     @NSManaged var target: NSDecimalNumber?
     @NSManaged var uamMinutes: NSDecimalNumber?
     @NSManaged var overrideRun: OverrideRunStored?
+    @NSManaged var enteredBy: String?
 }
 
 extension OverrideStored: Identifiable {}
