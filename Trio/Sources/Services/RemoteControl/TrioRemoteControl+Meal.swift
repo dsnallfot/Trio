@@ -18,6 +18,25 @@ extension TrioRemoteControl {
             return
         }
 
+        // --- DEDUPE START ---
+        let commandKey = remoteCommandDedupKey(for: pushMessage, scope: .meal)
+
+        guard beginRemoteCommandIfNotDuplicate(commandKey) else {
+            debug(.remoteControl, "Remote måltid ignorerades som dublett. \(pushMessage.humanReadableDescription())")
+            return
+        }
+
+        var shouldKeepMealDedupKey = false
+
+        defer {
+            if shouldKeepMealDedupKey {
+                finishRemoteCommandDedup(commandKey)
+            } else {
+                cancelRemoteCommandDedup(commandKey)
+            }
+        }
+        // --- DEDUPE END ---
+
         let carbsDecimal = pushMessage.carbs != nil ? Decimal(pushMessage.carbs!) : nil
         let fatDecimal = pushMessage.fat != nil ? Decimal(pushMessage.fat!) : nil
         let proteinDecimal = pushMessage.protein != nil ? Decimal(pushMessage.protein!) : nil
@@ -90,6 +109,8 @@ extension TrioRemoteControl {
         )
 
         await carbsStorage.storeCarbs([mealEntry], areFetchedFromRemote: false)
+
+        shouldKeepMealDedupKey = true
 
         // 1) Upload newly registered carbs directly to Nightscout.
         // 2) Trigger a basal sync so calculations (COB/IOB/etc) update immediately.

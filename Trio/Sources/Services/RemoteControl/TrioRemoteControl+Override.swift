@@ -36,6 +36,25 @@ extension TrioRemoteControl {
             return
         }
 
+        // --- DEDUPE START ---
+        let commandKey = remoteCommandDedupKey(for: pushMessage, scope: .startOverride)
+
+        guard beginRemoteCommandIfNotDuplicate(commandKey) else {
+            debug(.remoteControl, "Remote override ignorerades som dublett. \(pushMessage.humanReadableDescription())")
+            return
+        }
+
+        var shouldKeepStartOverrideDedupKey = false
+
+        defer {
+            if shouldKeepStartOverrideDedupKey {
+                finishRemoteCommandDedup(commandKey)
+            } else {
+                cancelRemoteCommandDedup(commandKey)
+            }
+        }
+        // --- DEDUPE END ---
+
         let presetIDs = await overrideStorage.fetchForOverridePresets()
 
         let presets = presetIDs.compactMap { id in
@@ -43,21 +62,14 @@ extension TrioRemoteControl {
         }
 
         if let preset = presets.first(where: { $0.name == overrideName }) {
-            await enactOverridePreset(presetObjectID: preset.objectID, pushMessage: pushMessage)
+            let didEnactOverride = await enactOverridePreset(presetObjectID: preset.objectID, pushMessage: pushMessage)
+            shouldKeepStartOverrideDedupKey = didEnactOverride
         } else {
             await logError("Kommandot avvisades: override '\(overrideName)' hittades inte.", pushMessage: pushMessage)
         }
-
-        /*
-         if let preset = presets.first(where: { $0.name == overrideName }) {
-             await enactOverridePreset(preset: preset, pushMessage: pushMessage)
-         } else {
-             await logError("Kommandot avvisades: override '\(overrideName)' hittades inte.", pushMessage: pushMessage)
-         }
-         */
     }
 
-    @MainActor private func enactOverridePreset(presetObjectID: NSManagedObjectID, pushMessage: PushMessage) async {
+    @MainActor private func enactOverridePreset(presetObjectID: NSManagedObjectID, pushMessage: PushMessage) async -> Bool {
         debug(.remoteControl, "🛑 Starting enactment of override for objectID: \(presetObjectID)")
 
         var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
@@ -92,7 +104,7 @@ extension TrioRemoteControl {
             try? self.viewContext.existingObject(with: presetObjectID) as? OverrideStored
         }) else {
             debug(.remoteControl, "❌ CRITICAL: Failed to fetch preset for objectID \(presetObjectID) after disabling overrides.")
-            return
+            return false
         }
 
         let overrideName = refreshedPreset.name ?? ""
@@ -114,7 +126,7 @@ extension TrioRemoteControl {
                 await awaitNotification(.didUpdateOverrideConfiguration)
                 debug(.remoteControl, "✅ Notification received. Override is now active.")
 
-                guard settings.settings.notificationsRemote else { return }
+                guard settings.settings.notificationsRemote else { return true }
 
                 var notificationBody = "\(pushMessage.overrideName ?? "Anpassad override") aktiverades\n"
                 notificationBody += "Inlagt av: \(pushMessage.user)\n"
@@ -129,15 +141,19 @@ extension TrioRemoteControl {
                     title: "Remote Override",
                     body: notificationBody
                 )
+
+                return true
             } else {
                 debug(.remoteControl, "⚠️ No changes detected in Core Data after enabling preset '\(overrideName)'.")
                 debug(
                     .remoteControl,
                     "Preset state - enabled: \(refreshedPreset.enabled), date: \(refreshedPreset.date?.description ?? "nil")"
                 )
+                return false
             }
         } catch {
             debug(.remoteControl, "❌ Failed to save override preset '\(overrideName)': \(error.localizedDescription)")
+            return false
         }
     }
 
