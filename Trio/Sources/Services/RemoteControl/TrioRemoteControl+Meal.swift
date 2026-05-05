@@ -277,6 +277,8 @@ extension TrioRemoteControl {
             "Remote måltidsradering behandlades framgångsrikt. \(pushMessage.humanReadableDescription())"
         )
 
+        guard settings.settings.notificationsRemote else { return }
+
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "HH:mm:ss"
         let formattedTime = dateFormatter.string(from: startDate)
