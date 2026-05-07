@@ -100,6 +100,26 @@ extension PluginSource: CGMManagerDelegate {
         completion _: ((Error?) -> Void)?
     ) {
         debug(.deviceManager, "device Manager for \(String(describing: deviceIdentifier)) : \(message)")
+
+        if message.contains("Sensor disconnected: suspectedEndOfSession=true") {
+            let sensorName = deviceIdentifier ?? "okänd sensor"
+            let note = "⚠️ Sensorsession \(sensorName) avslutades i Trio"
+            let now = Date()
+            let shouldUpload: Bool
+
+            if let last = lastUploadedNote {
+                shouldUpload = (last.message != note) || (now.timeIntervalSince(last.date) > noteThrottleInterval)
+            } else {
+                shouldUpload = true
+            }
+
+            if shouldUpload {
+                lastUploadedNote = (note, now)
+                Task { [weak self] in
+                    await self?.nightscoutManager?.uploadNoteTreatment(note: note)
+                }
+            }
+        }
     }
 
     func issueAlert(_: LoopKit.Alert) {}
