@@ -103,7 +103,7 @@ extension PluginSource: CGMManagerDelegate {
 
         if message.contains("Sensor disconnected: suspectedEndOfSession=true") {
             let sensorName = deviceIdentifier ?? "okänd sensor"
-            let note = "⚠️ Sensorsession \(sensorName) avslutades i Trio"
+            let note = "⛔️ Sensorsession \(sensorName) avslutades i Trio"
             let now = Date()
             let shouldUpload: Bool
 
