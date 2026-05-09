@@ -21,6 +21,10 @@ class TrioRemoteControl: Injectable {
     private static let remoteCommandDedupQueue = DispatchQueue(label: "TrioRemoteControl.remoteCommandDedup")
     private static let remoteCommandDedupRetention: TimeInterval = 10 * 60
 
+    private static let pendingRemoteCommandsUserDefaultsKey = "TrioRemoteControl.pendingRemoteCommands.v1"
+    private static let pendingRemoteCommandsQueue = DispatchQueue(label: "TrioRemoteControl.pendingRemoteCommands")
+    private static let pendingRemoteCommandMaxAge: TimeInterval = 30 * 60
+
     internal let pumpHistoryFetchContext: NSManagedObjectContext
     internal let viewContext: NSManagedObjectContext
 
@@ -84,29 +88,35 @@ class TrioRemoteControl: Injectable {
         case .cancelTempTarget:
             await cancelTempTarget(pushMessage)
         case .meal:
-            // Execute bolus command first.
             if pushMessage.bolusAmount != nil {
+                persistPendingRemoteCommandIfNeeded(for: pushMessage)
                 await handleBolusCommand(pushMessage)
             }
-            // Then execute the meal command.
+
             await handleMealCommand(pushMessage)
+            markPendingRemoteCommandMealHandled(for: pushMessage)
+            clearPendingRemoteCommandIfCompleted(for: pushMessage)
         case .deleteMeal:
             await handleDeleteMealCommand(pushMessage)
 
         case .combo:
-            // Execute bolus command first.
+            persistPendingRemoteCommandIfNeeded(for: pushMessage)
+
             if pushMessage.bolusAmount != nil {
                 await handleBolusCommand(pushMessage)
             }
-            // Then execute the meal command.
-            await handleMealCommand(pushMessage)
 
-            // Finally execute the override command.
+            await handleMealCommand(pushMessage)
+            markPendingRemoteCommandMealHandled(for: pushMessage)
+
             if let overrideName = pushMessage.overrideName,
                !overrideName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             {
                 await handleStartOverrideCommand(pushMessage)
+                markPendingRemoteCommandOverrideHandled(for: pushMessage)
             }
+
+            clearPendingRemoteCommandIfCompleted(for: pushMessage)
         case .startOverride:
             await handleStartOverrideCommand(pushMessage)
         case .cancelOverride:
@@ -269,5 +279,148 @@ extension BaseUserNotificationsManager {
             content: content,
             deleteOld: false
         )
+    }
+}
+
+// MARK: - Remote Command Recovery
+
+extension TrioRemoteControl {
+    private struct PendingRemoteCommand: Codable {
+        let id: String
+        let pushMessage: PushMessage
+        var mealHandled: Bool
+        var overrideHandled: Bool
+        let createdAt: Date
+
+        var containsMeal: Bool {
+            pushMessage.carbs != nil || pushMessage.fat != nil || pushMessage.protein != nil
+        }
+
+        var containsOverride: Bool {
+            guard let overrideName = pushMessage.overrideName else { return false }
+            return !overrideName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
+
+        var isCompleted: Bool {
+            (!containsMeal || mealHandled) && (!containsOverride || overrideHandled)
+        }
+    }
+
+    private func remoteRecoveryID(for pushMessage: PushMessage) -> String {
+        remoteCommandDedupKey(for: pushMessage, scope: pushMessage.commandType)
+    }
+
+    private func loadPendingRemoteCommands() -> [PendingRemoteCommand] {
+        Self.pendingRemoteCommandsQueue.sync {
+            guard let data = UserDefaults.standard.data(forKey: Self.pendingRemoteCommandsUserDefaultsKey) else {
+                return []
+            }
+
+            do {
+                return try JSONDecoder().decode([PendingRemoteCommand].self, from: data)
+            } catch {
+                debug(.remoteControl, "Kunde inte läsa pending remote commands: \(error.localizedDescription)")
+                UserDefaults.standard.removeObject(forKey: Self.pendingRemoteCommandsUserDefaultsKey)
+                return []
+            }
+        }
+    }
+
+    private func savePendingRemoteCommands(_ commands: [PendingRemoteCommand]) {
+        Self.pendingRemoteCommandsQueue.sync {
+            do {
+                let data = try JSONEncoder().encode(commands)
+                UserDefaults.standard.set(data, forKey: Self.pendingRemoteCommandsUserDefaultsKey)
+            } catch {
+                debug(.remoteControl, "Kunde inte spara pending remote commands: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    private func persistPendingRemoteCommandIfNeeded(for pushMessage: PushMessage) {
+        let containsMeal = pushMessage.carbs != nil || pushMessage.fat != nil || pushMessage.protein != nil
+        let containsOverride = pushMessage.overrideName?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
+
+        guard containsMeal || containsOverride else { return }
+
+        let id = remoteRecoveryID(for: pushMessage)
+        var commands = loadPendingRemoteCommands()
+
+        let now = Date()
+        commands = commands.filter { now.timeIntervalSince($0.createdAt) <= Self.pendingRemoteCommandMaxAge }
+
+        guard !commands.contains(where: { $0.id == id }) else { return }
+
+        commands.append(
+            PendingRemoteCommand(
+                id: id,
+                pushMessage: pushMessage,
+                mealHandled: !containsMeal,
+                overrideHandled: !containsOverride,
+                createdAt: now
+            )
+        )
+
+        savePendingRemoteCommands(commands)
+        debug(.remoteControl, "Sparade remote command för recovery. \(pushMessage.humanReadableDescription())")
+    }
+
+    private func markPendingRemoteCommandMealHandled(for pushMessage: PushMessage) {
+        let id = remoteRecoveryID(for: pushMessage)
+        var commands = loadPendingRemoteCommands()
+
+        guard let index = commands.firstIndex(where: { $0.id == id }) else { return }
+        commands[index].mealHandled = true
+        savePendingRemoteCommands(commands)
+    }
+
+    private func markPendingRemoteCommandOverrideHandled(for pushMessage: PushMessage) {
+        let id = remoteRecoveryID(for: pushMessage)
+        var commands = loadPendingRemoteCommands()
+
+        guard let index = commands.firstIndex(where: { $0.id == id }) else { return }
+        commands[index].overrideHandled = true
+        savePendingRemoteCommands(commands)
+    }
+
+    private func clearPendingRemoteCommandIfCompleted(for pushMessage: PushMessage) {
+        let id = remoteRecoveryID(for: pushMessage)
+        var commands = loadPendingRemoteCommands()
+
+        guard let command = commands.first(where: { $0.id == id }), command.isCompleted else { return }
+        commands.removeAll { $0.id == id }
+        savePendingRemoteCommands(commands)
+        debug(.remoteControl, "Rensade färdigbehandlad remote command från recovery. \(pushMessage.humanReadableDescription())")
+    }
+
+    func resumePendingRemoteCommands() async {
+        let now = Date()
+        let commandsToResume = loadPendingRemoteCommands().filter {
+            now.timeIntervalSince($0.createdAt) <= Self.pendingRemoteCommandMaxAge
+        }
+
+        savePendingRemoteCommands(commandsToResume)
+
+        guard !commandsToResume.isEmpty else { return }
+
+        debug(.remoteControl, "Återupptar \(commandsToResume.count) pending remote command(s) efter omstart.")
+
+        for command in commandsToResume {
+            let pushMessage = command.pushMessage
+
+            if command.containsMeal, !command.mealHandled {
+                debug(.remoteControl, "Recovery kör måltidsdelen. \(pushMessage.humanReadableDescription())")
+                await handleMealCommand(pushMessage)
+                markPendingRemoteCommandMealHandled(for: pushMessage)
+            }
+
+            if command.containsOverride, !command.overrideHandled {
+                debug(.remoteControl, "Recovery kör override-delen. \(pushMessage.humanReadableDescription())")
+                await handleStartOverrideCommand(pushMessage)
+                markPendingRemoteCommandOverrideHandled(for: pushMessage)
+            }
+
+            clearPendingRemoteCommandIfCompleted(for: pushMessage)
+        }
     }
 }

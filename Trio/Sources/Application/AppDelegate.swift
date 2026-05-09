@@ -8,6 +8,11 @@ class AppDelegate: NSObject, UIApplicationDelegate, ObservableObject, UNUserNoti
         didFinishLaunchingWithOptions _: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
         application.registerForRemoteNotifications()
+
+        Task {
+            await TrioRemoteControl.shared.resumePendingRemoteCommands()
+        }
+
         return true
     }
 
