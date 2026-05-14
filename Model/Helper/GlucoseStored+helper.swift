@@ -130,7 +130,7 @@ extension GlucoseStored: Encodable {
 
         try container.encode(dateFormatter.string(from: date ?? Date()), forKey: .dateString)
 
-        //let dateAsUnixTimestamp = String(format: "%.0f", (date?.timeIntervalSince1970 ?? Date().timeIntervalSince1970) * 1000)
+        // let dateAsUnixTimestamp = String(format: "%.0f", (date?.timeIntervalSince1970 ?? Date().timeIntervalSince1970) * 1000)
         let dateAsUnixTimestamp = Int64((date?.timeIntervalSince1970 ?? Date().timeIntervalSince1970) * 1000)
         try container.encode(dateAsUnixTimestamp, forKey: .date)
 

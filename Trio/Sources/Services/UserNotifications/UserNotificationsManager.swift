@@ -55,6 +55,7 @@ final class BaseUserNotificationsManager: NSObject, UserNotificationsManager, In
     @Injected() private var glucoseStorage: GlucoseStorage!
     @Injected() private var apsManager: APSManager!
     @Injected() private var router: Router!
+    @Injected() private var nightscout: NightscoutManager!
 
     @Injected(as: FetchGlucoseManager.self) private var sourceInfoProvider: SourceInfoProvider!
 
@@ -665,6 +666,14 @@ extension BaseUserNotificationsManager: pumpNotificationObserver {
         }
         content.title = alert.contentTitle ?? "Unknown"
         content.body = alert.contentBody ?? "Unknown"
+
+        if typeMessage == .error {
+            let errorNote = "⛔️ \(content.title) - \(content.body)"
+            Task {
+                await nightscout.uploadErrors(withNotes: errorNote)
+            }
+        }
+
         content.sound = .default
         addRequest(
             identifier: Identifier.pumpNotification.rawValue,
