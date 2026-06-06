@@ -964,6 +964,7 @@ extension Home {
             }
             .confirmationDialog("Pump Model", isPresented: $showPumpSelection) {
                 Button("Medtronic") { state.addPump(.minimed) }
+                Button("All Omnipod Types") { state.addPump(.omni) }
                 Button("Omnipod Eros") { state.addPump(.omnipod) }
                 Button("Omnipod Dash") { state.addPump(.omnipodBLE) }
                 Button("Dana(RS/-i)") { state.addPump(.dana) }
