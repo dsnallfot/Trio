@@ -23,6 +23,7 @@ struct ServicesView: BaseView {
                 header: Text("Anslutna tjänster"),
                 content: {
                     Text("Nightscout").navigationLink(to: .nighscoutConfig, from: self)
+                    NavigationLink("Home Assistant", destination: HomeAssistantConnectView())
                     Text("Tidepool").navigationLink(to: .tidepoolConfig, from: self)
                     if HKHealthStore.isHealthDataAvailable() {
                         Text("Apple hälsa").navigationLink(to: .healthkit, from: self)

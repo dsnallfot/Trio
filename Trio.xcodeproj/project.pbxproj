@@ -256,6 +256,7 @@
 		63E890B4D951EAA91C071D5C /* BasalProfileEditorStateModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAFF91130F2FCCC7EBBA11AD /* BasalProfileEditorStateModel.swift */; };
 		642F76A05A4FF530463A9FD0 /* NightscoutConfigRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8782B44544F38F2B2D82C38E /* NightscoutConfigRootView.swift */; };
 		65070A332BFDCB83006F213F /* TidepoolStartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65070A322BFDCB83006F213F /* TidepoolStartView.swift */; };
+		6532EDBA2FD3164600AD46D9 /* HomeAssistantConnectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6532EDB92FD3164200AD46D9 /* HomeAssistantConnectView.swift */; };
 		6540760C2F4145F000DD4CC1 /* TrioSettingsAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6540760B2F4145ED00DD4CC1 /* TrioSettingsAdapter.swift */; };
 		6545DD692D70D026007B0D70 /* AppVersionChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6545DD682D70D024007B0D70 /* AppVersionChecker.swift */; };
 		6545DD6B2D70D495007B0D70 /* SubmodulesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6545DD6A2D70D493007B0D70 /* SubmodulesView.swift */; };
@@ -991,6 +992,7 @@
 		60744C3E9BB3652895C908CC /* DataTableProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DataTableProvider.swift; sourceTree = "<group>"; };
 		64AA5E04A2761F6EEA6568E1 /* CarbRatioEditorStateModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CarbRatioEditorStateModel.swift; sourceTree = "<group>"; };
 		65070A322BFDCB83006F213F /* TidepoolStartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TidepoolStartView.swift; sourceTree = "<group>"; };
+		6532EDB92FD3164200AD46D9 /* HomeAssistantConnectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeAssistantConnectView.swift; sourceTree = "<group>"; };
 		6540760B2F4145ED00DD4CC1 /* TrioSettingsAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrioSettingsAdapter.swift; sourceTree = "<group>"; };
 		6545DD652D70CFBB007B0D70 /* blacklisted-versions.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "blacklisted-versions.json"; sourceTree = "<group>"; };
 		6545DD682D70D024007B0D70 /* AppVersionChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppVersionChecker.swift; sourceTree = "<group>"; };
@@ -1641,6 +1643,7 @@
 				F66B236E00924A05D6A9F9DF /* GlucoseNotificationSettings */,
 				F90692CD274B99850037068D /* HealthKit */,
 				3811DE2725C9D49500A708ED /* Home */,
+				6532EDB82FD3162000AD46D9 /* HomeAssistant */,
 				19E1F7E629D0828B005C8D20 /* IconConfig */,
 				D8F047E14D567F2B5DBEFD96 /* ISFEditor */,
 				DDF847DB2C5C28550049BB3B /* LiveActivitySettings */,
@@ -2423,6 +2426,14 @@
 				34CA4DF169B53D67EF18ED8A /* View */,
 			);
 			path = TargetsEditor;
+			sourceTree = "<group>";
+		};
+		6532EDB82FD3162000AD46D9 /* HomeAssistant */ = {
+			isa = PBXGroup;
+			children = (
+				6532EDB92FD3164200AD46D9 /* HomeAssistantConnectView.swift */,
+			);
+			path = HomeAssistant;
 			sourceTree = "<group>";
 		};
 		6545DD672D70D018007B0D70 /* AppVersionChecker */ = {
@@ -3983,6 +3994,7 @@
 				F90692D3274B9A130037068D /* AppleHealthKitRootView.swift in Sources */,
 				BDF34F852C10C62E00D51995 /* GlucoseData.swift in Sources */,
 				19E1F7EC29D082FE005C8D20 /* IconConfigStateModel.swift in Sources */,
+				6532EDBA2FD3164600AD46D9 /* HomeAssistantConnectView.swift in Sources */,
 				711C0CB42CAABE788916BC9D /* ManualTempBasalDataFlow.swift in Sources */,
 				DD1745222C55524800211FAC /* SMBSettingsProvider.swift in Sources */,
 				BF1667ADE69E4B5B111CECAE /* ManualTempBasalProvider.swift in Sources */,

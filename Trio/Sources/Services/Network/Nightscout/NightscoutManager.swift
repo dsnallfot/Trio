@@ -72,6 +72,53 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         settingsManager.settings.uploadGlucose
     }
 
+    private var isConnectedToLocalSkynetWiFi: Bool {
+        currentWiFiIPv4Address == "192.168.0.246"
+    }
+
+    private var currentWiFiIPv4Address: String? {
+        var address: String?
+        var interfaces: UnsafeMutablePointer<ifaddrs>?
+
+        guard getifaddrs(&interfaces) == 0 else {
+            return nil
+        }
+
+        defer {
+            freeifaddrs(interfaces)
+        }
+
+        var pointer = interfaces
+        while pointer != nil {
+            guard let interface = pointer?.pointee else {
+                pointer = pointer?.pointee.ifa_next
+                continue
+            }
+
+            let interfaceName = String(cString: interface.ifa_name)
+            let family = interface.ifa_addr.pointee.sa_family
+
+            if interfaceName == "en0", family == UInt8(AF_INET) {
+                var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+                getnameinfo(
+                    interface.ifa_addr,
+                    socklen_t(interface.ifa_addr.pointee.sa_len),
+                    &hostname,
+                    socklen_t(hostname.count),
+                    nil,
+                    0,
+                    NI_NUMERICHOST
+                )
+                address = String(cString: hostname)
+                break
+            }
+
+            pointer = interface.ifa_next
+        }
+
+        return address
+    }
+
     private var nightscoutAPI: NightscoutAPI? {
         guard let urlString = keychain.getValue(String.self, forKey: NightscoutConfig.Config.urlKey),
               let url = URL(string: urlString),
@@ -1021,8 +1068,117 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
     }
 
     func uploadGlucose() async {
-        await uploadGlucose(glucoseStorage.getGlucoseNotYetUploadedToNightscout())
+        let glucose = await glucoseStorage.getGlucoseNotYetUploadedToNightscout()
+
+        async let nightscoutUpload: Void = uploadGlucose(glucose)
+        async let localUpload: Void = uploadGlucoseLocallyIfNeeded(glucose)
+
+        _ = await (nightscoutUpload, localUpload)
+
         await uploadNonCoreDataTreatments(glucoseStorage.getCGMStateNotYetUploadedToNightscout())
+    }
+
+    private var isLocalGlucoseUploadEnabled: Bool {
+        if UserDefaults.standard.object(forKey: "HomeAssistantConfig.localGlucoseUploadEnabled") == nil {
+            return true
+        }
+
+        return UserDefaults.standard.bool(forKey: "HomeAssistantConfig.localGlucoseUploadEnabled")
+    }
+
+    private var localHomeAssistantWebhookURL: URL? {
+        let urlString =
+            UserDefaults.standard.string(forKey: "HomeAssistantConfig.urlHA")?.nonEmpty
+                ?? "http://192.168.0.191:8123/api/webhook/localglucoseupdate"
+
+        return URL(string: urlString)
+    }
+
+    private var localThisPhoneIPAddress: String {
+        UserDefaults.standard.string(forKey: "HomeAssistantConfig.urlThisPhone")?.nonEmpty
+            ?? "192.168.0.246"
+    }
+
+    private var isConnectedToConfiguredLocalWiFi: Bool {
+        currentWiFiIPv4Address == localThisPhoneIPAddress
+    }
+
+    private func uploadGlucoseLocallyIfNeeded(_ glucose: [BloodGlucose]) async {
+        guard !glucose.isEmpty else { return }
+
+        guard isLocalGlucoseUploadEnabled else {
+            return
+        }
+
+        guard isConnectedToConfiguredLocalWiFi else {
+            debug(
+                .nightscout,
+                "Local glucose not uploaded - current Wi-Fi IP: \(currentWiFiIPv4Address ?? "none"), expected: \(localThisPhoneIPAddress)"
+            )
+            return
+        }
+
+        do {
+            try await uploadLatestGlucoseToLocalWebhook(glucose)
+        } catch {
+            debug(.nightscout, "Local glucose upload failed: \(error.localizedDescription)")
+        }
+    }
+
+    private func uploadLatestGlucoseToLocalWebhook(_ glucose: [BloodGlucose]) async throws {
+        guard let latestGlucose = glucose
+            .filter({ $0.glucose != nil })
+            .max(by: { $0.date < $1.date }),
+            let glucoseValue = latestGlucose.glucose
+        else {
+            debug(.nightscout, "No local glucose value available to upload")
+            return
+        }
+
+        struct LocalGlucosePayload: Encodable {
+            let glucose: Int
+            let date: Decimal
+        }
+
+        guard let url = localHomeAssistantWebhookURL else {
+            throw URLError(.badURL)
+        }
+
+        let payload = LocalGlucosePayload(
+            glucose: glucoseValue,
+            date: latestGlucose.date
+        )
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.timeoutInterval = 4
+        request.allowsCellularAccess = false
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONCoding.encoder.encode(payload)
+
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.waitsForConnectivity = false
+        configuration.allowsCellularAccess = false
+        configuration.timeoutIntervalForRequest = 4
+        configuration.timeoutIntervalForResource = 4
+
+        let session = URLSession(configuration: configuration)
+        defer {
+            session.finishTasksAndInvalidate()
+        }
+
+        let (_, response) = try await session.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+
+        guard (200 ... 299).contains(httpResponse.statusCode) else {
+            debug(.nightscout, "Local glucose upload failed with HTTP status: \(httpResponse.statusCode)")
+            throw URLError(.badServerResponse)
+        }
+
+        debug(.nightscout, "Local glucose upload successful: \(glucoseValue) mg/dL, date: \(latestGlucose.date)")
     }
 
     func uploadManualGlucose() async {
