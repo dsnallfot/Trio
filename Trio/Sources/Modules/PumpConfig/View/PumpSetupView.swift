@@ -5,9 +5,6 @@ import MinimedKit
 import MinimedKitUI
 import MockKit
 import MockKitUI
-import OmniBLE
-import OmniKit
-import OmniKitUI
 import OmnipodKit
 import SwiftUI
 import UIKit
@@ -41,23 +38,6 @@ extension PumpConfig {
                     colorPalette: .default,
                     allowDebugFeatures: true,
                     prefersToSkipUserInteraction: false,
-                    allowedInsulinTypes: [.apidra, .humalog, .novolog, .fiasp, .lyumjev]
-                )
-            case .omnipod:
-                setupViewController = OmnipodPumpManager.setupViewController(
-                    initialSettings: initialSettings,
-                    bluetoothProvider: bluetoothManager,
-                    colorPalette: .default,
-                    allowDebugFeatures: true,
-                    prefersToSkipUserInteraction: false,
-                    allowedInsulinTypes: [.apidra, .humalog, .novolog, .fiasp, .lyumjev]
-                )
-            case .omnipodBLE:
-                setupViewController = OmniBLEPumpManager.setupViewController(
-                    initialSettings: initialSettings,
-                    bluetoothProvider: bluetoothManager,
-                    colorPalette: .default,
-                    allowDebugFeatures: true,
                     allowedInsulinTypes: [.apidra, .humalog, .novolog, .fiasp, .lyumjev]
                 )
             case .omni:

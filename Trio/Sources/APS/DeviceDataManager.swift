@@ -7,8 +7,6 @@ import LoopKit
 import LoopKitUI
 import MinimedKit
 import MockKit
-import OmniBLE
-import OmniKit
 import OmnipodKit
 import ShareClient
 import SwiftDate
@@ -34,8 +32,6 @@ protocol DeviceDataManager: GlucoseSource {
 
 private let staticPumpManagers: [PumpManagerUI.Type] = [
     MinimedPumpManager.self,
-    OmnipodPumpManager.self,
-    OmniBLEPumpManager.self,
     OmniPumpManager.self,
     DanaKitPumpManager.self,
     MockPumpManager.self
@@ -43,8 +39,6 @@ private let staticPumpManagers: [PumpManagerUI.Type] = [
 
 private let staticPumpManagersByIdentifier: [String: PumpManagerUI.Type] = [
     MinimedPumpManager.pluginIdentifier: MinimedPumpManager.self,
-    OmnipodPumpManager.pluginIdentifier: OmnipodPumpManager.self,
-    OmniBLEPumpManager.pluginIdentifier: OmniBLEPumpManager.self,
     OmniPumpManager.pluginIdentifier: OmniPumpManager.self,
     DanaKitPumpManager.pluginIdentifier: DanaKitPumpManager.self,
     MockPumpManager.pluginIdentifier: MockPumpManager.self
@@ -100,20 +94,6 @@ final class BaseDeviceDataManager: DeviceDataManager, Injectable {
                     .bolusIncrement = bolusIncrement != 0.025 ? bolusIncrement : 0.1
                 storage.save(modifiedPreferences, as: OpenAPS.Settings.preferences)
 
-                if let omnipod = pumpManager as? OmnipodPumpManager {
-                    guard let endTime = omnipod.state.podState?.expiresAt else {
-                        pumpExpiresAtDate.send(nil)
-                        return
-                    }
-                    pumpExpiresAtDate.send(endTime)
-                }
-                if let omnipodBLE = pumpManager as? OmniBLEPumpManager {
-                    guard let endTime = omnipodBLE.state.podState?.expiresAt else {
-                        pumpExpiresAtDate.send(nil)
-                        return
-                    }
-                    pumpExpiresAtDate.send(endTime)
-                }
                 if let omni = pumpManager as? OmniPumpManager {
                     guard let endTime = omni.state.podState?.expiresAt else {
                         pumpExpiresAtDate.send(nil)
@@ -429,71 +409,6 @@ extension BaseDeviceDataManager: PumpManagerDelegate {
             $0.pumpTimeZoneDidChange(status.timeZone)
         }
 
-        if let omnipod = pumpManager as? OmnipodPumpManager {
-            let reservoirVal = omnipod.state.podState?.lastInsulinMeasurements?.reservoirLevel ?? 0xDEAD_BEEF
-            // TODO: find the value Pod.maximumReservoirReading
-            let reservoir = Decimal(reservoirVal) > 50.0 ? 0xDEAD_BEEF : reservoirVal
-
-            storage.save(Decimal(reservoir), as: OpenAPS.Monitor.reservoir)
-            broadcaster.notify(PumpReservoirObserver.self, on: processQueue) {
-                $0.pumpReservoirDidChange(Decimal(reservoir))
-            }
-
-            if let tempBasal = omnipod.state.podState?.unfinalizedTempBasal, !tempBasal.isFinished(),
-               !tempBasal.automatic
-            {
-                // the manual basal temp is launch - block every thing
-                debug(.deviceManager, "manual temp basal")
-                manualTempBasal.send(true)
-            } else {
-                // no more manual Temp Basal !
-                manualTempBasal.send(false)
-            }
-
-            guard let endTime = omnipod.state.podState?.expiresAt else {
-                pumpExpiresAtDate.send(nil)
-                return
-            }
-            pumpExpiresAtDate.send(endTime)
-
-            if let startTime = omnipod.state.podState?.activatedAt {
-                storage.save(startTime, as: OpenAPS.Monitor.podAge)
-            }
-        }
-
-        if let omnipodBLE = pumpManager as? OmniBLEPumpManager {
-            let reservoirVal = omnipodBLE.state.podState?.lastInsulinMeasurements?.reservoirLevel ?? 0xDEAD_BEEF
-            // TODO: find the value Pod.maximumReservoirReading
-            let reservoir = Decimal(reservoirVal) > 50.0 ? 0xDEAD_BEEF : reservoirVal
-
-            storage.save(Decimal(reservoir), as: OpenAPS.Monitor.reservoir)
-            broadcaster.notify(PumpReservoirObserver.self, on: processQueue) {
-                $0.pumpReservoirDidChange(Decimal(reservoir))
-            }
-
-            // manual temp basal on
-            if let tempBasal = omnipodBLE.state.podState?.unfinalizedTempBasal, !tempBasal.isFinished(),
-               !tempBasal.automatic
-            {
-                // the manual basal temp is launch - block every thing
-                debug(.deviceManager, "manual temp basal")
-                manualTempBasal.send(true)
-            } else {
-                // no more manual Temp Basal !
-                manualTempBasal.send(false)
-            }
-
-            guard let endTime = omnipodBLE.state.podState?.expiresAt else {
-                pumpExpiresAtDate.send(nil)
-                return
-            }
-            pumpExpiresAtDate.send(endTime)
-
-            if let startTime = omnipodBLE.state.podState?.activatedAt {
-                storage.save(startTime, as: OpenAPS.Monitor.podAge)
-            }
-        }
-
         if let omni = pumpManager as? OmniPumpManager {
             let reservoirVal = omni.state.podState?.lastInsulinMeasurements?.reservoirLevel ?? 0xDEAD_BEEF
             // TODO: find the value Pod.maximumReservoirReading
@@ -697,21 +612,6 @@ extension BaseDeviceDataManager: AlertObserver {
         let alertIssueDate = alert.issuedDate
 
         processQueue.async {
-            // if not alert in OmniPod/BLE, the acknowledgeAlert didn't do callbacks- Hack to manage this case
-            if let omnipodBLE = self.pumpManager as? OmniBLEPumpManager {
-                if omnipodBLE.state.activeAlerts.isEmpty {
-                    // force to ack alert in the alertStorage
-                    self.alertHistoryStorage.ackAlert(alertIssueDate, nil)
-                }
-            }
-
-            if let omniPod = self.pumpManager as? OmnipodPumpManager {
-                if omniPod.state.activeAlerts.isEmpty {
-                    // force to ack alert in the alertStorage
-                    self.alertHistoryStorage.ackAlert(alertIssueDate, nil)
-                }
-            }
-
             self.pumpManager?.acknowledgeAlert(alertIdentifier: alert.alertIdentifier) { error in
                 if let error = error {
                     self.alertHistoryStorage.ackAlert(alertIssueDate, error.localizedDescription)
