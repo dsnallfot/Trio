@@ -821,8 +821,6 @@
 		3818AA4F274C26A300843DB3 /* MockKitUI.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = MockKitUI.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		3818AA51274C26A300843DB3 /* MinimedKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = MinimedKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		3818AA52274C26A300843DB3 /* MinimedKitUI.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = MinimedKitUI.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		3818AA53274C26A300843DB3 /* OmniKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = OmniKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		3818AA54274C26A300843DB3 /* OmniKitUI.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = OmniKitUI.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		3818AA55274C26A300843DB3 /* RileyLinkBLEKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = RileyLinkBLEKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		3818AA56274C26A300843DB3 /* RileyLinkKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = RileyLinkKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		3818AA57274C26A300843DB3 /* RileyLinkKitUI.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = RileyLinkKitUI.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -1143,12 +1141,9 @@
 		CE95BF592BA62E4A00DC3DE3 /* PluginSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PluginSource.swift; sourceTree = "<group>"; };
 		CEA4F62229BE10F70011ADF7 /* SavitzkyGolayFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavitzkyGolayFilter.swift; sourceTree = "<group>"; };
 		CEB434DB28B8F5B900B70274 /* MKRingProgressView.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = MKRingProgressView.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		CEB434DE28B8F5C400B70274 /* OmniBLE.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = OmniBLE.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		CEB434E228B8F9DB00B70274 /* BluetoothStateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothStateManager.swift; sourceTree = "<group>"; };
 		CEB434E428B8FF5D00B70274 /* UIColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIColor.swift; sourceTree = "<group>"; };
 		CEB434E628B9053300B70274 /* LoopUIColorPalette+Default.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LoopUIColorPalette+Default.swift"; sourceTree = "<group>"; };
-		CEC751D129D88257006E9D24 /* OmniKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = OmniKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		CEC751D329D88257006E9D24 /* OmniKitUI.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = OmniKitUI.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		CEC751D529D88262006E9D24 /* MinimedKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = MinimedKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		CEC751D729D88262006E9D24 /* MinimedKitUI.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = MinimedKitUI.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		CEE9A64F2BBB418300EB5194 /* CalibrationsProvider.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CalibrationsProvider.swift; sourceTree = "<group>"; };
@@ -1922,8 +1917,6 @@
 				CE94597929E9DF7B0047C9C6 /* ConnectIQ.framework */,
 				CEC751D529D88262006E9D24 /* MinimedKit.framework */,
 				CEC751D729D88262006E9D24 /* MinimedKitUI.framework */,
-				CEC751D129D88257006E9D24 /* OmniKit.framework */,
-				CEC751D329D88257006E9D24 /* OmniKitUI.framework */,
 				CE79502D29980E4D00FA576E /* ShareClientUI.framework */,
 				CE79502929980C9F00FA576E /* G7SensorKitUI.framework */,
 				CE79502729980C9600FA576E /* CGMBLEKitUI.framework */,
@@ -1931,7 +1924,6 @@
 				CE398D17297C9EE800DF218F /* G7SensorKit.framework */,
 				CE398D012977349800DF218F /* CryptoKit.framework */,
 				CE6B025628F350FF000C5502 /* HealthKit.framework */,
-				CEB434DE28B8F5C400B70274 /* OmniBLE.framework */,
 				CEB434DB28B8F5B900B70274 /* MKRingProgressView.framework */,
 				E0CC2C5B275B9DAE00A7BC71 /* HealthKit.framework */,
 				38E87402274F78C000975559 /* libswiftCoreNFC.tbd */,
@@ -1943,8 +1935,6 @@
 				3818AA4F274C26A300843DB3 /* MockKitUI.framework */,
 				3818AA51274C26A300843DB3 /* MinimedKit.framework */,
 				3818AA52274C26A300843DB3 /* MinimedKitUI.framework */,
-				3818AA53274C26A300843DB3 /* OmniKit.framework */,
-				3818AA54274C26A300843DB3 /* OmniKitUI.framework */,
 				3818AA55274C26A300843DB3 /* RileyLinkBLEKit.framework */,
 				3818AA56274C26A300843DB3 /* RileyLinkKit.framework */,
 				3818AA57274C26A300843DB3 /* RileyLinkKitUI.framework */,
@@ -3532,7 +3522,7 @@
 		};
 		DD88C8DF2C4D583900F2D558 /* Run Script: Capture Build Details */ = {
 			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 8;
+			buildActionMask = 12;
 			files = (
 			);
 			inputFileListPaths = (
@@ -3544,7 +3534,7 @@
 			);
 			outputPaths = (
 			);
-			runOnlyForDeploymentPostprocessing = 1;
+			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${SRCROOT}/scripts/capture-build-details.sh\"\n";
 		};
