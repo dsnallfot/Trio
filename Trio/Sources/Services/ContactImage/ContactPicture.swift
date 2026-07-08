@@ -4,6 +4,8 @@ import SwiftUI
 struct ContactPicture: View {
     private enum Config {
         static let lag: TimeInterval = 30
+        // TODO: Change to 6.minutes.timeInterval after visual testing.
+        static let staleBGThreshold: TimeInterval = 6.minutes.timeInterval
     }
 
     @Binding var contact: ContactImageEntry
@@ -276,6 +278,14 @@ struct ContactPicture: View {
             glucoseColorScheme: state.glucoseColorScheme
         )
 
+        let isStaleBG = state.lastBGDate.map { Date().timeIntervalSince($0) > Config.staleBGThreshold } ?? false
+        let shouldStrikeThrough = isStaleBG && [
+            ContactImageValue.glucose,
+            ContactImageValue.delta,
+            ContactImageValue.fifteenMinBg
+        ].contains(value)
+        let shouldHighlightStaleTime = isStaleBG && value == .lastBGDate
+
         let textColor: Color = switch value {
         case .cob:
             .loopYellow
@@ -283,6 +293,8 @@ struct ContactPicture: View {
             .insulin
         case .glucose:
             dynamicColor
+        case .lastBGDate where shouldHighlightStaleTime:
+            .loopRed
         default:
             color
         }
@@ -295,7 +307,9 @@ struct ContactPicture: View {
                 fontSize: fontSize,
                 fontWeight: fontWeight,
                 fontWidth: fontWidth,
-                color: textColor
+                color: textColor,
+                opacity: shouldStrikeThrough ? 0.7 : 1.0,
+                strikeThrough: shouldStrikeThrough
             )
         }
     }
@@ -307,7 +321,9 @@ struct ContactPicture: View {
         fontSize: Int,
         fontWeight: Font.Weight,
         fontWidth: Font.Width,
-        color: Color
+        color: Color,
+        opacity: Double = 1.0,
+        strikeThrough: Bool = false
     ) {
         var theFontSize = fontSize
 
@@ -315,7 +331,7 @@ struct ContactPicture: View {
             let font = UIFont.systemFont(ofSize: CGFloat(size), weight: fontWeight.uiFontWeight)
             return [
                 .font: font,
-                .foregroundColor: UIColor(color),
+                .foregroundColor: UIColor(color.opacity(opacity)),
                 .kern: fontWidth.value * Double(fontSize) // `kern` is the correct key for tracking
             ]
         }
@@ -329,15 +345,31 @@ struct ContactPicture: View {
             stringSize = text.size(withAttributes: attributes)
         }
 
+        let textRect = CGRect(
+            x: rect.minX + (rect.width - stringSize.width) / 2,
+            y: rect.minY + (rect.height - stringSize.height) / 2,
+            width: stringSize.width,
+            height: stringSize.height
+        )
+
         text.draw(
-            in: CGRect(
-                x: rect.minX + (rect.width - stringSize.width) / 2,
-                y: rect.minY + (rect.height - stringSize.height) / 2,
-                width: stringSize.width,
-                height: stringSize.height
-            ),
+            in: textRect,
             withAttributes: attributes
         )
+
+        if strikeThrough, let context = UIGraphicsGetCurrentContext() {
+            context.saveGState()
+            context.setStrokeColor(UIColor.secondaryLabel.withAlphaComponent(0.75).cgColor)
+            context.setLineWidth(max(CGFloat(theFontSize) * 0.21, 18))
+            context.setLineCap(.round)
+
+            let strikeY = textRect.midY
+            let horizontalInset = min(textRect.width * 0.04, 16)
+            context.move(to: CGPoint(x: textRect.minX + horizontalInset, y: strikeY))
+            context.addLine(to: CGPoint(x: textRect.maxX - horizontalInset, y: strikeY))
+            context.strokePath()
+            context.restoreGState()
+        }
     }
 
     private static func drawRing(
@@ -659,6 +691,7 @@ struct ContactPicture_Previews: PreviewProvider {
                     glucose: "6.8",
                     trend: "↗︎",
                     delta: "+0.2",
+                    lastBGDate: .now - 2.minutes,
                     cob: 25,
                     cobText: "25"
                 ))
