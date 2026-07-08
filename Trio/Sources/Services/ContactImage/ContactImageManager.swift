@@ -282,16 +282,16 @@ final class BaseContactImageManager: NSObject, ContactImageManager, Injectable {
 
         let iobValue = lastDetermination?.iob as? Decimal ?? 0.0
         state.iob = iobValue
-        state.iobText = Formatter.decimalFormatterWithOneFractionDigit.string(from: iobValue as NSNumber)
+        state.iobText = (Formatter.decimalFormatterWithOneFractionDigit.string(from: iobValue as NSNumber) ?? "0.0") + "E"
 
         // we need to do it complex and unelegant, otherwise unwrapping and parsing of cob results in 0
         if let cobValue = lastDetermination?.cob {
             state.cob = Decimal(cobValue)
-            state.cobText = Formatter.integerFormatter.string(from: Int(cobValue) as NSNumber)
+            state.cobText = (Formatter.integerFormatter.string(from: Int(cobValue) as NSNumber) ?? "0") + "g"
 
         } else {
             state.cob = 0
-            state.cobText = "0"
+            state.cobText = "0g"
         }
 
         if let eventualBG = settingsManager.settings.units == .mgdL ? lastDetermination?
