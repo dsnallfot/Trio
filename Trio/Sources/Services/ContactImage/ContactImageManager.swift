@@ -55,16 +55,26 @@ final class BaseContactImageManager: NSObject, ContactImageManager, Injectable {
 
     weak var delegate: ContactImageManagerDelegate?
 
+    private func currentBGStaleState() -> Bool? {
+        guard let lastBGDate = state.lastBGDate else { return nil }
+        return Date().timeIntervalSince(lastBGDate) > 6.minutes.timeInterval
+    }
+
+    private func markCurrentBGStaleStateAsRendered() {
+        lastRenderedBGStaleState = currentBGStaleState()
+    }
+
     @MainActor func refreshContactImagesIfStaleStateChanged() async {
-        guard let lastBGDate = state.lastBGDate else { return }
+        if state.lastBGDate == nil {
+            await updateContactImageState()
+        }
 
-        let isStaleBG = Date().timeIntervalSince(lastBGDate) > 6.minutes.timeInterval
-
+        guard let isStaleBG = currentBGStaleState() else { return }
         guard lastRenderedBGStaleState != isStaleBG else { return }
 
-        lastRenderedBGStaleState = isStaleBG
         await updateContactImageState()
         await updateContactImages()
+        markCurrentBGStaleStateAsRendered()
     }
 
     // Original implementation
@@ -85,6 +95,9 @@ final class BaseContactImageManager: NSObject, ContactImageManager, Injectable {
                 Task {
                     await self.updateContactImageState()
                     await self.updateContactImages()
+                    await MainActor.run {
+                        self.markCurrentBGStaleStateAsRendered()
+                    }
                 }
             }
             .store(in: &subscriptions)
@@ -137,6 +150,9 @@ final class BaseContactImageManager: NSObject, ContactImageManager, Injectable {
             Task {
                 await self.updateContactImageState()
                 await self.updateContactImages()
+                await MainActor.run {
+                    self.markCurrentBGStaleStateAsRendered()
+                }
             }
         }.store(in: &subscriptions)
     }
@@ -293,11 +309,6 @@ final class BaseContactImageManager: NSObject, ContactImageManager, Injectable {
         state.lastLoopDate = lastDetermination?.timestamp
 
         state.lastBGDate = lastGlucose?.date
-        if let lastBGDate = state.lastBGDate {
-            lastRenderedBGStaleState = Date().timeIntervalSince(lastBGDate) > 6.minutes.timeInterval
-        } else {
-            lastRenderedBGStaleState = nil
-        }
 
         let iobValue = lastDetermination?.iob as? Decimal ?? 0.0
         state.iob = iobValue
