@@ -217,7 +217,7 @@ struct PopupView: View {
                 )
             }
 
-            Text("Dra av IOB").foregroundColor(.secondary.opacity(colorScheme == .dark ? 0.65 : 0.8)).font(.footnote)
+            Text("Minus IOB").foregroundColor(.secondary.opacity(colorScheme == .dark ? 0.65 : 0.8)).font(.footnote)
 
             let iobFormatted = self.insulinFormatter(state.iob)
             HStack {
@@ -396,7 +396,7 @@ struct PopupView: View {
         GridRow(alignment: .bottom) {
             if state.useFattyMealCorrectionFactor {
                 Group {
-                    Text("Factor x Fatty Meal Factor x Full Bolus")
+                    Text("Faktor x Fet Mat Faktor x Full Bolus")
                         .foregroundColor(.secondary.opacity(colorScheme == .dark ? 0.65 : 0.8))
                         +
                         Text(state.wholeCalc > state.maxBolus ? " ≈ Max Bolus" : "").foregroundColor(Color.loopRed)
@@ -406,7 +406,7 @@ struct PopupView: View {
                 .gridCellColumns(3)
             } else if state.useSuperBolus {
                 Group {
-                    Text("(Factor x Full Bolus) + Super Bolus")
+                    Text("(Faktor x Full Bolus) + Superbolus")
                         .foregroundColor(.secondary.opacity(colorScheme == .dark ? 0.65 : 0.8))
                         +
                         Text(state.wholeCalc > state.maxBolus ? " ≈ Max Bolus" : "").foregroundColor(Color.loopRed)
@@ -417,7 +417,7 @@ struct PopupView: View {
             } else {
                 Color.clear.gridCellUnsizedAxes([.horizontal, .vertical])
                 Group {
-                    Text("Factor x Full Bolus")
+                    Text("Faktor x Full Bolus")
                         .foregroundColor(.secondary.opacity(colorScheme == .dark ? 0.65 : 0.8))
                         +
                         Text(state.wholeCalc > state.maxBolus ? " ≈ Max Bolus" : "").foregroundColor(Color.loopRed)
