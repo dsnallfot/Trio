@@ -11,6 +11,7 @@ final class PluginSource: GlucoseSource {
     private let processQueue = DispatchQueue(label: "DexcomSource.processQueue")
     private let glucoseStorage: GlucoseStorage!
     private let nightscoutManager: NightscoutManager?
+    private let contactImageManager: ContactImageManager?
 
     // Prevent spamming the same note repeatedly
     private var lastUploadedNote: (message: String, date: Date)?
@@ -36,6 +37,7 @@ final class PluginSource: GlucoseSource {
         self.glucoseManager = glucoseManager
 
         nightscoutManager = TrioApp.resolver.resolve(NightscoutManager.self)
+        contactImageManager = TrioApp.resolver.resolve(ContactImageManager.self)
 
         cgmManager = glucoseManager.cgmManager
         cgmManager?.delegateQueue = processQueue
@@ -84,6 +86,12 @@ final class PluginSource: GlucoseSource {
         .replaceError(with: [])
         .replaceEmpty(with: [])
         .eraseToAnyPublisher()
+    }
+
+    private func refreshContactImagesIfBGStaleStateChanged() {
+        Task { @MainActor [weak self] in
+            await self?.contactImageManager?.refreshContactImagesIfStaleStateChanged()
+        }
     }
 
     deinit {
@@ -372,11 +380,15 @@ extension PluginSource: CGMManagerDelegate {
             }
             return .success(bloodGlucose)
         case .unreliableData:
-            // loopManager.receivedUnreliableCGMReading()
+            refreshContactImagesIfBGStaleStateChanged()
             return .failure(GlucoseDataError.unreliableData)
+
         case .noData:
+            refreshContactImagesIfBGStaleStateChanged()
             return .failure(GlucoseDataError.noData)
+
         case let .error(error):
+            refreshContactImagesIfBGStaleStateChanged()
             return .failure(error)
         }
     }
