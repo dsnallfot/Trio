@@ -337,7 +337,9 @@ extension PluginSource: CGMManagerDelegate {
 
         switch readingResult {
         case let .newData(values):
-            setContactImagesForceStaleBG(false)
+            if values.isNotEmpty {
+                setContactImagesForceStaleBG(false)
+            }
 
             var sensorActivatedAt: Date?
             var sensorStartDate: Date?
