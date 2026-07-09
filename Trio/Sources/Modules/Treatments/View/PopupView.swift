@@ -62,7 +62,7 @@ struct PopupView: View {
                     }
 
                     GridRow {
-                        Text("Detailed Calculation Steps").gridCellColumns(3).gridCellAnchor(.center)
+                        Text("Detaljerad beräkning").gridCellColumns(3).gridCellAnchor(.center)
                             .padding(.bottom, 10)
                     }
                     calcGlucoseFirstRow
@@ -113,7 +113,7 @@ struct PopupView: View {
     var calcSettingsFirstRow: some View {
         GridRow {
             Group {
-                Text("Carb Ratio:")
+                Text("Insulinkvot:")
                     .foregroundColor(.secondary)
             }.gridCellAnchor(.leading)
 
@@ -123,7 +123,7 @@ struct PopupView: View {
             }.gridCellAnchor(.leading)
 
             VStack {
-                Text("Target:")
+                Text("Mål:")
                     .foregroundColor(.secondary)
             }.gridCellAnchor(.leading)
         }
@@ -153,7 +153,7 @@ struct PopupView: View {
             let currentBG = state.units == .mmolL ? state.currentBG.formattedAsMmolL : state.currentBG.description
             let target = state.units == .mmolL ? state.target.formattedAsMmolL : state.target.description
 
-            Text("Glucose:").foregroundColor(.secondary)
+            Text("Glukos:").foregroundColor(.secondary)
 
             let targetDifference = state.units == .mmolL ? state.targetDifference.formattedAsMmolL : state.targetDifference
                 .description
@@ -201,7 +201,7 @@ struct PopupView: View {
         GridRow(alignment: .top) {
             Color.clear.gridCellUnsizedAxes([.horizontal, .vertical])
 
-            Text("(Current - Target) / ISF").foregroundColor(.secondary.opacity(colorScheme == .dark ? 0.65 : 0.8))
+            Text("(Nuvarande - Mål) / ISF").foregroundColor(.secondary.opacity(colorScheme == .dark ? 0.65 : 0.8))
                 .gridColumnAlignment(.leading)
                 .gridCellColumns(2)
         }
@@ -217,7 +217,7 @@ struct PopupView: View {
                 )
             }
 
-            Text("Subtract IOB").foregroundColor(.secondary.opacity(colorScheme == .dark ? 0.65 : 0.8)).font(.footnote)
+            Text("Dra av IOB").foregroundColor(.secondary.opacity(colorScheme == .dark ? 0.65 : 0.8)).font(.footnote)
 
             let iobFormatted = self.insulinFormatter(state.iob)
             HStack {
@@ -264,7 +264,7 @@ struct PopupView: View {
         GridRow(alignment: .center) {
             Color.clear.gridCellUnsizedAxes([.horizontal, .vertical])
 
-            Text("COB / Carb Ratio").foregroundColor(.secondary.opacity(colorScheme == .dark ? 0.65 : 0.8))
+            Text("COB / Insulinkvot").foregroundColor(.secondary.opacity(colorScheme == .dark ? 0.65 : 0.8))
                 .gridColumnAlignment(.leading)
                 .gridCellColumns(2)
         }
