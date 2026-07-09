@@ -14,6 +14,7 @@ protocol ContactImageManager {
     func deleteContact(withIdentifier identifier: String) async -> Bool
     func updateContact(withIdentifier identifier: String, newName: String) async -> Bool
     @MainActor func updateContactImageState() async
+    @MainActor func refreshContactImagesIfStaleStateChanged() async
     func setImageForContact(contactId: String) async
     func validateContactExists(withIdentifier identifier: String) async -> Bool
 }
@@ -25,6 +26,7 @@ final class BaseContactImageManager: NSObject, ContactImageManager, Injectable {
     @Injected() private var fileStorage: FileStorage!
 
     private var workItem: DispatchWorkItem?
+    private var lastRenderedBGStaleState: Bool?
 
     private let contactStore = CNContactStore()
 
@@ -52,6 +54,18 @@ final class BaseContactImageManager: NSObject, ContactImageManager, Injectable {
     }
 
     weak var delegate: ContactImageManagerDelegate?
+
+    @MainActor func refreshContactImagesIfStaleStateChanged() async {
+        guard let lastBGDate = state.lastBGDate else { return }
+
+        let isStaleBG = Date().timeIntervalSince(lastBGDate) > 6.minutes.timeInterval
+
+        guard lastRenderedBGStaleState != isStaleBG else { return }
+
+        lastRenderedBGStaleState = isStaleBG
+        await updateContactImageState()
+        await updateContactImages()
+    }
 
     // Original implementation
     init(resolver: Resolver) {
@@ -279,6 +293,11 @@ final class BaseContactImageManager: NSObject, ContactImageManager, Injectable {
         state.lastLoopDate = lastDetermination?.timestamp
 
         state.lastBGDate = lastGlucose?.date
+        if let lastBGDate = state.lastBGDate {
+            lastRenderedBGStaleState = Date().timeIntervalSince(lastBGDate) > 6.minutes.timeInterval
+        } else {
+            lastRenderedBGStaleState = nil
+        }
 
         let iobValue = lastDetermination?.iob as? Decimal ?? 0.0
         state.iob = iobValue

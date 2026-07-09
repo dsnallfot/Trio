@@ -39,6 +39,12 @@ final class BaseFetchGlucoseManager: FetchGlucoseManager, Injectable {
     @Injected() var deviceDataManager: DeviceDataManager!
     @Injected() var pluginCGMManager: PluginManager!
     @Injected() var calibrationService: CalibrationService!
+    @Injected() var contactImageManager: ContactImageManager!
+    private func refreshContactImagesIfBGStaleStateChanged() {
+        Task { @MainActor [weak self] in
+            await self?.contactImageManager.refreshContactImagesIfStaleStateChanged()
+        }
+    }
 
     private var lifetime = Lifetime()
     private let timer = DispatchTimer(timeInterval: 1.minutes.timeInterval)
@@ -237,6 +243,8 @@ final class BaseFetchGlucoseManager: FetchGlucoseManager, Injectable {
         }
 
         guard newGlucose.isNotEmpty else {
+            refreshContactImagesIfBGStaleStateChanged()
+
             if let backgroundTask = backGroundFetchBGTaskID {
                 UIApplication.shared.endBackgroundTask(backgroundTask)
                 backGroundFetchBGTaskID = .invalid
@@ -248,6 +256,8 @@ final class BaseFetchGlucoseManager: FetchGlucoseManager, Injectable {
         filtered = glucoseStorage.filterTooFrequentGlucose(filteredByDate, at: syncDate)
 
         guard filtered.isNotEmpty else {
+            refreshContactImagesIfBGStaleStateChanged()
+
             // end of the Background tasks
             if let backgroundTask = backGroundFetchBGTaskID {
                 UIApplication.shared.endBackgroundTask(backgroundTask)
