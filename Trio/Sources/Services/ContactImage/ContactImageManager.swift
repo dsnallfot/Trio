@@ -15,6 +15,7 @@ protocol ContactImageManager {
     func updateContact(withIdentifier identifier: String, newName: String) async -> Bool
     @MainActor func updateContactImageState() async
     @MainActor func refreshContactImagesIfStaleStateChanged() async
+    @MainActor func setForceStaleBG(_ forceStaleBG: Bool) async
     func setImageForContact(contactId: String) async
     func validateContactExists(withIdentifier identifier: String) async -> Bool
 }
@@ -73,6 +74,18 @@ final class BaseContactImageManager: NSObject, ContactImageManager, Injectable {
         guard lastRenderedBGStaleState != isStaleBG else { return }
 
         await updateContactImageState()
+        await updateContactImages()
+        markCurrentBGStaleStateAsRendered()
+    }
+
+    @MainActor func setForceStaleBG(_ forceStaleBG: Bool) async {
+        if state.lastBGDate == nil {
+            await updateContactImageState()
+        }
+
+        guard state.forceStaleBG != forceStaleBG else { return }
+
+        state.forceStaleBG = forceStaleBG
         await updateContactImages()
         markCurrentBGStaleStateAsRendered()
     }

@@ -278,7 +278,8 @@ struct ContactPicture: View {
             glucoseColorScheme: state.glucoseColorScheme
         )
 
-        let isStaleBG = state.lastBGDate.map { Date().timeIntervalSince($0) > Config.staleBGThreshold } ?? false
+        let isStaleBG = state
+            .forceStaleBG || (state.lastBGDate.map { Date().timeIntervalSince($0) > Config.staleBGThreshold } ?? false)
         let shouldStrikeThrough = isStaleBG && [
             ContactImageValue.glucose,
             ContactImageValue.delta,

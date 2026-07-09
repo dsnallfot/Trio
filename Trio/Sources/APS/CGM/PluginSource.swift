@@ -94,6 +94,12 @@ final class PluginSource: GlucoseSource {
         }
     }
 
+    private func setContactImagesForceStaleBG(_ forceStaleBG: Bool) {
+        Task { @MainActor [weak self] in
+            await self?.contactImageManager?.setForceStaleBG(forceStaleBG)
+        }
+    }
+
     deinit {
         // dexcomManager.transmitter.stopScanning()
     }
@@ -331,6 +337,7 @@ extension PluginSource: CGMManagerDelegate {
 
         switch readingResult {
         case let .newData(values):
+            setContactImagesForceStaleBG(false)
 
             var sensorActivatedAt: Date?
             var sensorStartDate: Date?
@@ -380,14 +387,17 @@ extension PluginSource: CGMManagerDelegate {
             }
             return .success(bloodGlucose)
         case .unreliableData:
+            setContactImagesForceStaleBG(true)
             refreshContactImagesIfBGStaleStateChanged()
             return .failure(GlucoseDataError.unreliableData)
 
         case .noData:
+            setContactImagesForceStaleBG(true)
             refreshContactImagesIfBGStaleStateChanged()
             return .failure(GlucoseDataError.noData)
 
         case let .error(error):
+            setContactImagesForceStaleBG(true)
             refreshContactImagesIfBGStaleStateChanged()
             return .failure(error)
         }
