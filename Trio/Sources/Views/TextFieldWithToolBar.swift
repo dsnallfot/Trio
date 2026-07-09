@@ -383,3 +383,156 @@ extension TextFieldWithToolBarString.Coordinator: UITextFieldDelegate {
         return true
     }
 }
+
+public struct TextFieldWithToolBarStringAndChevrons: UIViewRepresentable {
+    @Binding var text: String
+    var placeholder: String
+    var textAlignment: NSTextAlignment = .right
+    var keyboardType: UIKeyboardType = .default
+    var autocapitalizationType: UITextAutocapitalizationType = .none
+    var autocorrectionType: UITextAutocorrectionType = .no
+    var shouldBecomeFirstResponder: Bool = false
+    var maxLength: Int? = nil
+    var isDismissible: Bool = true
+    var previousTextField: (() -> Void)?
+    var nextTextField: (() -> Void)?
+
+    public func makeUIView(context: Context) -> UITextField {
+        let textField = UITextField()
+        context.coordinator.textField = textField
+        textField.inputAccessoryView = isDismissible ? makeDoneToolbar(for: textField, context: context) : nil
+        textField.addTarget(context.coordinator, action: #selector(Coordinator.editingDidBegin), for: .editingDidBegin)
+        textField.delegate = context.coordinator
+        textField.text = text
+        textField.placeholder = placeholder
+        textField.textAlignment = textAlignment
+        textField.keyboardType = keyboardType
+        textField.autocapitalizationType = autocapitalizationType
+        textField.autocorrectionType = autocorrectionType
+        textField.spellCheckingType = .no
+        textField.smartQuotesType = .no
+        textField.smartDashesType = .no
+        textField.smartInsertDeleteType = .no
+        textField.inlinePredictionType = .no
+        textField.adjustsFontSizeToFitWidth = true
+        return textField
+    }
+
+    private func makeDoneToolbar(for textField: UITextField, context: Context) -> UIToolbar {
+        let toolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: 50))
+        let flexibleSpace = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
+        let doneButton = UIBarButtonItem(
+            image: UIImage(systemName: "keyboard.chevron.compact.down"),
+            style: .done,
+            target: textField,
+            action: #selector(UITextField.resignFirstResponder)
+        )
+        let clearButton = UIBarButtonItem(
+            image: UIImage(systemName: "trash"),
+            style: .plain,
+            target: context.coordinator,
+            action: #selector(Coordinator.clearText)
+        )
+        let previousButton = UIBarButtonItem(
+            image: UIImage(systemName: "chevron.up"),
+            style: .plain,
+            target: context.coordinator,
+            action: #selector(Coordinator.previousTextField)
+        )
+        let nextButton = UIBarButtonItem(
+            image: UIImage(systemName: "chevron.down"),
+            style: .plain,
+            target: context.coordinator,
+            action: #selector(Coordinator.nextTextField)
+        )
+
+        toolbar.items = [clearButton, previousButton, nextButton, flexibleSpace, doneButton]
+        toolbar.sizeToFit()
+        return toolbar
+    }
+
+    public func updateUIView(_ textField: UITextField, context: Context) {
+        if textField.text != text {
+            textField.text = text
+        }
+
+        textField.textAlignment = textAlignment
+        textField.keyboardType = keyboardType
+        textField.autocapitalizationType = autocapitalizationType
+        textField.autocorrectionType = autocorrectionType
+        textField.spellCheckingType = .no
+        textField.smartQuotesType = .no
+        textField.smartDashesType = .no
+        textField.smartInsertDeleteType = .no
+        textField.inlinePredictionType = .no
+
+        if shouldBecomeFirstResponder, !context.coordinator.didBecomeFirstResponder {
+            if textField.window != nil, textField.becomeFirstResponder() {
+                context.coordinator.didBecomeFirstResponder = true
+            }
+        } else if !shouldBecomeFirstResponder, context.coordinator.didBecomeFirstResponder {
+            context.coordinator.didBecomeFirstResponder = false
+        }
+    }
+
+    public func makeCoordinator() -> Coordinator {
+        Coordinator(self, maxLength: maxLength)
+    }
+
+    public final class Coordinator: NSObject {
+        var parent: TextFieldWithToolBarStringAndChevrons
+        var textField: UITextField?
+        let maxLength: Int?
+        var didBecomeFirstResponder = false
+
+        init(_ parent: TextFieldWithToolBarStringAndChevrons, maxLength: Int?) {
+            self.parent = parent
+            self.maxLength = maxLength
+        }
+
+        @objc fileprivate func clearText() {
+            parent.text = ""
+            textField?.text = ""
+        }
+
+        @objc fileprivate func editingDidBegin(_ textField: UITextField) {
+            DispatchQueue.main.async {
+                textField.moveCursorToEnd()
+            }
+        }
+
+        @objc fileprivate func previousTextField() {
+            parent.previousTextField?()
+        }
+
+        @objc fileprivate func nextTextField() {
+            parent.nextTextField?()
+        }
+    }
+}
+
+extension TextFieldWithToolBarStringAndChevrons.Coordinator: UITextFieldDelegate {
+    public func textField(
+        _ textField: UITextField,
+        shouldChangeCharactersIn range: NSRange,
+        replacementString string: String
+    ) -> Bool {
+        guard let currentText = textField.text as NSString? else {
+            return false
+        }
+
+        let newLength = currentText.length + string.count - range.length
+
+        if let maxLength = parent.maxLength, newLength > maxLength {
+            return false
+        }
+
+        let newText = currentText.replacingCharacters(in: range, with: string)
+
+        DispatchQueue.main.async {
+            self.parent.text = newText
+        }
+
+        return true
+    }
+}

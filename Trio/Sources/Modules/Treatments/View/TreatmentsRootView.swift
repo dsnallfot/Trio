@@ -11,6 +11,7 @@ extension Treatments {
             case fat
             case protein
             case bolus
+            case note
         }
 
         @FocusState private var focusedField: FocusedField?
@@ -24,10 +25,19 @@ extension Treatments {
         @State private var calculatorDetent = PresentationDetent.large
         @State private var pushed: Bool = false
         @State private var debounce: DispatchWorkItem?
+        @State private var treatmentSwipeOffset: CGFloat = 0
+        @State private var treatmentSwipeCompleted: Bool = false
+        @AppStorage("TreatmentsRootView.detailedView") private var detailedView: Bool = false
 
         private enum Config {
             static let dividerHeight: CGFloat = 2
             static let spacing: CGFloat = 3
+        }
+
+        private enum MealTypeSelection: Hashable {
+            case normal
+            case fattyMeal
+            case superBolus
         }
 
         @Environment(\.colorScheme) var colorScheme
@@ -63,6 +73,37 @@ extension Treatments {
             } else { return 0 }
         }
 
+        private var mealTypeSelection: Binding<MealTypeSelection> {
+            Binding(
+                get: {
+                    if state.useFattyMealCorrectionFactor {
+                        return .fattyMeal
+                    }
+                    if state.useSuperBolus {
+                        return .superBolus
+                    }
+                    return .normal
+                },
+                set: { selection in
+                    switch selection {
+                    case .normal:
+                        state.useFattyMealCorrectionFactor = false
+                        state.useSuperBolus = false
+                    case .fattyMeal:
+                        state.useFattyMealCorrectionFactor = true
+                        state.useSuperBolus = false
+                    case .superBolus:
+                        state.useFattyMealCorrectionFactor = false
+                        state.useSuperBolus = true
+                    }
+
+                    Task {
+                        state.insulinCalculated = await state.calculateInsulin()
+                    }
+                }
+            )
+        }
+
         /// Handles macro input (carb, fat, protein) in a debounced fashion.
         func handleDebouncedInput() {
             debounce?.cancel()
@@ -87,8 +128,8 @@ extension Treatments {
                         placeholder: "0",
                         keyboardType: .numberPad,
                         numberFormatter: mealFormatter,
-                        previousTextField: { focusOnPreviousTextField(index: 2) },
-                        nextTextField: { focusOnNextTextField(index: 2) }
+                        previousTextField: { focusOnPreviousTextField(index: 3) },
+                        nextTextField: { focusOnNextTextField(index: 3) }
                     ).focused($focusedField, equals: .protein)
                     Text("g").foregroundColor(.secondary)
                 }
@@ -102,8 +143,8 @@ extension Treatments {
                         placeholder: "0",
                         keyboardType: .numberPad,
                         numberFormatter: mealFormatter,
-                        previousTextField: { focusOnPreviousTextField(index: 3) },
-                        nextTextField: { focusOnNextTextField(index: 3) }
+                        previousTextField: { focusOnPreviousTextField(index: 2) },
+                        nextTextField: { focusOnNextTextField(index: 2) }
                     ).focused($focusedField, equals: .fat)
                     Text("g").foregroundColor(.secondary)
                 }
@@ -129,29 +170,43 @@ extension Treatments {
             }
         }
 
-        func focusOnPreviousTextField(index: Int) {
-            switch index {
-            case 2:
-                focusedField = .carbs
-            case 3:
-                focusedField = .fat
-            case 4:
-                focusedField = .protein
-            default:
-                break
+        private var focusOrder: [FocusedField] {
+            if detailedView, state.useFPUconversion {
+                return [.carbs, .protein, .fat, .note, .bolus]
             }
+            return [.carbs, .note, .bolus]
+        }
+
+        func focusOnPreviousTextField(index: Int) {
+            guard let currentField = field(for: index), let currentIndex = focusOrder.firstIndex(of: currentField) else {
+                return
+            }
+            let previousIndex = focusOrder.index(before: currentIndex)
+            focusedField = focusOrder.indices.contains(previousIndex) ? focusOrder[previousIndex] : focusOrder.last
         }
 
         func focusOnNextTextField(index: Int) {
+            guard let currentField = field(for: index), let currentIndex = focusOrder.firstIndex(of: currentField) else {
+                return
+            }
+            let nextIndex = focusOrder.index(after: currentIndex)
+            focusedField = focusOrder.indices.contains(nextIndex) ? focusOrder[nextIndex] : focusOrder.first
+        }
+
+        private func field(for index: Int) -> FocusedField? {
             switch index {
             case 1:
-                focusedField = .fat
+                return .carbs
             case 2:
-                focusedField = .protein
+                return .fat
             case 3:
-                focusedField = .bolus
+                return .protein
+            case 4:
+                return .bolus
+            case 5:
+                return .note
             default:
-                break
+                return nil
             }
         }
 
@@ -167,81 +222,70 @@ extension Treatments {
                         Section {
                             carbsTextField()
 
-                            if state.useFPUconversion {
+                            if detailedView, state.useFPUconversion {
                                 proteinAndFat()
                             }
 
-                            // Time
-                            HStack {
-                                // Semi-hacky workaround to make sure the List renders the horizontal divider properly between the `Time` and `Note` rows within the Section
+                            if detailedView {
+                                // Time
                                 HStack {
-                                    Text("")
-                                    Image(systemName: "clock").padding(.leading, -7)
-                                }
-
-                                Spacer()
-                                if !pushed {
-                                    Button {
-                                        pushed = true
-                                    } label: { Text("Now") }.buttonStyle(.borderless).foregroundColor(.secondary)
-                                        .padding(.trailing, 5)
-                                } else {
-                                    Button { state.date = state.date.addingTimeInterval(-15.minutes.timeInterval) }
-                                    label: { Image(systemName: "minus.circle") }.tint(.blue).buttonStyle(.borderless)
-
-                                    DatePicker(
-                                        "Time",
-                                        selection: $state.date,
-                                        displayedComponents: [.hourAndMinute]
-                                    ).controlSize(.mini)
-                                        .labelsHidden()
-                                    Button {
-                                        state.date = state.date.addingTimeInterval(15.minutes.timeInterval)
+                                    // Semi-hacky workaround to make sure the List renders the horizontal divider properly between the `Time` and `Note` rows within the Section
+                                    HStack {
+                                        Text("")
+                                        Image(systemName: "clock").padding(.leading, -7)
                                     }
-                                    label: { Image(systemName: "plus.circle") }.tint(.blue).buttonStyle(.borderless)
+
+                                    Spacer()
+                                    if !pushed {
+                                        Button {
+                                            pushed = true
+                                        } label: { Text("Now") }.buttonStyle(.borderless).foregroundColor(.secondary)
+                                            .padding(.trailing, 5)
+                                    } else {
+                                        Button { state.date = state.date.addingTimeInterval(-15.minutes.timeInterval) }
+                                        label: { Image(systemName: "minus.circle") }.tint(.blue).buttonStyle(.borderless)
+
+                                        DatePicker(
+                                            "Time",
+                                            selection: $state.date,
+                                            displayedComponents: [.hourAndMinute]
+                                        ).controlSize(.mini)
+                                            .labelsHidden()
+                                        Button {
+                                            state.date = state.date.addingTimeInterval(15.minutes.timeInterval)
+                                        }
+                                        label: { Image(systemName: "plus.circle") }.tint(.blue).buttonStyle(.borderless)
+                                    }
                                 }
                             }
 
                             // Notes
                             HStack {
                                 Image(systemName: "square.and.pencil")
-                                TextFieldWithToolBarString(text: $state.note, placeholder: "Notering", maxLength: 25)
+                                TextFieldWithToolBarStringAndChevrons(
+                                    text: $state.note,
+                                    placeholder: "Notering",
+                                    maxLength: 25,
+                                    previousTextField: { focusOnPreviousTextField(index: 5) },
+                                    nextTextField: { focusOnNextTextField(index: 5) }
+                                )
+                                .focused($focusedField, equals: .note)
                             }
                         }.listRowBackground(Color.chart)
 
                         Section {
-                            if state.fattyMeals || state.sweetMeals {
-                                HStack(spacing: 10) {
-                                    if state.fattyMeals {
-                                        Toggle(isOn: $state.useFattyMealCorrectionFactor) {
-                                            Text("Fatty Meal")
+                            if detailedView {
+                                if state.fattyMeals || state.sweetMeals {
+                                    Picker("Meal Type", selection: mealTypeSelection) {
+                                        Text("Normal dos").tag(MealTypeSelection.normal)
+                                        if state.fattyMeals {
+                                            Text("Fatty Meal").tag(MealTypeSelection.fattyMeal)
                                         }
-                                        .toggleStyle(CheckboxToggleStyle())
-                                        .font(.footnote)
-                                        .onChange(of: state.useFattyMealCorrectionFactor) {
-                                            Task {
-                                                state.insulinCalculated = await state.calculateInsulin()
-                                                if state.useFattyMealCorrectionFactor {
-                                                    state.useSuperBolus = false
-                                                }
-                                            }
+                                        if state.sweetMeals {
+                                            Text("Super Bolus").tag(MealTypeSelection.superBolus)
                                         }
                                     }
-                                    if state.sweetMeals {
-                                        Toggle(isOn: $state.useSuperBolus) {
-                                            Text("Super Bolus")
-                                        }
-                                        .toggleStyle(CheckboxToggleStyle())
-                                        .font(.footnote)
-                                        .onChange(of: state.useSuperBolus) {
-                                            Task {
-                                                state.insulinCalculated = await state.calculateInsulin()
-                                                if state.useSuperBolus {
-                                                    state.useFattyMealCorrectionFactor = false
-                                                }
-                                            }
-                                        }
-                                    }
+                                    .pickerStyle(.segmented)
                                 }
                             }
 
@@ -298,10 +342,12 @@ extension Treatments {
                                 Text(" U").foregroundColor(.secondary)
                             }
 
-                            HStack {
-                                Text("External Insulin")
-                                Spacer()
-                                Toggle("", isOn: $state.externalInsulin).toggleStyle(Checkbox())
+                            if detailedView {
+                                HStack {
+                                    Text("External Insulin")
+                                    Spacer()
+                                    Toggle("", isOn: $state.externalInsulin).toggleStyle(Checkbox())
+                                }
                             }
                         }.listRowBackground(Color.chart)
 
@@ -327,6 +373,20 @@ extension Treatments {
                         state.hideModal()
                     } label: {
                         Text("Close")
+                    }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        detailedView.toggle()
+                        if !detailedView {
+                            pushed = false
+                            state.externalInsulin = false
+                            state.useFattyMealCorrectionFactor = false
+                            state.useSuperBolus = false
+                            focusedField = nil
+                        }
+                    } label: {
+                        Image(systemName: detailedView ? "text.badge.minus" : "text.badge.plus")
                     }
                 }
                 if state.displayPresets {
@@ -387,26 +447,98 @@ extension Treatments {
                 treatmentButtonBackground = Color(.systemGray)
             }
 
-            return Button {
-                state.invokeTreatmentsTask()
-            } label: {
-                HStack {
-                    if state.isBolusInProgress && state
-                        .amount > 0 && !state.externalInsulin && (state.carbs == 0 || state.fat == 0 || state.protein == 0)
-                    {
-                        ProgressView()
-                    }
-                    taskButtonLabel
+            return swipeTreatmentButton(background: treatmentButtonBackground)
+                .disabled(disableTaskButton)
+                .listRowBackground(treatmentButtonBackground)
+                .shadow(radius: 3)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .onChange(of: disableTaskButton) {
+                    guard !treatmentSwipeCompleted else { return }
+                    treatmentSwipeOffset = 0
+                    treatmentSwipeCompleted = false
                 }
-                .font(.headline)
-                .foregroundStyle(Color.white)
-                .frame(maxWidth: .infinity, alignment: .center)
-                .frame(height: 35)
+        }
+
+        private func swipeTreatmentButton(background: Color) -> some View {
+            GeometryReader { geometry in
+                let handleSize: CGFloat = 40
+                let horizontalPadding: CGFloat = 2
+                let maxOffset = max(0, geometry.size.width - handleSize - horizontalPadding * 2)
+                let activationOffset = maxOffset * 0.82
+                let isWaitingForBolus = state.isBolusInProgress && state
+                    .amount > 0 && !state.externalInsulin && (state.carbs == 0 || state.fat == 0 || state.protein == 0)
+
+                ZStack(alignment: .leading) {
+                    HStack {
+                        if isWaitingForBolus {
+                            ProgressView()
+                        }
+                        taskButtonLabel
+                    }
+                    .font(.headline)
+                    .foregroundStyle(Color.white.opacity(disableTaskButton ? 0.7 : 1))
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .frame(height: 40)
+
+                    Circle()
+                        .fill(Color.white)
+                        .frame(width: handleSize - horizontalPadding, height: handleSize - horizontalPadding)
+                        .overlay(
+                            Image(systemName: treatmentSwipeCompleted ? "checkmark" : "chevron.right")
+                                .font(.headline)
+                                .foregroundStyle(treatmentSwipeCompleted ? Color.green : background)
+                                .contentTransition(.symbolEffect(.replace))
+                        )
+                        .offset(x: horizontalPadding + treatmentSwipeOffset)
+                        .gesture(
+                            DragGesture()
+                                .onChanged { value in
+                                    guard !disableTaskButton else { return }
+                                    treatmentSwipeOffset = min(max(0, value.translation.width), maxOffset)
+                                }
+                                .onEnded { _ in
+                                    guard !disableTaskButton else {
+                                        treatmentSwipeOffset = 0
+                                        treatmentSwipeCompleted = false
+                                        return
+                                    }
+
+                                    if treatmentSwipeOffset >= activationOffset {
+                                        withAnimation(.spring(response: 0.25, dampingFraction: 0.85)) {
+                                            treatmentSwipeOffset = maxOffset
+                                        }
+                                        withAnimation(.easeOut(duration: 0.12)) {
+                                            treatmentSwipeCompleted = true
+                                        }
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                                            state.invokeTreatmentsTask()
+                                        }
+
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                            withAnimation(.easeOut(duration: 0.12)) {
+                                                treatmentSwipeCompleted = false
+                                            }
+
+                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+                                                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                                    treatmentSwipeOffset = 0
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                            treatmentSwipeOffset = 0
+                                            treatmentSwipeCompleted = false
+                                        }
+                                    }
+                                }
+                        )
+                }
+                .frame(height: 40)
+                .frame(maxWidth: .infinity)
+                .background(background)
             }
-            .disabled(disableTaskButton)
-            .listRowBackground(treatmentButtonBackground)
-            .shadow(radius: 3)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .frame(height: 40)
         }
 
         private var taskButtonLabel: some View {
