@@ -330,7 +330,7 @@ struct PopupView: View {
             Text("Super Bolus")
                 .foregroundColor(.secondary)
 
-            Text("Added to Result").foregroundColor(.secondary.opacity(colorScheme == .dark ? 0.65 : 0.8)).font(.footnote)
+            Text("Tillagt till resultat").foregroundColor(.secondary.opacity(colorScheme == .dark ? 0.65 : 0.8)).font(.footnote)
 
             HStack {
                 Text("+" + self.insulinFormatter(state.superBolusInsulin))
