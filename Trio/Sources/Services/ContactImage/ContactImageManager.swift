@@ -83,6 +83,11 @@ final class BaseContactImageManager: NSObject, ContactImageManager, Injectable {
             await updateContactImageState()
         }
 
+        if forceStaleBG {
+            guard let lastBGDate = state.lastBGDate else { return }
+            guard Date().timeIntervalSince(lastBGDate) >= 5.minutes.timeInterval else { return }
+        }
+
         guard state.forceStaleBG != forceStaleBG else { return }
 
         state.forceStaleBG = forceStaleBG
