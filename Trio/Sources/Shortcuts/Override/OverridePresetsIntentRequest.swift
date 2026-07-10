@@ -131,6 +131,7 @@ import UIKit
             overrideObject.enabled = true
             overrideObject.date = Date()
             overrideObject.isUploadedToNS = false
+            overrideObject.enteredBy = "Trio"
 
             if viewContext.hasChanges {
                 try viewContext.save()

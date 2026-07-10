@@ -17,6 +17,7 @@ extension Adjustments.StateModel {
 
             overrideToEnact.date = Date()
             overrideToEnact.isUploadedToNS = false
+            overrideToEnact.enteredBy = "Trio"
             isOverrideEnabled = true
 
             guard viewContext.hasChanges else { return }
