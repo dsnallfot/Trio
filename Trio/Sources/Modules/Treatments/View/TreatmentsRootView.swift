@@ -449,21 +449,25 @@ extension Treatments {
 
             return swipeTreatmentButton(background: treatmentButtonBackground)
                 .disabled(disableTaskButton)
-                .listRowBackground(treatmentButtonBackground)
+                .listRowBackground(Color.clear)
+                .listRowInsets(
+                    EdgeInsets(
+                        top: 6,
+                        leading: 0,
+                        bottom: 6,
+                        trailing: 0
+                    )
+                )
+                .listRowSeparator(.hidden)
                 .shadow(radius: 3)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-                .onChange(of: disableTaskButton) {
-                    guard !treatmentSwipeCompleted else { return }
-                    treatmentSwipeOffset = 0
-                    treatmentSwipeCompleted = false
-                }
         }
 
         private func swipeTreatmentButton(background: Color) -> some View {
             GeometryReader { geometry in
-                let handleSize: CGFloat = 40
-                let horizontalPadding: CGFloat = 2
-                let maxOffset = max(0, geometry.size.width - handleSize - horizontalPadding * 2)
+                let buttonHeight: CGFloat = 52
+                let handleSize: CGFloat = 46
+                let handlePadding: CGFloat = 3
+                let maxOffset = max(0, geometry.size.width - handleSize - handlePadding * 2)
                 let activationOffset = maxOffset * 0.82
                 let isWaitingForBolus = state.isBolusInProgress && state
                     .amount > 0 && !state.externalInsulin && (state.carbs == 0 || state.fat == 0 || state.protein == 0)
@@ -478,18 +482,18 @@ extension Treatments {
                     .font(.headline)
                     .foregroundStyle(Color.white.opacity(disableTaskButton ? 0.7 : 1))
                     .frame(maxWidth: .infinity, alignment: .center)
-                    .frame(height: 40)
+                    .frame(height: buttonHeight)
 
                     Circle()
                         .fill(Color.white)
-                        .frame(width: handleSize - horizontalPadding, height: handleSize - horizontalPadding)
+                        .frame(width: handleSize, height: handleSize)
                         .overlay(
                             Image(systemName: treatmentSwipeCompleted ? "checkmark" : "chevron.right")
                                 .font(.headline)
                                 .foregroundStyle(treatmentSwipeCompleted ? Color.green : background)
                                 .contentTransition(.symbolEffect(.replace))
                         )
-                        .offset(x: horizontalPadding + treatmentSwipeOffset)
+                        .offset(x: handlePadding + treatmentSwipeOffset)
                         .gesture(
                             DragGesture()
                                 .onChanged { value in
@@ -510,6 +514,7 @@ extension Treatments {
                                         withAnimation(.easeOut(duration: 0.12)) {
                                             treatmentSwipeCompleted = true
                                         }
+
                                         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                                             state.invokeTreatmentsTask()
                                         }
@@ -534,11 +539,12 @@ extension Treatments {
                                 }
                         )
                 }
-                .frame(height: 40)
+                .frame(height: buttonHeight)
                 .frame(maxWidth: .infinity)
                 .background(background)
+                .clipShape(Capsule())
             }
-            .frame(height: 40)
+            .frame(height: 52)
         }
 
         private var taskButtonLabel: some View {

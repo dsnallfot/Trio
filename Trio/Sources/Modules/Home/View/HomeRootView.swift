@@ -190,10 +190,10 @@ extension Home {
                 : ""
 
             let smbToggleString = latestOverride.smbIsOff || latestOverride
-                .smbIsScheduledOff ? "SMBs Off\(smbScheduleString)" : ""
+                .smbIsScheduledOff ? "SMB av\(smbScheduleString)" : ""
 
             let components = [durationString, percentString, targetString, smbToggleString].filter { !$0.isEmpty }
-            return components.isEmpty ? nil : components.joined(separator: ", ")
+            return components.isEmpty ? nil : components.joined(separator: " • ")
         }
 
         var tempTargetString: String? {
