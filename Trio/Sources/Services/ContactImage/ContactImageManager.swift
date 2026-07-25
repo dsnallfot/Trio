@@ -20,16 +20,45 @@ protocol ContactImageManager {
     func validateContactExists(withIdentifier identifier: String) async -> Bool
 }
 
+private actor ContactImageRefreshCoordinator {
+    private var isRefreshing = false
+    private var waiters: [CheckedContinuation<Void, Never>] = []
+
+    func acquire() async {
+        if !isRefreshing {
+            isRefreshing = true
+            return
+        }
+
+        await withCheckedContinuation { continuation in
+            waiters.append(continuation)
+        }
+    }
+
+    func release() {
+        guard !waiters.isEmpty else {
+            isRefreshing = false
+            return
+        }
+
+        let next = waiters.removeFirst()
+        next.resume()
+    }
+}
+
 final class BaseContactImageManager: NSObject, ContactImageManager, Injectable {
     @Injected() private var glucoseStorage: GlucoseStorage!
     @Injected() private var contactImageStorage: ContactImageStorage!
     @Injected() private var settingsManager: SettingsManager!
     @Injected() private var fileStorage: FileStorage!
 
-    private var workItem: DispatchWorkItem?
+    @MainActor private var refreshDebounceTask: Task<Void, Never>?
+
+    private let refreshCoordinator = ContactImageRefreshCoordinator()
     private var lastRenderedBGStaleState: Bool?
 
     private let contactStore = CNContactStore()
+    private let contactOrganizationName = "Trio"
 
     // Make it read-only from outside the class
     private(set) var state = ContactImageState()
@@ -58,11 +87,49 @@ final class BaseContactImageManager: NSObject, ContactImageManager, Injectable {
 
     private func currentBGStaleState() -> Bool? {
         guard let lastBGDate = state.lastBGDate else { return nil }
-        return Date().timeIntervalSince(lastBGDate) > 6.minutes.timeInterval
+        return Date().timeIntervalSince(lastBGDate) > 5.minutes.timeInterval
     }
 
     private func markCurrentBGStaleStateAsRendered() {
         lastRenderedBGStaleState = currentBGStaleState()
+    }
+
+    @MainActor private func scheduleContactImageRefresh() {
+        refreshDebounceTask?.cancel()
+
+        refreshDebounceTask = Task { [weak self] in
+            do {
+                try await Task.sleep(for: .seconds(2))
+            } catch {
+                return
+            }
+
+            guard !Task.isCancelled, let self else {
+                return
+            }
+
+            await self.performSerializedContactImageRefresh(
+                updateState: true
+            )
+        }
+    }
+
+    private func performSerializedContactImageRefresh(
+        updateState: Bool
+    ) async {
+        await refreshCoordinator.acquire()
+
+        if updateState {
+            await updateContactImageState()
+        }
+
+        await updateContactImagesUnlocked()
+
+        await MainActor.run {
+            self.markCurrentBGStaleStateAsRendered()
+        }
+
+        await refreshCoordinator.release()
     }
 
     @MainActor func refreshContactImagesIfStaleStateChanged() async {
@@ -70,12 +137,17 @@ final class BaseContactImageManager: NSObject, ContactImageManager, Injectable {
             await updateContactImageState()
         }
 
-        guard let isStaleBG = currentBGStaleState() else { return }
-        guard lastRenderedBGStaleState != isStaleBG else { return }
+        guard let isStaleBG = currentBGStaleState() else {
+            return
+        }
 
-        await updateContactImageState()
-        await updateContactImages()
-        markCurrentBGStaleStateAsRendered()
+        guard lastRenderedBGStaleState != isStaleBG else {
+            return
+        }
+
+        await performSerializedContactImageRefresh(
+            updateState: true
+        )
     }
 
     @MainActor func setForceStaleBG(_ forceStaleBG: Bool) async {
@@ -84,15 +156,24 @@ final class BaseContactImageManager: NSObject, ContactImageManager, Injectable {
         }
 
         if forceStaleBG {
-            guard let lastBGDate = state.lastBGDate else { return }
-            guard Date().timeIntervalSince(lastBGDate) >= 5.minutes.timeInterval else { return }
+            guard let lastBGDate = state.lastBGDate else {
+                return
+            }
+
+            guard Date().timeIntervalSince(lastBGDate) >= 5.minutes.timeInterval else {
+                return
+            }
         }
 
-        guard state.forceStaleBG != forceStaleBG else { return }
+        guard state.forceStaleBG != forceStaleBG else {
+            return
+        }
 
         state.forceStaleBG = forceStaleBG
-        await updateContactImages()
-        markCurrentBGStaleStateAsRendered()
+
+        await performSerializedContactImageRefresh(
+            updateState: false
+        )
     }
 
     // Original implementation
@@ -109,13 +190,8 @@ final class BaseContactImageManager: NSObject, ContactImageManager, Injectable {
         glucoseStorage.updatePublisher
             .receive(on: DispatchQueue.global(qos: .background))
             .sink { [weak self] _ in
-                guard let self = self else { return }
-                Task {
-                    await self.updateContactImageState()
-                    await self.updateContactImages()
-                    await MainActor.run {
-                        self.markCurrentBGStaleStateAsRendered()
-                    }
+                Task { @MainActor in
+                    self?.scheduleContactImageRefresh()
                 }
             }
             .store(in: &subscriptions)
@@ -123,56 +199,17 @@ final class BaseContactImageManager: NSObject, ContactImageManager, Injectable {
         registerHandlers()
     }
 
-    /*
-        //Daniel test 10 sec delay to get updated IOB+COB
-        init(resolver: Resolver) {
-            super.init()
-            injectServices(resolver)
-            units = settingsManager.settings.units
-            coreDataPublisher =
-                changedObjectsOnManagedObjectContextDidSavePublisher()
-                    .receive(on: queue)
-                    .share()
-                    .eraseToAnyPublisher()
-
-            glucoseStorage.updatePublisher
-                .receive(on: DispatchQueue.global(qos: .background))
-                .sink { [weak self] _ in
-                    guard let self = self else { return }
-                        // Cancel any pending work item
-                        self.workItem?.cancel()
-
-                        // Create a new work item with a delay
-                        let workItem = DispatchWorkItem {
-                            Task {
-                                await self.updateContactImageState()
-                                await self.updateContactImages()
-                            }
-                        }
-                        self.workItem = workItem
-
-                        // Schedule the work item with a delay (e.g., 10 seconds)
-                        DispatchQueue.global(qos: .background).asyncAfter(deadline: .now() + 10, execute: workItem)
-                }
-                .store(in: &subscriptions)
-
-            registerHandlers()
-        }
-     */
-
     // MARK: - Core Data observation
 
     private func registerHandlers() {
-        coreDataPublisher?.filterByEntityName("OrefDetermination").sink { [weak self] _ in
-            guard let self = self else { return }
-            Task {
-                await self.updateContactImageState()
-                await self.updateContactImages()
-                await MainActor.run {
-                    self.markCurrentBGStaleStateAsRendered()
+        coreDataPublisher?
+            .filterByEntityName("OrefDetermination")
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    self?.scheduleContactImageRefresh()
                 }
             }
-        }.store(in: &subscriptions)
+            .store(in: &subscriptions)
     }
 
     // MARK: - Core Data Fetches
@@ -328,6 +365,15 @@ final class BaseContactImageManager: NSObject, ContactImageManager, Injectable {
 
         state.lastBGDate = lastGlucose?.date
 
+        // Ett nytt färskt BG ska alltid rensa en tidigare tvingad stale-status.
+        // Annars kan forceStaleBG ligga kvar efter ett sensoravbrott och göra
+        // ett nytt värde överstruket trots att tidsstämpeln är färsk.
+        if let lastBGDate = state.lastBGDate,
+           Date().timeIntervalSince(lastBGDate) <= 5.minutes.timeInterval
+        {
+            state.forceStaleBG = false
+        }
+
         let iobValue = lastDetermination?.iob as? Decimal ?? 0.0
         state.iob = iobValue
         state.iobText = (Formatter.decimalFormatterWithOneFractionDigit.string(from: iobValue as NSNumber) ?? "0.0") + "E"
@@ -378,32 +424,22 @@ final class BaseContactImageManager: NSObject, ContactImageManager, Injectable {
 
     // MARK: - Interactions with CNContactStore API
 
-    /// Checks if the app has access to the user's contacts.
-    func requestAccess() async -> Bool {
-        await withCheckedContinuation { continuation in
-            contactStore.requestAccess(for: .contacts) { granted, _ in
-                continuation.resume(returning: granted)
-            }
-        }
+    private enum ContactImageWriteResult {
+        case updated
+        case unchanged
+        case contactNotFound
+        case failed
     }
 
-    /// Sets the image for a specific contact in Apple Contacts.
-    /// This function fetches the associated `ContactImageEntry` for the provided contact ID, generates an image
-    /// based on the current `ContactImageState`, and updates the contact in the user's Apple Contacts.
-    /// - Parameter contactId: The unique identifier of the contact in Apple Contacts.
-    /// - Important: This function should be called when a new contact is created and needs its initial image set.
-    func setImageForContact(contactId: String) async {
-        guard let contactEntry = await contactImageStorage.fetchContactImageEntries().first(where: { $0.contactId == contactId })
-        else {
-            debugPrint("\(DebuggingIdentifiers.failed) No matching ContactImageEntry found for contact ID: \(contactId)")
-            return
-        }
-
-        // Create image based on current state
-        let newImage = await ContactPicture.getImage(contact: contactEntry, state: state)
-
+    private func writeImage(
+        _ imageData: Data,
+        toContactWithIdentifier contactId: String
+    ) -> ContactImageWriteResult {
         do {
-            let predicate = CNContact.predicateForContacts(withIdentifiers: [contactId])
+            let predicate = CNContact.predicateForContacts(
+                withIdentifiers: [contactId]
+            )
+
             let contacts = try contactStore.unifiedContacts(
                 matching: predicate,
                 keysToFetch: [
@@ -413,133 +449,277 @@ final class BaseContactImageManager: NSObject, ContactImageManager, Injectable {
             )
 
             guard let contact = contacts.first else {
-                debugPrint("\(DebuggingIdentifiers.failed) Contact with ID \(contactId) not found.")
-                return
+                debugPrint(
+                    "\(DebuggingIdentifiers.failed) Contact with ID \(contactId) not found."
+                )
+                return .contactNotFound
+            }
+
+            if contact.imageData == imageData {
+                debugPrint(
+                    "Skipped unchanged contact image for \(contactId)"
+                )
+                return .unchanged
             }
 
             let mutableContact = contact.mutableCopy() as! CNMutableContact
-            mutableContact.imageData = newImage.pngData()
+            mutableContact.imageData = imageData
 
             let saveRequest = CNSaveRequest()
             saveRequest.update(mutableContact)
 
             try contactStore.execute(saveRequest)
 
-            debugPrint("\(DebuggingIdentifiers.succeeded) Image successfully set for contact ID: \(contactId)")
+            debugPrint(
+                "\(DebuggingIdentifiers.succeeded) Updated contact image for \(contactId)"
+            )
+
+            return .updated
         } catch {
-            debugPrint("\(DebuggingIdentifiers.failed) Failed to set image for contact ID \(contactId): \(error)")
+            debugPrint(
+                "\(DebuggingIdentifiers.failed) Failed to update contact image for \(contactId): \(error)"
+            )
+
+            return .failed
         }
     }
 
-    /// Updates the images of all contacts stored in Core Data.
-    /// This function iterates through all stored `ContactImageEntry` objects, generates a new contact image
-    /// based on the current `ContactImageState`, and updates the image in the user's Apple Contacts.
-    /// - Important: This function should be called whenever the `ContactImageState` changes.
-    func updateContactImages() async {
-        // Iterate through all stored ContactImageEntry objects
-        for contactEntry in await contactImageStorage.fetchContactImageEntries() {
-            // Ensure the contact has a valid contact ID
-            guard let contactId = contactEntry.contactId else { continue }
+    private func findExistingTrioContact(
+        named name: String
+    ) throws -> CNContact? {
+        let predicate = CNContact.predicateForContacts(
+            matchingName: name
+        )
 
-            // Generate a new image for the contact based on the updated state
-            let newImage = await ContactPicture.getImage(contact: contactEntry, state: state)
+        let contacts = try contactStore.unifiedContacts(
+            matching: predicate,
+            keysToFetch: [
+                CNContactIdentifierKey as CNKeyDescriptor,
+                CNContactGivenNameKey as CNKeyDescriptor,
+                CNContactOrganizationNameKey as CNKeyDescriptor
+            ]
+        )
 
-            do {
-                // Fetch the existing contact from CNContactStore using its identifier
-                let predicate = CNContact.predicateForContacts(withIdentifiers: [contactId])
-                let contacts = try contactStore.unifiedContacts(
-                    matching: predicate,
-                    keysToFetch: [
-                        CNContactIdentifierKey as CNKeyDescriptor, // To identify the contact
-                        CNContactImageDataKey as CNKeyDescriptor // To fetch current image data
-                    ]
-                )
+        return contacts.first {
+            let hasExactName = $0.givenName.compare(
+                name,
+                options: [
+                    .caseInsensitive,
+                    .diacriticInsensitive
+                ]
+            ) == .orderedSame
 
-                // Ensure the contact exists in the CNContactStore
-                guard let contact = contacts.first else {
-                    debugPrint(
-                        "\(DebuggingIdentifiers.failed) Contact with ID \(contactId) and name \(contactEntry.name) not found."
-                    )
-                    continue
-                }
+            let belongsToTrio =
+                $0.organizationName == contactOrganizationName
 
-                // Create a mutable copy of the contact to update its image
-                let mutableContact = contact.mutableCopy() as! CNMutableContact
-                mutableContact.imageData = newImage.pngData() // Set the new image data
+            return hasExactName && belongsToTrio
+        }
+    }
 
-                // Prepare a save request to update the contact
-                let saveRequest = CNSaveRequest()
-                saveRequest.update(mutableContact)
+    private func findLegacyContact(
+        named name: String
+    ) throws -> CNContact? {
+        let predicate = CNContact.predicateForContacts(
+            matchingName: name
+        )
 
-                // Execute the save request to persist the changes
-                try contactStore.execute(saveRequest)
+        let contacts = try contactStore.unifiedContacts(
+            matching: predicate,
+            keysToFetch: [
+                CNContactIdentifierKey as CNKeyDescriptor,
+                CNContactGivenNameKey as CNKeyDescriptor,
+                CNContactOrganizationNameKey as CNKeyDescriptor
+            ]
+        )
 
-                debugPrint("\(DebuggingIdentifiers.succeeded) Updated contact image for \(contactId)")
-            } catch {
-                debugPrint("\(DebuggingIdentifiers.failed) Failed to update contact image for \(contactId): \(error)")
+        return contacts.first {
+            let hasExactName = $0.givenName.compare(
+                name,
+                options: [
+                    .caseInsensitive,
+                    .diacriticInsensitive
+                ]
+            ) == .orderedSame
+
+            let hasNoOrganization = $0.organizationName
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .isEmpty
+
+            return hasExactName && hasNoOrganization
+        }
+    }
+
+    private func adoptLegacyContact(
+        _ contact: CNContact
+    ) throws -> String {
+        let mutableContact = contact.mutableCopy() as! CNMutableContact
+        mutableContact.organizationName = contactOrganizationName
+
+        let saveRequest = CNSaveRequest()
+        saveRequest.update(mutableContact)
+
+        try contactStore.execute(saveRequest)
+
+        debugPrint(
+            "\(DebuggingIdentifiers.succeeded) Adopted legacy Trio contact \(contact.identifier)"
+        )
+
+        return contact.identifier
+    }
+
+    /// Checks if the app has access to the user's contacts.
+    func requestAccess() async -> Bool {
+        await withCheckedContinuation { continuation in
+            contactStore.requestAccess(for: .contacts) { granted, _ in
+                continuation.resume(returning: granted)
             }
         }
     }
 
-    /// Creates a new contact in the Apple contact list or updates an existing one with the same name.
-    /// - Parameter name: The name of the contact.
-    /// - Returns: The `identifier` of the created/updated contact, or `nil` if an error occurs.
-    func createContact(name: String) async -> String? {
-        do {
-            // First check if a contact with this name already exists
-            let predicate = CNContact.predicateForContacts(matchingName: name)
-            let existingContacts = try contactStore.unifiedContacts(
-                matching: predicate,
-                keysToFetch: [
-                    CNContactIdentifierKey as CNKeyDescriptor,
-                    CNContactGivenNameKey as CNKeyDescriptor
-                ]
+    func setImageForContact(contactId: String) async {
+        guard let contactEntry = await contactImageStorage
+            .fetchContactImageEntries()
+            .first(where: { $0.contactId == contactId })
+        else {
+            debugPrint(
+                "\(DebuggingIdentifiers.failed) No matching ContactImageEntry found for contact ID: \(contactId)"
+            )
+            return
+        }
+
+        await refreshCoordinator.acquire()
+
+        let newImage = await ContactPicture.getImage(
+            contact: contactEntry,
+            state: state
+        )
+
+        guard let imageData = newImage.pngData() else {
+            debugPrint(
+                "\(DebuggingIdentifiers.failed) Failed to encode image for contact ID: \(contactId)"
             )
 
-            // If contact exists, return its identifier
-            if let existingContact = existingContacts.first {
-                debugPrint("Found existing contact with name: \(name)")
+            await refreshCoordinator.release()
+            return
+        }
+
+        _ = writeImage(
+            imageData,
+            toContactWithIdentifier: contactId
+        )
+
+        await refreshCoordinator.release()
+    }
+
+    func updateContactImages() async {
+        await refreshCoordinator.acquire()
+        await updateContactImagesUnlocked()
+        await refreshCoordinator.release()
+    }
+
+    private func updateContactImagesUnlocked() async {
+        let contactEntries = await contactImageStorage
+            .fetchContactImageEntries()
+
+        for contactEntry in contactEntries {
+            guard let contactId = contactEntry.contactId else {
+                continue
+            }
+
+            let newImage = await ContactPicture.getImage(
+                contact: contactEntry,
+                state: state
+            )
+
+            guard let imageData = newImage.pngData() else {
+                debugPrint(
+                    "\(DebuggingIdentifiers.failed) Failed to encode image for contact ID: \(contactId)"
+                )
+                continue
+            }
+
+            _ = writeImage(
+                imageData,
+                toContactWithIdentifier: contactId
+            )
+        }
+    }
+
+    func createContact(name: String) async -> String? {
+        do {
+            if let existingContact = try findExistingTrioContact(
+                named: name
+            ) {
+                debugPrint(
+                    "Found existing Trio contact with name: \(name)"
+                )
                 return existingContact.identifier
             }
 
-            // If no existing contact, create a new one
+            if let legacyContact = try findLegacyContact(
+                named: name
+            ) {
+                return try adoptLegacyContact(
+                    legacyContact
+                )
+            }
+
             let contact = CNMutableContact()
             contact.givenName = name
+            contact.organizationName = contactOrganizationName
 
             let saveRequest = CNSaveRequest()
-            saveRequest.add(contact, toContainerWithIdentifier: nil)
+            saveRequest.add(
+                contact,
+                toContainerWithIdentifier: nil
+            )
 
             try contactStore.execute(saveRequest)
 
-            // Re-fetch to get the identifier
-            let newContacts = try contactStore.unifiedContacts(
-                matching: predicate,
-                keysToFetch: [CNContactIdentifierKey as CNKeyDescriptor]
-            )
+            if !contact.identifier.isEmpty {
+                return contact.identifier
+            }
 
-            guard let createdContact = newContacts.first else {
-                debugPrint("\(DebuggingIdentifiers.failed) Contact creation failed: No contact found after save.")
+            guard let createdContact = try findExistingTrioContact(
+                named: name
+            ) else {
+                debugPrint(
+                    "\(DebuggingIdentifiers.failed) Contact creation failed: No Trio contact found after save."
+                )
                 return nil
             }
 
             return createdContact.identifier
         } catch {
-            debugPrint("\(DebuggingIdentifiers.failed) Error creating/finding contact: \(error)")
+            debugPrint(
+                "\(DebuggingIdentifiers.failed) Error creating or finding Trio contact: \(error)"
+            )
             return nil
         }
     }
 
-    /// Validates if a contact still exists in iOS Contacts.
-    func validateContactExists(withIdentifier identifier: String) async -> Bool {
-        let store = CNContactStore()
-        let predicate = CNContact.predicateForContacts(withIdentifiers: [identifier])
-        let keys = [CNContactIdentifierKey] as [CNKeyDescriptor]
+    func validateContactExists(
+        withIdentifier identifier: String
+    ) async -> Bool {
+        let predicate = CNContact.predicateForContacts(
+            withIdentifiers: [identifier]
+        )
+
+        let keys = [
+            CNContactIdentifierKey as CNKeyDescriptor
+        ]
 
         do {
-            let contacts = try store.unifiedContacts(matching: predicate, keysToFetch: keys)
+            let contacts = try contactStore.unifiedContacts(
+                matching: predicate,
+                keysToFetch: keys
+            )
+
             return !contacts.isEmpty
         } catch {
-            debugPrint("\(DebuggingIdentifiers.failed) Error validating contact: \(error)")
+            debugPrint(
+                "\(DebuggingIdentifiers.failed) Error validating contact: \(error)"
+            )
             return false
         }
     }
@@ -589,7 +769,8 @@ final class BaseContactImageManager: NSObject, ContactImageManager, Injectable {
                 keysToFetch: [
                     CNContactIdentifierKey as CNKeyDescriptor,
                     CNContactGivenNameKey as CNKeyDescriptor,
-                    CNContactFamilyNameKey as CNKeyDescriptor
+                    CNContactFamilyNameKey as CNKeyDescriptor,
+                    CNContactOrganizationNameKey as CNKeyDescriptor
                 ]
             )
 
@@ -601,6 +782,7 @@ final class BaseContactImageManager: NSObject, ContactImageManager, Injectable {
             // Update the contact.
             let mutableContact = contact.mutableCopy() as! CNMutableContact
             mutableContact.givenName = newName
+            mutableContact.organizationName = contactOrganizationName
 
             let updateRequest = CNSaveRequest()
             updateRequest.update(mutableContact)

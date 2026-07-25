@@ -4,8 +4,7 @@ import SwiftUI
 struct ContactPicture: View {
     private enum Config {
         static let lag: TimeInterval = 30
-        // TODO: Change to 6.minutes.timeInterval after visual testing.
-        static let staleBGThreshold: TimeInterval = 6.minutes.timeInterval
+        static let staleBGThreshold: TimeInterval = 5.minutes.timeInterval
     }
 
     @Binding var contact: ContactImageEntry
