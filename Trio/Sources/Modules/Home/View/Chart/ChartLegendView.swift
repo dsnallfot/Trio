@@ -10,17 +10,22 @@ struct ChartLegendView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(alignment: .leading) {
+            VStack(alignment: .leading, spacing: 0) {
                 Text(
                     "The main chart in Trio is made up of various elements and shapes. Find their meanings below."
                 )
                 .font(.subheadline)
                 .foregroundColor(.secondary)
                 .padding(.top, 50)
+                .padding(.horizontal)
 
                 List {
                     VStack(alignment: .leading) {
-                        Text("Forecasts").bold().padding(.bottom, 5).textCase(.uppercase)
+                        Text("Forecasts")
+                            .bold()
+                            .padding(.bottom, 5)
+                            .textCase(.uppercase)
+
                         Text(
                             "The oref algorithm determines insulin dosing based on a number of scenarios that it estimates with different types of forecasts."
                         )
@@ -32,16 +37,25 @@ struct ChartLegendView: View {
                         } else {
                             legendConeOfUncertaintyView
                         }
-                    }.listRowBackground(Color.gray.opacity(0.1))
+                    }
+                    .listRowBackground(Color.gray.opacity(0.1))
 
                     VStack(alignment: .leading) {
-                        Text("Other Elements & Shapes").bold().padding(.bottom, 5).textCase(.uppercase)
+                        Text("Other Elements & Shapes")
+                            .bold()
+                            .padding(.bottom, 5)
+                            .textCase(.uppercase)
 
                         DefinitionRow(
                             term: "Scheduled Basal Rate",
                             definition: VStack(alignment: .leading, spacing: 10) {
-                                Text("This dotted line represents the hourly insulin rate of your scheduled basal insulin.")
-                                Text("To review or change your scheduled basal rates, go to Settings > Therapy > Basal Rates.")
+                                Text(
+                                    "This dotted line represents the hourly insulin rate of your scheduled basal insulin."
+                                )
+
+                                Text(
+                                    "To review or change your scheduled basal rates, go to Settings > Therapy > Basal Rates."
+                                )
                             },
                             color: Color.insulin,
                             iconString: "ellipsis"
@@ -58,8 +72,12 @@ struct ChartLegendView: View {
 
                         DefinitionRow(
                             term: "Pump Suspension",
-                            definition: Text("Indicates when insulin delivery was paused, i.e. pump is suspended."),
-                            color: Color.loopGray.opacity(colorScheme == .dark ? 0.3 : 0.8),
+                            definition: Text(
+                                "Indicates when insulin delivery was paused, i.e. pump is suspended."
+                            ),
+                            color: Color.loopGray.opacity(
+                                colorScheme == .dark ? 0.3 : 0.8
+                            ),
                             iconString: "square.fill"
                         )
 
@@ -70,6 +88,7 @@ struct ChartLegendView: View {
                                     Text(
                                         "Displays real-time glucose readings from your CGM that were smoothed using the Savatzky-Golay filter. The displayed glucose readings may not match the actual readings from your CGM."
                                     )
+
                                     Text(
                                         "Depending on your user interface settings, this may be displayed in a static (red, green, orange) or dynamic (full color spectrum) coloring scheme."
                                     )
@@ -78,9 +97,11 @@ struct ChartLegendView: View {
                                         "Displays real-time glucose readings from your CGM. Depending on your user interface settings, this may be displayed in a static (red, green, orange) or dynamic (full color spectrum) coloring scheme."
                                     )
                                 }
+
                                 Text(
                                     "To modify how glucose readings are displayed, go to Settings > Features > User Interface > Glucose Color Scheme."
                                 )
+
                                 if state.settingsManager.settings.smoothGlucose {
                                     Text(
                                         "To disable smoothing, go to Settings > Devices > Continuous Glucose Monitor > Smooth Glucose Value and toggle off the setting."
@@ -88,12 +109,16 @@ struct ChartLegendView: View {
                                 }
                             },
                             color: Color.green,
-                            iconString: state.settingsManager.settings.smoothGlucose ? "record.circle.fill" : "circle.fill"
+                            iconString: state.settingsManager.settings.smoothGlucose
+                                ? "record.circle.fill"
+                                : "circle.fill"
                         )
 
                         DefinitionRow(
                             term: "Manual Glucose Measurement",
-                            definition: Text("Manually entered blood glucose, such as a fingerstick test."),
+                            definition: Text(
+                                "Manually entered blood glucose, such as a fingerstick test."
+                            ),
                             color: Color.red,
                             iconString: "drop.fill"
                         )
@@ -109,7 +134,9 @@ struct ChartLegendView: View {
 
                         DefinitionRow(
                             term: "Carb Entry",
-                            definition: Text("Tracks the carbohydrates you eat, entered to guide insulin dosing."),
+                            definition: Text(
+                                "Tracks the carbohydrates you eat, entered to guide insulin dosing."
+                            ),
                             color: Color.orange,
                             iconString: "arrowtriangle.down.fill",
                             shouldRotateIcon: true
@@ -121,6 +148,7 @@ struct ChartLegendView: View {
                                 Text(
                                     "Represents carb equivalent for fat and protein, calculated using the Warsaw Method."
                                 )
+
                                 Text(
                                     "To enable or configure Warsaw Method application in Trio, go to Settings > Features > Meal Settings."
                                 )
@@ -164,22 +192,71 @@ struct ChartLegendView: View {
                             color: Color.orange.opacity(0.8),
                             iconString: "line.diagonal"
                         )
-                    }.listRowBackground(Color.gray.opacity(0.1))
+                    }
+                    .listRowBackground(Color.gray.opacity(0.1))
                 }
                 .scrollContentBackground(.hidden)
-                .navigationBarTitle("Chart Legend", displayMode: .inline)
                 .padding(.trailing, 10)
-                .padding(.bottom, 15)
 
-                Button {
-                    state.isLegendPresented.toggle()
-                } label: {
-                    Text("Got it!").bold().frame(maxWidth: .infinity, minHeight: 30, alignment: .center)
-                }
-                .buttonStyle(.bordered)
-                .padding(.top)
+                // Ger tillräckligt med extra skrollutrymme så den sista
+                // listposten kan skrollas upp ovanför den flytande knappen.
+                .contentMargins(.bottom, 110, for: .scrollContent)
             }
-            .padding([.horizontal, .bottom])
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .overlay(alignment: .bottom) {
+                let bottomExtension: CGFloat = 34
+
+                ZStack(alignment: .bottom) {
+                    LinearGradient(
+                        colors: [
+                            .clear,
+                            Color(.systemBackground).opacity(0.5),
+                            Color(.systemBackground).opacity(0.8)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 150)
+                    .allowsHitTesting(false)
+
+                    Group {
+                        if #available(iOS 26.0, *) {
+                            Button {
+                                state.isLegendPresented.toggle()
+                            } label: {
+                                Text("Got it!")
+                                    .bold()
+                                    .frame(
+                                        maxWidth: .infinity,
+                                        minHeight: 40,
+                                        alignment: .center
+                                    )
+                            }
+                            .buttonStyle(.glassProminent)
+                        } else {
+                            Button {
+                                state.isLegendPresented.toggle()
+                            } label: {
+                                Text("Got it!")
+                                    .bold()
+                                    .frame(
+                                        maxWidth: .infinity,
+                                        minHeight: 40,
+                                        alignment: .center
+                                    )
+                            }
+                            .buttonStyle(.borderedProminent)
+                        }
+                    }
+                    .padding(.horizontal)
+                    .padding(.bottom, bottomExtension + 8)
+                }
+                .frame(maxWidth: .infinity)
+                .offset(y: bottomExtension)
+                .ignoresSafeArea(edges: .bottom)
+            }
+            .navigationBarTitle("Chart Legend", displayMode: .inline)
             .listSectionSpacing(10)
             .ignoresSafeArea(edges: .top)
             .presentationDetents(
@@ -232,6 +309,7 @@ struct ChartLegendView: View {
                 Text(
                     "For simplicity reasons, oref's various forecast curves are displayed as a \"Cone of Uncertainty\" that depicts a possible, forecasted range of future glucose fluctuation based on the current data and the algothim's result."
                 )
+
                 Text(
                     "To modify how the forecast is displayed, go to Settings > Features > User Interface > Forecast Display Type."
                 )

@@ -26,7 +26,7 @@ extension Adjustments.RootView {
             }
             .listRowBackground(Color.chart)
         } header: {
-            Text("Scheduled Temp Targets")
+            Text("Schemalägg TIllfälligt mål")
         }
     }
 
@@ -52,11 +52,13 @@ extension Adjustments.RootView {
             }
             .listRowBackground(Color.chart)
         } header: {
-            Text("Temporära mål förval")
+            Text("Tillfälliga mål förval")
         } footer: {
             HStack {
                 Image(systemName: "hand.draw.fill").foregroundStyle(.primary)
-                Text("Swipe left to edit or delete a temporary target preset. Hold, drag and drop to reorder a preset.")
+                Text(
+                    "Svep vänster för att redigera eller radera ett sparat tillfälligt mål. Håll, drag och släpp för att ändra ordning."
+                )
             }
         }
     }
@@ -96,14 +98,14 @@ extension Adjustments.RootView {
     }
 
     private var deleteConfirmationTitle: String {
-        "Delete the Temp Target Preset \"\(selectedTempTarget?.name ?? "")\"?"
+        "Radera det tillfälliga målet \"\(selectedTempTarget?.name ?? "")\"?"
     }
 
     private func deleteConfirmationButtons() -> some View {
         Group {
             if let itemToDelete = selectedTempTarget {
                 Button(
-                    state.currentActiveTempTarget == selectedTempTarget ? "Stop and Delete" : "Delete",
+                    state.currentActiveTempTarget == selectedTempTarget ? "Stoppa och radera" : "Radera",
                     role: .destructive
                 ) {
                     if state.currentActiveTempTarget == selectedTempTarget {
@@ -125,7 +127,7 @@ extension Adjustments.RootView {
 
     private var deleteConfirmationMessage: Text? {
         if state.currentActiveTempTarget == selectedTempTarget {
-            return Text("This Temp Target preset is currently running. Deleting will stop it.")
+            return Text("Detta tillfälliga mål är aktivt. Om du raderar det inaktiveras det också.")
         }
         return nil
     }
@@ -187,7 +189,7 @@ extension Adjustments.RootView {
                         Text(tempTarget.name ?? "")
                         Spacer()
                         if remainingTime > 0 {
-                            Text("Starts in \(formattedTimeRemaining(remainingTime))")
+                            Text("Startar om \(formattedTimeRemaining(remainingTime))")
                                 .foregroundColor(colorScheme == .dark ? .orange : .accentColor)
                         }
                     }
@@ -195,7 +197,7 @@ extension Adjustments.RootView {
                         Text(formattedGlucose(glucose: target as Decimal))
                             .foregroundColor(.secondary)
                             .font(.caption)
-                        Text("for")
+                        Text("i")
                             .foregroundColor(.secondary)
                             .font(.caption)
                         Text("\(Formatter.integerFormatter.string(from: (tempTarget.duration ?? 0) as NSNumber)!)")

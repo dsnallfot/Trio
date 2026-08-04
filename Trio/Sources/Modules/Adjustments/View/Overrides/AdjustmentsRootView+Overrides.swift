@@ -25,13 +25,13 @@ extension Adjustments.RootView {
             }
             .onMove(perform: state.reorderOverride)
             .confirmationDialog(
-                "Delete the Override Preset \"\(selectedOverride?.name ?? "")\"?",
+                "Radera den sparade overriden \"\(selectedOverride?.name ?? "")\"?",
                 isPresented: $isConfirmDeletePresented,
                 titleVisibility: .visible
             ) {
                 if let itemToDelete = selectedOverride {
                     Button(
-                        state.currentActiveOverride == selectedOverride ? "Stop and Delete" : "Delete",
+                        state.currentActiveOverride == selectedOverride ? "Stoppa och radera" : "Radera",
                         role: .destructive
                     ) {
                         if state.currentActiveOverride == selectedOverride {
@@ -58,7 +58,7 @@ extension Adjustments.RootView {
                     Text(
                         state
                             .currentActiveOverride == selectedOverride ?
-                            "This override preset is currently running. Deleting will stop it." : ""
+                            "Denna override är aktiv. Om du raderar den inaktiveras den också." : ""
                     )
                 }
             }
@@ -68,7 +68,7 @@ extension Adjustments.RootView {
         } footer: {
             HStack {
                 Image(systemName: "hand.draw.fill").foregroundStyle(.primary)
-                Text("Swipe left to edit or delete an override preset. Hold, drag and drop to reorder a preset.")
+                Text("Svep vänster för att redigera eller radera en sparad override. Håll, drag och släpp för att ändra ordning.")
             }
         }
     }
@@ -121,7 +121,7 @@ extension Adjustments.RootView {
                 await state.disableAllActiveOverrides(createOverrideRunEntry: true)
             }
         } label: {
-            Text("Stop Override")
+            Text("Stoppa override")
                 .fontWeight(.semibold)
                 .foregroundStyle(
                     state.isOverrideEnabled

@@ -90,7 +90,7 @@ extension ISFEditor {
                         }
                         HStack {
                             Image(systemName: "hand.draw.fill").foregroundStyle(.primary)
-                            Text("Swipe left to delete a single entry. Tap on it, to edit its time or rate.")
+                            Text("Svep vänster för att radera en post. Klicka på den för att ändra tid eller värde.")
                         }
                     }
                     .textCase(nil)

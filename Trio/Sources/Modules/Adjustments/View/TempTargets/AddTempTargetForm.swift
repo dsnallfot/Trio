@@ -75,7 +75,7 @@ struct AddTempTargetForm: View {
                 HStack {
                     Text("Name")
                     Spacer()
-                    TextField("(Optional)", text: $state.tempTargetName)
+                    TextField("(Valfritt)", text: $state.tempTargetName)
                         .multilineTextAlignment(.trailing)
                 }
             }.listRowBackground(Color.chart)
@@ -152,13 +152,13 @@ struct AddTempTargetForm: View {
             }
 
             Section {
-                DatePicker("Start Time", selection: $state.date, in: Date.now...)
+                DatePicker("Starttid", selection: $state.date, in: Date.now...)
             }.listRowBackground(Color.chart)
 
             Section {
                 VStack {
                     HStack {
-                        Text("Duration")
+                        Text("Varaktighet")
                         Spacer()
                         Text(state.formatHrMin(Int(state.tempTargetDuration)))
                             .foregroundColor(
@@ -172,9 +172,9 @@ struct AddTempTargetForm: View {
 
                     if displayPickerDuration {
                         HStack {
-                            Picker("Hours", selection: $durationHours) {
+                            Picker("Timmar", selection: $durationHours) {
                                 ForEach(0 ..< 24) { hour in
-                                    Text("\(hour) hr").tag(hour)
+                                    Text("\(hour) h").tag(hour)
                                 }
                             }
                             .pickerStyle(WheelPickerStyle())
@@ -183,7 +183,7 @@ struct AddTempTargetForm: View {
                                 state.tempTargetDuration = Decimal(totalDurationInMinutes())
                             }
 
-                            Picker("Minutes", selection: $durationMinutes) {
+                            Picker("Minuter", selection: $durationMinutes) {
                                 ForEach(Array(stride(from: 0, through: 55, by: 5)), id: \.self) { minute in
                                     Text("\(minute) min").tag(minute)
                                 }
@@ -205,13 +205,13 @@ struct AddTempTargetForm: View {
         let targetZero = state.tempTargetTarget < 80
 
         if noDurationSpecified {
-            return (true, "Set a duration!")
+            return (true, "Ange en varaktighet!")
         }
 
         if targetZero {
             return (
                 true,
-                "\(state.units == .mgdL ? "80 " : "4.4 ")" + state.units.rawValue + " needed as min. Glucose Target!"
+                "\(state.units == .mgdL ? "80 " : "4.4 ")" + state.units.rawValue + " behövs som lägsta glukosmål!"
             )
         }
 
@@ -227,7 +227,7 @@ struct AddTempTargetForm: View {
         }
 
         if isDateInFuture {
-            return (true, "Presets can't be saved with a future date!")
+            return (true, "Förval kan inte sparas med ett framtida datum!")
         }
 
         return (false, nil)
@@ -249,13 +249,13 @@ struct AddTempTargetForm: View {
                 content: {
                     Button(action: {
                         Task {
-                            if noNameSpecified { state.tempTargetName = "Custom Target" }
+                            if noNameSpecified { state.tempTargetName = "Anpassat mål" }
                             didPressSave.toggle()
                             await state.invokeSaveOfCustomTempTargets()
                             dismiss()
                         }
                     }, label: {
-                        Text("Start Temp Target")
+                        Text("Starta tillfälligt mål")
                     })
                         .disabled(isTempTargetInvalid)
                         .frame(maxWidth: .infinity, alignment: .center)
@@ -266,13 +266,13 @@ struct AddTempTargetForm: View {
             Section {
                 Button(action: {
                     Task {
-                        if noNameSpecified { state.tempTargetName = "Custom Target" }
+                        if noNameSpecified { state.tempTargetName = "Anpassat mål" }
                         didPressSave.toggle()
                         await state.saveTempTargetPreset()
                         dismiss()
                     }
                 }, label: {
-                    Text("Save as Preset")
+                    Text("Spara som förval")
 
                 })
                     .disabled(isSavePresetInvalid)

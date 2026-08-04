@@ -66,7 +66,7 @@ struct AddOverrideForm: View {
                 HStack {
                     Text("Name")
                     Spacer()
-                    TextField("(Optional)", text: $state.overrideName).multilineTextAlignment(.trailing)
+                    TextField("(Valfritt)", text: $state.overrideName).multilineTextAlignment(.trailing)
                 }
             }
             .listRowBackground(Color.chart)
@@ -74,7 +74,7 @@ struct AddOverrideForm: View {
             Section(footer: state.percentageDescription(state.overridePercentage)) {
                 // Percentage Picker
                 HStack {
-                    Text("Basal Rate Adjustment")
+                    Text("Basaljustering")
                     Spacer()
                     Text("\(state.overridePercentage.formatted(.number)) %")
                         .foregroundColor(!displayPickerPercentage ? .primary : .accentColor)
@@ -122,7 +122,7 @@ struct AddOverrideForm: View {
                 }
 
                 // Picker for ISF/CR settings
-                Picker("Also Inversely Change", selection: $selectedIsfCrOption) {
+                Picker("Justera också omvänt", selection: $selectedIsfCrOption) {
                     ForEach(IsfAndOrCrOptions.allCases, id: \.self) { option in
                         Text(option.rawValue).tag(option)
                     }
@@ -153,14 +153,14 @@ struct AddOverrideForm: View {
 
             Section {
                 Toggle(isOn: $state.shouldOverrideTarget) {
-                    Text("Override Target")
+                    Text("Justera målglukos")
                 }
 
                 if state.shouldOverrideTarget {
                     let settingsProvider = PickerSettingsProvider.shared
                     let glucoseSetting = PickerSetting(value: 0, step: targetStep, min: 72, max: 270, type: .glucose)
                     TargetPicker(
-                        label: "Target Glucose",
+                        label: "Målglukos",
                         selection: Binding(
                             get: { state.target },
                             set: { state.target = $0 }
@@ -209,7 +209,7 @@ struct AddOverrideForm: View {
                 if state.smbIsScheduledOff {
                     // First Hour SMBs Are Disabled
                     HStack {
-                        Text("From")
+                        Text("Från")
                         Spacer()
                         Text(
                             state.is24HourFormat() ? state.format24Hour(Int(truncating: state.start as NSNumber)) + ":00" :
@@ -222,7 +222,7 @@ struct AddOverrideForm: View {
                         Spacer()
                         Divider().frame(width: 1, height: 20)
                         Spacer()
-                        Text("To")
+                        Text("Till")
                         Spacer()
                         Text(
                             state.is24HourFormat() ? state.format24Hour(Int(truncating: state.end as NSNumber)) + ":00" :
@@ -278,7 +278,7 @@ struct AddOverrideForm: View {
             if !state.smbIsOff {
                 Section {
                     Toggle(isOn: $state.advancedSettings) {
-                        Text("Override Max SMB Minutes")
+                        Text("Justera Max SMB Minuter")
                     }
 
                     if state.advancedSettings {
@@ -336,12 +336,12 @@ struct AddOverrideForm: View {
 
             Section {
                 Toggle(isOn: $state.indefinite) {
-                    Text("Enable Indefinitely")
+                    Text("Aktivera tillsvidare")
                 }
 
                 if !state.indefinite {
                     HStack {
-                        Text("Duration")
+                        Text("Varaktighet")
                         Spacer()
                         Text(state.formatHrMin(Int(state.overrideDuration)))
                             .foregroundColor(!displayPickerDuration ? .primary : .accentColor)
@@ -352,9 +352,9 @@ struct AddOverrideForm: View {
 
                     if displayPickerDuration {
                         HStack {
-                            Picker("Hours", selection: $durationHours) {
+                            Picker("Timmar", selection: $durationHours) {
                                 ForEach(0 ..< 24) { hour in
-                                    Text("\(hour) hr").tag(hour)
+                                    Text("\(hour) h").tag(hour)
                                 }
                             }
                             .pickerStyle(WheelPickerStyle())
@@ -363,7 +363,7 @@ struct AddOverrideForm: View {
                                 state.overrideDuration = state.convertToMinutes(durationHours, durationMinutes)
                             }
 
-                            Picker("Minutes", selection: $durationMinutes) {
+                            Picker("Minuter", selection: $durationMinutes) {
                                 ForEach(Array(stride(from: 0, through: 55, by: 5)), id: \.self) { minute in
                                     Text("\(minute) min").tag(minute)
                                 }
@@ -404,7 +404,7 @@ struct AddOverrideForm: View {
                             dismiss()
                         }
                     }, label: {
-                        Text("Start Override")
+                        Text("Starta Override")
                     })
                         .disabled(isInvalid)
                         .frame(maxWidth: .infinity, alignment: .center)
@@ -419,7 +419,7 @@ struct AddOverrideForm: View {
                         dismiss()
                     }
                 }, label: {
-                    Text("Save as Preset")
+                    Text("Spara som förval")
 
                 })
                     .disabled(isInvalid)
@@ -448,15 +448,15 @@ struct AddOverrideForm: View {
             !state.advancedSettings && !state.smbIsOff && !state.smbIsScheduledOff
 
         if noDurationSpecified {
-            return (true, "Enable indefinitely or set a duration.")
+            return (true, "Aktivera tillsvidare eller ställ in varaktighet.")
         }
 
         if targetZeroWithOverride {
-            return (true, "Target glucose is out of range (\(state.units == .mgdL ? "72-270" : "4-14")).")
+            return (true, "Målglukos är utanför spann (\(state.units == .mgdL ? "72-270" : "4-14")).")
         }
 
         if allSettingsDefault {
-            return (true, "All settings are at default values.")
+            return (true, "Inga inställningar har ändrats.")
         }
 
         return (false, nil)

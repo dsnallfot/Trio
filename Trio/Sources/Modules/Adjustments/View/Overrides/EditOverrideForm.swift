@@ -563,7 +563,7 @@ struct EditOverrideForm: View {
         }
 
         if allSettingsDefault {
-            return (true, "All settings are at default values.")
+            return (true, "Inga inställningar har ändrats.")
         }
 
         if !hasChanges {
