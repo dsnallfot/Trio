@@ -371,7 +371,7 @@ extension Settings {
                         },
                         label: {
                             HStack {
-                                Text("Trio Docs")
+                                Text(" Trio Docs")
                                 Image(systemName: "questionmark.circle")
                             }
                         }

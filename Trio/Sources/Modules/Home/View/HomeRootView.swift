@@ -31,6 +31,7 @@ extension Home {
         @State var isMenuPresented = false
         @State var showTreatments = false
         @State var selectedTab: Int = 0
+        static let treatmentTabTag = 4
         @State var showPumpSelection: Bool = false
         @State var notificationsDisabled = false
         @State var timeButtons: [TimePicker] = [
@@ -51,6 +52,12 @@ extension Home {
             ascending: false,
             fetchLimit: 1
         )) var latestTempTarget: FetchedResults<TempTargetStored>
+
+        var adjustmentTint: Color? {
+            if overrideString != nil { return Color.purple }
+            if tempTargetString != nil { return Color.loopGreen }
+            return nil
+        }
 
         var bolusProgressFormatter: NumberFormatter {
             let formatter = NumberFormatter()
@@ -631,31 +638,21 @@ extension Home {
         }
 
         @ViewBuilder func adjustmentView(geo: GeometryProxy) -> some View {
-//            let background = colorScheme == .dark ? Material.ultraThinMaterial.opacity(0.5) : Color.black.opacity(0.2)
+            //            let background = colorScheme == .dark ? Material.ultraThinMaterial.opacity(0.5) : Color.black.opacity(0.2)
+
+            let tint = adjustmentTint
+            // concurrent override + temp target: halved tint, one remaining bar per half
+            let isConcurrent = overrideString != nil && tempTargetString != nil
 
             ZStack {
-                /// rectangle as background
-                RoundedRectangle(cornerRadius: 15)
-                    .fill(
-                        (overrideString != nil || tempTargetString != nil) ?
-                            (
-                                colorScheme == .dark ?
-                                    // Color(red: 0.03921568627, green: 0.133333333, blue: 0.2156862745) :
-                                    Color.purple.opacity(0.5) :
-                                    Color.insulin.opacity(0.1)
-                            ) : Color.clear // Use clear and add the Material in the background
-                    )
-                    .background(colorScheme == .dark ? Color.white.opacity(0.05) : Color.black.opacity(0.05))
-                    .clipShape(RoundedRectangle(cornerRadius: 15))
-                    .frame(height: geo.size.height * 0.08)
-                    .shadow(
-                        color: (overrideString != nil || tempTargetString != nil) ?
-                            (
-                                colorScheme == .dark ? Color(red: 0.02745098039, green: 0.1098039216, blue: 0.1411764706) :
-                                    Color.black.opacity(0.33)
-                            ) : Color.clear,
-                        radius: 3
-                    )
+                if isConcurrent {
+                    // halved tint layer the single-tint glass chrome can't express
+                    HStack(spacing: 0) {
+                        Color.purple.opacity(0.2)
+                        Color.loopGreen.opacity(0.2)
+                    }
+                    .clipShape(GlassChrome.panelShape)
+                }
                 HStack {
                     if let overrideString = overrideString, let tempTargetString = tempTargetString {
                         HStack {
@@ -703,13 +700,13 @@ extension Home {
                                 await state.cancelOverride(withID: objectID)
                             }
                         }
-                        Button("Stop Temp Target", role: .destructive) {
+                        Button("Stoppa tillfälligt mål", role: .destructive) {
                             Task {
                                 guard let objectID = latestTempTarget.first?.objectID else { return }
                                 await state.cancelTempTarget(withID: objectID)
                             }
                         }
-                        Button("Stop All Adjustments", role: .destructive) {
+                        Button("Stoppa alla justeringar", role: .destructive) {
                             Task {
                                 guard let overrideObjectID = latestOverride.first?.objectID else { return }
                                 await state.cancelOverride(withID: overrideObjectID)
@@ -719,33 +716,33 @@ extension Home {
                             }
                         }
                     } message: {
-                        Text("Select Adjustment")
+                        Text("Välj vad du vill stoppa")
                     }
-            }.padding(.horizontal, 10).padding(.bottom, UIDevice.adjustPadding(min: nil, max: 10))
-        }
-
-        @ViewBuilder func bolusProgressBar(_ progress: Decimal) -> some View {
-            GeometryReader { geo in
-                RoundedRectangle(cornerRadius: 15)
-                    .frame(height: 6)
-                    .foregroundColor(.clear)
-                    .background(
-                        LinearGradient(colors: [
-                            Color(red: 0.7215686275, green: 0.3411764706, blue: 1),
-                            Color(red: 0.6235294118, green: 0.4235294118, blue: 0.9803921569),
-                            Color(red: 0.4862745098, green: 0.5450980392, blue: 0.9529411765),
-                            Color(red: 0.3411764706, green: 0.6666666667, blue: 0.9254901961),
-                            Color(red: 0.262745098, green: 0.7333333333, blue: 0.9137254902)
-                        ], startPoint: .leading, endPoint: .trailing)
-                            .mask(alignment: .leading) {
-                                RoundedRectangle(cornerRadius: 15)
-                                    .frame(width: geo.size.width * CGFloat(progress))
-                            }
+            } // .padding(.horizontal, 10).padding(.bottom, UIDevice.adjustPadding(min: nil, max: 10))
+            // }
+            .frame(height: HomeLayout.bottomPanelHeight)
+            .glassPanel(
+                tint: isConcurrent ? nil : tint,
+                tintOpacity: 0.12,
+                strokeOpacity: isConcurrent ? 0 : (tint == nil ? 0.08 : 0.30)
+            )
+            .overlay(
+                // concurrent halves get a bicolor rim the single-tint chrome can't express
+                isConcurrent
+                    ? GlassChrome.panelShape.strokeBorder(
+                        LinearGradient(
+                            colors: [Color.purple.opacity(0.30), Color.loopGreen.opacity(0.30)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        ),
+                        lineWidth: 1
                     )
-            }
+                    : nil
+            )
+            .padding(.horizontal, 10)
         }
 
-        @ViewBuilder func bolusView(geo: GeometryProxy, _ progress: Decimal) -> some View {
+        @ViewBuilder func bolusView(geo _: GeometryProxy, _ progress: Decimal) -> some View {
             /// ensure that state.lastPumpBolus has a value, i.e. there is a last bolus done by the pump and not an external bolus
             /// - TRUE:  show the pump bolus
             /// - FALSE:  do not show a progress bar at all
@@ -753,93 +750,67 @@ extension Home {
                 let bolusFraction = progress * (bolusTotal as Decimal)
                 let bolusString =
                     (bolusProgressFormatter.string(from: bolusFraction as NSNumber) ?? "0")
-                        + " of " +
-                        (Formatter.decimalFormatterWithTwoFractionDigits.string(from: bolusTotal as NSNumber) ?? "0")
-                        + NSLocalizedString(" U", comment: "Insulin unit")
+                        + String(localized: " av ", comment: "Bolus string partial message: 'x U of y U' in home view") +
+                        (Formatter.decimalFormatterWithThreeFractionDigits.string(from: bolusTotal as NSNumber) ?? "0")
+                        + String(localized: " E", comment: "Insulin unit")
+                let bolusLabel = String(localized: "Ger bolus")
 
-                ZStack {
-                    /// rectangle as background
-                    RoundedRectangle(cornerRadius: 15)
-                        .fill(
-                            colorScheme == .dark ? Color(red: 0.03921568627, green: 0.133333333, blue: 0.2156862745) : Color
-                                .insulin
-                                .opacity(0.2)
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: 15))
-                        .frame(height: geo.size.height * 0.08)
-                        .shadow(
-                            color: colorScheme == .dark ? Color(red: 0.02745098039, green: 0.1098039216, blue: 0.1411764706) :
-                                Color.black.opacity(0.33),
-                            radius: 3
-                        )
+                HStack {
+                    Image(systemName: "cross.vial.fill")
+                        .font(.system(size: 25))
 
-                    /// actual bolus view
-                    HStack {
-                        Image(systemName: "cross.vial.fill")
+                    Spacer()
+
+                    VStack {
+                        Text(bolusLabel)
+                            .font(.subheadline)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        Text(bolusString)
+                            .font(.caption)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }.padding(.leading, 5)
+
+                    Spacer()
+
+                    Button {
+                        state.showProgressView()
+                        state.cancelBolus()
+                    } label: {
+                        Image(systemName: "xmark.app")
                             .font(.system(size: 25))
-
-                        Spacer()
-
-                        VStack {
-                            Text("Bolusing")
-                                .font(.subheadline)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            Text(bolusString)
-                                .font(.caption)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }.padding(.leading, 5)
-
-                        Spacer()
-
-                        Button {
-                            state.showProgressView()
-                            state.cancelBolus()
-                        } label: {
-                            Image(systemName: "xmark.app")
-                                .font(.system(size: 25))
-                        }
-                    }.padding(.horizontal, 10)
-                        .padding(.trailing, 8)
-
-                }.padding(.horizontal, 10).padding(.bottom, UIDevice.adjustPadding(min: nil, max: 10))
-                    .overlay(alignment: .bottom) {
-                        // Use a geo-based offset here to position progress bar independent of device size
-                        let offset = geo.size.height * 0.0725
-                        bolusProgressBar(progress).padding(.horizontal, 18)
-                            .offset(y: offset)
-                    }.clipShape(RoundedRectangle(cornerRadius: 15))
+                    }
+                }
+                .padding(.horizontal, 10)
+                .padding(.trailing, 8)
+                .frame(height: HomeLayout.bottomPanelHeight)
+                .glassPanel(tint: .insulin, tintOpacity: 0.18, strokeOpacity: 0.30)
+                .overlay(alignment: .bottom) {
+                    // bar hugs the panel's bottom edge (the slot no longer has outer bottom padding)
+                    BolusProgressBar(progress: progress)
+                        .padding(.horizontal, 18)
+                        .padding(.bottom, 1)
+                }
+                .padding(.horizontal, 10)
             }
         }
 
-        @ViewBuilder func alertSafetyNotificationsView(geo: GeometryProxy) -> some View {
+        @ViewBuilder func alertSafetyNotificationsView(geo _: GeometryProxy) -> some View {
             ZStack {
-                /// rectangle as background
-                RoundedRectangle(cornerRadius: 15)
-                    .fill(
-                        Color(
-                            red: 0.9,
-                            green: 0.133333333,
-                            blue: 0.2156862745
-                        )
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 15))
-                    .frame(height: geo.size.height * safeAreaSize)
-                    .coordinateSpace(name: "alertSafetyNotificationsView")
-                    .shadow(
-                        color: colorScheme == .dark ? Color(red: 0.02745098039, green: 0.1098039216, blue: 0.1411764706) :
-                            Color.black.opacity(0.33),
-                        radius: 3
-                    )
+                HStack {
+                    Color.red.opacity(0.6)
+                }
+                .clipShape(GlassChrome.panelShape)
+
                 HStack {
                     Spacer()
                     VStack {
-                        Text("⚠️ Safety Notifications are OFF")
+                        Text("⚠️ Säkerhetsnotiser är AV")
                             .font(.headline)
                             .fontWeight(.bold)
                             .fontDesign(.rounded)
                             .foregroundStyle(.white.gradient)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                        Text("Fix now by turning Notifications ON.")
+                        Text("Fixa det nu genom att aktivera notiser.")
                             .font(.footnote)
                             .fontDesign(.rounded)
                             .foregroundStyle(.white.gradient)
@@ -853,8 +824,12 @@ extension Home {
                     .onTapGesture {
                         UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!)
                     }
-            }.padding(.horizontal, 10)
-                .padding(.top, 0)
+            }
+            .frame(height: HomeLayout.statsBannerHeight)
+            .glassPanel()
+            .padding(.horizontal, 10)
+            .padding(.top, 0)
+            .padding(.bottom, 5)
         }
 
         @ViewBuilder func mainViewElements(_ geo: GeometryProxy) -> some View {
@@ -883,15 +858,6 @@ extension Home {
                         Spacer()
                     }.padding(.leading, 20)
                 }.padding(.bottom, 20)
-                // .padding(.top, 10)
-                // .safeAreaInset(edge: .top, spacing: 0) {
-                // if notificationsDisabled {
-                // alertSafetyNotificationsView(geo: geo)
-                // }
-                // }
-
-                // mealPanel(geo).padding(.top, UIDevice.adjustPadding(min: nil, max: 30))
-                // .padding(.bottom, UIDevice.adjustPadding(min: nil, max: 20))
 
                 mainChart(geo: geo)
 
@@ -947,6 +913,8 @@ extension Home {
             GeometryReader { geo in
                 mainViewElements(geo)
             }
+            // no inline text input here; a stale keyboard inset must never shrink the zone budget
+            .ignoresSafeArea(.keyboard, edges: .bottom)
             .onChange(of: state.hours) {
                 highlightButtons()
             }
@@ -992,6 +960,123 @@ extension Home {
         }
 
         @ViewBuilder func tabBar() -> some View {
+            if #available(iOS 26.0, *) {
+                modernTabBar()
+            } else {
+                legacyTabBar()
+            }
+        }
+
+        /// Legacy layout on the glass bar: a dead middle slot with the
+        /// treatment button overlaid; the slot's selection is swallowed.
+        @available(iOS 26.0, *)
+        @ViewBuilder private func modernTabBar() -> some View {
+            ZStack(alignment: .bottom) {
+                TabView(selection: modernTabSelection) {
+                    let carbsRequiredBadge: String? = carbsRequiredBadgeValue
+
+                    NavigationStack { mainView() }
+                        .tabItem { Label("", systemImage: "chart.xyaxis.line") }
+                        .badge(carbsRequiredBadge).tag(0)
+                        .accessibilityLabel(Text("Main"))
+
+                    NavigationStack { DataTable.RootView(resolver: resolver) }
+                        .tabItem { Label("", systemImage: historySFSymbol) }.tag(1)
+                        .accessibilityLabel(Text("History"))
+
+                    Spacer()
+                        // nbsp title + empty image: invisible item that still
+                        // holds a full-width slot for the overlaid button
+                        .tabItem { Label {
+                            Text(String(repeating: "\u{00A0}", count: 12))
+                        } icon: {
+                            Image(uiImage: UIImage())
+                        } }
+                        .tag(RootView.treatmentTabTag)
+
+                    NavigationStack { Adjustments.RootView(resolver: resolver) }
+                        .tabItem {
+                            Label(
+                                "",
+                                systemImage: "slider.horizontal.2.gobackward"
+                            ) }.tag(2)
+                        .accessibilityLabel(Text("Adjustments"))
+
+                    NavigationStack(path: self.$settingsPath) {
+                        Settings.RootView(resolver: resolver) }
+                        // .environment(settingsSearchHighlight)
+                        .tabItem { Label(
+                            "",
+                            systemImage: "gear"
+                        ) }.tag(3)
+                        .accessibilityLabel(Text("Settings"))
+                }
+                .tint(Color.tabBar)
+
+                // fixed distance from the physical screen bottom; immune to
+                // safe-area changes (keyboard, accessories)
+                GeometryReader { geo in
+                    treatmentButton
+                        .position(x: geo.size.width / 2, y: geo.size.height - 52)
+                }
+                .ignoresSafeArea(.all, edges: .bottom)
+            }
+            .ignoresSafeArea(.container, edges: .bottom)
+            .ignoresSafeArea(.keyboard, edges: .bottom)
+            .blur(radius: state.waitForSuggestion ? 8 : 0)
+            .onChange(of: selectedTab) {
+                if selectedTab != 3, !settingsPath.isEmpty {
+                    settingsPath = NavigationPath()
+                }
+            }
+        }
+
+        private var modernTabSelection: Binding<Int> {
+            Binding(
+                get: { selectedTab },
+                set: { newValue in
+                    if newValue == RootView.treatmentTabTag {
+                        let previous = selectedTab
+                        selectedTab = newValue
+                        DispatchQueue.main.async {
+                            selectedTab = previous
+                        }
+                    } else {
+                        selectedTab = newValue
+                    }
+                }
+            )
+        }
+
+        private var treatmentButton: some View {
+            Image(systemName: "plus.circle.fill")
+                .font(.system(size: 40))
+                .foregroundStyle(Color.tabBar)
+                .padding(.vertical, 2)
+                .padding(.horizontal, 24)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    state.showModal(for: .bolus)
+                }
+
+                .accessibilityLabel(Text("Add Treatment"))
+        }
+
+        private var carbsRequiredBadgeValue: String? {
+            guard let carbsRequired = state.enactedAndNonEnactedDeterminations.first?.carbsRequired,
+                  state.showCarbsRequiredBadge
+            else {
+                return nil
+            }
+            let carbsRequiredDecimal = Decimal(carbsRequired)
+            if carbsRequiredDecimal > state.settingsManager.settings.carbsRequiredThreshold {
+                let numberAsNSNumber = NSDecimalNumber(decimal: carbsRequiredDecimal)
+                return (Formatter.decimalFormatterWithTwoFractionDigits.string(from: numberAsNSNumber) ?? "") + " g"
+            }
+            return nil
+        }
+
+        @ViewBuilder private func legacyTabBar() -> some View {
             ZStack(alignment: .bottom) {
                 TabView(selection: $selectedTab) {
                     let carbsRequiredBadge: String? = {
@@ -1034,20 +1119,6 @@ extension Home {
                 }
                 .tint(Color.tabBar)
 
-                Button(
-                    action: {
-                        state.showModal(for: .bolus) },
-                    label: {
-                        Image(systemName: "plus.circle.fill")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 45, height: 45)
-                            .symbolRenderingMode(.palette) // Enables multicolor rendering
-                            .foregroundStyle(.white, Color.tabBar) // White accent, tabBar base color
-                            .padding(.bottom, 1)
-                            .padding(.horizontal, 22.5)
-                    }
-                )
             }.ignoresSafeArea(.keyboard, edges: .bottom).blur(radius: state.waitForSuggestion ? 8 : 0)
                 .onChange(of: selectedTab) {
                     if !settingsPath.isEmpty {

@@ -131,34 +131,36 @@ extension Adjustments.RootView {
     }
 
     var stickyStopTempTargetButton: some View {
-        ZStack {
-            Rectangle()
-                .frame(width: UIScreen.main.bounds.width, height: 65)
-                .foregroundStyle(colorScheme == .dark ? Color.bgDarkerDarkBlue : Color.white)
-                .background(.thinMaterial)
-                .opacity(0.8)
-                .clipShape(Rectangle())
-
-            Button(action: {
-                Task {
-                    // Save cancelled Temp Targets in TempTargetRunStored Entity
-                    // Cancel ALL active Temp Targets
-                    await state.disableAllActiveTempTargets(createTempTargetRunEntry: true)
-                    // Update View
-                    state.updateLatestTempTargetConfiguration()
-                }
-            }, label: {
-                Text("Stop Temp Target")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .padding(10)
-            })
-                .frame(width: UIScreen.main.bounds.width * 0.9, height: 40, alignment: .center)
-                .disabled(!state.isTempTargetEnabled)
-                .background(!state.isTempTargetEnabled ? Color(.systemGray4) : Color(.systemRed))
-                .tint(.white)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-                .padding(5)
+        Button {
+            Task {
+                // Save cancelled Temp Targets in TempTargetRunStored Entity
+                // Cancel ALL active Temp Targets
+                await state.disableAllActiveTempTargets(createTempTargetRunEntry: true)
+                // Update View
+                state.updateLatestTempTargetConfiguration()
+            }
+        } label: {
+            Text("Stoppa tillfälligt mål")
+                .fontWeight(.semibold)
+                .foregroundStyle(
+                    state.isTempTargetEnabled
+                        ? Color.white
+                        : Color.secondary
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .contentShape(GlassChrome.panelShape)
         }
+        .buttonStyle(.plain)
+        .frame(height: 50)
+        .disabled(!state.isTempTargetEnabled)
+        .glassPanel(
+            tint: state.isTempTargetEnabled ? Color.red : nil,
+            tintOpacity: state.isTempTargetEnabled ? 0.40 : 0,
+            strokeOpacity: state.isTempTargetEnabled ? 0.60 : 0.08
+        )
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .frame(height: 65)
     }
 
     private func tempTargetView(

@@ -256,6 +256,10 @@
 		63E890B4D951EAA91C071D5C /* BasalProfileEditorStateModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAFF91130F2FCCC7EBBA11AD /* BasalProfileEditorStateModel.swift */; };
 		642F76A05A4FF530463A9FD0 /* NightscoutConfigRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8782B44544F38F2B2D82C38E /* NightscoutConfigRootView.swift */; };
 		65070A332BFDCB83006F213F /* TidepoolStartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65070A322BFDCB83006F213F /* TidepoolStartView.swift */; };
+		651B4F7530222B9400D10A64 /* GlassChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = 651B4F7430222B9000D10A64 /* GlassChrome.swift */; };
+		651B4F7730222C0E00D10A64 /* UIHostingController+KeyboardSafeArea.swift in Sources */ = {isa = PBXBuildFile; fileRef = 651B4F7630222C0B00D10A64 /* UIHostingController+KeyboardSafeArea.swift */; };
+		651B4F793022315F00D10A64 /* HomeLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 651B4F783022315C00D10A64 /* HomeLayout.swift */; };
+		651B4F7B302232C000D10A64 /* BolusProgressBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 651B4F7A302232B900D10A64 /* BolusProgressBar.swift */; };
 		6532EDBA2FD3164600AD46D9 /* HomeAssistantConnectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6532EDB92FD3164200AD46D9 /* HomeAssistantConnectView.swift */; };
 		6540760C2F4145F000DD4CC1 /* TrioSettingsAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6540760B2F4145ED00DD4CC1 /* TrioSettingsAdapter.swift */; };
 		6545DD692D70D026007B0D70 /* AppVersionChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6545DD682D70D024007B0D70 /* AppVersionChecker.swift */; };
@@ -990,6 +994,10 @@
 		60744C3E9BB3652895C908CC /* DataTableProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DataTableProvider.swift; sourceTree = "<group>"; };
 		64AA5E04A2761F6EEA6568E1 /* CarbRatioEditorStateModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CarbRatioEditorStateModel.swift; sourceTree = "<group>"; };
 		65070A322BFDCB83006F213F /* TidepoolStartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TidepoolStartView.swift; sourceTree = "<group>"; };
+		651B4F7430222B9000D10A64 /* GlassChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassChrome.swift; sourceTree = "<group>"; };
+		651B4F7630222C0B00D10A64 /* UIHostingController+KeyboardSafeArea.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIHostingController+KeyboardSafeArea.swift"; sourceTree = "<group>"; };
+		651B4F783022315C00D10A64 /* HomeLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeLayout.swift; sourceTree = "<group>"; };
+		651B4F7A302232B900D10A64 /* BolusProgressBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BolusProgressBar.swift; sourceTree = "<group>"; };
 		6532EDB92FD3164200AD46D9 /* HomeAssistantConnectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeAssistantConnectView.swift; sourceTree = "<group>"; };
 		6540760B2F4145ED00DD4CC1 /* TrioSettingsAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrioSettingsAdapter.swift; sourceTree = "<group>"; };
 		6545DD652D70CFBB007B0D70 /* blacklisted-versions.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "blacklisted-versions.json"; sourceTree = "<group>"; };
@@ -1735,6 +1743,8 @@
 		3811DE2C25C9D49500A708ED /* View */ = {
 			isa = PBXGroup;
 			children = (
+				651B4F783022315C00D10A64 /* HomeLayout.swift */,
+				651B4F7430222B9000D10A64 /* GlassChrome.swift */,
 				3811DE2E25C9D49500A708ED /* HomeRootView.swift */,
 				3833B51E260264AC003021B3 /* Chart */,
 				3833B51F260264B6003021B3 /* Header */,
@@ -1994,6 +2004,7 @@
 		3883582E25EEAFC000E024B2 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				651B4F7A302232B900D10A64 /* BolusProgressBar.swift */,
 				3811DE5925C9D4D500A708ED /* ViewModifiers.swift */,
 				3883581B25EE79BB00E024B2 /* TextFieldWithToolBar.swift */,
 				383420D825FFEB3F002D46C1 /* Popup.swift */,
@@ -2127,6 +2138,7 @@
 		388E5A5A25B6F05F0019842D /* Helpers */ = {
 			isa = PBXGroup;
 			children = (
+				651B4F7630222C0B00D10A64 /* UIHostingController+KeyboardSafeArea.swift */,
 				C2A0A42E2CE0312C003B98E8 /* ConstantValues.swift */,
 				DD940BAB2CA75889000830A5 /* DynamicGlucoseColor.swift */,
 				38F37827261260DC009DB701 /* Color+Extensions.swift */,
@@ -3684,6 +3696,7 @@
 				3811DE1825C9D40400A708ED /* Router.swift in Sources */,
 				CE7950262998056D00FA576E /* CGMSetupView.swift in Sources */,
 				582FAE432C05102C00D1C13F /* CoreDataError.swift in Sources */,
+				651B4F7530222B9400D10A64 /* GlassChrome.swift in Sources */,
 				38A0363B25ECF07E00FCBB52 /* GlucoseStorage.swift in Sources */,
 				65070A332BFDCB83006F213F /* TidepoolStartView.swift in Sources */,
 				190EBCC629FF138000BA767D /* UserInterfaceSettingsProvider.swift in Sources */,
@@ -3786,6 +3799,7 @@
 				38FE826A25CC82DB001FF17A /* NetworkService.swift in Sources */,
 				FE66D16B291F74F8005D6F77 /* Bundle+Extensions.swift in Sources */,
 				DD940BAC2CA75889000830A5 /* DynamicGlucoseColor.swift in Sources */,
+				651B4F7B302232C000D10A64 /* BolusProgressBar.swift in Sources */,
 				3883581C25EE79BB00E024B2 /* TextFieldWithToolBar.swift in Sources */,
 				58D08B302C8DEA7500AA37D3 /* ForecastView.swift in Sources */,
 				6B1A8D2E2B156EEF00E76752 /* LiveActivityBridge.swift in Sources */,
@@ -3900,6 +3914,7 @@
 				DDF847DF2C5C28780049BB3B /* LiveActivitySettingsProvider.swift in Sources */,
 				DDB37CC52D05048F00D99BF4 /* ContactImageStorage.swift in Sources */,
 				BD54A95B2D28087C00F9C1EE /* OverridePresetWatch.swift in Sources */,
+				651B4F793022315F00D10A64 /* HomeLayout.swift in Sources */,
 				DBA5254DBB2586C98F61220C /* ISFEditorProvider.swift in Sources */,
 				BDF34EBE2C0A31D100D51995 /* CustomNotification.swift in Sources */,
 				BDC2EA472C3045AD00E5BBD0 /* Override.swift in Sources */,
@@ -3937,6 +3952,7 @@
 				DD17453A2C55BFA600211FAC /* AlgorithmAdvancedSettingsDataFlow.swift in Sources */,
 				5075C1608E6249A51495C422 /* TargetsEditorProvider.swift in Sources */,
 				E13B7DAB2A435F57066AF02E /* TargetsEditorStateModel.swift in Sources */,
+				651B4F7730222C0E00D10A64 /* UIHostingController+KeyboardSafeArea.swift in Sources */,
 				9702FF92A09C53942F20D7EA /* TargetsEditorRootView.swift in Sources */,
 				1967DFBE29D052C200759F30 /* Icons.swift in Sources */,
 				DDD163182C4C694000CD525A /* AdjustmentsRootView.swift in Sources */,

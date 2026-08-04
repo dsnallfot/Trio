@@ -660,9 +660,9 @@ Enact a temp Basal or a temp target */
 
 "Adjustment" = "Override";
 
-"Add Glucose" = "Logga glukos";
+"Add Glucose" = " Logga glukos";
 
-"Add Override" = "Ny override";
+"Add Override" = " Ny override";
 
 "Add Temp Target" = "Nytt tillfälligt mål";
 

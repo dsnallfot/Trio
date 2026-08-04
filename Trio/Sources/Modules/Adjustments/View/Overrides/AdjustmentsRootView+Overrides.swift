@@ -114,33 +114,34 @@ extension Adjustments.RootView {
     }
 
     var stickyStopOverrideButton: some View {
-        ZStack {
-            Rectangle()
-                .frame(width: UIScreen.main.bounds.width, height: 65)
-                .foregroundStyle(colorScheme == .dark ? Color.bgDarkerDarkBlue : Color.white)
-                .background(.thinMaterial)
-                .opacity(0.8)
-                .clipShape(Rectangle())
-
-            Button(action: {
-                Task {
-                    // Save cancelled Override in OverrideRunStored Entity
-                    // Cancel ALL active Override
-                    await state.disableAllActiveOverrides(createOverrideRunEntry: true)
-                }
-            }, label: {
-                Text("Stop Override")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .padding(10)
-            })
-                .frame(width: UIScreen.main.bounds.width * 0.9, height: 40, alignment: .center)
-                .disabled(!state.isOverrideEnabled)
-                .background(!state.isOverrideEnabled ? Color(.systemGray4) : Color(.systemRed))
-                .tint(.white)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-
-                .padding(5)
+        Button {
+            Task {
+                // Save cancelled Override in OverrideRunStored Entity
+                // Cancel ALL active Override
+                await state.disableAllActiveOverrides(createOverrideRunEntry: true)
+            }
+        } label: {
+            Text("Stop Override")
+                .fontWeight(.semibold)
+                .foregroundStyle(
+                    state.isOverrideEnabled
+                        ? Color.white
+                        : Color.secondary
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .contentShape(GlassChrome.panelShape)
         }
+        .buttonStyle(.plain)
+        .frame(height: 50)
+        .disabled(!state.isOverrideEnabled)
+        .glassPanel(
+            tint: state.isOverrideEnabled ? Color.red : nil,
+            tintOpacity: state.isOverrideEnabled ? 0.40 : 0,
+            strokeOpacity: state.isOverrideEnabled ? 0.50 : 0.08
+        )
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .frame(height: 65)
     }
 
     @ViewBuilder func overridesView(

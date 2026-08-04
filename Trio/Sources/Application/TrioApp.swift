@@ -167,6 +167,14 @@ import Swinject
             if newScenePhase == .background {
                 coreDataStack.save()
             }
+
+            if newScenePhase == .active {
+                if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                   let rootVC = windowScene.windows.first(where: { $0.isKeyWindow })?.rootViewController
+                {
+                    rootVC.excludeKeyboardFromSafeAreaTree()
+                }
+            }
         }
         .backgroundTask(.appRefresh("com.trio.cleanup")) {
             await scheduleDatabaseCleaning()

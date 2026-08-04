@@ -70,8 +70,10 @@ extension Adjustments {
                 ) {
                     if shouldDisplayStickyOverrideStopButton, state.selectedTab == .overrides {
                         stickyStopOverrideButton
+                            .padding(.bottom, 10)
                     } else if shouldDisplayStickyTempTargetStopButton, state.selectedTab == .tempTargets {
                         stickyStopTempTargetButton
+                            .padding(.bottom, 10)
                     } else {
                         EmptyView()
                     }
@@ -168,55 +170,94 @@ extension Adjustments {
         var currentActiveAdjustment: some View {
             switch state.selectedTab {
             case .overrides:
-                Section {
-                    HStack {
+                Button {
+                    Task {
+                        /// To avoid editing the Preset when a Preset-Override is running we first duplicate the Preset-Override as a non-Preset Override
+                        /// The currentActiveOverride variable in the State will update automatically via MOC notification
+                        await state.duplicateOverridePresetAndCancelPreviousOverride()
+
+                        /// selectedOverride is used for passing the chosen Override to the EditSheet so we have to set the updated currentActiveOverride to be the selectedOverride
+                        selectedOverride = state.currentActiveOverride
+
+                        /// Now we can show the Edit sheet
+                        state.showOverrideEditSheet = true
+                    }
+                } label: {
+                    HStack(spacing: 12) {
                         Text("\(state.activeOverrideName) är aktiverad")
+                            .fontWeight(.semibold)
+                            .foregroundStyle(Color.primary)
 
                         Spacer()
+
                         Image(systemName: "square.and.pencil")
                             .foregroundStyle(Color.primary)
                     }
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        Task {
-                            /// To avoid editing the Preset when a Preset-Override is running we first duplicate the Preset-Override as a non-Preset Override
-                            /// The currentActiveOverride variable in the State will update automatically via MOC notification
-                            await state.duplicateOverridePresetAndCancelPreviousOverride()
-
-                            /// selectedOverride is used for passing the chosen Override to the EditSheet so we have to set the updated currentActiveOverride to be the selectedOverride
-                            selectedOverride = state.currentActiveOverride
-
-                            /// Now we can show the Edit sheet
-                            state.showOverrideEditSheet = true
-                        }
-                    }
+                    .padding(.horizontal, 14)
+                    .frame(maxWidth: .infinity, minHeight: 50)
+                    .contentShape(GlassChrome.panelShape)
                 }
-                .listRowBackground(Color.purple.opacity(0.8))
+                .buttonStyle(.plain)
+                .glassPanel(
+                    tint: Color.purple,
+                    tintOpacity: 0.18,
+                    strokeOpacity: 0.30
+                )
+                .listRowInsets(
+                    EdgeInsets(
+                        top: 5,
+                        leading: 0,
+                        bottom: 5,
+                        trailing: 0
+                    )
+                )
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+
             case .tempTargets:
-                Section {
-                    HStack {
+                Button {
+                    Task {
+                        /// To avoid editing the Preset when a Preset-Override is running we first duplicate the Preset-Override as a non-Preset Override
+                        /// The currentActiveOverride variable in the State will update automatically via MOC notification
+                        await state.duplicateTempTargetPresetAndCancelPreviousTempTarget()
+
+                        /// selectedOverride is used for passing the chosen Override to the EditSheet so we have to set the updated currentActiveOverride to be the selectedOverride
+                        selectedTempTarget = state.currentActiveTempTarget
+
+                        /// Now we can show the Edit sheet
+                        state.showTempTargetEditSheet = true
+                    }
+                } label: {
+                    HStack(spacing: 12) {
                         Text("\(state.activeTempTargetName) är aktiverad")
+                            .fontWeight(.semibold)
+                            .foregroundStyle(Color.primary)
 
                         Spacer()
+
                         Image(systemName: "square.and.pencil")
                             .foregroundStyle(Color.primary)
                     }
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        Task {
-                            /// To avoid editing the Preset when a Preset-Override is running we first duplicate the Preset-Override as a non-Preset Override
-                            /// The currentActiveOverride variable in the State will update automatically via MOC notification
-                            await state.duplicateTempTargetPresetAndCancelPreviousTempTarget()
-
-                            /// selectedOverride is used for passing the chosen Override to the EditSheet so we have to set the updated currentActiveOverride to be the selectedOverride
-                            selectedTempTarget = state.currentActiveTempTarget
-
-                            /// Now we can show the Edit sheet
-                            state.showTempTargetEditSheet = true
-                        }
-                    }
+                    .padding(.horizontal, 14)
+                    .frame(maxWidth: .infinity, minHeight: 50)
+                    .contentShape(GlassChrome.panelShape)
                 }
-                .listRowBackground(Color.loopGreen.opacity(0.8))
+                .buttonStyle(.plain)
+                .glassPanel(
+                    tint: Color.loopGreen,
+                    tintOpacity: 0.18,
+                    strokeOpacity: 0.30
+                )
+                .listRowInsets(
+                    EdgeInsets(
+                        top: 5,
+                        leading: 0,
+                        bottom: 5,
+                        trailing: 0
+                    )
+                )
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
             }
         }
 
@@ -248,7 +289,7 @@ extension Adjustments {
                         state.updateLatestTempTargetConfiguration()
                     }
                 }, label: {
-                    Text("Stop Temp Target")
+                    Text("Stoppa tillfälligt mål")
 
                 })
                     .frame(maxWidth: .infinity, alignment: .center)
