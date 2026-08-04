@@ -36,6 +36,10 @@ struct ForecastChart: View {
 
     @State private var startMarker = Date(timeIntervalSinceNow: -4 * 60 * 60)
 
+    private var glucoseStartMarker: Date {
+        startMarker.addingTimeInterval(5 * 60)
+    }
+
     @State var selection: Date? = nil
 
     private var endMarker: Date {
@@ -263,7 +267,12 @@ struct ForecastChart: View {
     }
 
     private func drawGlucose() -> some ChartContent {
-        ForEach(state.glucoseFromPersistence) { item in
+        ForEach(
+            state.glucoseFromPersistence.filter {
+                guard let date = $0.date else { return false }
+                return date >= glucoseStartMarker
+            }
+        ) { item in
             let glucoseToDisplay = state.units == .mgdL ? Decimal(item.glucose) : Decimal(item.glucose).asMmolL
             let targetGlucose = (state.determination.first?.currentTarget ?? state.currentBGTarget as NSDecimalNumber) as Decimal
 

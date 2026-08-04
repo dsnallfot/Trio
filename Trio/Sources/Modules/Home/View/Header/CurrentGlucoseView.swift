@@ -49,13 +49,35 @@ struct CurrentGlucoseView: View {
         return formatter
     }
 
+    private var glucoseBackgroundColor: Color {
+        guard let glucoseValue = glucose.last?.glucose else {
+            return Color.clear
+        }
+
+        let hardCodedLow = Decimal(55)
+        let hardCodedHigh = Decimal(220)
+        let isDynamicColorScheme = glucoseColorScheme == .dynamicColor
+
+        return Trio.getDynamicGlucoseColor(
+            glucoseValue: Decimal(glucoseValue),
+            highGlucoseColorValue: isDynamicColorScheme ? hardCodedHigh : highGlucose,
+            lowGlucoseColorValue: isDynamicColorScheme ? hardCodedLow : lowGlucose,
+            targetGlucose: currentGlucoseTarget,
+            glucoseColorScheme: glucoseColorScheme
+        )
+    }
+
     var body: some View {
         let triangleColor = Color(red: 0.262745098, green: 0.7333333333, blue: 0.9137254902)
 
         if cgmAvailable {
             ZStack {
-                TrendShape(gradient: angularGradient, color: triangleColor)
-                    .rotationEffect(.degrees(rotationDegrees))
+                TrendShape(
+                    gradient: angularGradient,
+                    color: triangleColor,
+                    backgroundColor: glucoseBackgroundColor
+                )
+                .rotationEffect(.degrees(rotationDegrees))
 
                 VStack(alignment: .center) {
                     HStack {
@@ -182,19 +204,30 @@ struct TrendShape: View {
 
     let gradient: AngularGradient
     let color: Color
+    let backgroundColor: Color
 
     var body: some View {
         HStack(alignment: .center) {
             ZStack {
                 Group {
-                    CircleShape(gradient: gradient)
+                    CircleShape(
+                        gradient: gradient,
+                        backgroundColor: backgroundColor
+                    )
+
                     TriangleShape(color: color)
-                    // }.shadow(color: Color.black.opacity(colorScheme == .dark ? 0.75 : 0.33), radius: colorScheme == .dark ? 5 : 3)
-                }.shadow(
-                    color: Color.black.opacity(colorScheme == .dark ? 0.75 : 0.33),
+                }
+                .shadow(
+                    color: Color.black.opacity(
+                        colorScheme == .dark ? 0.75 : 0.33
+                    ),
                     radius: colorScheme == .dark ? 4 : 2
                 )
-                CircleShape(gradient: gradient)
+
+                CircleShape(
+                    gradient: gradient,
+                    backgroundColor: backgroundColor
+                )
             }
         }
     }
@@ -204,12 +237,14 @@ struct CircleShape: View {
     @Environment(\.colorScheme) var colorScheme
 
     let gradient: AngularGradient
+    let backgroundColor: Color
 
     var body: some View {
         Circle()
             .stroke(gradient, lineWidth: 1.5)
             .background(
-                Circle().fill(Color(UIColor.systemBackground))
+                Circle()
+                    .fill(backgroundColor.opacity(0.3))
             )
             .frame(width: 130, height: 130)
     }

@@ -216,7 +216,6 @@ extension Treatments {
                     List {
                         Section {
                             ForecastChart(state: state)
-                                .padding(.vertical)
                         }.listRowBackground(Color.chart)
 
                         Section {
@@ -353,6 +352,7 @@ extension Treatments {
 
                         treatmentButton
                     }
+                    .padding(.top, 40)
                     .listSectionSpacing(sectionSpacing)
                 }
                 .blur(radius: state.waitForSuggestion ? 5 : 0)
@@ -361,7 +361,6 @@ extension Treatments {
                     CustomProgressView(text: progressText.rawValue)
                 }
             }
-            .padding(.top)
             .ignoresSafeArea(edges: .top)
             .scrollContentBackground(.hidden).background(appState.trioBackgroundColor(for: colorScheme))
             .blur(radius: state.showInfo ? 3 : 0)
