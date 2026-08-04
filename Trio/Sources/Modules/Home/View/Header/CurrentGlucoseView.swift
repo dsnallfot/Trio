@@ -85,22 +85,24 @@ struct CurrentGlucoseView: View {
                             let displayGlucose = units == .mgdL ? Decimal(glucoseValue).description : Decimal(glucoseValue)
                                 .formattedAsMmolL
 
-                            var glucoseDisplayColor = Color.primary
+                            let glucoseDisplayColor = Color.primary
 
-                            // TODO: workaround for now: set low value to 55, to have dynamic color shades between 55 and user-set low (approx. 70); same for high glucose
-                            let hardCodedLow = Decimal(55)
-                            let hardCodedHigh = Decimal(220)
-                            let isDynamicColorScheme = glucoseColorScheme == .dynamicColor
+                            /*
+                             // TODO: workaround for now: set low value to 55, to have dynamic color shades between 55 and user-set low (approx. 70); same for high glucose
+                             let hardCodedLow = Decimal(55)
+                             let hardCodedHigh = Decimal(220)
+                             let isDynamicColorScheme = glucoseColorScheme == .dynamicColor
 
-                            if Decimal(glucoseValue) <= lowGlucose || Decimal(glucoseValue) >= highGlucose {
-                                glucoseDisplayColor = Trio.getDynamicGlucoseColor(
-                                    glucoseValue: Decimal(glucoseValue),
-                                    highGlucoseColorValue: isDynamicColorScheme ? hardCodedHigh : highGlucose,
-                                    lowGlucoseColorValue: isDynamicColorScheme ? hardCodedLow : lowGlucose,
-                                    targetGlucose: currentGlucoseTarget,
-                                    glucoseColorScheme: glucoseColorScheme
-                                )
-                            }
+                             if Decimal(glucoseValue) <= lowGlucose || Decimal(glucoseValue) >= highGlucose {
+                                 glucoseDisplayColor = Trio.getDynamicGlucoseColor(
+                                     glucoseValue: Decimal(glucoseValue),
+                                     highGlucoseColorValue: isDynamicColorScheme ? hardCodedHigh : highGlucose,
+                                     lowGlucoseColorValue: isDynamicColorScheme ? hardCodedLow : lowGlucose,
+                                     targetGlucose: currentGlucoseTarget,
+                                     glucoseColorScheme: glucoseColorScheme
+                                 )
+                             }
+                             */
 
                             return Text(
                                 glucoseValue == 400 ? "HIGH" : displayGlucose
