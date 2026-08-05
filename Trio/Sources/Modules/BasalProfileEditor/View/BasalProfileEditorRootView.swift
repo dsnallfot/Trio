@@ -147,7 +147,7 @@ extension BasalProfileEditor {
                     }
                 }.listRowBackground(Color.chart)
 
-                Section {} header: {
+                Section {} footer: {
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
                             Image(systemName: "note.text.badge.plus").foregroundStyle(.primary)
