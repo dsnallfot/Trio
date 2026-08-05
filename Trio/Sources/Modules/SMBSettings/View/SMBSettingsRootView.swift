@@ -32,17 +32,18 @@ extension SMBSettings {
                     units: state.units,
                     type: .boolean,
                     label: NSLocalizedString("Enable SMB Always", comment: "Enable SMB Always"),
-                    miniHint: "Allow SMBs at all times except when a high Temp Target is set.",
+                    miniHint: "Använd alltid SMB, förutom när ett högt tillfälligt mål är aktivt.",
                     verboseHint: VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: OFF").bold()
+                        Text("Standard: AV").bold()
                         Text(
-                            "When enabled, Super Micro Boluses (SMBs) will always be allowed if dosing calculations determine insulin is needed via the SMB delivery method, except when a high Temp Target is set. Enabling SMB Always will remove redundant \"Enable SMB\" options when this setting is enacted."
+                            "När detta är aktiverat kommer super mikrobolus (SMB) alltid att tillåtas om doseringsberäkningarna visar att insulin behöver ges via SMB, förutom när ett högt tillfälligt mål är inställt. När 'ANvänd alltid SMB' är aktiverat döljs de överflödiga alternativen för att aktivera SMB."
                         )
+
                         Text(
-                            "Note: If you would like to allow SMBs when a high Temp Target is set, enable the \"Allow SMBs with High Temptarget\" setting."
+                            "Obs: Om du vill tillåta SMB även när ett högt tillfälligt mål är inställt aktiverar du inställningen 'Tillåt SMB vid högt tillfälligt mål'."
                         )
                     },
-                    headerText: "Super-Micro-Bolus"
+                    headerText: "Super mikrobolus"
                 )
 
                 if !state.enableSMBAlways {
@@ -60,15 +61,16 @@ extension SMBSettings {
                         units: state.units,
                         type: .boolean,
                         label: NSLocalizedString("Enable SMB With COB", comment: "Enable SMB With COB"),
-                        miniHint: "Allow SMB when carbs are on board.",
+                        miniHint: "Använd SMB vid aktiva kolhydrater.",
                         verboseHint:
                         VStack(alignment: .leading, spacing: 10) {
-                            Text("Default: OFF").bold()
+                            Text("Standard: AV").bold()
                             Text(
-                                "When the carb on board (COB) forecast line is active, enabling this feature allows Trio to use Super Micro Boluses (SMB) to deliver the insulin required."
+                                "När prognoslinjen för aktiva kolhydrater (COB) visas kan Trio, om denna inställning är aktiverad, använda Super mikrobolus (SMB) för att leverera den insulinmängd som behövs."
                             )
+
                             Text(
-                                "Note: If this is enabled and the criteria are met, SMBs could be utilized regardless of other SMB settings being enabled or not."
+                                "Obs: Om denna inställning är aktiverad och villkoren är uppfyllda kan SMB användas oavsett om övriga SMB-inställningar är aktiverade eller inte."
                             )
                         }
                     )
@@ -87,15 +89,16 @@ extension SMBSettings {
                         units: state.units,
                         type: .boolean,
                         label: NSLocalizedString("Enable SMB With Temptarget", comment: "Enable SMB With Temptarget"),
-                        miniHint: "Allow SMB when a manual Temporary Target is set under \(state.units == .mgdL ? "100" : 100.formattedAsMmolL) \(state.units.rawValue).",
+                        miniHint: "Använd SMB när ett tillfälligt mål är inställt under \(state.units == .mgdL ? "100" : 100.formattedAsMmolL) \(state.units.rawValue).",
                         verboseHint:
                         VStack(alignment: .leading, spacing: 10) {
-                            Text("Default: OFF").bold()
+                            Text("Standard: AV").bold()
                             Text(
-                                "Enabling this feature allows Trio to deliver insulin required using Super Micro Boluses (SMB) at times when a manual Temporary Target under \(state.units == .mgdL ? "100" : 100.formattedAsMmolL) \(state.units.rawValue) is set."
+                                "När denna inställning är aktiverad kan Trio använda Super mikrobolus (SMB) för att leverera den insulinmängd som behövs när ett manuellt tillfälligt mål under \(state.units == .mgdL ? "100" : 100.formattedAsMmolL) \(state.units.rawValue) är inställt."
                             )
+
                             Text(
-                                "Note: If this is enabled and the criteria are met, SMBs could be utilized regardless of other SMB settings being enabled or not."
+                                "Obs: Om denna inställning är aktiverad och villkoren är uppfyllda kan SMB användas oavsett om övriga SMB-inställningar är aktiverade eller inte."
                             )
                         }
                     )
@@ -114,15 +117,16 @@ extension SMBSettings {
                         units: state.units,
                         type: .boolean,
                         label: NSLocalizedString("Enable SMB After Carbs", comment: "Enable SMB After Carbs"),
-                        miniHint: "Allow SMB for 6 hrs after a carb entry.",
+                        miniHint: "Använd SMB i 6h efter en måltid.",
                         verboseHint:
                         VStack(alignment: .leading, spacing: 10) {
-                            Text("Default: OFF").bold()
+                            Text("Standard: AV").bold()
                             Text(
-                                "Enabling this feature allows Trio to deliver insulin required using Super Micro Boluses (SMB) for 6 hours after a carb entry, regardless of whether there are active carbs on board (COB)."
+                                "När denna inställning är aktiverad kan Trio använda Super mikrobolus (SMB) för att leverera den insulinmängd som behövs under 6 timmar efter att en måltid med kolhydrater har registrerats, oavsett om det finns aktiva kolhydrater ombord (COB) eller inte."
                             )
+
                             Text(
-                                "Note: If this is enabled and the criteria are met, SMBs could be utilized regardless of other SMB settings being enabled or not."
+                                "Obs: Om denna inställning är aktiverad och villkoren är uppfyllda kan SMB användas oavsett om övriga SMB-inställningar är aktiverade eller inte."
                             )
                         }
                     )
@@ -140,17 +144,18 @@ extension SMBSettings {
                         ),
                         units: state.units,
                         type: .conditionalDecimal("enableSMB_high_bg_target"),
-                        label: NSLocalizedString("Enable SMB With High BG", comment: "Enable SMB With High BG"),
-                        conditionalLabel: "High BG Target",
-                        miniHint: "Allow SMB when glucose is above the High BG Target value.",
+                        label: NSLocalizedString("Använd SMB vid högt glukosvärde", comment: "Enable SMB With High BG"),
+                        conditionalLabel: "Högt glukosvärde",
+                        miniHint: "Använd SMB när glukos överstiger 'Högt glukosvärde'.",
                         verboseHint:
                         VStack(alignment: .leading, spacing: 10) {
-                            Text("Default: OFF").bold()
+                            Text("Standard: AV").bold()
                             Text(
-                                "Enabling this feature allows Trio to deliver insulin required using Super Micro Boluses (SMB) when glucose reading is above the value set as High BG Target."
+                                "När denna inställning är aktiverad kan Trio använda Super mikrobolus (SMB) för att leverera den insulinmängd som behövs när blodsockret ligger över det värde som har angetts som 'Högt glukosvärde'."
                             )
+
                             Text(
-                                "Note: If this is enabled and the criteria are met, SMBs could be utilized regardless of other SMB settings being enabled or not."
+                                "Obs: Om denna inställning är aktiverad och villkoren är uppfyllda kan SMB användas oavsett om övriga SMB-inställningar är aktiverade eller inte."
                             )
                         }
                     )
@@ -176,18 +181,20 @@ extension SMBSettings {
                         "Allow SMB With High Temptarget",
                         comment: "Allow SMB With High Temptarget"
                     ),
-                    miniHint: "Allow SMB when a manual Temporary Target is set greater than \(state.units == .mgdL ? "100" : 100.formattedAsMmolL) \(state.units.rawValue).",
+                    miniHint: "Tillåt även SMB när ett tillfälligt mål är satt högre än \(state.units == .mgdL ? "100" : 100.formattedAsMmolL) \(state.units.rawValue).",
                     verboseHint:
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: OFF").bold()
+                        Text("Standard: AV").bold()
                         Text(
-                            "Enabling this feature allows Trio to deliver insulin required using Super Micro Boluses (SMB) when a manual Temporary Target above \(state.units == .mgdL ? "100" : 100.formattedAsMmolL) \(state.units.rawValue) is set."
+                            "När denna inställning är aktiverad kan Trio använda Super mikrobolus (SMB) för att leverera den insulinmängd som behövs när ett manuellt tillfälligt mål över \(state.units == .mgdL ? "100" : 100.formattedAsMmolL) \(state.units.rawValue) är inställt."
                         )
+
                         Text(
-                            "Note: If this is enabled and the criteria are met, SMBs could be utilized regardless of other SMB settings being enabled or not."
+                            "Obs: Om denna inställning är aktiverad och villkoren är uppfyllda kan SMB användas oavsett om övriga SMB-inställningar är aktiverade eller inte."
                         )
+
                         Text(
-                            "Warning: High Temp Targets are often set when recovering from lows. If you use High Temp Targets for that purpose, this feature should remain disabled."
+                            "Varning: Höga tillfälliga mål används ofta vid återhämtning efter ett lågt blodsocker. Om du använder höga tillfälliga mål för detta ändamål bör denna inställning förbli avstängd."
                         ).bold()
                     }
                 )
@@ -206,18 +213,20 @@ extension SMBSettings {
                     units: state.units,
                     type: .boolean,
                     label: NSLocalizedString("Enable UAM", comment: "Enable UAM"),
-                    miniHint: "Enable Unannounced Meals SMB.",
+                    miniHint: "Aktivera UAM (oannonserade måltider) SMB.",
                     verboseHint:
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: OFF").bold()
+                        Text("Standard: AV").bold()
                         Text(
-                            "Enabling the UAM (Unannounced Meals) feature allows the system to detect and respond to unexpected rises in glucose readings caused by unannounced or miscalculated carbs, meals high in fat or protein, or other factors like adrenaline."
+                            "När UAM (Unannounced Meals) är aktiverat kan Trio upptäcka och reagera på oväntade ökningar i blodsockret som orsakas av oregistrerade eller felberäknade kolhydrater, måltider med högt innehåll av fett eller protein eller andra faktorer, såsom adrenalin."
                         )
+
                         Text(
-                            "It uses the SMB (Super Micro Bolus) algorithm to deliver insulin in small amounts to correct glucose spikes. UAM also works in reverse, reducing or stopping SMBs if glucose levels drop unexpectedly."
+                            "Funktionen använder SMB-algoritmen (Super mikrobolus) för att ge insulin i små doser och korrigera stigande blodsocker. UAM fungerar även åt andra hållet genom att minska eller stoppa SMB om blodsockret sjunker oväntat."
                         )
+
                         Text(
-                            "This feature ensures more accurate insulin adjustments when carb entries are missing or incorrect."
+                            "Detta ger mer träffsäkra insulinjusteringar när kolhydrater inte har registrerats eller har registrerats felaktigt."
                         )
                     }
                 )
@@ -235,35 +244,35 @@ extension SMBSettings {
                     ),
                     units: state.units,
                     type: .decimal("maxSMBBasalMinutes"),
-                    label: NSLocalizedString("Max SMB Basal Minutes", comment: "Max SMB Basal Minutes"),
-                    miniHint: "Limits the size of a single Super Micro Bolus (SMB) dose.",
+                    label: NSLocalizedString("Max SMB Basalminuter", comment: "Max SMB Basal Minutes"),
+                    miniHint: "Begränsar storleken på en enskild SMB-dos.",
                     verboseHint: VStack(spacing: 10) {
                         VStack(alignment: .leading, spacing: 10) {
                             VStack(alignment: .leading, spacing: 1) {
-                                Text("Default: 30 minutes").bold()
-                                Text("(50% current basal rate)").bold()
+                                Text("Standard: 30 minuter").bold()
+                                Text("(50% nuvarande basal)").bold()
                             }
                             VStack(alignment: .leading, spacing: 10) {
                                 Text(
-                                    "This is a limit on the size of a single SMB. One SMB can only be as large as this many minutes of your current profile basal rate."
+                                    "Detta är en begränsning för storleken på en enskild SMB-dos. En SMB kan maximalt vara lika stor som angivet antal minuter av din nuvarande basal."
                                 )
                                 Text(
-                                    "To calculate the maximum SMB allowed based on this setting, use the following formula:"
+                                    "För att beräkna maximal tillåten SMB utifrån denna inställning, anvämnd följande formel:"
                                 )
                             }
                         }
                         VStack(alignment: .center, spacing: 5) {
                             Text(
-                                "𝒳 = Max SMB Basal Minutes"
+                                "𝒳 = Max SMB Basalminuter"
                             )
-                            Text("(𝒳 ÷ 60) × current basal rate")
+                            Text("(𝒳 ÷ 60) × nuvarande basal")
                         }
 
                         VStack(alignment: .leading, spacing: 10) {
                             Text(
-                                "Warning: Increasing this value above 90 minutes may impact Trio's ability to effectively zero temp and prevent lows."
+                                "Varning: Om värdet sätts högre än 90 minuter påverkas Trios möjlighet att använda nollbasaler för att förebygga lågt blodsocker om trenden plötsligt vänder ner."
                             ).bold()
-                            Text("Note: SMBs must be enabled to use this limit.")
+                            Text("Notera: SMB måste vara aktivt för att denna gräns ska aktiveras.")
                         }
                     }
                 )
@@ -281,34 +290,34 @@ extension SMBSettings {
                     ),
                     units: state.units,
                     type: .decimal("maxUAMSMBBasalMinutes"),
-                    label: NSLocalizedString("Max UAM Basal Minutes", comment: "Max UAM Basal Minutes"),
-                    miniHint: "Limits the size of a single Unannounced Meal (UAM) SMB dose.",
+                    label: NSLocalizedString("Max UAM Basalminuter", comment: "Max UAM Basal Minutes"),
+                    miniHint: "Begränsar storleken på en enskild UAM-SMB-dos.",
                     verboseHint: VStack(spacing: 10) {
                         VStack(alignment: .leading, spacing: 10) {
                             VStack(alignment: .leading, spacing: 1) {
-                                Text("Default: 30 minutes").bold()
-                                Text("(50% current basal rate)").bold()
+                                Text("Standard: 30 minutes").bold()
+                                Text("(50% nuvarande basal)").bold()
                             }
                             VStack(alignment: .leading, spacing: 10) {
                                 Text(
-                                    "This is a limit on the size of a single UAM SMB. One UAM SMB can only be as large as this many minutes of your current profile basal rate."
+                                    "Detta är en begränsning för storleken på en enskild UAM SMB-dos. En SMB kan maximalt vara lika stor som angivet antal minuter av din nuvarande basal."
                                 )
                                 Text(
-                                    "To calculate the maximum UAM SMB allowed based on this setting, use the following formula:"
+                                    "För att beräkna maximal tillåten UAM SMB utifrån denna inställning, anvämnd följande formel:"
                                 )
                             }
                         }
                         VStack(alignment: .center, spacing: 5) {
                             Text(
-                                "𝒳 = Max UAM SMB Basal Minutes"
+                                "𝒳 = Max UAM SMB Basalminuter"
                             )
-                            Text("(𝒳 ÷ 60) × current basal rate")
+                            Text("(𝒳 ÷ 60) × nuvarande basal")
                         }
                         VStack(alignment: .leading, spacing: 10) {
                             Text(
-                                "Warning: Increasing this value above 60 minutes may impact Trio's ability to effectively zero temp and prevent lows."
+                                "Varning: Om värdet sätts högre än 60 minuter påverkas Trios möjlighet att använda nollbasaler för att förebygga lågt blodsocker om trenden plötsligt vänder ner."
                             ).bold()
-                            Text("Note: UAM SMBs must be enabled to use this limit.")
+                            Text("Notera: UAM SMB måste vara aktivt för att denna gräns ska aktiveras.")
                         }
                     }
                 )
@@ -327,14 +336,14 @@ extension SMBSettings {
                     units: state.units,
                     type: .decimal("maxDeltaBGthreshold"),
                     label: NSLocalizedString("Max Delta-BG Threshold SMB", comment: "Max Delta-BG Threshold"),
-                    miniHint: "Disables SMBs if last two glucose values differ by more than this percent.",
+                    miniHint: "Inaktiverar SMB om de två senaste glukosvärdena skiljer sig mer än angiven procent.",
                     verboseHint:
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: 20% increase").bold()
+                        Text("Standard: 20% ökning").bold()
                         Text(
-                            "Maximum allowed positive percent change in glucose level to permit SMBs. If the difference in glucose is greater than this, Trio will disable SMBs."
+                            "Maximal tillåten procentuell ökning av glukosvärdet för att SMB ska tillåtas. Om skillnaden är större än angivet värde kommer Trio tillfälligt att inaktivera SMB."
                         )
-                        Text("Note: This setting has a hard-coded cap of 40%")
+                        Text("Notera: Denna inställning har ett hårdkodat tak på 40%")
                     }
                 )
 
@@ -351,18 +360,18 @@ extension SMBSettings {
                     ),
                     units: state.units,
                     type: .decimal("smbDeliveryRatio"),
-                    label: NSLocalizedString("SMB Delivery Ratio", comment: "SMB Delivery Ratio"),
-                    miniHint: "Percentage of calculated insulin required that is given as SMB.",
+                    label: NSLocalizedString("SMB ratio", comment: "SMB Delivery Ratio"),
+                    miniHint: "Procent av det beräknade insulonbehovet som kan ges som en enskild SMB.",
                     verboseHint:
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: 50%").bold()
+                        Text("Standard: 50%").bold()
                         Text(
-                            "Once the total insulin required is calculated, this safety limit specifies what percentage of the insulin required can be delivered as an SMB."
+                            "När det totala insulnbehovet har beräknats, så används denna säkerhetsgräns för att avgöra hur stor del av det totala beräknade insulinbehovet som maximalt kan levereras med en enskild SMB."
                         )
                         Text(
-                            "Due to SMBs potentially occurring every 5 minutes with each loop cycle, it is important to set this value to a reasonable level that allows Trio to safely zero temp should dosing needs suddenly change. Increase this value with caution."
+                            "Eftersom SMB kan ges vid varje loop-cykel, så är det viktigt att sätta detta värde till en rimlig nivå som ger Trio möjlighet att använda nollbasaler för att förebygga låga värden om blodsockret plötsligt faller. Öka detta värde med försiktighet."
                         )
-                        Text("Note: Allowed range is 30 - 70%")
+                        Text("Notera: Tillåtet spann är 30 - 70%")
                     }
                 )
 
@@ -380,12 +389,12 @@ extension SMBSettings {
                     units: state.units,
                     type: .decimal("smbInterval"),
                     label: NSLocalizedString("SMB Interval", comment: "SMB Interval"),
-                    miniHint: "Minimum minutes since the last SMB or manual bolus to allow an automated SMB.",
+                    miniHint: "Minsta antalet minuter sedan föregående SMB/Bolus innan en ny SMB tillåts.",
                     verboseHint:
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: 3 min").bold()
+                        Text("Standard: 3 min").bold()
                         Text(
-                            "This is the minimum number of minutes since the last SMB or manual bolus before Trio will permit an automated SMB."
+                            "Detta är det minsta antalet minuter som måste passera sedan föregående manuella eller automatiska bolus (SMB) innan Trio tillåter att en ny SMB ges."
                         )
                     }
                 )
@@ -397,12 +406,12 @@ extension SMBSettings {
                     shouldDisplayHint: $shouldDisplayHint,
                     hintLabel: hintLabel ?? "",
                     hintText: selectedVerboseHint ?? AnyView(EmptyView()),
-                    sheetTitle: "Help"
+                    sheetTitle: "Hjälp"
                 )
             }
             .scrollContentBackground(.hidden).background(appState.trioBackgroundColor(for: colorScheme))
             .onAppear(perform: configureView)
-            .navigationTitle("SMB Settings")
+            .navigationTitle("SMB Inställningar")
             .navigationBarTitleDisplayMode(.automatic)
         }
     }

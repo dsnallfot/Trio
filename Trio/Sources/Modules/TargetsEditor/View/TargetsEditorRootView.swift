@@ -70,11 +70,11 @@ extension TargetsEditor {
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
                             Image(systemName: "note.text.badge.plus").foregroundStyle(.primary)
-                            Text("Add an entry by tapping 'Add Target +' in the top right-hand corner of the screen.")
+                            Text("Lägg till en post genom att klicka på 'Lägg till +' i det övre högra hörnet.")
                         }
                         HStack {
                             Image(systemName: "hand.draw.fill").foregroundStyle(.primary)
-                            Text("Swipe to delete a single entry. Tap on it, to edit its time or rate.")
+                            Text("Svep för att radera en post. Klicka på den för att redigera tid eller värde.")
                         }
                     }
                     .textCase(nil)
@@ -89,7 +89,7 @@ extension TargetsEditor {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(action: { state.add() }) {
                         HStack {
-                            Text("Lägg till mål")
+                            Text(" Lägg till")
                             Image(systemName: "plus")
                         }
                     }.disabled(!state.canAdd)

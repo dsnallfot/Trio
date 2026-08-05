@@ -22,7 +22,7 @@ extension PumpConfig {
             NavigationView {
                 Form {
                     Section(
-                        header: Text("Pump Integration to Trio"),
+                        header: Text("Pumpintegration för Trio"),
                         content: {
                             if let pumpState = state.pumpState {
                                 Button {

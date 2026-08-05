@@ -72,7 +72,7 @@ extension ISFEditor {
                     Section {
                         VStack(alignment: .leading) {
                             Text(
-                                "Insulin Sensitivities cover 24 hours. You cannot add more rates. Please remove or adjust existing rates to make space."
+                                "Insulinkänslighetsposterna täcker 24 timmar. Du kan inte lägga till fler poster. Radera en befintlig post för att skapa utrymme för en ny post."
                             ).bold()
                         }
                     }.listRowBackground(Color.tabBar)
@@ -86,11 +86,11 @@ extension ISFEditor {
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
                             Image(systemName: "note.text.badge.plus").foregroundStyle(.primary)
-                            Text("Add an entry by tapping 'Add Sensitivity +' in the top right-hand corner of the screen.")
+                            Text("Lägg till en post genom att klicka på 'Lägg till +' i det övre högra hörnet.")
                         }
                         HStack {
                             Image(systemName: "hand.draw.fill").foregroundStyle(.primary)
-                            Text("Svep vänster för att radera en post. Klicka på den för att ändra tid eller värde.")
+                            Text("Svep för att radera en post. Klicka på den för att redigera tid eller värde.")
                         }
                     }
                     .textCase(nil)
@@ -99,13 +99,13 @@ extension ISFEditor {
             .safeAreaInset(edge: .bottom, spacing: 30) { saveButton }
             .scrollContentBackground(.hidden).background(appState.trioBackgroundColor(for: colorScheme))
             .onAppear(perform: configureView)
-            .navigationTitle("Insulin Sensitivities")
+            .navigationTitle("Insulinkänslighet")
             .navigationBarTitleDisplayMode(.automatic)
             .toolbar(content: {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(action: { state.add() }) {
                         HStack {
-                            Text("Add Sensitivity")
+                            Text(" Lägg till")
                             Image(systemName: "plus")
                         }
                     }.disabled(!state.canAdd)

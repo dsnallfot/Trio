@@ -26,32 +26,32 @@ extension AutosensSettings {
         var autosensVerboseHint: some View {
             VStack(alignment: .leading, spacing: 15) {
                 Text(
-                    "Autosens automatically adjusts insulin delivery based on how sensitive or resistant you are to insulin at the time of the current loop cycle by analyzing past data to keep blood sugar levels stable."
+                    "Autosens justerar automatiskt insulindoseringen utifrån hur känslig eller resistent du är mot insulin under den aktuella loopcykeln. Genom att analysera tidigare data hjälper funktionen till att hålla blodsockret stabilt."
                 )
 
                 VStack(alignment: .leading, spacing: 5) {
-                    Text("How it Works").bold()
+                    Text("Så fungerar det").bold()
                     Text(
-                        "It looks at the last 8-24 hours of data, excluding meal-related changes, and adjusts insulin settings like basal rates and targets when needed to match your sensitivity or resistance to insulin."
+                        "Autosens analyserar data från de senaste 8–24 timmarna, men bortser från förändringar som är kopplade till måltider. Vid behov justeras inställningar som basal och blodsockermål för att bättre matcha din aktuella insulinkänslighet eller insulinresistens."
                     )
                 }
 
                 VStack(alignment: .leading, spacing: 5) {
-                    Text("What it Adjusts").bold()
+                    Text("Vad som justeras").bold()
                     Text(
-                        "Autosens modifies Insulin Sensitivity Factor (ISF), basal rates, and target blood sugar levels. It doesn’t account for carbs but adjusts for insulin effectiveness based on patterns in your glucose data."
+                        "Autosens justerar insulinkänslighetsfaktorn (ISF), basalen och blodsockermålet. Funktionen tar inte hänsyn till kolhydrater, utan anpassar insulineffekten utifrån mönster i dina glukosvärden."
                     )
                 }
 
                 VStack(alignment: .leading, spacing: 5) {
-                    Text("Key Limitations").bold()
+                    Text("Viktiga begränsningar").bold()
                     Text(
-                        "Autosens has safety limits determined by your Autosens Max and Autosens Min settings. These settings prevent over-adjusting."
+                        "Autosens har inbyggda säkerhetsgränser som styrs av inställningarna Autosens Max och Autosens Min. Dessa förhindrar att justeringarna blir för stora."
                     )
                 }
 
                 Text(
-                    "Autosens functions alongside certain settings, like Super Micro Bolus (SMB). Other settings, like Dynamic ISF, alter portions of the Autosens formula. Please review the in-app hints for the Algorithm Settings prior to enabling them to understand how they may influence it."
+                    "Autosens samverkar med vissa andra funktioner, exempelvis Super mikrobolus (SMB). Andra inställningar, som Dynamisk ISF, påverkar delar av Autosens-beräkningen. Läs gärna hjälptexterna för algoritminställningarna innan du aktiverar dem, så att du förstår hur de kan påverka Autosens."
                 )
             }
         }
@@ -92,12 +92,12 @@ extension AutosensSettings {
                                     .useNewFormula ? newISF!.formattedAsMmolL : dynamicISF?.decimalValue.formattedAsMmolL
                             ) ?? "0")
                         }
-                        Text(state.units.rawValue + "/U").foregroundColor(.secondary)
+                        Text(state.units.rawValue + "/E").foregroundColor(.secondary)
                     }
 
                     HStack(alignment: .top) {
                         Text(
-                            "This adjusted ISF is temporary, will change with the next loop cycle, and should not be directly used as your profile ISF value."
+                            "Denna justerade ISF är tillfällig, kommer att justeras vid varje loop, och bör inte användas direkt som inställning för din ISF-profil."
                         )
                         .font(.footnote)
                         .foregroundColor(.secondary)
@@ -140,21 +140,23 @@ extension AutosensSettings {
                     units: state.units,
                     type: .decimal("autosensMax"),
                     label: NSLocalizedString("Autosens Max", comment: "Autosens Max"),
-                    miniHint: "Upper limit of the Autosens Ratio.",
+                    miniHint: "Övre gränsvärde för Autosens.",
                     verboseHint:
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: 120%").bold()
+                        Text("Standard: 120%").bold()
                         Text(
-                            "Autosens Max sets the maximum Autosens Ratio used by Autosens, Dynamic ISF, and Sigmoid Formula."
+                            "Autosens Max anger den högsta Autosens-ration som får användas av Autosens, Dynamisk ISF och Sigmoid-formeln."
                         )
+
                         Text(
-                            "The Autosens Ratio is used to calculate the amount of adjustment needed to basal rates, ISF, and CR."
+                            "Autosens-ration används för att beräkna hur mycket basalen, ISF och CR ska justeras."
                         )
+
                         Text(
-                            "Tip: Increasing this value allows automatic adjustments of basal rates to be higher, ISF to be lower, and CR to be lower."
+                            "Tips: Om du ökar detta värde kan automatiska justeringar ge högre basal, lägre ISF och lägre CR."
                         )
                     },
-                    headerText: "Glucose Deviations Algorithm"
+                    headerText: "Algortim för glukosavvikelser"
                 )
 
                 SettingInputSection(
@@ -171,53 +173,55 @@ extension AutosensSettings {
                     units: state.units,
                     type: .decimal("autosensMin"),
                     label: NSLocalizedString("Autosens Min", comment: "Autosens Min"),
-                    miniHint: "Lower limit of the Autosens Ratio.",
+                    miniHint: "Lägre gränsvärde för Autosens.",
                     verboseHint:
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: 70%").bold()
+                        Text("Standard: 70%").bold()
                         Text(
-                            "Autosens Min sets the minimum Autosens Ratio used by Autosens, Dynamic ISF, and Sigmoid Formula."
+                            "Autosens Min anger den lägsta Autosens-ration som får användas av Autosens, Dynamisk ISF och Sigmoid-formeln."
                         )
-                        Text(
-                            "The Autosens Ratio is used to calculate the amount of adjustment needed to basal rates, ISF, and CR."
-                        )
-                        Text(
-                            "Tip: Decreasing this value allows automatic adjustments of basal rates to be lower, ISF to be higher, and CR to be higher."
-                        )
-                    }
-                )
 
-                SettingInputSection(
-                    decimalValue: $decimalPlaceholder,
-                    booleanValue: $state.rewindResetsAutosens,
-                    shouldDisplayHint: $shouldDisplayHint,
-                    selectedVerboseHint: Binding(
-                        get: { selectedVerboseHint },
-                        set: {
-                            selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = NSLocalizedString("Rewind Resets Autosens", comment: "Rewind Resets Autosens")
-                        }
-                    ),
-                    units: state.units,
-                    type: .boolean,
-                    label: NSLocalizedString("Rewind Resets Autosens", comment: "Rewind Resets Autosens"),
-                    miniHint: "Pump rewind initiates a reset in Autosens Ratio.",
-                    verboseHint: VStack(alignment: .leading, spacing: 5) {
-                        Text("Default: ON").bold()
-                        Text("Medtronic Users Only").bold()
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text(
-                                "This feature resets the Autosens Ratio to neutral when you rewind your pump on the assumption that this corresponds to a site change."
-                            )
-                            Text(
-                                "Autosens will begin learning sensitivity anew from the time of the rewind, which may take up to 6 hours."
-                            )
-                            Text(
-                                "Tip: If you usually rewind your pump independently of site changes, you may want to consider disabling this feature."
-                            )
-                        }
+                        Text(
+                            "Autosens-ration används för att beräkna hur mycket basal, ISF och CR ska justeras."
+                        )
+
+                        Text(
+                            "Tips: Om du sänker detta värde kan automatiska justeringar ge lägre basal, högre ISF och högre CR."
+                        )
                     }
                 )
+                /*
+                 SettingInputSection(
+                     decimalValue: $decimalPlaceholder,
+                     booleanValue: $state.rewindResetsAutosens,
+                     shouldDisplayHint: $shouldDisplayHint,
+                     selectedVerboseHint: Binding(
+                         get: { selectedVerboseHint },
+                         set: {
+                             selectedVerboseHint = $0.map { AnyView($0) }
+                             hintLabel = NSLocalizedString("Rewind Resets Autosens", comment: "Rewind Resets Autosens")
+                         }
+                     ),
+                     units: state.units,
+                     type: .boolean,
+                     label: NSLocalizedString("Rewind Resets Autosens", comment: "Rewind Resets Autosens"),
+                     miniHint: "Pump rewind initiates a reset in Autosens Ratio.",
+                     verboseHint: VStack(alignment: .leading, spacing: 5) {
+                         Text("Default: ON").bold()
+                         Text("Medtronic Users Only").bold()
+                         VStack(alignment: .leading, spacing: 10) {
+                             Text(
+                                 "This feature resets the Autosens Ratio to neutral when you rewind your pump on the assumption that this corresponds to a site change."
+                             )
+                             Text(
+                                 "Autosens will begin learning sensitivity anew from the time of the rewind, which may take up to 6 hours."
+                             )
+                             Text(
+                                 "Tip: If you usually rewind your pump independently of site changes, you may want to consider disabling this feature."
+                             )
+                         }
+                     }
+                 )*/
             }
             .listSectionSpacing(sectionSpacing)
             .sheet(isPresented: $shouldDisplayHint) {
@@ -226,7 +230,7 @@ extension AutosensSettings {
                     shouldDisplayHint: $shouldDisplayHint,
                     hintLabel: hintLabel ?? "",
                     hintText: selectedVerboseHint ?? AnyView(EmptyView()),
-                    sheetTitle: "Help"
+                    sheetTitle: "Hjälp"
                 )
             }
             .scrollContentBackground(.hidden).background(appState.trioBackgroundColor(for: colorScheme))

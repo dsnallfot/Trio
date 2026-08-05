@@ -52,7 +52,7 @@ extension CarbRatioEditor {
                                     if state.shouldDisplaySaving {
                                         ProgressView().padding(.trailing, 10)
                                     }
-                                    Text(state.shouldDisplaySaving ? "Saving..." : "Save")
+                                    Text(state.shouldDisplaySaving ? "Sparar..." : "Spara")
                                 }
                                 .frame(width: UIScreen.main.bounds.width * 0.9, alignment: .center)
                                 .padding(10)
@@ -74,7 +74,7 @@ extension CarbRatioEditor {
                     Section {
                         VStack(alignment: .leading) {
                             Text(
-                                "Carb Ratios cover 24 hours. You cannot add more rates. Please remove or adjust existing rates to make space."
+                                "Insulinkvoterna täcker 24 timmar. Du kan inte lägga till fler poster. Radera en befintlig post för att skapa utrymme för en ny post."
                             ).bold()
                         }
                     }.listRowBackground(Color.tabBar)
@@ -88,11 +88,11 @@ extension CarbRatioEditor {
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
                             Image(systemName: "note.text.badge.plus").foregroundStyle(.primary)
-                            Text("Add an entry by tapping 'Add Ratio +' in the top right-hand corner of the screen.")
+                            Text("Lägg till en post genom att klicka på 'Lägg till +' i det övre högra hörnet.")
                         }
                         HStack {
                             Image(systemName: "hand.draw.fill").foregroundStyle(.primary)
-                            Text("Swipe to delete a single entry. Tap on it, to edit its time or rate.")
+                            Text("Svep för att radera en post. Klicka på den för att redigera tid eller värde.")
                         }
                     }
                     .textCase(nil)
@@ -101,13 +101,13 @@ extension CarbRatioEditor {
             .safeAreaInset(edge: .bottom, spacing: 30) { saveButton }
             .scrollContentBackground(.hidden).background(appState.trioBackgroundColor(for: colorScheme))
             .onAppear(perform: configureView)
-            .navigationTitle("Carb Ratios")
+            .navigationTitle("Insulinkvoter")
             .navigationBarTitleDisplayMode(.automatic)
             .toolbar(content: {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(action: { state.add() }) {
                         HStack {
-                            Text("Lägg till")
+                            Text(" Lägg till")
                             Image(systemName: "plus")
                         }
                     }.disabled(!state.canAdd)

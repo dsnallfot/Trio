@@ -23,10 +23,10 @@ extension CGM {
             NavigationView {
                 List {
                     Section(
-                        header: Text("CGM Integration to Trio"),
+                        header: Text("CGM Integration för Trio"),
                         content: {
                             VStack {
-                                Picker("Type", selection: $state.cgmCurrent) {
+                                Picker("Typ", selection: $state.cgmCurrent) {
                                     ForEach(state.listOfCGM) { type in
                                         VStack(alignment: .leading) {
                                             Text(type.displayName)

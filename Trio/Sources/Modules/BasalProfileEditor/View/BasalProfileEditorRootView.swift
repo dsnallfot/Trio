@@ -99,7 +99,7 @@ extension BasalProfileEditor {
                                 if state.syncInProgress {
                                     ProgressView().padding(.trailing, 10)
                                 }
-                                Text(state.syncInProgress ? "Saving..." : "Save")
+                                Text(state.syncInProgress ? "Sparar..." : "Spara")
                             }
                             .frame(width: UIScreen.main.bounds.width * 0.9, alignment: .center)
                             .padding(10)
@@ -120,7 +120,7 @@ extension BasalProfileEditor {
                     Section {
                         VStack(alignment: .leading) {
                             Text(
-                                "Basal profile covers 24 hours. You cannot add more rates. Please remove or adjust existing rates to make space."
+                                "Basalprofilen täcker 24 timmar. Du kan inte lägga till fler poster. Radera en befintlig post för att skapa utrymme för en ny post."
                             ).bold()
                         }
                     }.listRowBackground(Color.tabBar)
@@ -151,11 +151,11 @@ extension BasalProfileEditor {
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
                             Image(systemName: "note.text.badge.plus").foregroundStyle(.primary)
-                            Text("Add an entry by tapping 'Add Rate +' in the top right-hand corner of the screen.")
+                            Text("Lägg till en post genom att klicka på 'Lägg till +' i det övre högra hörnet.")
                         }
                         HStack {
                             Image(systemName: "hand.draw.fill").foregroundStyle(.primary)
-                            Text("Swipe to delete a single entry. Tap on it, to edit its time or rate.")
+                            Text("Svep för att radera en post. Klicka på den för att redigera tid eller värde.")
                         }
                     }
                     .textCase(nil)
@@ -165,8 +165,8 @@ extension BasalProfileEditor {
             .alert(isPresented: $state.showAlert) {
                 Alert(
                     title: Text("Unable to Save"),
-                    message: Text("Trio could not communicate with your pump. Changes to your basal profile were not saved."),
-                    dismissButton: .default(Text("Close"))
+                    message: Text("Trio kunde inte kommunicera med din pump. Ändringar av baselen sparades inte."),
+                    dismissButton: .default(Text("Stäng"))
                 )
             }
             .onChange(of: state.items) {
@@ -180,7 +180,7 @@ extension BasalProfileEditor {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(action: { state.add() }) {
                         HStack {
-                            Text("Lägg till")
+                            Text(" Lägg till")
                             Image(systemName: "plus")
                         }
                     }.disabled(!state.canAdd)
@@ -227,7 +227,7 @@ extension BasalProfileEditor {
             }
             .padding(.top)
             .scrollContentBackground(.hidden).background(appState.trioBackgroundColor(for: colorScheme))
-            .navigationTitle("Set Rate")
+            .navigationTitle("Ange basalvärden")
             .navigationBarTitleDisplayMode(.automatic)
         }
 

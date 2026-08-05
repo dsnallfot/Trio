@@ -275,7 +275,7 @@
 "Ratio" = "Kvot";
 
 /*  */
-"Autosens" = "Autosense";
+"Autosens" = "Autosens";
 
 /*  */
 "Calculated Sensitivity" = "Beräknad känslighet";
@@ -1937,7 +1937,7 @@ Enact a temp Basal or a temp target */
 "Exercise Mode" = "Motionsläge";
 
 /* "Exercise Mode" */
-"Defaults to false. When true, > 105 mg/dL high temp target adjusts sensitivityRatio for exercise_mode. Synonym for high_temptarget_raises_sensitivity" = "Av som standard. Synonymt med 'High Temptarget Raises Sensitivity'. Vid ett temporärt målvärde > 5,8 mmol/l justeras 'sensitivityRatio' när 'Exercise Mode' är på.";
+"Defaults to false. When true, > 105 mg/dL high temp target adjusts sensitivityRatio for exercise_mode. Synonym for high_temptarget_raises_sensitivity" = "Av som standard. Synonymt med 'High Temptarget Raises Sensitivity'. Vid ett tillfälligt målvärde > 5,8 mmol/l justeras 'sensitivityRatio' när 'Exercise Mode' är på.";
 
 /* Headline "Wide BG Target Range" */
 "Wide BG Target Range" = "Brett blodsockermålintervall";
@@ -1970,7 +1970,7 @@ Enact a temp Basal or a temp target */
 "This enables supermicrobolus (SMB) while carbs on board (COB) are positive." = "Detta tillåter supermikrobolusar (SMB) medan det finns aktiva kolhydrater (COB).";
 
 /* Headline "Enable SMB With Temptarget” */
-"Enable SMB With Temptarget" = "Använd SMB vid ett temporärt målvärde";
+"Enable SMB With Temptarget" = "Använd SMB vid ett tillfälligt målvärde";
 
 /* "Enable SMB With Temptarget” */
 "This enables supermicrobolus (SMB) with eating soon / low temp targets. With this feature enabled, any temporary target below 100mg/dL, such as a temp target of 99 (or 80, the typical eating soon target) will enable SMB." = "Detta tillåter supermikrobolusar (SMB) vid låga tillfälliga målvärden (tex 'Äter snart'). Med denna funktion aktiverad, kommer SMB:ar vara aktiva även vid tillfälliga målvärden under 100mg/dL (5,6 mmol/l).";
@@ -1988,10 +1988,10 @@ Enact a temp Basal or a temp target */
 "Defaults to false. When true, enables supermicrobolus (SMB) for 6h after carbs, even with 0 carbs on board (COB)." = "Av som standard. Tillåter supermikrobolusar (SMB) även 6h efter kolhydrater, också vid 0 aktiva kolhydrater (COB).";
 
 /* Enable "Allow SMB With High Temptarget" */
-"Allow SMB With High Temptarget" = "Tillåt SMB vid högt temporärt målvärde";
+"Allow SMB With High Temptarget" = "Tillåt SMB vid högt tillfälligt målvärde";
 
 /* Headline "Allow SMB With High Temptarget" */
-"Allow SMB With High Temptarget" = "Tillåt SMB vid högt temporärt målvärde";
+"Allow SMB With High Temptarget" = "Tillåt SMB vid högt tillfälligt målvärde";
 
 /* "Allow SMB With High Temptarget" */
 "Defaults to false. When true, allows supermicrobolus (if otherwise enabled) even with high temp targets (> 100 mg/dl)." = "Av som standard. När läge på, tillåts SMB:ar även vid höga temporära målvärden.";

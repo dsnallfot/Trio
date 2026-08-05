@@ -88,9 +88,9 @@ class BuildDetails: Injectable {
     // Expiration header based on build type
     var expirationHeaderString: String {
         if isTestFlightBuild() {
-            return "Beta (TestFlight) Expires"
+            return "TestFlight-app löper ut"
         } else {
-            return "App Expires"
+            return "Xcode-app löper ut"
         }
     }
 

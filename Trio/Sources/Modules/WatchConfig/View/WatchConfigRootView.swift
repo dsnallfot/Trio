@@ -12,7 +12,7 @@ extension WatchConfig {
         var body: some View {
             List {
                 Section(
-                    header: Text("Smartwatch Configuration"),
+                    header: Text("Konfigurera Smartwatch"),
                     content: {
                         NavigationLink("Apple Watch", destination: WatchConfigAppleWatchView(resolver: resolver, state: state))
                         NavigationLink("Garmin", destination: WatchConfigGarminView(state: state))

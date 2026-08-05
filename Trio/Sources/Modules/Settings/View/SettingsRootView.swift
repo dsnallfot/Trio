@@ -75,7 +75,7 @@ extension Settings {
                     let buildDetails = BuildDetails.shared
 
                     Section(
-                        header: Text("BRANCH: \(buildDetails.branchAndSha)").textCase(nil),
+                        header: Text("Branch: \(buildDetails.branchAndSha)").textCase(nil),
                         content: {
                             let versionNumber = Bundle.main.releaseVersionNumber ?? "Unknown"
                             let buildNumber = Bundle.main.buildVersionNumber ?? "Unknown"
@@ -101,7 +101,7 @@ extension Settings {
                                                 .font(.footnote)
                                                 .foregroundColor(.secondary)
                                         } else {
-                                            Text("Simulator Build has no expiry")
+                                            Text("Simulatorbygge löper aldrig ut")
                                                 .font(.footnote)
                                                 .foregroundColor(.secondary)
                                         }
@@ -130,10 +130,10 @@ extension Settings {
                         miniHint: "Aktivera automatisk insulintillförsel.",
                         verboseHint: VStack(alignment: .leading, spacing: 10) {
                             Text(
-                                "Running Trio in closed loop mode requires an active CGM sensor session and a connected pump. This enables automated insulin delivery."
+                                "Att använda Trio med sluten loop kräver an aktiv CGM-sensorsession och en ansluten pump. Detta möjliggör automatisk insulindosering."
                             )
                             Text(
-                                "Before enabling, dial in your settings (basal / insulin sensitivity / carb ratio), and familiarize yourself with the app."
+                                "Innan aktivering, se till att dina behandlingsinställningar är väl injusterade (Basal/ISF/CR)."
                             )
                         },
                         headerText: "Automatisk insulintillförsel"
