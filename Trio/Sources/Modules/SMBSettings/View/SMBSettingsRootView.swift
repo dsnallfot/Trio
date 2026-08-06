@@ -36,14 +36,14 @@ extension SMBSettings {
                     verboseHint: VStack(alignment: .leading, spacing: 10) {
                         Text("Standard: AV").bold()
                         Text(
-                            "När detta är aktiverat kommer super mikrobolus (SMB) alltid att tillåtas om doseringsberäkningarna visar att insulin behöver ges via SMB, förutom när ett högt tillfälligt mål är inställt. När 'ANvänd alltid SMB' är aktiverat döljs de överflödiga alternativen för att aktivera SMB."
+                            "När detta är aktiverat kommer super mikrobolus (SMB) alltid att tillåtas om doseringsberäkningarna visar att insulin behöver ges via SMB, förutom när ett högt tillfälligt mål är inställt. När 'Använd alltid SMB' är aktiverat döljs de överflödiga alternativen för att aktivera SMB."
                         )
 
                         Text(
                             "Obs: Om du vill tillåta SMB även när ett högt tillfälligt mål är inställt aktiverar du inställningen 'Tillåt SMB vid högt tillfälligt mål'."
                         )
                     },
-                    headerText: "Super mikrobolus"
+                    headerText: "Super mikrobolus inställningar"
                 )
 
                 if !state.enableSMBAlways {
@@ -66,7 +66,7 @@ extension SMBSettings {
                         VStack(alignment: .leading, spacing: 10) {
                             Text("Standard: AV").bold()
                             Text(
-                                "När prognoslinjen för aktiva kolhydrater (COB) visas kan Trio, om denna inställning är aktiverad, använda Super mikrobolus (SMB) för att leverera den insulinmängd som behövs."
+                                "När prognoslinjen för aktiva kolhydrater (COB) visas kan Trio, om denna inställning är aktiverad, använda super mikrobolus (SMB) för att leverera den insulinmängd som behövs."
                             )
 
                             Text(
@@ -89,12 +89,12 @@ extension SMBSettings {
                         units: state.units,
                         type: .boolean,
                         label: NSLocalizedString("Enable SMB With Temptarget", comment: "Enable SMB With Temptarget"),
-                        miniHint: "Använd SMB när ett tillfälligt mål är inställt under \(state.units == .mgdL ? "100" : 100.formattedAsMmolL) \(state.units.rawValue).",
+                        miniHint: "Använd SMB när ett tillfälligt mål är inställt",
                         verboseHint:
                         VStack(alignment: .leading, spacing: 10) {
                             Text("Standard: AV").bold()
                             Text(
-                                "När denna inställning är aktiverad kan Trio använda Super mikrobolus (SMB) för att leverera den insulinmängd som behövs när ett manuellt tillfälligt mål under \(state.units == .mgdL ? "100" : 100.formattedAsMmolL) \(state.units.rawValue) är inställt."
+                                "När denna inställning är aktiverad kan Trio använda super mikrobolus (SMB) för att leverera den insulinmängd som behövs när ett manuellt tillfälligt mål under \(state.units == .mgdL ? "100" : 100.formattedAsMmolL) \(state.units.rawValue) är inställt."
                             )
 
                             Text(
@@ -122,7 +122,7 @@ extension SMBSettings {
                         VStack(alignment: .leading, spacing: 10) {
                             Text("Standard: AV").bold()
                             Text(
-                                "När denna inställning är aktiverad kan Trio använda Super mikrobolus (SMB) för att leverera den insulinmängd som behövs under 6 timmar efter att en måltid med kolhydrater har registrerats, oavsett om det finns aktiva kolhydrater ombord (COB) eller inte."
+                                "När denna inställning är aktiverad kan Trio använda super mikrobolus (SMB) för att leverera den insulinmängd som behövs under 6 timmar efter att en måltid med kolhydrater har registrerats, oavsett om det finns aktiva kolhydrater ombord (COB) eller inte."
                             )
 
                             Text(
@@ -151,7 +151,7 @@ extension SMBSettings {
                         VStack(alignment: .leading, spacing: 10) {
                             Text("Standard: AV").bold()
                             Text(
-                                "När denna inställning är aktiverad kan Trio använda Super mikrobolus (SMB) för att leverera den insulinmängd som behövs när blodsockret ligger över det värde som har angetts som 'Högt glukosvärde'."
+                                "När denna inställning är aktiverad kan Trio använda super mikrobolus (SMB) för att leverera den insulinmängd som behövs när blodsockret ligger över det värde som har angetts som 'Högt glukosvärde'."
                             )
 
                             Text(
@@ -186,7 +186,7 @@ extension SMBSettings {
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Standard: AV").bold()
                         Text(
-                            "När denna inställning är aktiverad kan Trio använda Super mikrobolus (SMB) för att leverera den insulinmängd som behövs när ett manuellt tillfälligt mål över \(state.units == .mgdL ? "100" : 100.formattedAsMmolL) \(state.units.rawValue) är inställt."
+                            "När denna inställning är aktiverad kan Trio använda super mikrobolus (SMB) för att leverera den insulinmängd som behövs när ett manuellt tillfälligt mål över \(state.units == .mgdL ? "100" : 100.formattedAsMmolL) \(state.units.rawValue) är inställt."
                         )
 
                         Text(
@@ -222,7 +222,7 @@ extension SMBSettings {
                         )
 
                         Text(
-                            "Funktionen använder SMB-algoritmen (Super mikrobolus) för att ge insulin i små doser och korrigera stigande blodsocker. UAM fungerar även åt andra hållet genom att minska eller stoppa SMB om blodsockret sjunker oväntat."
+                            "Funktionen använder SMB-algoritmen (super mikrobolus) för att ge insulin i små doser och korrigera stigande blodsocker. UAM fungerar även åt andra hållet genom att minska eller stoppa SMB om blodsockret sjunker oväntat."
                         )
 
                         Text(
@@ -369,7 +369,7 @@ extension SMBSettings {
                             "När det totala insulnbehovet har beräknats, så används denna säkerhetsgräns för att avgöra hur stor del av det totala beräknade insulinbehovet som maximalt kan levereras med en enskild SMB."
                         )
                         Text(
-                            "Eftersom SMB kan ges vid varje loop-cykel, så är det viktigt att sätta detta värde till en rimlig nivå som ger Trio möjlighet att använda nollbasaler för att förebygga låga värden om blodsockret plötsligt faller. Öka detta värde med försiktighet."
+                            "Eftersom SMB kan ges vid varje loopcykel, så är det viktigt att sätta detta värde till en rimlig nivå som ger Trio möjlighet att använda nollbasaler för att förebygga låga värden om blodsockret plötsligt faller. Öka detta värde med försiktighet."
                         )
                         Text("Notera: Tillåtet spann är 30 - 70%")
                     }
@@ -411,7 +411,7 @@ extension SMBSettings {
             }
             .scrollContentBackground(.hidden).background(appState.trioBackgroundColor(for: colorScheme))
             .onAppear(perform: configureView)
-            .navigationTitle("SMB Inställningar")
+            .navigationTitle("Super mikrobolus (SMB)")
             .navigationBarTitleDisplayMode(.automatic)
         }
     }

@@ -21,21 +21,21 @@ struct WatchConfigGarminView: View {
     var body: some View {
         Form {
             Section(
-                header: Text("Garmin Configuration"),
+                header: Text("Garmin konfiguration"),
                 content:
                 {
                     VStack {
                         Button {
                             state.selectGarminDevices()
                         } label: {
-                            Text("Add Device")
+                            Text("Lägg till")
                                 .font(.title3) }
                             .frame(maxWidth: .infinity, alignment: .center)
                             .buttonStyle(.bordered)
 
                         HStack(alignment: .center) {
                             Text(
-                                "Add a Garmin Device to Trio."
+                                "Lägg till en Garmin-enhet till Trio."
                             )
                             .font(.footnote)
                             .foregroundColor(.secondary)
@@ -75,11 +75,11 @@ struct WatchConfigGarminView: View {
             SettingInputHintView(
                 hintDetent: $hintDetent,
                 shouldDisplayHint: $shouldDisplayHint,
-                hintLabel: "Add Device",
+                hintLabel: "Lägg till Garmin",
                 hintText: Text(
-                    "Add Garmin Device to Trio. Please look at the docs to see which devices are supported."
+                    "Lägg till en Garmin-enhet till Trio. Se Trio docs för vilka enheter som stöds."
                 ),
-                sheetTitle: "Help"
+                sheetTitle: "Hjälp"
             )
         }
         .navigationTitle("Garmin")

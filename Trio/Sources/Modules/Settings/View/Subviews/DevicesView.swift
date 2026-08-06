@@ -22,7 +22,7 @@ struct DevicesView: BaseView {
                 header: Text("Ställ in och konfigurera"),
                 content: {
                     Text("Insulinpump").navigationLink(to: .pumpConfig, from: self)
-                    Text("Kontinuerlig glukosmätare").navigationLink(to: .cgm, from: self)
+                    Text("CGM (Kontinuerlig glukosmätare)").navigationLink(to: .cgm, from: self)
                     Text("Smartwatch").navigationLink(to: .watch, from: self)
                 }
             )

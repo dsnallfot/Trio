@@ -68,13 +68,13 @@ struct AddContactImageSheet: View {
 
                 Form {
                     Section(
-                        header: Text("Contact Name"),
+                        header: Text("Kontaktnamn"),
                         content: {
-                            TextField("Enter Name (Optional)", text: $contactName)
+                            TextField("Ange namn (Valfritt)", text: $contactName)
                         }
                     ).listRowBackground(Color.chart)
                     // Layout Section
-                    Section(header: Text("Style")) {
+                    Section(header: Text("Stil")) {
                         Picker("Layout", selection: $layout) {
                             ForEach(ContactImageLayout.allCases, id: \.id) { layout in
                                 Text(layout.displayName).tag(layout)
@@ -86,24 +86,24 @@ struct AddContactImageSheet: View {
                                 top = .none
                             }
                         })
-                        Toggle("High Contrast Mode", isOn: $hasHighContrast)
+                        Toggle("Högkontrastläge", isOn: $hasHighContrast)
                     }.listRowBackground(Color.chart)
 
                     // Primary Value Section
-                    Section(header: Text("Display Values")) {
-                        Picker("Top Value", selection: $top) {
+                    Section(header: Text("Visning värden")) {
+                        Picker("Övre värde", selection: $top) {
                             ForEach(ContactImageValue.allCases, id: \.id) { value in
                                 Text(value.displayName).tag(value)
                             }
                         }
                         if layout == .default {
-                            Picker("Primary", selection: $primary) {
+                            Picker("Primärt värde", selection: $primary) {
                                 ForEach(ContactImageValue.allCases, id: \.id) { value in
                                     Text(value.displayName).tag(value)
                                 }
                             }
                         }
-                        Picker("Bottom Value", selection: $bottom) {
+                        Picker("Nedre värde", selection: $bottom) {
                             ForEach(ContactImageValue.allCases, id: \.id) { value in
                                 Text(value.displayName).tag(value)
                             }
@@ -112,20 +112,20 @@ struct AddContactImageSheet: View {
                     }.listRowBackground(Color.chart)
 
                     // Ring Settings Section
-                    Section(header: Text("Ring Settings")) {
-                        Picker("Ring Type", selection: $ring) {
+                    Section(header: Text("Ringinställningar")) {
+                        Picker("Ringtyp", selection: $ring) {
                             ForEach(ContactImageLargeRing.allCases, id: \.self) { ring in
                                 Text(ring.displayName).tag(ring)
                             }
                         }
 
                         if ring != .none {
-                            Picker("Ring Width", selection: $ringWidth) {
+                            Picker("Ringbredd", selection: $ringWidth) {
                                 ForEach(ContactImageEntry.RingWidth.allCases, id: \.self) { width in
                                     Text(width.displayName).tag(width)
                                 }
                             }
-                            Picker("Ring Gap", selection: $ringGap) {
+                            Picker("Ringgap", selection: $ringGap) {
                                 ForEach(ContactImageEntry.RingGap.allCases, id: \.self) { gap in
                                     Text(gap.displayName).tag(gap)
                                 }
@@ -134,7 +134,7 @@ struct AddContactImageSheet: View {
                     }.listRowBackground(Color.chart)
 
                     // Font Settings Section
-                    Section(header: Text("Font Settings")) {
+                    Section(header: Text("Teckensnitt")) {
                         fontSizePicker
                         if layout == .split {
                             secondaryFontSizePicker
@@ -146,7 +146,7 @@ struct AddContactImageSheet: View {
 
                 stickySaveButton
             }
-            .navigationTitle("Add Contact Items")
+            .navigationTitle("Lägg till kontakt")
             .navigationBarTitleDisplayMode(.inline)
             .listSectionSpacing(10)
             .padding(.top, 30)
@@ -199,7 +199,7 @@ struct AddContactImageSheet: View {
     }
 
     private var fontSizePicker: some View {
-        Picker("Font Size", selection: $fontSize) {
+        Picker("Teckenstorlek", selection: $fontSize) {
             ForEach(ContactImageEntry.FontSize.allCases, id: \.self) { size in
                 Text(size.displayName).tag(size)
             }
@@ -207,7 +207,7 @@ struct AddContactImageSheet: View {
     }
 
     private var secondaryFontSizePicker: some View {
-        Picker("Secondary Font Size", selection: $secondaryFontSize) {
+        Picker("Sekundär teckenstorlek", selection: $secondaryFontSize) {
             ForEach(ContactImageEntry.FontSize.allCases, id: \.self) { size in
                 Text(size.displayName).tag(size)
             }
@@ -215,7 +215,7 @@ struct AddContactImageSheet: View {
     }
 
     private var fontWeightPicker: some View {
-        Picker("Font Weight", selection: $fontWeight) {
+        Picker("Teckenvikt", selection: $fontWeight) {
             ForEach(
                 [Font.Weight.light, Font.Weight.regular, Font.Weight.medium, Font.Weight.bold, Font.Weight.black],
                 id: \.self
@@ -226,7 +226,7 @@ struct AddContactImageSheet: View {
     }
 
     private var fontWidthPicker: some View {
-        Picker("Font Width", selection: $fontWidth) {
+        Picker("Teckenbredd", selection: $fontWidth) {
             ForEach(
                 [Font.Width.standard, Font.Width.expanded],
                 id: \.self

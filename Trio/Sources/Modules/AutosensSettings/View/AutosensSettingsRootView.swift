@@ -51,7 +51,7 @@ extension AutosensSettings {
                 }
 
                 Text(
-                    "Autosens samverkar med vissa andra funktioner, exempelvis Super mikrobolus (SMB). Andra inställningar, som Dynamisk ISF, påverkar delar av Autosens-beräkningen. Läs gärna hjälptexterna för algoritminställningarna innan du aktiverar dem, så att du förstår hur de kan påverka Autosens."
+                    "Autosens samverkar med vissa andra funktioner, exempelvis super mikrobolus (SMB). Andra inställningar, som Dynamisk ISF, påverkar delar av Autosens-beräkningen. Läs gärna hjälptexterna för algoritminställningarna innan du aktiverar dem, så att du förstår hur de kan påverka Autosens."
                 )
             }
         }
@@ -156,7 +156,7 @@ extension AutosensSettings {
                             "Tips: Om du ökar detta värde kan automatiska justeringar ge högre basal, lägre ISF och lägre CR."
                         )
                     },
-                    headerText: "Algortim för glukosavvikelser"
+                    headerText: "Algoritm för glukosavvikelser"
                 )
 
                 SettingInputSection(

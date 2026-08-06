@@ -19,11 +19,11 @@ struct AlgorithmSettings: BaseView {
     var body: some View {
         Form {
             Section(
-                header: Text("Oref algoritm"),
+                header: Text("Oref algoritm inställningar"),
                 content: {
                     Text("Autosens").navigationLink(to: .autosensSettings, from: self)
                     Text("Super mikrobolus (SMB)").navigationLink(to: .smbSettings, from: self)
-                    Text("Dynamiska inställningar").navigationLink(to: .dynamicISF, from: self)
+                    Text("Dynamisk dosering").navigationLink(to: .dynamicISF, from: self)
                     Text("Målbeteende").navigationLink(to: .targetBehavior, from: self)
                     Text("Extra").navigationLink(to: .algorithmAdvancedSettings, from: self)
                 }

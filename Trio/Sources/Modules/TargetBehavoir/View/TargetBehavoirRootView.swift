@@ -27,7 +27,7 @@ extension TargetBehavoir {
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
                             hintLabel = NSLocalizedString(
-                                "High Temp Target Raises Sensitivity",
+                                "Högt tillfälligt mål ökar känsligheten",
                                 comment: "High Temp Target Raises Sensitivity"
                             )
                         }
@@ -35,22 +35,29 @@ extension TargetBehavoir {
                     units: state.units,
                     type: .boolean,
                     label: NSLocalizedString(
-                        "High Temp Target Raises Sensitivity",
+                        "Högt tillfälligt mål ökar känsligheten",
                         comment: "High Temp Target Raises Sensitivity"
                     ),
-                    miniHint: "Increase sensitivity when glucose is above target if a manual Temp Target > \(state.units == .mgdL ? "100" : 100.formattedAsMmolL) \(state.units.rawValue) is set.",
+
+                    miniHint: "Ökar insulinkänsligheten vid höga tillfälliga mål.",
+
                     verboseHint:
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: OFF").bold()
+                        Text("Standard: AV").bold()
+
                         Text(
-                            "When this feature is enabled, manually setting a temporary target above \(state.units == .mgdL ? "100" : 100.formattedAsMmolL) \(state.units.rawValue) will decrease the Autosens Ratio used for ISF and basal adjustments, resulting in less insulin delivered overall. This scales with the temporary target set; the higher the temp target, the lower the Autosens Ratio used."
+                            "När denna funktion är aktiverad kommer ett manuellt tillfälligt mål över \(state.units == .mgdL ? "100" : 100.formattedAsMmolL) \(state.units.rawValue) att minska Autosens-förhållandet som används för justering av ISF och basalinsulin. Resultatet blir att mindre insulin ges totalt. Effekten anpassas efter det valda tillfälliga målet – ju högre målvärde, desto lägre Autosens-förhållande används."
                         )
+
                         Text(
-                            "If Half Basal Exercise Target is set to \(state.units == .mgdL ? "160" : 160.formattedAsMmolL) \(state.units.rawValue), a temp target of \(state.units == .mgdL ? "120" : 120.formattedAsMmolL) \(state.units.rawValue) uses an Autosens Ratio of 0.75. A temp target of \(state.units == .mgdL ? "140" : 140.formattedAsMmolL) \(state.units.rawValue) uses an Autosens Ratio of 0.6."
+                            "Om halv basal träningsmål är satt till \(state.units == .mgdL ? "160" : 160.formattedAsMmolL) \(state.units.rawValue) används ett Autosens-förhållande på 0,75 vid ett tillfälligt mål på \(state.units == .mgdL ? "120" : 120.formattedAsMmolL) \(state.units.rawValue). Ett tillfälligt mål på \(state.units == .mgdL ? "140" : 140.formattedAsMmolL) \(state.units.rawValue) använder ett Autosens-förhållande på 0,6."
                         )
-                        Text("Note: The effect of this can be adjusted with the Half Basal Exercise Target")
+
+                        Text(
+                            "Obs: Hur stor denna effekt blir kan justeras med inställningen 'Halv basal träningsmål'."
+                        )
                     },
-                    headerText: "Algorithmic Target Settings"
+                    headerText: "Algoritmiska målinställningar"
                 )
 
                 SettingInputSection(
@@ -62,7 +69,7 @@ extension TargetBehavoir {
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
                             hintLabel = NSLocalizedString(
-                                "Low Temp Target Lowers Sensitivity",
+                                "Lågt tillfälligt mål minskar känsligheten",
                                 comment: "Low Temp Target Lowers Sensitivity"
                             )
                         }
@@ -70,20 +77,27 @@ extension TargetBehavoir {
                     units: state.units,
                     type: .boolean,
                     label: NSLocalizedString(
-                        "Low Temp Target Lowers Sensitivity",
+                        "Lågt tillfälligt mål minskar känsligheten",
                         comment: "Low Temp Target Lowers Sensitivity"
                     ),
-                    miniHint: "Decrease sensitivity when glucose is below target if a manual Temp Target < \(state.units == .mgdL ? "100" : 100.formattedAsMmolL) \(state.units.rawValue) is set.",
+
+                    miniHint: "Minskar insulinkänsligheten vid låga tillfälliga mål.",
+
                     verboseHint:
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: OFF").bold()
+                        Text("Standard: AV").bold()
+
                         Text(
-                            "When this feature is enabled, setting a temporary target below \(state.units == .mgdL ? "100" : 100.formattedAsMmolL) \(state.units.rawValue) will increase the Autosens Ratio used for ISF and basal adjustments, resulting in more insulin delivered overall. This scales with the temporary target set; the lower the Temp Target, the higher the Autosens Ratio used."
+                            "När denna funktion är aktiverad kommer ett tillfälligt mål under \(state.units == .mgdL ? "100" : 100.formattedAsMmolL) \(state.units.rawValue) att öka Autosens-förhållandet som används för justering av ISF och basalinsulin. Resultatet blir att mer insulin ges totalt. Effekten anpassas efter det valda tillfälliga målet – ju lägre målvärde, desto högre Autosens-förhållande används."
                         )
+
                         Text(
-                            "If Half Basal Exercise Target is \(state.units == .mgdL ? "160" : 160.formattedAsMmolL) \(state.units.rawValue), a Temp Target of \(state.units == .mgdL ? "95" : 95.formattedAsMmolL) \(state.units.rawValue) uses an Autosens Ratio of 1.09. A Temp Target of \(state.units == .mgdL ? "85" : 85.formattedAsMmolL) \(state.units.rawValue) uses an Autosens Ratio of 1.33."
+                            "Om Målet för halv basal vid aktivitet är satt till \(state.units == .mgdL ? "160" : 160.formattedAsMmolL) \(state.units.rawValue) används ett Autosens-förhållande på 1,09 vid ett tillfälligt mål på \(state.units == .mgdL ? "95" : 95.formattedAsMmolL) \(state.units.rawValue). Ett tillfälligt mål på \(state.units == .mgdL ? "85" : 85.formattedAsMmolL) \(state.units.rawValue) använder ett Autosens-förhållande på 1,33."
                         )
-                        Text("Note: The effect of this can be adjusted with the Half Basal Exercise Target")
+
+                        Text(
+                            "Obs: Hur stor denna effekt blir kan justeras med inställningen Målet för halv basal vid aktivitet."
+                        )
                     }
                 )
 
@@ -95,17 +109,17 @@ extension TargetBehavoir {
                         get: { selectedVerboseHint },
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = NSLocalizedString("Sensitivity Raises Target", comment: "Sensitivity Raises Target")
+                            hintLabel = NSLocalizedString("Känslighet höjer mål", comment: "Sensitivity Raises Target")
                         }
                     ),
                     units: state.units,
                     type: .boolean,
-                    label: NSLocalizedString("Sensitivity Raises Target", comment: "Sensitivity Raises Target"),
-                    miniHint: "Raise target glucose if when Autosens Ratio is >1.",
+                    label: NSLocalizedString("Känslighet höjer mål", comment: "Sensitivity Raises Target"),
+                    miniHint: "Höjer glukosmålnivån vid känslighet",
                     verboseHint: VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: OFF").bold()
+                        Text("Standard: AV").bold()
                         Text(
-                            "Enabling this feature causes Trio to automatically raise the targeted glucose if it detects an increase in insulin sensitivity from your baseline."
+                            "Om denna funktion aktiveras höjs ditt glukosmål om Trio upptäcker en ökad insulinkänslighet jämfört med din normala insulinkänslighet."
                         )
                     }
                 )
@@ -118,17 +132,17 @@ extension TargetBehavoir {
                         get: { selectedVerboseHint },
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = NSLocalizedString("Resistance Lowers Target", comment: "Resistance Lowers Target")
+                            hintLabel = NSLocalizedString("Resistens sänker mål", comment: "Resistance Lowers Target")
                         }
                     ),
                     units: state.units,
                     type: .boolean,
-                    label: NSLocalizedString("Resistance Lowers Target", comment: "Resistance Lowers Target"),
-                    miniHint: "Lower target glucose when Autosens Ratio is <1.",
+                    label: NSLocalizedString("Resistens sänker mål", comment: "Resistance Lowers Target"),
+                    miniHint: "Sänker glukosmålnivån vid resistens",
                     verboseHint: VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: OFF").bold()
+                        Text("Standard: AV").bold()
                         Text(
-                            "Enabling this feature causes Trio to automatically reduce the targeted glucose if it detects a decrease in sensitivity (resistance) from your baseline."
+                            "Om denna funktion aktiveras sänks ditt glukosmål om Trio upptäcker en minskad insulinkänslighet jämfört med din normala insulinkänslighet."
                         )
                     }
                 )
@@ -141,27 +155,29 @@ extension TargetBehavoir {
                         get: { selectedVerboseHint },
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = NSLocalizedString("Half Basal Exercise Target", comment: "Half Basal Exercise Target")
+                            hintLabel = NSLocalizedString("Halv basal träningsmål", comment: "Half Basal Exercise Target")
                         }
                     ),
                     units: state.units,
                     type: .decimal("halfBasalExerciseTarget"),
-                    label: NSLocalizedString("Half Basal Exercise Target", comment: "Half Basal Exercise Target"),
-                    miniHint: "Scales down your basal rate to 50% at this value.",
+                    label: NSLocalizedString("Halv basal träningsmål", comment: "Half Basal Exercise Target"),
+                    miniHint: "Skalar ner din basal till 50% vid detta värde.",
                     verboseHint:
                     VStack(alignment: .leading, spacing: 10) {
                         Text(
-                            "Default: \(state.units == .mgdL ? "160" : 160.formattedAsMmolL) \(state.units.rawValue)"
+                            "Standard: \(state.units == .mgdL ? "160" : 160.formattedAsMmolL) \(state.units.rawValue)"
                         )
                         .bold()
                         Text(
-                            "The Half Basal Exercise Target allows you to scale down your basal insulin during exercise or scale up your basal insulin when eating soon when a temporary glucose target is set."
+                            "Halv basal träningsmål gör det möjligt att minska basalinsulinet vid träning eller öka basalinsulinet inför en måltid när ett tillfälligt glukosmål är inställt."
                         )
+
                         Text(
-                            "For example, at a temp target of \(state.units == .mgdL ? "160" : 160.formattedAsMmolL) \(state.units.rawValue), your basal is reduced to 50%, but this scales depending on the target (e.g., 75% at \(state.units == .mgdL ? "120" : 120.formattedAsMmolL) \(state.units.rawValue), 60% at \(state.units == .mgdL ? "140" : 140.formattedAsMmolL) \(state.units.rawValue))."
+                            "Om ett tillfälligt glukosmål på \(state.units == .mgdL ? "160" : 160.formattedAsMmolL) \(state.units.rawValue) används minskas exempelvis basalinsulinet till 50 %. Minskningen anpassas dock efter det valda målet, till exempel 75 % vid \(state.units == .mgdL ? "120" : 120.formattedAsMmolL) \(state.units.rawValue) och 60 % vid \(state.units == .mgdL ? "140" : 140.formattedAsMmolL) \(state.units.rawValue)."
                         )
+
                         Text(
-                            "Note: This setting is only utilized if the settings \"Low Temp Target Lowers Sensitivity\" OR \"High Temp Target Raises Sensitivity\" are enabled."
+                            "Obs: Den här inställningen används endast om inställningen \"Lågt tillfälligt mål minskar känsligheten\" eller \"Högt tillfälligt mål ökar känsligheten\" är aktiverad."
                         )
                     }
                 )
@@ -173,12 +189,12 @@ extension TargetBehavoir {
                     shouldDisplayHint: $shouldDisplayHint,
                     hintLabel: hintLabel ?? "",
                     hintText: selectedVerboseHint ?? AnyView(EmptyView()),
-                    sheetTitle: "Help"
+                    sheetTitle: "Hjälp"
                 )
             }
             .scrollContentBackground(.hidden).background(appState.trioBackgroundColor(for: colorScheme))
             .onAppear(perform: configureView)
-            .navigationTitle("Target Behavior")
+            .navigationTitle("Målbeteende")
             .navigationBarTitleDisplayMode(.automatic)
 //            .onDisappear {
 //                state.saveIfChanged()

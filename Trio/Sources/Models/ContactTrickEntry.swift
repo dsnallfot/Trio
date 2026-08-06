@@ -65,10 +65,10 @@ struct ContactImageEntry: Hashable, Equatable, Sendable {
 
         var displayName: String {
             switch self {
-            case .tiny: return "Tiny"
-            case .small: return "Small"
-            case .regular: return "Regular"
-            case .large: return "Large"
+            case .tiny: return "Mini"
+            case .small: return "Liten"
+            case .regular: return "Normal"
+            case .large: return "Stor"
             }
         }
     }
@@ -82,11 +82,11 @@ struct ContactImageEntry: Hashable, Equatable, Sendable {
 
         var displayName: String {
             switch self {
-            case .tiny: return "Tiny"
-            case .small: return "Small"
-            case .regular: return "Regular"
+            case .tiny: return "Mini"
+            case .small: return "Liten"
+            case .regular: return "Normal"
             case .medium: return "Medium"
-            case .large: return "Large"
+            case .large: return "Stor"
             }
         }
     }
@@ -100,11 +100,11 @@ struct ContactImageEntry: Hashable, Equatable, Sendable {
 
         var displayName: String {
             switch self {
-            case .tiny: return "Tiny"
-            case .small: return "Small"
-            case .regular: return "Regular"
+            case .tiny: return "Mini"
+            case .small: return "Litet"
+            case .regular: return "Normalt"
             case .medium: return "Medium"
-            case .large: return "Large"
+            case .large: return "Stort"
             }
         }
     }
@@ -136,35 +136,35 @@ enum ContactImageValue: String, JSON, CaseIterable, Identifiable, Codable {
     var displayName: String {
         switch self {
         case .none:
-            return NSLocalizedString("None", comment: "")
+            return NSLocalizedString("Ingen", comment: "")
         case .glucose:
-            return NSLocalizedString("Glucose Reading", comment: "")
+            return NSLocalizedString("Glukosevärde", comment: "")
         case .eventualBG:
-            return NSLocalizedString("Eventual Glucose", comment: "")
+            return NSLocalizedString("Prognos", comment: "")
         case .delta:
-            return NSLocalizedString("Glucose Delta", comment: "")
+            return NSLocalizedString("Glukosdelta", comment: "")
         case .trend:
-            return NSLocalizedString("Glucose Trend", comment: "")
+            return NSLocalizedString("Glukostrend", comment: "")
         case .fifteenMinBg:
-            return NSLocalizedString("15 Min Trend", comment: "")
+            return NSLocalizedString("15 min trend", comment: "")
         case .lastLoopDate:
-            return NSLocalizedString("Last Loop Time", comment: "")
+            return NSLocalizedString("Senaste loop", comment: "")
         case .lastBGDate:
-            return NSLocalizedString("Last BG Time", comment: "")
+            return NSLocalizedString("Senaste glukos", comment: "")
         case .cob:
             return NSLocalizedString("COB", comment: "")
         case .iob:
             return NSLocalizedString("IOB", comment: "")
         case .ring:
-            return NSLocalizedString("Loop Status", comment: "")
+            return NSLocalizedString("Loopstatus", comment: "")
         case .fifteenLabel:
-            return NSLocalizedString("15 Min Label", comment: "")
+            return NSLocalizedString("15 min rubrik", comment: "")
         case .iobLabel:
-            return NSLocalizedString("IOB Label", comment: "")
+            return NSLocalizedString("IOB rubrik", comment: "")
         case .cobLabel:
-            return NSLocalizedString("COB Label", comment: "")
+            return NSLocalizedString("COB rubrik", comment: "")
         case .loopLabel:
-            return NSLocalizedString("Loop Label", comment: "")
+            return NSLocalizedString("Loop rubrik", comment: "")
         }
     }
 }
@@ -177,9 +177,9 @@ enum ContactImageLayout: String, JSON, CaseIterable, Identifiable, Codable {
     var displayName: String {
         switch self {
         case .default:
-            return NSLocalizedString("Default", comment: "")
+            return NSLocalizedString("Standard", comment: "")
         case .split:
-            return NSLocalizedString("Split", comment: "")
+            return NSLocalizedString("Delad", comment: "")
         }
     }
 }
@@ -196,9 +196,9 @@ enum ContactImageLargeRing: String, JSON, CaseIterable, Identifiable, Codable {
     var displayName: String {
         switch self {
         case .none:
-            return NSLocalizedString("Hidden", comment: "")
+            return NSLocalizedString("Dold", comment: "")
         case .loop:
-            return NSLocalizedString("Loop Status", comment: "")
+            return NSLocalizedString("Loopstatus", comment: "")
 //        case .iob:
 //            return NSLocalizedString("Insulin on Board (IOB)", comment: "")
 //        case .cob:

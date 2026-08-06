@@ -35,21 +35,21 @@ extension PumpConfig {
                                 }
                                 if state.alertNotAck {
                                     Spacer()
-                                    Button("Acknowledge all alerts") { state.ack() }
+                                    Button("Bekräfta alla notiser") { state.ack() }
                                 }
                             } else {
                                 VStack {
                                     Button {
                                         showPumpSelection.toggle()
                                     } label: {
-                                        Text("Add Pump")
+                                        Text("Lägg till pump")
                                             .font(.title3) }
                                         .frame(maxWidth: .infinity, alignment: .center)
                                         .buttonStyle(.bordered)
 
                                     HStack(alignment: .center) {
                                         Text(
-                                            "Pair your insulin pump with Trio. See hint for compatible devices."
+                                            "Parkoppla din insulinpump med Trio. Klicka på frågetecknet för mer info."
                                         )
                                         .font(.footnote)
                                         .foregroundColor(.secondary)
@@ -75,9 +75,9 @@ extension PumpConfig {
                 }
                 .scrollContentBackground(.hidden).background(appState.trioBackgroundColor(for: colorScheme))
                 .onAppear(perform: configureView)
-                .navigationTitle("Insulin Pump")
+                .navigationTitle("Insulinpump")
                 .navigationBarTitleDisplayMode(.automatic)
-                .navigationBarItems(leading: displayClose ? Button("Close", action: state.hideModal) : nil)
+                .navigationBarItems(leading: displayClose ? Button("Stäng", action: state.hideModal) : nil)
                 .sheet(isPresented: $state.setupPump) {
                     if let pumpManager = state.provider.apsManager.pumpManager {
                         PumpSettingsView(
@@ -100,32 +100,32 @@ extension PumpConfig {
                     SettingInputHintView(
                         hintDetent: $hintDetent,
                         shouldDisplayHint: $shouldDisplayHint,
-                        hintLabel: "Pump Pairing to Trio",
+                        hintLabel: "Parkoppla pump med Trio",
                         hintText: AnyView(
                             VStack(alignment: .leading, spacing: 10) {
                                 Text(
-                                    "Current Pump Models Supported:"
+                                    "Nuvarande Pumpmodeller som stöds:"
                                 )
                                 VStack(alignment: .leading) {
                                     Text("• Medtronic")
-                                    Text("• All Omnipod Types")
+                                    Text("• Alla typer av Omnipod")
                                     Text("• Dana (RS/-i)")
-                                    Text("• Pump Simulator")
+                                    Text("• Pumpsimulator")
                                 }
                                 Text(
-                                    "Note: If using a pump simulator, you will not have continuous readings from the CGM in Trio. Using a pump simulator is only advisable for becoming familiar with the app user interface. It will not give you insight on how the algorithm will respond."
+                                    "Notera: Pumpsimulatorn ska endast användas för test och utveckling."
                                 )
                             }
                         ),
-                        sheetTitle: "Help"
+                        sheetTitle: "Hjälp"
                     )
                 }
-                .confirmationDialog("Pump Model", isPresented: $showPumpSelection) {
+                .confirmationDialog("Pumpmodell", isPresented: $showPumpSelection) {
                     Button("Medtronic") { state.addPump(.minimed) }
-                    Button("All Omnipod Types") { state.addPump(.omni) }
+                    Button("Alla typer av Omnipod") { state.addPump(.omni) }
                     Button("Dana(RS/-i)") { state.addPump(.dana) }
-                    Button("Pump Simulator") { state.addPump(.simulator) }
-                } message: { Text("Select Pump Model") }
+                    Button("Pumpsimulator") { state.addPump(.simulator) }
+                } message: { Text("Välj Pumpmodell") }
             }
         }
     }

@@ -37,7 +37,7 @@ extension CGM {
 
                                 HStack(alignment: .center) {
                                     Text(
-                                        "Select your CGM. See hint for compatible devices."
+                                        "Välj din CGM. Klicka på frågetecknet för mer info."
                                     )
                                     .font(.footnote)
                                     .foregroundColor(.secondary)
@@ -45,11 +45,11 @@ extension CGM {
                                     Spacer()
                                     Button(
                                         action: {
-                                            hintLabel = "Available CGM Types for Trio"
+                                            hintLabel = "Tillgängliga CGM-modeller i Trio"
                                             selectedVerboseHint =
                                                 AnyView(
                                                     Text(
-                                                        "• Dexcom G5 \n• Dexcom G6 / ONE \n• Dexcom G7 / ONE+ \n• Dexcom Share \n• Freestyle Libre \n• Freestyle Libre Demo \n• Glucose Simulator \n• Medtronic Enlite \n• Nightscout \n• xDrip4iOS"
+                                                        "• Dexcom G5 \n• Dexcom G6 / ONE \n• Dexcom G7 / ONE+ \n• Dexcom Share \n• Freestyle Libre \n• Freestyle Libre Demo \n• Glukossimulator \n• Medtronic Enlite \n• Nightscout \n• xDrip4iOS"
                                                     )
                                                 )
                                             shouldDisplayHint.toggle()
@@ -68,7 +68,7 @@ extension CGM {
                                     UIApplication.shared.open(link, options: [:], completionHandler: nil)
                                 } label: {
                                     HStack {
-                                        Text("About this source")
+                                        Text("Om denna källa")
                                         Spacer()
                                         Image(systemName: "chevron.right")
                                     }
@@ -81,7 +81,7 @@ extension CGM {
                                     setupCGM.toggle()
                                 } label: {
                                     HStack {
-                                        Text("CGM Configuration")
+                                        Text("CGM Konfiguration")
                                         Spacer()
                                         Image(systemName: "chevron.right")
                                     }
@@ -97,7 +97,7 @@ extension CGM {
                                 UIApplication.shared.open(appURL, options: [:]) { success in
                                     if !success {
                                         self.router.alertMessage
-                                            .send(MessageContent(content: "Unable to open the app", type: .warning))
+                                            .send(MessageContent(content: "Kan inte öppna appen", type: .warning))
                                     }
                                 }
                             }
@@ -116,11 +116,11 @@ extension CGM {
                                     UIApplication.shared.open(url, options: [:]) { success in
                                         if !success {
                                             self.router.alertMessage
-                                                .send(MessageContent(content: "No URL available", type: .warning))
+                                                .send(MessageContent(content: "Ingen URL tillgänglig", type: .warning))
                                         }
                                     }
                                 }
-                                label: { Label("Open URL", systemImage: "waveform.path.ecg.rectangle").font(.title3).padding() }
+                                label: { Label("Öppna URL", systemImage: "waveform.path.ecg.rectangle").font(.title3).padding() }
                                     .frame(maxWidth: .infinity, alignment: .center)
                                     .buttonStyle(.bordered)
                             }
@@ -131,7 +131,8 @@ extension CGM {
                                     state.showModal(for: .nighscoutConfigDirect)
                                 }
                                 label: {
-                                    Label("Config Nightscout", systemImage: "waveform.path.ecg.rectangle").font(.title3).padding()
+                                    Label("Konfigurera Nightscout", systemImage: "waveform.path.ecg.rectangle").font(.title3)
+                                        .padding()
                                 }
                                 .frame(maxWidth: .infinity, alignment: .center)
                                 .buttonStyle(.bordered)
@@ -144,15 +145,15 @@ extension CGM {
                         Section(header: Text("Heartbeat")) {
                             VStack(alignment: .leading) {
                                 if let cgmTransmitterDeviceAddress = state.cgmTransmitterDeviceAddress {
-                                    Text("CGM address :").padding(.top)
+                                    Text("CGM adress :").padding(.top)
                                     Text(cgmTransmitterDeviceAddress)
                                 } else {
-                                    Text("CGM is not used as heartbeat.").padding(.top)
+                                    Text("CGM används inte som heartbeat.").padding(.top)
                                 }
 
                                 HStack(alignment: .center) {
                                     Text(
-                                        "A heartbeat tells Trio to start a loop cycle. This is required for closed loop."
+                                        "Ett heartbeat triggar Trio att genomföra en loop. Detta krävs för att använda sluten loop."
                                     )
                                     .font(.footnote)
                                     .foregroundColor(.secondary)
@@ -164,7 +165,7 @@ extension CGM {
                                             selectedVerboseHint =
                                                 AnyView(
                                                     Text(
-                                                        "The CGM Heartbeat can come from either a CGM or a pump to wake up Trio when phone is locked or in the background. If CGM is on the same phone as Trio and xDrip4iOS is configured to use the same AppGroup as Trio and the heartbeat feature is turned on in xDrip4iOS, then the CGM can provide a heartbeat to wake up Trio when phone is locked or app is in the background."
+                                                        "CGM heartbeat kan komma från en CGM eller en pump, och väcker Trio när telefonen är låst och appen är inaktiv bakgrunden."
                                                     )
                                                 )
                                             shouldDisplayHint.toggle()
@@ -182,7 +183,7 @@ extension CGM {
 
                     if state.cgmCurrent.type == .plugin && state.cgmCurrent.id.contains("Libre") {
                         Section {
-                            Text("Libre Calibrations").navigationLink(to: .calibrations, from: self)
+                            Text("Libre kalibrering").navigationLink(to: .calibrations, from: self)
                         }.listRowBackground(Color.chart)
                     }
 
@@ -194,24 +195,24 @@ extension CGM {
                             get: { selectedVerboseHint },
                             set: {
                                 selectedVerboseHint = $0.map { AnyView($0) }
-                                hintLabel = "Smooth Glucose Value"
+                                hintLabel = "Utjämna glukosvärden"
                             }
                         ),
                         units: state.units,
                         type: .boolean,
-                        label: "Smooth Glucose Value",
-                        miniHint: "Smooth CGM readings using Savitzky-Golay filtering.",
+                        label: "Utjämna glukosvärden",
+                        miniHint: "Utjämna glukosvärden med Savitzky-Golay filtrering.",
                         verboseHint:
                         VStack(alignment: .leading, spacing: 10) {
-                            Text("Default: OFF").bold()
+                            Text("Standard: AV").bold()
                             Text(
-                                "This filter looks at small groups of nearby readings and fits them to a simple mathematical curve. This process doesn't change the overall pattern of your glucose data but helps smooth out the \"noise\" or irregular fluctuations that could lead to false highs or lows."
+                                "Detta filter analyserar små grupper av närliggande glukosvärden och anpassar dem till en enkel matematisk kurva. Processen förändrar inte det övergripande mönstret i dina glukosdata, men hjälper till att jämna ut \"brus\" och små oregelbundna variationer som annars kan ge falskt höga eller låga värden."
                             )
                             Text(
-                                "It's designed to keep the important trends in your data while minimizing those small, misleading variations, giving you and Trio a clearer sense of where your blood sugar is really headed. This type of filtering is useful in Trio, as it can help prevent over-corrections based on inaccurate glucose readings. This can help reduce the impact of sudden spikes or dips that might not reflect your true blood glucose levels."
+                                "Syftet är att bevara de viktiga trenderna i dina glukosdata samtidigt som små, missvisande variationer minimeras. Det ger både dig och Trio en tydligare bild av vart ditt blodsocker faktiskt är på väg. Den här typen av filtrering är användbar i Trio eftersom den kan minska risken för överkorrigeringar baserade på felaktiga glukosvärden. Den kan också minska påverkan från plötsliga toppar eller dalar som inte speglar ditt verkliga blodsocker."
                             )
                             Text(
-                                "Note: If enabled, the smoothed values you see in Trio may differ from what is shown in your CGM app."
+                                "Obs: Om denna funktion är aktiverad kan de utjämnade glukosvärden som visas i Trio skilja sig från de värden som visas i din CGM-app."
                             )
                         }
                     )
@@ -220,14 +221,14 @@ extension CGM {
                 .onAppear(perform: configureView)
                 .navigationTitle("CGM")
                 .navigationBarTitleDisplayMode(.automatic)
-                .navigationBarItems(leading: displayClose ? Button("Close", action: state.hideModal) : nil)
+                .navigationBarItems(leading: displayClose ? Button("Stäng", action: state.hideModal) : nil)
                 .sheet(isPresented: $shouldDisplayHint) {
                     SettingInputHintView(
                         hintDetent: $hintDetent,
                         shouldDisplayHint: $shouldDisplayHint,
                         hintLabel: hintLabel ?? "",
                         hintText: selectedVerboseHint ?? AnyView(EmptyView()),
-                        sheetTitle: "Help"
+                        sheetTitle: "Hjälp"
                     )
                 }
                 .onChange(of: setupCGM) { _, setupCGM in

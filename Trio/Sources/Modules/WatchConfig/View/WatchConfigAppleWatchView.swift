@@ -35,20 +35,20 @@ struct WatchConfigAppleWatchView: BaseView {
                 ),
                 units: state.units,
                 type: .boolean,
-                label: "Confirm Bolus Faster",
-                miniHint: "Reduce the number of crown rotations required for bolus confirmation.",
+                label: "Bekräfta bolus snabbare",
+                miniHint: "Minska antalet rotationer på kronan för att konfiirmera bolus.",
                 verboseHint: Text(
-                    "Enabling this feature lowers the number of turns on the crown dial required when confirming a bolus."
+                    "Aktivering av denna funktion minskar antalet rotationer på kronan som krävs för att konfirmera en bolus."
                 ),
-                headerText: "Apple Watch Configuration"
+                headerText: "Apple Watch konfigurering"
             )
 
             Section(
-                header: Text("Contact Image"),
+                header: Text("Kontakttrick"),
                 content: {
                     VStack {
                         HStack {
-                            NavigationLink("Contacts Configuration") {
+                            NavigationLink("Kontaktkonfiguration") {
                                 ContactImage.RootView(resolver: resolver)
                             }.foregroundStyle(Color.accentColor)
                         }
@@ -63,7 +63,7 @@ struct WatchConfigAppleWatchView: BaseView {
                 shouldDisplayHint: $shouldDisplayHint,
                 hintLabel: hintLabel ?? "",
                 hintText: selectedVerboseHint ?? AnyView(EmptyView()),
-                sheetTitle: "Help"
+                sheetTitle: "Hjälp"
             )
         }
         .navigationTitle("Apple Watch")

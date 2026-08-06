@@ -19,15 +19,14 @@ extension AlgorithmAdvancedSettings {
         var body: some View {
             List {
                 Section(
-                    header: Text("DISCLAIMER"),
+                    header: Text("ANSVARSFRISKRIVNING"),
                     content: {
                         VStack(alignment: .leading) {
                             Text(
-                                "The settings in this section typically do not require ANY modifications. Do not alter them without a solid understanding of what you are changing and the full impact it will have on the algorithm."
+                                "Inställningarna i detta avsnitt behöver normalt inte ändras. Ändra dem inte om du inte har en god förståelse för vad de gör och vilken påverkan de har på algoritmen."
                             ).bold()
                         }
                     }
-
                 ).listRowBackground(Color.tabBar)
 
                 SettingInputSection(
@@ -38,21 +37,34 @@ extension AlgorithmAdvancedSettings {
                         get: { selectedVerboseHint },
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = NSLocalizedString("Max Daily Safety Multiplier", comment: "Max Daily Safety Multiplier")
+                            hintLabel = NSLocalizedString(
+                                "Max daglig säkerhetsmultiplikator",
+                                comment: "Max Daily Safety Multiplier"
+                            )
                         }
                     ),
                     units: state.units,
                     type: .decimal("maxDailySafetyMultiplier"),
-                    label: NSLocalizedString("Max Daily Safety Multiplier", comment: "Max Daily Safety Multiplier"),
-                    miniHint: "Limits temporary basal rates to this percentage of your largest basal rate.",
+                    label: NSLocalizedString(
+                        "Max daglig säkerhetsmultiplikator",
+                        comment: "Max Daily Safety Multiplier"
+                    ),
+
+                    miniHint: "Begränsar temporära basalhastigheter till denna procentandel av din högsta basalhastighet.",
+
                     verboseHint:
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: 300%").bold()
+                        Text("Standard: 300 %").bold()
+
                         Text(
-                            "This setting restricts the maximum temporary basal rate Trio can set. At the default of 300%, it caps it at 3 times your highest programmed basal rate."
+                            "Den här inställningen begränsar den högsta temporära basalhastighet som Trio får sätta. Med standardvärdet 300 % begränsas den till tre gånger din högsta programmerade basalhastighet."
                         )
-                        Text("It serves as a safety limit, ensuring no temporary basal rates exceed safe levels.")
-                        Text("Warning: Increasing this setting is not advised.").bold()
+
+                        Text(
+                            "Det fungerar som en säkerhetsgräns och ser till att temporära basalhastigheter aldrig överstiger säkra nivåer."
+                        )
+
+                        Text("Varning: Det rekommenderas inte att öka detta värde.").bold()
                     }
                 )
 
@@ -65,25 +77,33 @@ extension AlgorithmAdvancedSettings {
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
                             hintLabel = NSLocalizedString(
-                                "Current Basal Safety Multiplier",
+                                "Aktuell basal säkerhetsmultiplikator",
                                 comment: "Current Basal Safety Multiplier"
                             )
                         }
                     ),
                     units: state.units,
                     type: .decimal("currentBasalSafetyMultiplier"),
-                    label: NSLocalizedString("Current Basal Safety Multiplier", comment: "Current Basal Safety Multiplier"),
-                    miniHint: "Limits temporary basal rates to this percentage of the current basal rate.",
+                    label: NSLocalizedString(
+                        "Aktuell basal säkerhetsmultiplikator",
+                        comment: "Current Basal Safety Multiplier"
+                    ),
+
+                    miniHint: "Begränsar temporära basalhastigheter till denna procentandel av den aktuella basalhastigheten.",
+
                     verboseHint:
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: 400%").bold()
+                        Text("Standard: 400 %").bold()
+
                         Text(
-                            "This limits the automatic adjustment of the temporary basal rate to this percentage of the current hourly profile basal rate at the time of the loop cycle."
+                            "Den här inställningen begränsar den automatiska justeringen av den temporära basalhastigheten till denna procentandel av den aktuella basalhastigheten i profilen vid den aktuella loopcykeln."
                         )
+
                         Text(
-                            "This prevents excessive dosing, especially during times of variable insulin sensitivity, enhancing safety."
+                            "Detta förhindrar alltför höga insulindoser, särskilt under perioder med varierande insulinkänslighet, och ökar säkerheten."
                         )
-                        Text("Warning: Increasing this setting is not advised.").bold()
+
+                        Text("Varning: Det rekommenderas inte att öka detta värde.").bold()
                     }
                 )
 
@@ -95,24 +115,29 @@ extension AlgorithmAdvancedSettings {
                         get: { selectedVerboseHint },
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = "Duration of Insulin Action"
+                            hintLabel = "Insulinets verkningstid"
                         }
                     ),
                     units: state.units,
                     type: .decimal("dia"),
-                    label: "Duration of Insulin Action",
-                    miniHint: "Number of hours insulin is active in your body.",
+                    label: "Insulinets verkningstid",
+
+                    miniHint: "Hur många timmar insulinet är aktivt i kroppen.",
+
                     verboseHint:
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: 10 hours").bold()
+                        Text("Standard: 10 timmar").bold()
+
                         Text(
-                            "The Duration of Insulin Action (DIA) defines how long your insulin continues to lower glucose readings after a dose."
+                            "Insulinets verkningstid (DIA) anger hur länge insulinet fortsätter att sänka glukosnivån efter att en dos har givits."
                         )
+
                         Text(
-                            "This helps the system accurately track Insulin on Board (IOB), avoiding over- or under-corrections by considering the tail end of insulin's effect."
+                            "Detta hjälper systemet att beräkna aktivt insulin (IOB) på ett korrekt sätt och minskar risken för över- eller underkorrigering genom att ta hänsyn till den sista delen av insulinets effekt."
                         )
+
                         Text(
-                            "Tip: It is better to use Custom Peak Time rather than adjust your Duration of Insulin Action (DIA)."
+                            "Tips: Det är oftast bättre att använda Anpassad topptid än att ändra insulinets verkningstid (DIA)."
                         )
                     }
                 )
@@ -125,108 +150,151 @@ extension AlgorithmAdvancedSettings {
                         get: { selectedVerboseHint },
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = NSLocalizedString("Use Custom Peak Time", comment: "Use Custom Peak Time")
+                            hintLabel = NSLocalizedString("Använd anpassad topptid", comment: "Use Custom Peak Time")
                         }
                     ),
                     units: state.units,
                     type: .conditionalDecimal("insulinPeakTime"),
-                    label: NSLocalizedString("Use Custom Peak Time", comment: "Use Custom Peak Time"),
-                    conditionalLabel: NSLocalizedString("Insulin Peak Time", comment: "Insulin Peak Time"),
-                    miniHint: "Set a custom time for peak insulin effect.",
-                    verboseHint:
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: Set by Insulin Type").bold()
-                        Text(
-                            "Insulin Peak Time defines when insulin is most effective in lowering glucose, set in minutes after dosing."
-                        )
-                        Text(
-                            "This peak informs the system when to expect the most potent glucose-lowering effect, helping it predict glucose trends more accurately."
-                        )
-                        Text("System-Determined Defaults:").bold()
-                        Text("Ultra-Rapid: 55 minutes (permitted range 35-100 minutes)")
-                        Text("Rapid-Acting: 75 minutes (permitted range 50-120 minutes)")
-                    }
-                )
-
-                SettingInputSection(
-                    decimalValue: $decimalPlaceholder,
-                    booleanValue: $state.skipNeutralTemps,
-                    shouldDisplayHint: $shouldDisplayHint,
-                    selectedVerboseHint: Binding(
-                        get: { selectedVerboseHint },
-                        set: {
-                            selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = NSLocalizedString("Skip Neutral Temps", comment: "Skip Neutral Temps")
-                        }
+                    label: NSLocalizedString(
+                        "Använd anpassad topptid",
+                        comment: "Use Custom Peak Time"
                     ),
-                    units: state.units,
-                    type: .boolean,
-                    label: NSLocalizedString("Skip Neutral Temps", comment: "Skip Neutral Temps"),
-                    miniHint: "Skip neutral temporary basal rates to reduce MDT pump alerts.",
-                    verboseHint:
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: OFF").bold()
-                        Text(
-                            "When Skip Neutral Temps is enabled, Trio will not set neutral basal rates shortly before the hour, minimizing hourly pump alerts on MDT pumps. This can help light sleepers avoid alerts but will delay basal adjustments. This will also only come into effect if SMB's are disabled for whatever reason."
-                        )
-                        Text(
-                            "For most users, leaving this OFF is recommended to ensure consistent basal delivery and loop calculation. If this option is effective, loops will be skipped during the last 5 minutes of the hour."
-                        )
-                    }
-                )
 
-                SettingInputSection(
-                    decimalValue: $decimalPlaceholder,
-                    booleanValue: $state.unsuspendIfNoTemp,
-                    shouldDisplayHint: $shouldDisplayHint,
-                    selectedVerboseHint: Binding(
-                        get: { selectedVerboseHint },
-                        set: {
-                            selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = NSLocalizedString("Unsuspend If No Temp", comment: "Unsuspend If No Temp")
-                        }
+                    conditionalLabel: NSLocalizedString(
+                        "Insulinets topptid",
+                        comment: "Insulin Peak Time"
                     ),
-                    units: state.units,
-                    type: .boolean,
-                    label: NSLocalizedString("Unsuspend If No Temp", comment: "Unsuspend If No Temp"),
-                    miniHint: "Resume pump automatically after suspension.",
-                    verboseHint:
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: OFF").bold()
-                        Text(
-                            "Enabling Unsuspend If No Temp allows Trio to resume your pump if you forget, as long as a zero temp basal was set first. This feature ensures insulin delivery restarts if you forget to manually unsuspend, adding a safeguard for pump reconnections."
-                        )
-                        Text("Note: Applies only to pumps with on-pump suspend options")
-                    }
-                )
 
-                SettingInputSection(
-                    decimalValue: $decimalPlaceholder,
-                    booleanValue: $state.suspendZerosIOB,
-                    shouldDisplayHint: $shouldDisplayHint,
-                    selectedVerboseHint: Binding(
-                        get: { selectedVerboseHint },
-                        set: {
-                            selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = NSLocalizedString("Suspend Zeros IOB", comment: "Suspend Zeros IOB")
-                        }
-                    ),
-                    units: state.units,
-                    type: .boolean,
-                    label: NSLocalizedString("Suspend Zeros IOB", comment: "Suspend Zeros IOB"),
-                    miniHint: "Clear temporary basal rates and reset IOB when suspended.",
+                    miniHint: "Ange en anpassad tidpunkt för insulinets maximala effekt.",
+
                     verboseHint:
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: OFF").bold()
+                        Text("Standard: Bestäms av insulintyp").bold()
+
                         Text(
-                            "When Suspend Zeros IOB is enabled, any active temporary basal rates during a pump suspension are reset, with new 0 U/hr temporary basal rates added to counteract those done during suspension."
+                            "Insulinets topptid anger när insulinet har sin starkaste glukossänkande effekt och anges i minuter efter att dosen har givits."
                         )
+
                         Text(
-                            "This prevents lingering insulin effects when your pump is suspended, ensuring safer management of insulin on board."
+                            "Denna topptid hjälper systemet att förutsäga när insulinets effekt är som störst, vilket ger mer träffsäkra prognoser för glukosutvecklingen."
                         )
-                        Text("Note: Applies only to pumps with on-pump suspend options.")
+
+                        Text("Systemets standardvärden:").bold()
+
+                        Text("Ultrasnabbverkande: 55 minuter (tillåtet intervall 35–100 minuter)")
+
+                        Text("Snabbverkande: 75 minuter (tillåtet intervall 50–120 minuter)")
                     }
                 )
+                /*
+                 SettingInputSection(
+                     decimalValue: $decimalPlaceholder,
+                     booleanValue: $state.skipNeutralTemps,
+                     shouldDisplayHint: $shouldDisplayHint,
+                     selectedVerboseHint: Binding(
+                         get: { selectedVerboseHint },
+                         set: {
+                             selectedVerboseHint = $0.map { AnyView($0) }
+                             hintLabel = NSLocalizedString("Hoppa över neutral temp basal", comment: "Skip Neutral Temps")
+                         }
+                     ),
+                     units: state.units,
+                     type: .boolean,
+                     label: NSLocalizedString(
+                         "Hoppa över neutral temp basal",
+                         comment: "Skip Neutral Temps"
+                     ),
+
+                     miniHint: "Hoppar över neutrala temporära basaler för att minska larm från MDT-pumpar.",
+
+                     verboseHint:
+                     VStack(alignment: .leading, spacing: 10) {
+                         Text("Standard: AV").bold()
+
+                         Text(
+                             "När Hoppa över neutrala temporära basalhastigheter är aktiverat kommer Trio inte att sätta neutrala temporära basalhastigheter strax före varje hel timme. Detta minskar de återkommande larmen från MDT-pumpar. Funktionen kan hjälpa lättväckta personer att undvika larm, men innebär också att basaljusteringar fördröjs. Den används dessutom endast när SMB av någon anledning är inaktiverat."
+                         )
+
+                         Text(
+                             "För de flesta användare rekommenderas att lämna denna inställning avstängd för att säkerställa en jämn basalinsulintillförsel och korrekta loopberäkningar. Om funktionen används hoppas loopkörningar över under de sista fem minuterna av varje timme."
+                         )
+                     }
+                 )
+                 */
+                /*
+                                SettingInputSection(
+                                    decimalValue: $decimalPlaceholder,
+                                    booleanValue: $state.unsuspendIfNoTemp,
+                                    shouldDisplayHint: $shouldDisplayHint,
+                                    selectedVerboseHint: Binding(
+                                        get: { selectedVerboseHint },
+                                        set: {
+                                            selectedVerboseHint = $0.map { AnyView($0) }
+                                            hintLabel = NSLocalizedString("Återuppta pump om ingen temp basal är aktiv", comment: "Unsuspend If No Temp")
+                                        }
+                                    ),
+                                    units: state.units,
+                                    type: .boolean,
+                                    label: NSLocalizedString(
+                                        "Återuppta om ingen temp",
+                                        comment: "Unsuspend If No Temp"
+                                    ),
+
+                                    miniHint: "Återupptar pumpen automatiskt efter en paus.",
+
+                                    verboseHint:
+                                    VStack(alignment: .leading, spacing: 10) {
+                                        Text("Standard: Av").bold()
+
+                                        Text(
+                                            "När denna funktion är aktiverad kan Trio automatiskt återuppta pumpen om du glömmer att göra det själv, förutsatt att en temporär basal på 0 E/tim först har satts. Funktionen fungerar som en extra säkerhet genom att återstarta insulintillförseln om du glömmer att återuppta pumpen manuellt."
+                                        )
+
+                                        Text(
+                                            "Obs: Gäller endast pumpar med stöd för paus direkt på pumpen."
+                                        )
+                                    }
+                                )
+                 */
+                /*
+                 SettingInputSection(
+                     decimalValue: $decimalPlaceholder,
+                     booleanValue: $state.suspendZerosIOB,
+                     shouldDisplayHint: $shouldDisplayHint,
+                     selectedVerboseHint: Binding(
+                         get: { selectedVerboseHint },
+                         set: {
+                             selectedVerboseHint = $0.map { AnyView($0) }
+                             hintLabel = NSLocalizedString("Nollställ IOB vid paus", comment: "Suspend Zeros IOB")
+                         }
+                     ),
+                     units: state.units,
+                     type: .boolean,
+                     label: NSLocalizedString(
+                         "Nollställ IOB vid paus",
+                         comment: "Suspend Zeros IOB"
+                     ),
+
+                     miniHint: "Rensar temporära basalhastigheter och återställer IOB när pumpen pausas.",
+
+                     verboseHint:
+                     VStack(alignment: .leading, spacing: 10) {
+                         Text("Standard: AV").bold()
+
+                         Text(
+                             "När Nollställ IOB vid paus är aktiverat återställs alla aktiva temporära basalhastigheter när pumpen pausas. Nya temporära basalhastigheter på 0 E/tim läggs därefter till för att kompensera för de temporära basalhastigheter som annars skulle ha varit aktiva under pausen."
+                         )
+
+                         Text(
+                             "Detta förhindrar att kvarvarande insulineffekt från temporära basalhastigheter påverkar beräkningarna när pumpen är pausad och ger en säkrare hantering av aktivt insulin (IOB)."
+                         )
+
+                         Text(
+                             "Obs: Gäller endast pumpar med stöd för paus direkt på pumpen."
+                         )
+                     }
+                 )
+                 */
 
                 SettingInputSection(
                     decimalValue: $state.min5mCarbimpact,
@@ -236,23 +304,30 @@ extension AlgorithmAdvancedSettings {
                         get: { selectedVerboseHint },
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = NSLocalizedString("Min 5m Carb Impact", comment: "Min 5m Carb Impact")
+                            hintLabel = NSLocalizedString("Minsta kolhydratpåverkan per 5 min", comment: "Min 5m Carb Impact")
                         }
                     ),
                     units: state.units,
                     type: .decimal("min5mCarbimpact"),
-                    label: NSLocalizedString("Min 5m Carb Impact", comment: "Min 5m Carb Impact"),
-                    miniHint: "Default impact of carb absorption over a 5 minute interval.",
+                    label: NSLocalizedString(
+                        "Minsta kh-påverkan per 5 min",
+                        comment: "Min 5m Carb Impact"
+                    ),
+
+                    miniHint: "Standardvärde för kolhydratabsorption under ett intervall på fem minuter.",
+
                     verboseHint:
                     VStack(alignment: .leading, spacing: 10) {
                         Text(
-                            "Min 5m Carb Impact sets the expected glucose rise from carbs over 5 minutes when absorption isn't obvious from glucose data."
+                            "Minsta kolhydratpåverkan per 5 minuter anger den förväntade glukosökningen från kolhydrater under fem minuter när absorptionen inte tydligt kan utläsas från glukosdata."
                         )
+
                         Text(
-                            "The default is an expected \(state.units == .mgdL ? "8" : 8.formattedAsMmolL) \(state.units.rawValue)/5min. This affects how fast COB is decayed in situations when carb absorption is not visible in BG deviations. The default of \(state.units == .mgdL ? "8" : 8.formattedAsMmolL) \(state.units.rawValue)/5min corresponds to a minimum carb absorption rate of 24 g/hr at a CSF of \(state.units == .mgdL ? "4" : 4.formattedAsMmolL) \(state.units.rawValue)/g."
+                            "Standardvärdet är en förväntad ökning på \(state.units == .mgdL ? "8" : 8.formattedAsMmolL) \(state.units.rawValue) per 5 minuter. Detta påverkar hur snabbt COB minskar i situationer där kolhydratabsorption inte syns i glukosavvikelserna. Standardvärdet motsvarar en lägsta absorptionshastighet på 24 g/timme vid ett CSF på \(state.units == .mgdL ? "4" : 4.formattedAsMmolL) \(state.units.rawValue)/g."
                         )
+
                         Text(
-                            "This setting helps the system estimate how much glucose your body is absorbing, even when it's not immediately visible in your glucose data, ensuring more accurate insulin dosing during carb absorption."
+                            "Denna inställning hjälper systemet att uppskatta hur mycket glukos kroppen absorberar även när detta inte omedelbart syns i glukosdata, vilket ger mer träffsäkra insulindoser under kolhydratabsorptionen."
                         )
                     }
                 )
@@ -265,21 +340,28 @@ extension AlgorithmAdvancedSettings {
                         get: { selectedVerboseHint },
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = NSLocalizedString("Remaining Carbs Percentage", comment: "Remaining Carbs Percentage")
+                            hintLabel = NSLocalizedString("Återstående kolhydrater (%)", comment: "Remaining Carbs Percentage")
                         }
                     ),
                     units: state.units,
                     type: .decimal("remainingCarbsFraction"),
-                    label: NSLocalizedString("Remaining Carbs Percentage", comment: "Remaining Carbs Percentage"),
-                    miniHint: "Percentage of carbs still available if no absorption is detected.",
+                    label: NSLocalizedString(
+                        "Återstående kolhydrater (%)",
+                        comment: "Remaining Carbs Percentage"
+                    ),
+
+                    miniHint: "Andel kolhydrater som fortfarande antas absorberas om ingen absorption upptäcks.",
+
                     verboseHint:
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: 100%").bold()
+                        Text("Standard: 100 %").bold()
+
                         Text(
-                            "Remaining Carbs Percentage estimates carbs still absorbing over 4 hours if glucose data doesn't show clear absorption."
+                            "Återstående kolhydrater (%) uppskattar hur stor del av de registrerade kolhydraterna som fortfarande absorberas under en period på fyra timmar när glukosdata inte visar någon tydlig absorption."
                         )
+
                         Text(
-                            "This fallback setting prevents under-dosing by spreading a portion of the entered carbs over time, balancing insulin needs with undetected carb impact."
+                            "Denna reservberäkning minskar risken för för låg insulindosering genom att fördela en del av de registrerade kolhydraterna över tid och balansera insulinbehovet när kolhydratabsorptionen inte kan upptäckas."
                         )
                     }
                 )
@@ -292,21 +374,28 @@ extension AlgorithmAdvancedSettings {
                         get: { selectedVerboseHint },
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = NSLocalizedString("Remaining Carbs Cap", comment: "Remaining Carbs Cap")
+                            hintLabel = NSLocalizedString("Max återstående kolhydrater", comment: "Remaining Carbs Cap")
                         }
                     ),
                     units: state.units,
                     type: .decimal("remainingCarbsCap"),
-                    label: NSLocalizedString("Remaining Carbs Cap", comment: "Remaining Carbs Cap"),
-                    miniHint: "Maximum amount of carbs still available if no absorption is detected.",
+                    label: NSLocalizedString(
+                        "Max återstående kolhydrater",
+                        comment: "Remaining Carbs Cap"
+                    ),
+
+                    miniHint: "Högsta mängd kolhydrater som fortfarande antas absorberas om ingen absorption upptäcks.",
+
                     verboseHint:
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: 90 g").bold()
+                        Text("Standard: 90 g").bold()
+
                         Text(
-                            "The Remaining Carbs Cap defines the upper limit for how many carbs the system will assume are absorbing over 4 hours, even when there's no clear sign of absorption from your glucose readings."
+                            "Max återstående kolhydrater anger den högsta mängd kolhydrater som systemet antar fortfarande absorberas under en period på fyra timmar, även när glukosvärdena inte visar några tydliga tecken på absorption."
                         )
+
                         Text(
-                            "This cap prevents the system from overestimating how much insulin is needed when carb absorption isn't visible, offering a safeguard for accurate dosing."
+                            "Denna gräns förhindrar att systemet överskattar insulinbehovet när kolhydratabsorptionen inte syns i glukosdata och fungerar som en extra säkerhetsfunktion för mer träffsäker dosering."
                         )
                     }
                 )
@@ -319,23 +408,36 @@ extension AlgorithmAdvancedSettings {
                         get: { selectedVerboseHint },
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = NSLocalizedString("Noisy CGM Target Multiplier", comment: "Noisy CGM Target Multiplier")
+                            hintLabel = NSLocalizedString(
+                                "Ökning av glukosmål vid brusig CGM",
+                                comment: "Noisy CGM Target Multiplier"
+                            )
                         }
                     ),
                     units: state.units,
                     type: .decimal("noisyCGMTargetMultiplier"),
-                    label: NSLocalizedString("Noisy CGM Target Increase", comment: "Noisy CGM Target Increase"),
-                    miniHint: "Percentage increase of glucose target when CGM is inconsistent.",
+                    label: NSLocalizedString(
+                        "Ökning glukosmål brusig CGM",
+                        comment: "Noisy CGM Target Multiplier"
+                    ),
+
+                    miniHint: "Procentuell ökning av glukosmålet när CGM-data är opålitliga.",
+
                     verboseHint:
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: 130%").bold()
+                        Text("Standard: 130 %").bold()
+
                         Text(
-                            "The Noisy CGM Target Increase raises your glucose target when the system detects noisy or raw CGM data. By default, the target is increased to 130% of your set target glucose to account for the less reliable glucose readings."
+                            "Ökning av glukosmål vid brusig CGM höjer ditt glukosmål när systemet upptäcker brusiga eller opålitliga CGM-data. Som standard höjs glukosmålet till 130 % av ditt inställda glukosmål för att kompensera för den lägre tillförlitligheten i glukosvärdena."
                         )
+
                         Text(
-                            "This helps reduce the risk of incorrect insulin dosing based on inaccurate sensor data, ensuring safer insulin adjustments during periods of poor CGM accuracy."
+                            "Detta minskar risken för felaktig insulindosering baserad på osäkra sensordata och ger säkrare insulinjusteringar under perioder med låg CGM-noggrannhet."
                         )
-                        Text("Note: A CGM is considered noisy when it provides inconsistent readings.")
+
+                        Text(
+                            "Obs: En CGM betraktas som brusig när den levererar inkonsekventa glukosvärden."
+                        )
                     }
                 )
             }
@@ -346,13 +448,13 @@ extension AlgorithmAdvancedSettings {
                     shouldDisplayHint: $shouldDisplayHint,
                     hintLabel: hintLabel ?? "",
                     hintText: selectedVerboseHint ?? AnyView(EmptyView()),
-                    sheetTitle: "Help"
+                    sheetTitle: "Hjälp"
                 )
             }
             .scrollContentBackground(.hidden)
             .background(appState.trioBackgroundColor(for: colorScheme))
             .onAppear(perform: configureView)
-            .navigationTitle("Additionals")
+            .navigationTitle("Extra inställningar")
             .navigationBarTitleDisplayMode(.automatic)
             .onDisappear {
                 state.saveIfChanged()

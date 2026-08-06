@@ -73,7 +73,7 @@ struct ChartLegendView: View {
                     DefinitionRow(
                         term: "Pump pausad",
                         definition: Text(
-                            "Visar när insulinleveransen varit pausad, det vill säga när pumpen varit stoppad."
+                            "Visar när insulintillförseln varit pausad, det vill säga när pumpen varit stoppad."
                         ),
                         color: Color.loopGray.opacity(
                             colorScheme == .dark ? 0.3 : 0.8
@@ -280,7 +280,7 @@ struct ChartLegendView: View {
             DefinitionRow(
                 term: "ZT (nolltemp)",
                 definition: Text(
-                    "Visar det sämsta prognostiserade scenariot om inga kolhydrater absorberas och insulinleveransen stoppas tills glukoset börjar stiga."
+                    "Visar det sämsta prognostiserade scenariot om inga kolhydrater absorberas och insulintillförseln stoppas tills glukoset börjar stiga."
                 ),
                 color: .zt
             )

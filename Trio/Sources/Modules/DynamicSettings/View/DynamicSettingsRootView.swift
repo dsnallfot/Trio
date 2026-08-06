@@ -49,31 +49,34 @@ extension DynamicSettings {
                         get: { selectedVerboseHint },
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = "Activate Dynamic Sensitivity (Dynamic ISF)"
+                            hintLabel = "Aktivera dynamisk insulinkänslighet (Dynamisk ISF)"
                         }
                     ),
                     units: state.units,
                     type: .boolean,
-                    label: "Activate Dynamic ISF",
-                    miniHint: "Dynamically adjust insulin sensitivity using Dynamic Ratio rather than Autosens Ratio.",
+                    label: "Aktivera dynamisk ISF",
+                    miniHint: "Dynamisk justering av insulinkänslighet genom användning av dynamisk ratio istället för Autosens ratio.",
                     verboseHint:
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: OFF").bold()
+                        Text("Standard: AV").bold()
                         Text(
-                            "Enabling this feature allows Trio to calculate a new Insulin Sensitivity Factor with each loop cycle by considering your current glucose, the weighted total daily dose of insulin, the set adjustment factor, and a few other data points. This helps tailor your insulin response more accurately in real time."
+                            "När denna funktion är aktiverad beräknar Trio en ny insulinkänslighetsfaktor (ISF) vid varje loopcykel. Beräkningen baseras bland annat på ditt aktuella glukosvärde, den viktade totala dygnsdosen insulin (TDD), den inställda justeringsfaktorn och flera andra parametrar. Detta gör att insulinresponsen kan anpassas mer exakt i realtid."
                         )
+
                         Text(
-                            "Dynamic ISF produces a Dynamic Ratio, replacing the Autosens Ratio, determining how much your profile ISF will be adjusted every loop cycle, ensuring it stays within safe limits set by your Autosens Min/Max settings. It provides more precise insulin dosing by responding to changes in insulin needs throughout the day."
+                            "Dynamisk ISF beräknar ett dynamiskt förhållande som ersätter Autosens-förhållandet. Detta avgör hur mycket din profil-ISF ska justeras vid varje loopcykel, samtidigt som justeringarna hålls inom de säkra gränser som anges av Autosens Min och Autosens Max. Resultatet blir en mer exakt insulindosering som anpassar sig efter förändringar i insulinbehovet under dagen."
                         )
+
                         Text(
-                            "You can influence the adjustments made by Dynamic ISF primarily by adjusting Autosens Max, Autosens Min, and Adjustment Factor. Other settings also influence Dynamic ISF's response, such as Glucose Target, Profile ISF, Peak Insulin Time, and Weighted Average of TDD."
+                            "Du kan främst påverka hur Dynamisk ISF justerar insulinbehovet genom att ändra Autosens Max, Autosens Min och Justeringsfaktorn. Även andra inställningar påverkar Dynamisk ISF, till exempel Glukosmål, Profil-ISF, Insulinets topptid och Viktat genomsnitt av TDD."
                         )
+
                         Text(
-                            "Warning: Before adjusting these settings, make sure you are fully aware of the impact those changes will have."
+                            "Varning: Innan du ändrar dessa inställningar bör du vara helt säker på vilken påverkan ändringarna kommer att ha."
                         )
                         .bold()
                     },
-                    headerText: "Dynamic Settings"
+                    headerText: "Dynamiska inställningar"
                 )
 
                 if state.useNewFormula {
@@ -85,25 +88,27 @@ extension DynamicSettings {
                             get: { selectedVerboseHint },
                             set: {
                                 selectedVerboseHint = $0.map { AnyView($0) }
-                                hintLabel = "Activate Dynamic CR (Carb Ratio)"
+                                hintLabel = "Aktivera Dynamisk CR (Insulinkvot)"
                             }
                         ),
                         units: state.units,
                         type: .boolean,
-                        label: "Activate Dynamic CR (Carb Ratio)",
-                        miniHint: "Dynamically adjust your Carb Ratio (CR).",
+                        label: "Aktivera dynamisk CR",
+                        miniHint: "Dynamisk justering av din insulinkvot (CR).",
                         verboseHint:
 
                         VStack(alignment: .leading, spacing: 10) {
-                            Text("Default: OFF").bold()
+                            Text("Standard: AV").bold()
                             Text(
-                                "Dynamic CR adjusts your carb ratio based on your Dynamic Ratio, adapting automatically to changes in insulin sensitivity."
+                                "Dynamisk CR justerar ditt kolhydratförhållande utifrån det dynamiska förhållandet och anpassar det automatiskt efter förändringar i din insulinkänslighet."
                             )
+
                             Text(
-                                "When Dynamic Ratio increases, indicating you need more insulin, the carb ratio value is decreased to make your insulin dosing more effective."
+                                "När det dynamiska förhållandet ökar, vilket innebär att du behöver mer insulin, minskas kolhydratförhållandet så att insulindoseringen blir mer effektiv."
                             )
+
                             Text(
-                                "When Dynamic Ratio decreases, indicating you need less insulin, the carb ratio value is increased to avoid over-delivery."
+                                "När det dynamiska förhållandet minskar, vilket innebär att du behöver mindre insulin, ökas kolhydratförhållandet för att undvika att för mycket insulin ges."
                             )
                         }
                     )
@@ -116,30 +121,36 @@ extension DynamicSettings {
                             get: { selectedVerboseHint },
                             set: {
                                 selectedVerboseHint = $0.map { AnyView($0) }
-                                hintLabel = "Use Sigmoid Formula"
+                                hintLabel = "Använd Sigmoid formel"
                             }
                         ),
                         units: state.units,
                         type: .boolean,
-                        label: "Use Sigmoid Formula",
-                        miniHint: "Adjust insulin sensitivity using a sigmoid-shaped curve.",
+                        label: "Använd Sigmoid formel",
+                        miniHint: "Justera insulinkänsligheten utifrån en sigmoid-formad kurva.",
                         verboseHint:
                         VStack(alignment: .leading, spacing: 10) {
-                            Text("Default: OFF").bold()
+                            Text("Standard: AV").bold()
                             Text(
-                                "Turning on the Sigmoid Formula setting alters how your Dynamic Ratio, and thus your New ISF and New Carb Ratio, are calculated using a sigmoid curve rather than the default logarithmic function."
+                                "När inställningen *Använd Sigmoid formel' är aktiverad ändras hur det dynamiska förhållandet, och därmed din nya ISF och nya insulinkvot, beräknas. I stället för den vanliga logaritmiska funktionen används en sigmoidkurva."
                             )
+
                             Text(
-                                "The curve's steepness is influenced by the Adjustment Factor, while the Autosens Min/Max settings determine the limits of the ratio adjustment, which can also influence the steepness of the sigmoid curve."
+                                "Kurvans branthet påverkas av Justeringsfaktorn, medan Autosens Min och Autosens Max anger gränserna för förhållandets justering. Dessa inställningar kan också påverka sigmoidkurvans branthet."
                             )
+
                             Text(
-                                "When using the Sigmoid Formula, the weighted Total Daily Dose has a much lower impact on the dynamic adjustments to sensitivity."
+                                "När Sigmoid formeln används har den viktade totala dygnsdosen insulin (TDD) betydligt mindre påverkan på de dynamiska justeringarna av insulinkänsligheten."
                             )
-                            Text("Careful tuning is essential to avoid overly aggressive insulin changes.")
-                            Text("It is not recommended to set Autosens Max above 150% to maintain safe insulin dosing.")
+
                             Text(
-                                "There has been no empirical data analysis to support the use of the Sigmoid Formula for dynamic sensitivity determination."
-                            ).bold()
+                                "Noggrann finjustering är viktig för att undvika alltför aggressiva förändringar av insulindoseringen."
+                            )
+
+                            Text(
+                                "För att bibehålla en säker insulindosering rekommenderas det inte att sätta Autosens Max högre än 150 %."
+                            )
+                            .bold()
                         }
                     )
 
@@ -152,25 +163,27 @@ extension DynamicSettings {
                                 get: { selectedVerboseHint },
                                 set: {
                                     selectedVerboseHint = $0.map { AnyView($0) }
-                                    hintLabel = "Adjustment Factor (AF)"
+                                    hintLabel = "Justeringsfaktor (AF)"
                                 }
                             ),
                             // TODO?: include conditional links to Desmos logarithmic graphs based on which .glucose setting is used
                             units: state.units,
                             type: .decimal("adjustmentFactor"),
-                            label: "Adjustment Factor (AF)",
-                            miniHint: "Alter the rate of Dynamic ISF (Sensitivity) adjustments.",
+                            label: "Justeringsfaktor (AF)",
+                            miniHint: "Justera aggressiviteten för dynamisk ISF.",
                             verboseHint:
                             VStack(alignment: .leading, spacing: 10) {
-                                Text("Default: 80%").bold()
+                                Text("Standard: 80%").bold()
                                 Text(
-                                    "The Adjustment Factor (AF) allows you to control how quickly and effectively Dynamic ISF responds to changes in glucose levels."
+                                    "Justeringsfaktorn (AF) låter dig styra hur snabbt och effektivt Dynamisk ISF reagerar på förändringar i glukosnivån."
                                 )
+
                                 Text(
-                                    "Adjusting this value not only can adjust how quickly your sensitivity will respond to changing glucose readings, but also at what glucose readings you reach your Autosens Max/Min limits."
+                                    "Genom att ändra detta värde kan du inte bara påverka hur snabbt insulinkänsligheten anpassas till förändrade glukosvärden, utan även vid vilka glukosnivåer Autosens Max- och Autosens Min-gränserna uppnås."
                                 )
+
                                 Text(
-                                    "Increasing this setting can make ISF adjustments quicker, but will also change the glucose value that coincides with the ISF used at your Autosens Max and Autosens Min limits. Likewise, decreasing this setting can make ISF adjustments slower and will also change the glucose value that coincides with the ISF used when it reaches the Autosens Max and Autosens Min limits. It is best to utilize the Desmos graphs from TrioDocs.org to optimize all Dynamic Settings."
+                                    "Om du ökar detta värde sker ISF-justeringarna snabbare, men det ändrar också vilka glukosvärden som motsvarar den ISF som används vid Autosens Max och Autosens Min. Om du i stället sänker värdet sker ISF-justeringarna långsammare, och även då förändras vilka glukosvärden som motsvarar ISF vid Autosens Max och Autosens Min. För bästa resultat rekommenderas att använda Desmos-graferna på TrioDocs.org för att optimera alla dynamiska inställningar."
                                 )
                             }
                         )
@@ -183,27 +196,30 @@ extension DynamicSettings {
                                 get: { selectedVerboseHint },
                                 set: {
                                     selectedVerboseHint = $0.map { AnyView($0) }
-                                    hintLabel = "Sigmoid Adjustment Factor"
+                                    hintLabel = "Sigmoid justeringsfaktor"
                                 }
                             ),
                             units: state.units,
                             type: .decimal("adjustmentFactorSigmoid"),
-                            label: "Sigmoid Adjustment Factor",
-                            miniHint: "Alter the rate of dynamic sensitivity adjustments for Sigmoid.",
+                            label: "Sigmoid justeringsfaktor",
+                            miniHint: "Justera aggressiviteten för Sigmoid dynamisk ISF.",
                             verboseHint:
                             VStack(alignment: .leading, spacing: 10) {
-                                Text("Default: 50%").bold()
+                                Text("Standard: 50%").bold()
                                 Text(
-                                    "The Sigmoid Adjustment Factor (AF) allows you to control how quickly Sigmoid Dynamic ISF responds to changes in glucose levels and at what glucose value you will reach your Autosens Max and Autosens Min limits."
+                                    "Sigmoid-justeringsfaktorn (AF) låter dig styra hur snabbt Sigmoid Dynamic ISF reagerar på förändringar i glukosnivån och vid vilket glukosvärde Autosens Max- och Autosens Min-gränserna uppnås."
                                 )
+
                                 Text(
-                                    "Sigmoid Adjustment Factor influences both how fast your ISF values will change and how quickly you will reach your Autosens Max and Min limits set. Increasing Sigmoid Adjustment Factor increases the rate of change of your ISF and reduces the range of glucose values between your Autosens Max and Min limits."
+                                    "Sigmoid-justeringsfaktorn påverkar både hur snabbt dina ISF-värden förändras och hur snabbt Autosens Max- och Autosens Min-gränserna nås. Om du ökar Sigmoid-justeringsfaktorn förändras ISF snabbare samtidigt som intervallet av glukosvärden mellan Autosens Max och Autosens Min blir mindre."
                                 )
+
                                 Text(
-                                    "This setting allows for a more responsive system, but the effects are restricted by the Autosens Min/Max settings."
+                                    "Denna inställning gör systemet mer responsivt, men effekten begränsas av inställningarna Autosens Min och Autosens Max."
                                 )
+
                                 Text(
-                                    "Due to how the curve is calculated when using the Sigmoid Formula, increasing this setting has a different impact on the steepness of the curve than in the standard logarithmic Dynamic ISF calculation. Use caution when adjusting this setting."
+                                    "På grund av hur kurvan beräknas när Sigmoid-formeln används påverkar en ökning av denna inställning kurvans branthet på ett annat sätt än vid den vanliga logaritmiska beräkningen i Dynamisk ISF. Var försiktig när du justerar denna inställning."
                                 )
                             }
                         )
@@ -217,24 +233,31 @@ extension DynamicSettings {
                             get: { selectedVerboseHint },
                             set: {
                                 selectedVerboseHint = $0.map { AnyView($0) }
-                                hintLabel = "Weighted Average of TDD"
+                                hintLabel = "Viktad total daglig dos (TDD)"
                             }
                         ),
                         units: state.units,
                         type: .decimal("weightPercentage"),
-                        label: "Weighted Average of TDD",
-                        miniHint: "Weight of 24-hr TDD against 10-day TDD.",
+                        label: "Viktad total daglig dos (TDD)",
+                        miniHint: "Viktning mellan 24h TDD vs 10 dagars TDD.",
                         verboseHint:
                         VStack(alignment: .leading, spacing: 10) {
-                            Text("Default: 35%").bold()
+                            Text("Standard: 35%").bold()
                             Text(
-                                "This setting adjusts how much weight is given to your recent total daily insulin dose when calculating Dynamic ISF and Dynamic CR."
+                                "Denna inställning justerar hur stor vikt som ges åt din senaste totala dygnsdos insulin (TDD) vid beräkningen av Dynamisk ISF och Dynamisk CR."
                             )
+
                             Text(
-                                "At the default setting, 35% of the calculation is based on the last 24 hours of insulin use, with the remaining 65% considering the last 10 days of data."
+                                "Med standardinställningen baseras 35 % av beräkningen på de senaste 24 timmarnas insulinanvändning, medan de återstående 65 % baseras på data från de senaste 10 dagarna."
                             )
-                            Text("Setting this to 100% means only the past 24 hours will be used.")
-                            Text("A lower value smooths out these variations for more stability.")
+
+                            Text(
+                                "Om värdet sätts till 100 % används endast de senaste 24 timmarnas data."
+                            )
+
+                            Text(
+                                "Ett lägre värde jämnar ut dessa variationer och ger ett stabilare resultat."
+                            )
                         }
                     )
 
@@ -246,23 +269,26 @@ extension DynamicSettings {
                             get: { selectedVerboseHint },
                             set: {
                                 selectedVerboseHint = $0.map { AnyView($0) }
-                                hintLabel = "Adjust Basal"
+                                hintLabel = "Justera basal"
                             }
                         ),
                         units: state.units,
                         type: .boolean,
-                        label: "Adjust Basal",
-                        miniHint: "Use Dynamic Ratio to adjust basal rates.",
+                        label: "Justera basal",
+                        miniHint: "Använd dynamisk ratio för att justera basal.",
                         verboseHint: VStack(alignment: .leading, spacing: 10) {
-                            Text("Default: OFF").bold()
+                            Text("Standard: AV").bold()
                             Text(
-                                "Turn this setting on to give basal adjustments more agility. Keep this setting off if your basal needs are not highly variable."
+                                "Aktivera denna inställning för att göra basaljusteringarna mer responsiva. Låt den vara avstängd om ditt basalbehov normalt inte varierar särskilt mycket."
                             )
+
                             Text(
-                                "Enabling Adjust Basal replaces the standard Autosens Ratio calculation with its own Autosens Ratio calculated as such:"
+                                "När Justera basal är aktiverad ersätts den vanliga beräkningen av Autosens-förhållandet med följande beräkning:"
                             )
-                            Text("Autosens Ratio =\n(Weighted Average of TDD) ÷ (10-day Average of TDD)")
-                            Text("New Basal Profile =\n(Current Basal Profile) × (Autosens Ratio)")
+
+                            Text("Autosens-förhållande =\n(Viktat genomsnitt av TDD) ÷ (10-dagars genomsnitt av TDD)")
+
+                            Text("Ny basalprofil =\n(Aktuell basalprofil) × (Autosens-förhållande)")
                         }
                     )
 
@@ -274,40 +300,46 @@ extension DynamicSettings {
                             get: { selectedVerboseHint },
                             set: {
                                 selectedVerboseHint = $0.map { AnyView($0) }
-                                hintLabel = "Minimum Safety Threshold"
+                                hintLabel = "Minsta glukos säkerhetströskel"
                             }
                         ),
                         units: state.units,
                         type: .decimal("threshold_setting"),
-                        label: "Minimum Safety Threshold",
-                        miniHint: "Increase the safety threshold used to suspend insulin delivery.",
+                        label: "Minsta säkerhetströskel",
+                        miniHint: "Justera säkerhetströskeln som används för att pausa insulintillförsel.",
                         verboseHint:
                         VStack(alignment: .leading, spacing: 10) {
-                            Text("Default: Set by Algorithm").bold()
+                            Text("Standard: Sätts av algoritmen").bold()
                             Text(
-                                "Minimum Threshold Setting is, by default, determined by your set Glucose Target. This threshold automatically suspends insulin delivery if your glucose levels are forecasted to fall below this value. It’s designed to protect against hypoglycemia, particularly during sleep or other vulnerable times."
+                                "Den lägsta säkerhetströskeln bestäms som standard av ditt inställda glukosmål. Om ditt glukos förväntas sjunka under denna nivå kommer insulintillförseln automatiskt att pausas. Funktionen är utformad för att skydda mot hypoglykemi, särskilt under sömn eller andra känsliga situationer."
                             )
+
                             Text(
-                                "Trio will use the larger of the default setting calculation below and the value entered here."
+                                "Trio använder det högsta av det standardberäknade värdet nedan och det värde som du själv anger här."
                             )
+
                             VStack(alignment: .leading, spacing: 10) {
                                 VStack(alignment: .leading, spacing: 5) {
-                                    Text("The default setting is based on this calculation:").bold()
-                                    Text("TargetGlucose - 0.5 × (TargetGlucose - 40)")
+                                    Text("Standardvärdet beräknas enligt följande:").bold()
+                                    Text("Målglukos - 0,5 × (Målglukos - 40)")
                                 }
+
                                 VStack(alignment: .leading, spacing: 5) {
                                     Text(
-                                        "If your glucose target is \(state.units == .mgdL ? "110" : 110.formattedAsMmolL) \(state.units.rawValue), Trio will use a safety threshold of \(state.units == .mgdL ? "75" : 75.formattedAsMmolL) \(state.units.rawValue), unless you set Minimum Safety Threshold to something > \(state.units == .mgdL ? "75" : 75.formattedAsMmolL) \(state.units.rawValue)."
+                                        "Om ditt glukosmål är \(state.units == .mgdL ? "110" : 110.formattedAsMmolL) \(state.units.rawValue) kommer Trio att använda en säkerhetströskel på \(state.units == .mgdL ? "75" : 75.formattedAsMmolL) \(state.units.rawValue), om du inte anger ett högre värde än \(state.units == .mgdL ? "75" : 75.formattedAsMmolL) \(state.units.rawValue) för Lägsta säkerhetströskel."
                                     )
+
                                     Text(
-                                        "\(state.units == .mgdL ? "110" : 110.formattedAsMmolL) - 0.5 × (\(state.units == .mgdL ? "110" : 110.formattedAsMmolL) - \(state.units == .mgdL ? "40" : 40.formattedAsMmolL)) = \(state.units == .mgdL ? "75" : 75.formattedAsMmolL)"
+                                        "\(state.units == .mgdL ? "110" : 110.formattedAsMmolL) - 0,5 × (\(state.units == .mgdL ? "110" : 110.formattedAsMmolL) - \(state.units == .mgdL ? "40" : 40.formattedAsMmolL)) = \(state.units == .mgdL ? "75" : 75.formattedAsMmolL)"
                                     )
                                 }
+
                                 Text(
-                                    "This setting is limited to values between \(state.units == .mgdL ? "60" : 60.formattedAsMmolL) - \(state.units == .mgdL ? "120" : 120.formattedAsMmolL) \(state.units.rawValue)"
+                                    "Denna inställning kan sättas till ett värde mellan \(state.units == .mgdL ? "60" : 60.formattedAsMmolL) och \(state.units == .mgdL ? "120" : 120.formattedAsMmolL) \(state.units.rawValue)."
                                 )
+
                                 Text(
-                                    "Note: Basal may be resumed if there is negative IOB and glucose is rising faster than the forecast."
+                                    "Obs: Basalinsulinet kan återupptas om IOB är negativt och glukoset stiger snabbare än prognosen förutser."
                                 )
                             }
                         }
@@ -321,12 +353,12 @@ extension DynamicSettings {
                     shouldDisplayHint: $shouldDisplayHint,
                     hintLabel: hintLabel ?? "",
                     hintText: selectedVerboseHint ?? AnyView(EmptyView()),
-                    sheetTitle: "Help"
+                    sheetTitle: "Hjälp"
                 )
             }
             .scrollContentBackground(.hidden).background(appState.trioBackgroundColor(for: colorScheme))
             .onAppear(perform: configureView)
-            .navigationBarTitle("Dynamic Settings")
+            .navigationBarTitle("Dynamisk dosering")
             .navigationBarTitleDisplayMode(.automatic)
         }
     }

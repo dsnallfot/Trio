@@ -8,61 +8,86 @@ struct ContactImageHelpView: View {
         NavigationStack {
             List {
                 DefinitionRow(
-                    term: "How Trio Manages Contact Images",
+                    term: "Hur Trio hanterar kontaktbilder",
                     definition: Text(
-                        "Trio will automatically assign a name like 'Trio 1' to any contact image you add, and a create an entry under your iOS Contacts. Use the 'Save' button at the bottom to save your customized contact image."
+                        "Trio ger automatiskt varje kontaktbild du skapar ett namn, till exempel \"Trio 1\", och skapar en motsvarande kontakt i iOS Kontakter. Tryck på knappen \"Spara\" längst ned för att spara din anpassade kontaktbild."
                     )
                 ).listRowBackground(Color.gray.opacity(0.1))
 
                 DefinitionRow(
-                    term: "Preview Contact Image",
+                    term: "Förhandsgranska kontaktbild",
                     definition: Text(
-                        "See a live preview of your contact image design at the top of the screen. Changes made to styles, layouts, or settings are instantly reflected."
+                        "Högst upp på skärmen visas en förhandsvisning av din kontaktbild i realtid. Ändringar av stil, layout eller inställningar visas omedelbart i förhandsvisningen."
                     )
                 ).listRowBackground(Color.gray.opacity(0.1))
 
-                DefinitionRow(term: "Customize Layout and Style", definition: VStack(alignment: .leading) {
-                    Text("Choose from multiple layout options using the Layout Picker in the 'Style' section.")
-                    Text("Enable High Contrast Mode for better visibility in certain conditions.")
-                    Text("Available Layouts:")
-                    Text("• Default: Single 'primary' value with up to two smaller values ('Top', 'Bottom') above and below it.")
-                    Text("• Split: Divides values into two separate areas of same size.")
+                DefinitionRow(term: "Anpassa stil och layout", definition: VStack(alignment: .leading) {
+                    Text("Välj mellan flera olika layouter med hjälp av layoutväljaren under avsnittet \"Stil\".")
+
+                    Text("Aktivera Högkontrastläge för bättre läsbarhet under vissa förhållanden.")
+
+                    Text("Tillgängliga layouter:")
+
+                    Text(
+                        "• Standard: Visar ett primärt värde med upp till två mindre värden (\"Övre\" och \"Nedre\") ovanför respektive under det."
+                    )
+
+                    Text("• Delad: Delar upp värdena i två separata områden av samma storlek.")
                 }).listRowBackground(Color.gray.opacity(0.1))
 
-                DefinitionRow(term: "Set Display Values", definition: VStack(alignment: .leading) {
-                    Text("Select what values to show on the contact image (e.g., glucose, trend, none) for the available slots:")
-                    Text("• None: No value displayed.")
-                    Text("• Glucose Reading: Current CGM provided glucose value.")
-                    Text("• Eventual Glucose: Glucose value as forecasted by the oref algorithm.")
-                    Text("• Glucose Delta: Change in glucose value.")
-                    Text("• Glucose Trend: Direction of glucose change.")
-                    Text("• COB: Carbs on Board.")
-                    Text("• IOB: Insulin on Board.")
-                    Text("• Loop Status: Indicates current loop status (green, yellow, red).")
-                    Text("• Last Loop Time: Time of the last algorithm run.")
+                DefinitionRow(term: "Ange visningsvärden", definition: VStack(alignment: .leading) {
+                    Text(
+                        "Välj vilka värden som ska visas på kontaktbilden (t.ex. glukos, trend eller inget) för de tillgängliga platserna:"
+                    )
+
+                    Text("• Ingen: Inget värde visas.")
+
+                    Text("• Glukosvärde: Aktuellt glukosvärde från CGM.")
+
+                    Text("• Prognostiserat glukos: Glukosvärde som beräknats av oref-algoritmen.")
+
+                    Text("• Glukosförändring: Förändringen av glukosvärdet.")
+
+                    Text("• Glukostrend: Riktningen på glukosförändringen.")
+
+                    Text("• COB: Kolhydrater ombord.")
+
+                    Text("• IOB: Aktivt insulin.")
+
+                    Text("• Loopstatus: Visar den aktuella loopstatusen (grön, gul eller röd).")
+
+                    Text("• Tid för senaste loop: Tidpunkten då algoritmen senast kördes.")
                 }).listRowBackground(Color.gray.opacity(0.1))
 
-                DefinitionRow(term: "Adjust Ring Settings", definition: VStack(alignment: .leading) {
-                    Text("Add visual Rings around the contact image to highlight information.")
-                    Text("Fine-tune the ring’s Width and Gap to suit your design preferences.")
-                    Text("Available Rings:")
-                    Text("• Hidden: No ring displayed.")
-                    Text("• Loop Status: Indicates current loop status (green, yellow, red).")
+                DefinitionRow(term: "Justera ringinställningar", definition: VStack(alignment: .leading) {
+                    Text("Lägg till visuella ringar runt kontaktbilden för att framhäva information.")
+
+                    Text("Finjustera ringens bredd och mellanrum så att den passar dina önskemål.")
+
+                    Text("Tillgängliga ringar:")
+
+                    Text("• Dold: Ingen ring visas.")
+
+                    Text("• Loopstatus: Visar den aktuella loopstatusen (grön, gul eller röd).")
                 }).listRowBackground(Color.gray.opacity(0.1))
 
-                DefinitionRow(term: "Customize Fonts", definition: VStack(alignment: .leading) {
-                    Text("Select font size, weight, and width to match your style:")
-                    Text("• Font Size: Adjust the main text size.")
-                    Text("• Secondary Font Size: Adjust text size for values in split layouts.")
-                    Text("• Font Weight: Control how bold the text appears.")
-                    Text("• Font Width: Choose between standard or expanded text spacing.")
+                DefinitionRow(term: "Anpassa teckensnitt", definition: VStack(alignment: .leading) {
+                    Text("Välj teckenstorlek, teckenvikt och teckenbredd för att anpassa utseendet:")
+
+                    Text("• Teckenstorlek: Justera storleken på huvudtexten.")
+
+                    Text("• Sekundär teckenstorlek: Justera textstorleken för värden i delade layouter.")
+
+                    Text("• Teckenvikt: Styr hur fet texten ska vara.")
+
+                    Text("• Teckenbredd: Välj mellan normal eller utökad teckenbredd.")
                 }).listRowBackground(Color.gray.opacity(0.1))
             }
             .scrollContentBackground(.hidden)
-            .navigationBarTitle("Help", displayMode: .inline)
+            .navigationBarTitle("Hjälp", displayMode: .inline)
 
             Button { state.isHelpSheetPresented.toggle() }
-            label: { Text("Got it!").bold().frame(maxWidth: .infinity, minHeight: 30, alignment: .center) }
+            label: { Text("Uppfattat!").bold().frame(maxWidth: .infinity, minHeight: 30, alignment: .center) }
                 .buttonStyle(.bordered)
                 .padding(.top)
         }

@@ -17,7 +17,7 @@ extension ContactImage {
                 contactItemsList
             }
             .onAppear(perform: configureView)
-            .navigationTitle("Contacts Configuration")
+            .navigationTitle("Kontaktkonfiguration")
             .navigationBarTitleDisplayMode(.large)
             .scrollContentBackground(.hidden)
             .background(appState.trioBackgroundColor(for: colorScheme))
@@ -27,7 +27,7 @@ extension ContactImage {
                         isAddSheetPresented.toggle()
                     }) {
                         HStack {
-                            Text("Add Contact")
+                            Text(" Lägg till")
                             Image(systemName: "plus")
                         }
                     }
@@ -44,7 +44,7 @@ extension ContactImage {
                     Section(
                         header: Text(""),
                         content: {
-                            Text("No Contact Trick Entries.")
+                            Text("Inga sparade kontakter.")
                         }
                     ).listRowBackground(Color.chart)
                 } else {
@@ -75,9 +75,9 @@ extension ContactImage {
                     .onDelete(perform: onDelete)
                 }
 
-                Section {} header: {
+                Section {} footer: {
                     Text(
-                        "Add one or more contacts to your iOS Contacts to display real-time Trio metrics on your watch face. Be sure to grant Trio full access to your Contacts when prompted."
+                        "Lägg till en eller flera kontakter till dina iOS kontakter för att visa realtidsvärden från Trio på din Apple watch. Se till att ge Trio full åtkomst till dina kontakter när du tillfrågas om det av iOS.."
                     )
                     .textCase(nil)
                     .foregroundStyle(.secondary)
