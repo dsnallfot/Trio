@@ -29,19 +29,30 @@ extension LiveActivitySettings {
             List {
                 if !systemLiveActivitySetting {
                     Section(
-                        header: Text("Display Live Data From Trio"),
+                        header: Text("Visa livedata från Trio"),
                         content: {
-                            Text("Live Activities must be enabled under iOS Settings to allow Trio to display live data.")
+                            Text(
+                                "Liveaktivitet måste vara aktiverade i iOS-inställningarna för att Trio ska kunna visa livedata."
+                            )
                         }
-                    ).listRowBackground(Color.chart)
+                    )
+                    .listRowBackground(Color.chart)
 
                     Section {
                         Button {
-                            UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!)
+                            UIApplication.shared.open(
+                                URL(string: UIApplication.openSettingsURLString)!
+                            )
+                        } label: {
+                            Label(
+                                "Öppna iOS-inställningar",
+                                systemImage: "gear.circle"
+                            )
+                            .font(.title3)
+                            .padding()
                         }
-                        label: { Label("Open iOS Settings", systemImage: "gear.circle").font(.title3).padding() }
-                            .frame(maxWidth: .infinity, alignment: .center)
-                            .buttonStyle(.bordered)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .buttonStyle(.bordered)
                     }
                     .listRowBackground(Color.clear)
                 } else {
@@ -53,32 +64,36 @@ extension LiveActivitySettings {
                             get: { selectedVerboseHint },
                             set: {
                                 selectedVerboseHint = $0.map { AnyView($0) }
-                                hintLabel = "Enable Live Activity"
+                                hintLabel = "Aktivera Liveaktivitet"
                             }
                         ),
                         units: state.units,
                         type: .boolean,
-                        label: "Enable Live Activity",
-                        miniHint: "Display customizable data on Lock Screen and Dynamic Island.",
+                        label: "Aktivera Liveaktivitet",
+                        miniHint: "Visa anpassningsbara data på låsskärmen och i Dynamic Island.",
                         verboseHint: VStack(alignment: .leading, spacing: 10) {
-                            Text("Default: OFF").bold()
+                            Text("Standard: AV").bold()
+
                             VStack(alignment: .leading, spacing: 10) {
                                 Text(
-                                    "With Live Activities enabled, Trio displays your choice of the following current data on your iPhone's Lock Screen and in the Dynamic Island:"
+                                    "När Liveaktivitet är aktiverade kan Trio visa valfri aktuell information på din iPhones låsskärm och i Dynamic Island:"
                                 )
+
                                 VStack(alignment: .leading) {
-                                    Text("• Current Glucose Reading")
-                                    Text("• IOB: Insulin On Board")
-                                    Text("• COB: Carbohydrates On Board")
-                                    Text("• Last Updated: Time of Last Loop Cycle")
-                                    Text("• Glucose Trend Chart")
-                                }.font(.footnote)
+                                    Text("• Aktuellt glukosvärde")
+                                    Text("• IOB: Aktivt insulin")
+                                    Text("• COB: Kolhydrater ombord")
+                                    Text("• Senast uppdaterad: Tid för senaste loopcykel")
+                                    Text("• Glukostrendgraf")
+                                }
+                                .font(.footnote)
+
                                 Text(
-                                    "It allows you to refer to live information at a glance and perform quick actions in your diabetes management."
+                                    "Det gör det möjligt att snabbt se aktuell information och utföra snabba åtgärder i din diabeteshantering."
                                 )
                             }
                         },
-                        headerText: "Display Live Data From Trio"
+                        headerText: "Visa livedata från Trio"
                     )
 
                     if state.useLiveActivity {
@@ -86,48 +101,59 @@ extension LiveActivitySettings {
                             VStack {
                                 Picker(
                                     selection: $state.lockScreenView,
-                                    label: Text("Lock Screen Widget Style")
+                                    label: Text("Stil för låsskärmswidget")
                                 ) {
                                     ForEach(LockScreenView.allCases) { selection in
                                         Text(selection.displayName).tag(selection)
                                     }
-                                }.padding(.top)
+                                }
+                                .padding(.top)
 
                                 HStack(alignment: .center) {
                                     Text(
-                                        "Select simple or detailed style. See hint for more details."
+                                        "Välj enkel eller detaljerad stil. Se hjälptexten för mer information."
                                     )
                                     .font(.footnote)
                                     .foregroundColor(.secondary)
                                     .lineLimit(nil)
+
                                     Spacer()
+
                                     Button(
                                         action: {
-                                            hintLabel = "Lock Screen Widget Style"
+                                            hintLabel = "Stil för låsskärmswidget"
+
                                             selectedVerboseHint =
                                                 AnyView(
                                                     VStack(alignment: .leading, spacing: 10) {
-                                                        Text("Default: Simple").bold()
+                                                        Text("Standard: Enkel").bold()
+
                                                         VStack(alignment: .leading, spacing: 10) {
-                                                            Text("Simple:").bold()
+                                                            Text("Enkel:").bold()
+
                                                             Text(
-                                                                "Trio's Simple Lock Screen Widget displays current glucose reading, trend arrow, delta and the timestamp of the current reading."
+                                                                "Trions enkla låsskärmswidget visar aktuellt glukosvärde, trendpil, delta och tidpunkten för det aktuella värdet."
                                                             )
                                                         }
+
                                                         VStack(alignment: .leading, spacing: 10) {
-                                                            Text("Detailed:").bold()
+                                                            Text("Detaljerad:").bold()
+
                                                             Text(
-                                                                "The Detailed Lock Screen Widget offers users a glucose chart as well as the ability to customize the information provided in the Detailed Widget using the following options:"
+                                                                "Den detaljerade låsskärmswidgeten visar en glukosgraf och låter dig anpassa vilken information som ska visas med hjälp av följande alternativ:"
                                                             )
                                                         }
+
                                                         VStack(alignment: .leading) {
-                                                            Text("• Current Glucose Reading")
-                                                            Text("• IOB: Insulin On Board")
-                                                            Text("• COB: Carbohydrates On Board")
-                                                            Text("• Last Updated: Time of Last Loop Cycle")
-                                                        }.font(.footnote)
+                                                            Text("• Aktuellt glukosvärde")
+                                                            Text("• IOB: Aktivt insulin")
+                                                            Text("• COB: Kolhydrater ombord")
+                                                            Text("• Senast uppdaterad: Tid för senaste loopcykel")
+                                                        }
+                                                        .font(.footnote)
                                                     }
                                                 )
+
                                             shouldDisplayHint.toggle()
                                         },
                                         label: {
@@ -135,41 +161,50 @@ extension LiveActivitySettings {
                                                 Image(systemName: "questionmark.circle")
                                             }
                                         }
-                                    ).buttonStyle(BorderlessButtonStyle())
-                                }.padding(.top)
-                            }.padding(.bottom)
+                                    )
+                                    .buttonStyle(BorderlessButtonStyle())
+                                }
+                                .padding(.top)
+                            }
+                            .padding(.bottom)
 
                             if state.lockScreenView == .detailed {
                                 HStack {
                                     NavigationLink(
-                                        "Widget Configuration",
+                                        "Widgetinställningar",
                                         destination: LiveActivityWidgetConfiguration(
                                             resolver: resolver,
                                             state: state
                                         )
-                                    ).foregroundStyle(Color.accentColor)
+                                    )
+                                    .foregroundStyle(Color.accentColor)
                                 }
                             }
-                        }.listRowBackground(Color.chart)
+                        }
+                        .listRowBackground(Color.chart)
                     }
                 }
             }
             .listSectionSpacing(sectionSpacing)
-            .onReceive(resolver.resolve(LiveActivityBridge.self)!.$systemEnabled, perform: {
-                self.systemLiveActivitySetting = $0
-            })
+            .onReceive(
+                resolver.resolve(LiveActivityBridge.self)!.$systemEnabled,
+                perform: {
+                    self.systemLiveActivitySetting = $0
+                }
+            )
             .sheet(isPresented: $shouldDisplayHint) {
                 SettingInputHintView(
                     hintDetent: $hintDetent,
                     shouldDisplayHint: $shouldDisplayHint,
                     hintLabel: hintLabel ?? "",
                     hintText: selectedVerboseHint ?? AnyView(EmptyView()),
-                    sheetTitle: "Help"
+                    sheetTitle: "Hjälp"
                 )
             }
-            .scrollContentBackground(.hidden).background(appState.trioBackgroundColor(for: colorScheme))
+            .scrollContentBackground(.hidden)
+            .background(appState.trioBackgroundColor(for: colorScheme))
             .onAppear(perform: configureView)
-            .navigationTitle("Live Activity")
+            .navigationTitle("Liveaktivitet")
             .navigationBarTitleDisplayMode(.automatic)
         }
     }

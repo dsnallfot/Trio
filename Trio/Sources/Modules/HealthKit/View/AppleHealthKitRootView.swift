@@ -26,20 +26,27 @@ extension AppleHealthKit {
                         get: { selectedVerboseHint },
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = "Connect to Apple Health"
+                            hintLabel = "Anslut till Apple Hälsa"
                         }
                     ),
                     units: state.units,
                     type: .boolean,
-                    label: "Connect to Apple Health",
-                    miniHint: "Allow Trio to read from and write to Apple Health.",
+                    label: "Anslut till Apple Hälsa",
+                    miniHint: "Låt Trio läsa och skriva data i Apple Hälsa.",
                     verboseHint:
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: OFF").bold()
-                        Text("This allows Trio to read from and write to Apple Health.")
-                        Text("Warning: You must also give permissions in iOS System Settings for the Health app.").bold()
+                        Text("Standard: Av").bold()
+
+                        Text(
+                            "Detta gör det möjligt för Trio att läsa och skriva data i Apple Hälsa."
+                        )
+
+                        Text(
+                            "Varning: Du måste även ge Trio behörighet i iOS-inställningarna för appen Hälsa."
+                        )
+                        .bold()
                     },
-                    headerText: "Apple Health Integration"
+                    headerText: "Apple Hälsa-integrering"
                 )
 
                 if !state.needShowInformationTextForSetPermissions {
@@ -47,21 +54,25 @@ extension AppleHealthKit {
                         VStack {
                             HStack {
                                 Image(systemName: "exclamationmark.circle.fill")
-                                Text("Give Apple Health Write Permissions")
-                            }.padding(.bottom)
+                                Text("Ge Apple Hälsa skrivbehörighet")
+                            }
+                            .padding(.bottom)
+
                             VStack(alignment: .leading, spacing: 5) {
-                                Text("1. Open the Settings app on your iOS device.")
+                                Text("1. Öppna appen Inställningar på din iPhone.")
+                                Text("2. Bläddra ned eller sök efter \"Hälsa\" och öppna appen Hälsa.")
+                                Text("3. Tryck på \"Dataåtkomst och enheter\".")
+                                Text("4. Välj \"Trio\" i listan över appar.")
                                 Text(
-                                    "2. Scroll down or type \"Health\" in the settings search bar and select the \"Health\" app."
+                                    "5. Kontrollera att \"Skriva data\" är aktiverat för de hälsodata du vill att Trio ska kunna spara."
                                 )
-                                Text("3. Tap on \"Data Access & Devices\".")
-                                Text("4. Find and select \"Trio\" from the list of apps.")
-                                Text("5. Ensure that the \"Write Data\" option is enabled for the desired health metrics.")
-                            }.font(.footnote)
+                            }
+                            .font(.footnote)
                         }
                         .padding(.vertical)
-                        .foregroundColor(Color.secondary)
-                    }.listRowBackground(Color.chart)
+                        .foregroundColor(.secondary)
+                    }
+                    .listRowBackground(Color.chart)
                 }
             }
             .listSectionSpacing(sectionSpacing)
@@ -71,12 +82,13 @@ extension AppleHealthKit {
                     shouldDisplayHint: $shouldDisplayHint,
                     hintLabel: hintLabel ?? "",
                     hintText: selectedVerboseHint ?? AnyView(EmptyView()),
-                    sheetTitle: "Help"
+                    sheetTitle: "Hjälp"
                 )
             }
-            .scrollContentBackground(.hidden).background(appState.trioBackgroundColor(for: colorScheme))
+            .scrollContentBackground(.hidden)
+            .background(appState.trioBackgroundColor(for: colorScheme))
             .onAppear(perform: configureView)
-            .navigationTitle("Apple Health")
+            .navigationTitle("Apple Hälsa")
             .navigationBarTitleDisplayMode(.automatic)
         }
     }

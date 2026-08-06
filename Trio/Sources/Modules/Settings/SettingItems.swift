@@ -34,7 +34,7 @@ enum SettingItems {
         SettingItem(title: "Behandling", view: .therapySettings),
         SettingItem(title: "Algoritm", view: .algorithmSettings),
         SettingItem(title: "Funktioner", view: .featureSettings),
-        SettingItem(title: "Notifieringar", view: .notificationSettings),
+        SettingItem(title: "Notiser", view: .notificationSettings),
         SettingItem(title: "Tjänster", view: .serviceSettings)
     ]
 

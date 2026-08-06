@@ -7,9 +7,9 @@ enum ColorSchemeOption: String, JSON, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .systemDefault: return "System Default"
-        case .light: return "Light"
-        case .dark: return "Dark"
+        case .systemDefault: return "Systemstandard"
+        case .light: return "Ljust"
+        case .dark: return "Mörkt"
         }
     }
 }

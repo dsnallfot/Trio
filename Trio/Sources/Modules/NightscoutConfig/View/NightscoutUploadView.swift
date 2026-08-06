@@ -23,26 +23,28 @@ struct NightscoutUploadView: View {
                     get: { selectedVerboseHint },
                     set: {
                         selectedVerboseHint = $0.map { AnyView($0) }
-                        hintLabel = "Allow Uploading to Nightscout"
+                        hintLabel = "Tillåt uppladdning till Nightscout"
                         shouldDisplayHint = true
                     }
                 ),
                 units: state.units,
                 type: .boolean,
-                label: "Allow Uploading to Nightscout",
-                miniHint: "Enable uploading of selected data sets to Nightscout.",
+                label: "Tillåt uppladdning till Nightscout",
+                miniHint: "Aktivera uppladdning av valda data till Nightscout.",
                 verboseHint:
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("Default: OFF").bold()
+                    Text("Standard: Av").bold()
+
                     Text(
-                        "The Upload Treatments toggle enables uploading of the following data sets to your connected Nightscout URL:"
+                        "När funktionen Ladda upp behandlingar är aktiverad laddas följande data upp till din anslutna Nightscout-adress:"
                     )
+
                     VStack(alignment: .leading, spacing: 5) {
-                        Text("• Carbs")
-                        Text("• Temp Targets")
-                        Text("• Device Status")
-                        Text("• Preferences")
-                        Text("• Settings")
+                        Text("• Kolhydrater")
+                        Text("• Tillfälliga glukosmål")
+                        Text("• Enhetsstatus")
+                        Text("• Inställningar")
+                        Text("• Preferenser")
                     }
                 }
             )
@@ -55,24 +57,26 @@ struct NightscoutUploadView: View {
                     get: { selectedVerboseHint },
                     set: {
                         selectedVerboseHint = $0.map { AnyView($0) }
-                        hintLabel = "Allow Uploading of Pump Errors"
+                        hintLabel = "Tillåt uppladdning av pumpfel"
                         shouldDisplayHint = true
                     }
                 ),
                 units: state.units,
                 type: .boolean,
-                label: "Allow Uploading of Pump Errors to Nightscout",
-                miniHint: "Enable uploading of Pump Errors to Nightscout.",
+                label: "Tillåt uppladdning av pumpfel till Nightscout",
+                miniHint: "Aktivera uppladdning av pumpfel till Nightscout.",
                 verboseHint:
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("Default: OFF").bold()
+                    Text("Standard: AV").bold()
+
                     Text(
-                        "The Upload of Pump Errors toggle enables uploading of errors from your Pump such as:"
+                        "När funktionen Ladda upp pumpfel är aktiverad laddas fel från din pump upp till Nightscout, till exempel:"
                     )
+
                     VStack(alignment: .leading, spacing: 5) {
-                        Text("• Pump busy bolusing")
-                        Text("• Pump not connected")
-                        Text("• Other communication errors")
+                        Text("• Pumpen är upptagen med att ge bolus")
+                        Text("• Pumpen är inte ansluten")
+                        Text("• Andra kommunikationsfel")
                     }
                 }
             )
@@ -86,17 +90,20 @@ struct NightscoutUploadView: View {
                         get: { selectedVerboseHint },
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = "Upload Glucose"
+                            hintLabel = "Ladda upp glukosvärden"
                             shouldDisplayHint = true
                         }
                     ),
                     units: state.units,
                     type: .boolean,
-                    label: "Upload Glucose",
-                    miniHint: "Enable uploading of CGM readings to Nightscout.",
+                    label: "Ladda upp glukosvärden",
+                    miniHint: "Aktivera uppladdning av CGM-värden till Nightscout.",
                     verboseHint: VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: OFF").bold()
-                        Text("Enabling this setting allows CGM readings from Trio to be used in Nightscout.")
+                        Text("Standard: Av").bold()
+
+                        Text(
+                            "När denna funktion är aktiverad laddas glukosvärden från Trio upp till Nightscout."
+                        )
                     }
                 )
             }
@@ -108,10 +115,10 @@ struct NightscoutUploadView: View {
                 shouldDisplayHint: $shouldDisplayHint,
                 hintLabel: hintLabel ?? "",
                 hintText: selectedVerboseHint ?? AnyView(EmptyView()),
-                sheetTitle: "Help"
+                sheetTitle: "Hjälp"
             )
         }
-        .navigationTitle("Upload")
+        .navigationTitle("Uppladdning")
         .navigationBarTitleDisplayMode(.automatic)
         .scrollContentBackground(.hidden)
         .background(appState.trioBackgroundColor(for: colorScheme))

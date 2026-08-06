@@ -1,9 +1,3 @@
-//
-//  FeatureSettingsView.swift
-//  Trio
-//
-//  Created by Deniz Cengiz on 26.07.24.
-//
 import Foundation
 import LoopKitUI
 import SwiftUI
@@ -19,13 +13,16 @@ struct NotificationsView: BaseView {
     @State var hintDetent = PresentationDetent.large
     @State var selectedVerboseHint: AnyView? = AnyView(
         VStack(alignment: .leading, spacing: 10) {
-            Text("Notifications give you important Trio information without requiring you to open the app.")
             Text(
-                "Keep these turned ON in your phone’s settings to ensure you receive Trio Notifications, Critical Alerts, and Time Sensitive Notifications."
+                "Notiser ger dig viktig information från Trio utan att du behöver öppna appen."
+            )
+
+            Text(
+                "Se till att dessa är aktiverade i telefonens inställningar så att du kan ta emot notiser från Trio, kritiska varningar och tidskänsliga notiser."
             )
         }
     )
-    @State var hintLabel: String? = "Manage iOS Preferences"
+    @State var hintLabel: String? = "Hantera iOS-inställningar"
 
     @Environment(\.colorScheme) var colorScheme
     @Environment(AppState.self) var appState
@@ -33,34 +30,43 @@ struct NotificationsView: BaseView {
     var body: some View {
         List {
             Section(
-                header: Text("Manage iOS Preferences"),
+                header: Text("Hantera iOS-inställningar"),
                 content: {
                     manageNotifications
                 }
-            ).listRowBackground(Color.chart)
+            )
+            .listRowBackground(Color.chart)
 
             Section {
                 VStack {
                     notificationsEnabledStatus
+
                     HStack(alignment: .top) {
-                        Text("Notifications give you important Trio information without requiring you to open the app.")
-                            .font(.footnote)
-                            .foregroundColor(.secondary)
-                            .lineLimit(nil)
+                        Text(
+                            "Notiser ger dig viktig information från Trio utan att du behöver öppna appen."
+                        )
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+                        .lineLimit(nil)
+
                         Spacer()
+
                         Button(
                             action: {
-                                hintLabel = "Manage iOS Preferences"
+                                hintLabel = "Hantera iOS-inställningar"
+
                                 selectedVerboseHint = AnyView(
                                     VStack(alignment: .leading, spacing: 10) {
                                         Text(
-                                            "Notifications give you important Trio information without requiring you to open the app."
+                                            "Notiser ger dig viktig information från Trio utan att du behöver öppna appen."
                                         )
+
                                         Text(
-                                            "Keep these turned ON in your phone’s settings to ensure you receive Trio Notifications, Critical Alerts, and Time Sensitive Notifications."
+                                            "Se till att dessa är aktiverade i telefonens inställningar så att du kan ta emot notiser från Trio, kritiska varningar och tidskänsliga notiser."
                                         )
                                     }
                                 )
+
                                 shouldDisplayHint.toggle()
                             },
                             label: {
@@ -68,24 +74,31 @@ struct NotificationsView: BaseView {
                                     Image(systemName: "questionmark.circle")
                                 }
                             }
-                        ).buttonStyle(BorderlessButtonStyle())
-                    }.padding(.top)
-                }.padding(.bottom)
-            }.listRowBackground(Color.chart)
+                        )
+                        .buttonStyle(BorderlessButtonStyle())
+                    }
+                    .padding(.top)
+                }
+                .padding(.bottom)
+            }
+            .listRowBackground(Color.chart)
 
             Section(
-                header: Text("Notification Center"),
+                header: Text("Notiscenter"),
                 content: {
-                    Text("Trio Notifications")
+                    Text("Trio-notiser")
                         .navigationLink(to: .glucoseNotificationSettings, from: self)
 
                     if #available(iOS 16.2, *) {
-                        Text("Live Activity").navigationLink(to: .liveActivitySettings, from: self)
+                        Text("Liveaktivitet")
+                            .navigationLink(to: .liveActivitySettings, from: self)
                     }
 
-                    Text("Calendar Events").navigationLink(to: .calendarEventSettings, from: self)
+                    Text("Kalenderhändelser")
+                        .navigationLink(to: .calendarEventSettings, from: self)
                 }
-            ).listRowBackground(Color.chart)
+            )
+            .listRowBackground(Color.chart)
         }
         .listSectionSpacing(sectionSpacing)
         .onReceive(
@@ -93,6 +106,7 @@ struct NotificationsView: BaseView {
             perform: {
                 if notificationsDisabled != $0 {
                     notificationsDisabled = $0
+
                     if notificationsDisabled {
                         showAlert = true
                     }
@@ -101,7 +115,9 @@ struct NotificationsView: BaseView {
         )
         .alert(
             isPresented: self.$showAlert,
-            content: { self.notificationReminder() }
+            content: {
+                self.notificationReminder()
+            }
         )
         .sheet(isPresented: $shouldDisplayHint) {
             SettingInputHintView(
@@ -109,12 +125,12 @@ struct NotificationsView: BaseView {
                 shouldDisplayHint: $shouldDisplayHint,
                 hintLabel: hintLabel ?? "",
                 hintText: selectedVerboseHint ?? AnyView(EmptyView()),
-                sheetTitle: "Help"
+                sheetTitle: "Hjälp"
             )
         }
         .scrollContentBackground(.hidden)
         .background(appState.trioBackgroundColor(for: colorScheme))
-        .navigationTitle("Notifications")
+        .navigationTitle("Notiser")
         .navigationBarTitleDisplayMode(.automatic)
     }
 }
@@ -122,31 +138,58 @@ struct NotificationsView: BaseView {
 extension NotificationsView {
     func notificationReminder() -> Alert {
         Alert(
-            title: Text("\u{2757} Notifications are Required"),
+            title: Text("\u{2757} Notiser krävs"),
             message: Text(
-                "Please authorize notifications by tapping 'Open iOS Settings' > 'Notifications' and enable 'Allow Notifications' for 'Notification Center' and 'Banners' Alerts."
+                "Tillåt notiser genom att trycka på \"Öppna iOS-inställningar\" > \"Notiser\" och aktivera \"Tillåt notiser\" samt visning i \"Notiscenter\" och som \"Banderoller\"."
             ),
-            dismissButton: .default(Text("Ok"))
+            dismissButton: .default(Text("OK"))
         )
     }
 
     @ViewBuilder private func onOff(_ val: Bool) -> some View {
         if val {
-            Text(NSLocalizedString("On", comment: "Notification Setting Status is On"))
+            Text(
+                NSLocalizedString(
+                    "På",
+                    comment: "Notification Setting Status is On"
+                )
+            )
         } else {
             HStack {
-                Image(systemName: "exclamationmark.triangle.fill").foregroundColor(.critical)
-                Text(NSLocalizedString("Off", comment: "Notification Setting Status is Off"))
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundColor(.critical)
+
+                Text(
+                    NSLocalizedString(
+                        "Av",
+                        comment: "Notification Setting Status is Off"
+                    )
+                )
             }
         }
     }
 
     private var manageNotifications: some View {
-        Button(action: { UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!) }) {
+        Button(
+            action: {
+                UIApplication.shared.open(
+                    URL(string: UIApplication.openSettingsURLString)!
+                )
+            }
+        ) {
             HStack {
-                Text(NSLocalizedString("Open iOS Settings", comment: "Manage Permissions in Settings button text"))
+                Text(
+                    NSLocalizedString(
+                        "Öppna iOS-inställningar",
+                        comment: "Manage Permissions in Settings button text"
+                    )
+                )
+
                 Spacer()
-                Image(systemName: "chevron.right").foregroundColor(.gray).font(.footnote)
+
+                Image(systemName: "chevron.right")
+                    .foregroundColor(.gray)
+                    .font(.footnote)
             }
         }
         .accentColor(.primary)
@@ -154,8 +197,15 @@ extension NotificationsView {
 
     private var notificationsEnabledStatus: some View {
         HStack {
-            Text(NSLocalizedString("Notifications", comment: "Notifications Status text"))
+            Text(
+                NSLocalizedString(
+                    "Notiser",
+                    comment: "Notifications Status text"
+                )
+            )
+
             Spacer()
+
             onOff(!notificationsDisabled)
         }
     }

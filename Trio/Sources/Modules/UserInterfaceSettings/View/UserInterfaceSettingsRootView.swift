@@ -43,12 +43,12 @@ extension UserInterfaceSettings {
         var body: some View {
             List {
                 Section(
-                    header: Text("General Appearance"),
+                    header: Text("Allmännt utseende"),
                     content: {
                         VStack {
                             Picker(
                                 selection: $colorSchemePreference,
-                                label: Text("Appearance")
+                                label: Text("Utseende")
                             ) {
                                 ForEach(ColorSchemeOption.allCases) { selection in
                                     Text(selection.displayName).tag(selection)
@@ -57,7 +57,7 @@ extension UserInterfaceSettings {
 
                             HStack(alignment: .center) {
                                 Text(
-                                    "Choose Trio's appearance. See hint for more details."
+                                    "Välj Trios utseende. Klicka på frågetecknet för mer info."
                                 )
                                 .font(.footnote)
                                 .foregroundColor(.secondary)
@@ -65,24 +65,27 @@ extension UserInterfaceSettings {
                                 Spacer()
                                 Button(
                                     action: {
-                                        hintLabel = "Color Scheme Preference"
+                                        hintLabel = "Föredraget färgschema"
                                         selectedVerboseHint =
                                             AnyView(
                                                 VStack(alignment: .leading, spacing: 10) {
                                                     Text(
-                                                        "Sets Trio's appearance. Descriptions of each option found below."
+                                                        "Ställer in Trios utseende. En beskrivning av varje alternativ finns nedan."
                                                     )
+
                                                     VStack(alignment: .leading, spacing: 5) {
-                                                        Text("System Default:").bold()
-                                                        Text("Follows the phone's current color scheme setting at that time")
+                                                        Text("Systemstandard:").bold()
+                                                        Text("Följer telefonens aktuella inställning för ljust eller mörkt läge.")
                                                     }
+
                                                     VStack(alignment: .leading, spacing: 5) {
-                                                        Text("Light:").bold()
-                                                        Text("Always in Light mode")
+                                                        Text("Ljust:").bold()
+                                                        Text("Använder alltid ljust läge.")
                                                     }
+
                                                     VStack(alignment: .leading, spacing: 5) {
-                                                        Text("Dark:").bold()
-                                                        Text("Always in Dark mode")
+                                                        Text("Mörkt:").bold()
+                                                        Text("Använder alltid mörkt läge.")
                                                     }
                                                 }
                                             )
@@ -103,7 +106,7 @@ extension UserInterfaceSettings {
                     VStack {
                         Picker(
                             selection: $state.glucoseColorScheme,
-                            label: Text("Glucose Color Scheme")
+                            label: Text("Glukos färgschema")
                         ) {
                             ForEach(GlucoseColorScheme.allCases) { selection in
                                 Text(selection.displayName).tag(selection)
@@ -112,7 +115,7 @@ extension UserInterfaceSettings {
 
                         HStack(alignment: .center) {
                             Text(
-                                "Choose glucose reading color scheme. See hint for more details."
+                                "Välj färgschema för glukosvärden. Klicka på frågetecknet för mer info."
                             )
                             .font(.footnote)
                             .foregroundColor(.secondary)
@@ -120,27 +123,32 @@ extension UserInterfaceSettings {
                             Spacer()
                             Button(
                                 action: {
-                                    hintLabel = "Glucose Color Scheme"
+                                    hintLabel = "Glukos färgschema"
                                     selectedVerboseHint =
                                         AnyView(
                                             VStack(alignment: .leading, spacing: 10) {
                                                 Text(
-                                                    "Set the color scheme for glucose readings on the main glucose graph, live activities, and bolus calculator. Descriptions for each option found below."
+                                                    "Välj färgschema för glukosvärden på huvudgrafen, i Liveaktivitet och i boluskalkylatorn. En beskrivning av varje alternativ finns nedan."
                                                 )
+
                                                 VStack(alignment: .leading, spacing: 5) {
-                                                    Text("Static:").bold()
-                                                    Text("Red = Below Range")
-                                                    Text("Green = In Range")
-                                                    Text("Yellow = Above Range")
+                                                    Text("Statiskt:").bold()
+                                                    Text("Röd = Under målområdet")
+                                                    Text("Grön = Inom målområdet")
+                                                    Text("Gul = Över målområdet")
                                                 }
+
                                                 VStack(alignment: .leading, spacing: 5) {
-                                                    Text("Dynamic:").bold()
-                                                    Text("Green = At Target")
+                                                    Text("Dynamiskt:").bold()
+
+                                                    Text("Grön = Vid glukosmålet")
+
                                                     Text(
-                                                        "Gradient Red = As readings approach and exceed below target, they gradually become more red."
+                                                        "Tonas gradvis mot rött ju närmare glukosvärdet kommer, och ju längre det hamnar under glukosmålet."
                                                     )
+
                                                     Text(
-                                                        "Gradient Purple = As readings approach and exceed above target, they become more purple."
+                                                        "Tonas gradvis mot lila ju närmare glukosvärdet kommer, och ju längre det hamnar över glukosmålet."
                                                     )
                                                 }
                                             }
@@ -158,27 +166,33 @@ extension UserInterfaceSettings {
                 }.listRowBackground(Color.chart)
 
                 Section(
-                    header: Text("Home View Settings"),
+                    header: Text("Inställningar för hemvyn"),
                     content: {
                         VStack {
-                            Toggle("Show X-Axis Grid Lines", isOn: $state.xGridLines)
-                            Toggle("Show Y-Axis Grid Lines", isOn: $state.yGridLines)
+                            Toggle("Visa rutnätslinjer för X-axeln", isOn: $state.xGridLines)
+                            Toggle("Visa rutnätslinjer för Y-axeln", isOn: $state.yGridLines)
 
                             HStack(alignment: .center) {
                                 Text(
-                                    "Display the grid lines behind the glucose graph."
+                                    "Visa rutnätslinjer bakom glukosgrafen."
                                 )
                                 .font(.footnote)
                                 .foregroundColor(.secondary)
                                 .lineLimit(nil)
+
                                 Spacer()
+
                                 Button(
                                     action: {
-                                        hintLabel = "Show Main Chart X- and Y-Axis Grid Lines"
+                                        hintLabel = "Visa rutnätslinjer för X- och Y-axeln"
+
                                         selectedVerboseHint =
                                             AnyView(
-                                                Text("Choose whether or not to display one or both X- and Y-Axis grid lines.")
+                                                Text(
+                                                    "Välj om rutnätslinjer för X-axeln, Y-axeln eller båda ska visas bakom glukosgrafen."
+                                                )
                                             )
+
                                         shouldDisplayHint.toggle()
                                     },
                                     label: {
@@ -186,9 +200,12 @@ extension UserInterfaceSettings {
                                             Image(systemName: "questionmark.circle")
                                         }
                                     }
-                                ).buttonStyle(BorderlessButtonStyle())
-                            }.padding(.top)
-                        }.padding(.vertical)
+                                )
+                                .buttonStyle(BorderlessButtonStyle())
+                            }
+                            .padding(.top)
+                        }
+                        .padding(.vertical)
                     }
                 ).listRowBackground(Color.chart)
 
@@ -200,16 +217,21 @@ extension UserInterfaceSettings {
                         get: { selectedVerboseHint },
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = "Show Low and High Thresholds"
+                            hintLabel = "Visa lågt och högt glukosgränsvärde"
                         }
                     ),
                     units: state.units,
                     type: .boolean,
-                    label: "Show Low and High Thresholds",
-                    miniHint: "Display the Low and High glucose thresholds set below.",
+                    label: "Visa lågt och högt glukosgränsvärde",
+                    miniHint: "Visar de låga och höga glukosgränsvärden som anges nedan.",
                     verboseHint: VStack(alignment: .leading, spacing: 10) {
-                        Text("This setting displays the upper and lower values for your glucose target range.")
-                        Text("This range is for display and statistical purposes only and does not influence insulin dosing.")
+                        Text(
+                            "Den här inställningen visar de övre och nedre gränserna för ditt glukosmålområde."
+                        )
+
+                        Text(
+                            "Glukosmålområdet används endast för visning och statistik och påverkar inte insulindoseringen."
+                        )
                     }
                 )
 
@@ -218,7 +240,7 @@ extension UserInterfaceSettings {
                         VStack {
                             VStack {
                                 HStack {
-                                    Text("Low Threshold")
+                                    Text("Lågt gränsvärde")
 
                                     Spacer()
 
@@ -253,7 +275,7 @@ extension UserInterfaceSettings {
 
                             VStack {
                                 HStack {
-                                    Text("High Threshold")
+                                    Text("Högt gränsvärde")
 
                                     Spacer()
 
@@ -287,26 +309,33 @@ extension UserInterfaceSettings {
 
                             HStack(alignment: .center) {
                                 Text(
-                                    "Set low and high glucose values for the main screen glucose graph and statistics."
+                                    "Ange låga och höga glukosgränsvärden för glukosgrafen på hemskärmen och för statistik."
                                 )
                                 .lineLimit(nil)
                                 .font(.footnote)
                                 .foregroundColor(.secondary)
 
                                 Spacer()
+
                                 Button(
                                     action: {
-                                        hintLabel = "Low and High Thresholds"
+                                        hintLabel = "Lågt och högt glukosgränsvärde"
+
                                         selectedVerboseHint =
                                             AnyView(
                                                 VStack(alignment: .leading, spacing: 10) {
                                                     Text(
-                                                        "Default values are based on internationally accepted Time in Range values of \(state.units == .mgdL ? "70" : 70.formattedAsMmolL)-\(state.units == .mgdL ? "180" : 180.formattedAsMmolL) \(state.units.rawValue)."
-                                                    ).bold()
-                                                    Text(
-                                                        "Adjust these values if you would like the statistics to reflect different values than the internationally accepted Time In Range values used as the default."
+                                                        "Standardvärdena bygger på de internationellt vedertagna gränserna för Tid inom målområdet: \(state.units == .mgdL ? "70" : 70.formattedAsMmolL)–\(state.units == .mgdL ? "180" : 180.formattedAsMmolL) \(state.units.rawValue)."
                                                     )
-                                                    Text("Note: These values are not used to calculate insulin dosing.")
+                                                    .bold()
+
+                                                    Text(
+                                                        "Justera dessa värden om du vill att statistiken ska baseras på andra gränser än standardvärdena för Tid inom målområdet."
+                                                    )
+
+                                                    Text(
+                                                        "Obs: Dessa värden används inte vid beräkning av insulindosering."
+                                                    )
                                                 }
                                             )
 
@@ -317,7 +346,8 @@ extension UserInterfaceSettings {
                                             Image(systemName: "questionmark.circle")
                                         }
                                     }
-                                ).buttonStyle(BorderlessButtonStyle())
+                                )
+                                .buttonStyle(BorderlessButtonStyle())
                             }.padding(.top)
                         }.padding(.bottom)
                     }.listRowBackground(Color.chart)
@@ -327,44 +357,53 @@ extension UserInterfaceSettings {
                     VStack {
                         Picker(
                             selection: $state.forecastDisplayType,
-                            label: Text("Forecast Display Type")
+                            label: Text("Visningstyp för glukosprognos")
                         ) {
                             ForEach(ForecastDisplayType.allCases) { selection in
                                 Text(selection.displayName).tag(selection)
                             }
-                        }.padding(.top)
+                        }
+                        .padding(.top)
 
                         HStack(alignment: .center) {
                             Text(
-                                "Choose glucose forecast presentation. See hint for more details."
+                                "Välj hur glukosprognosen ska visas. Se hjälptexten för mer information."
                             )
                             .font(.footnote)
                             .foregroundColor(.secondary)
                             .lineLimit(nil)
+
                             Spacer()
+
                             Button(
                                 action: {
-                                    hintLabel = "Forecast Display Type"
+                                    hintLabel = "Visningstyp för glukosprognos"
+
                                     selectedVerboseHint =
                                         AnyView(
                                             VStack(alignment: .leading, spacing: 10) {
                                                 Text(
-                                                    "This setting allows you to choose between Cone of Uncertainty (Cone) and OpenAPS Forecast Lines (Forecast Lines) for the glucose forecast. Descriptions for each option found below."
+                                                    "Den här inställningen låter dig välja mellan osäkerhetskonen och OpenAPS prognoslinjer för visning av glukosprognosen. En beskrivning av varje alternativ finns nedan."
                                                 )
+
                                                 VStack(alignment: .leading, spacing: 5) {
-                                                    Text("Cone:").bold()
+                                                    Text("Osäkerhetskon:").bold()
+
                                                     Text(
-                                                        "Uses a combined range of all possible forecasts from the OpenAPS lines and provides you with a range of possible forecasts. This option has shown to reduce confusion and stress around algorithm forecasts by providing a less concerning visual representation."
+                                                        "Visar det samlade intervallet från alla möjliga prognoser i OpenAPS-linjerna och ger därmed ett spann av möjliga glukosutvecklingar. Det här alternativet har visat sig kunna minska förvirring och oro kring algoritmens prognoser genom att presentera dem på ett mindre alarmerande sätt."
                                                     )
                                                 }
+
                                                 VStack(alignment: .leading, spacing: 5) {
-                                                    Text("Forecast Lines:").bold()
+                                                    Text("Prognoslinjer:").bold()
+
                                                     Text(
-                                                        "Uses the IOB, COB, UAM, and ZT forecast lines from OpenAPS. This option provides a more detailed view of the algorithm's forecast, but may be more confusing for some users."
+                                                        "Visar prognoslinjerna för IOB, COB, UAM och ZT från OpenAPS. Det här alternativet ger en mer detaljerad bild av algoritmens prognos, men kan upplevas som mer svårtolkat av vissa användare."
                                                     )
                                                 }
                                             }
                                         )
+
                                     shouldDisplayHint.toggle()
                                 },
                                 label: {
@@ -372,53 +411,66 @@ extension UserInterfaceSettings {
                                         Image(systemName: "questionmark.circle")
                                     }
                                 }
-                            ).buttonStyle(BorderlessButtonStyle())
-                        }.padding(.top)
-                    }.padding(.bottom)
+                            )
+                            .buttonStyle(BorderlessButtonStyle())
+                        }
+                        .padding(.top)
+                    }
+                    .padding(.bottom)
                 }.listRowBackground(Color.chart)
 
                 Section {
                     VStack(alignment: .leading) {
                         Picker(
                             selection: $state.totalInsulinDisplayType,
-                            label: Text("Total Insulin Display Type").multilineTextAlignment(.leading)
+                            label: Text("Visning av totalt insulin")
+                                .multilineTextAlignment(.leading)
                         ) {
                             ForEach(TotalInsulinDisplayType.allCases) { selection in
                                 Text(selection.displayName).tag(selection)
                             }
-                        }.padding(.top)
+                        }
+                        .padding(.top)
 
                         HStack(alignment: .center) {
                             Text(
-                                "Choose which total insulin calculation is displayed on the home screen. See hint for more details."
+                                "Välj vilken beräkning av totalt insulin som ska visas på hemskärmen. Se hjälptexten för mer information."
                             )
                             .font(.footnote)
                             .foregroundColor(.secondary)
                             .lineLimit(nil)
+
                             Spacer()
+
                             Button(
                                 action: {
-                                    hintLabel = "Total Insulin Display Type"
+                                    hintLabel = "Visning av totalt insulin"
+
                                     selectedVerboseHint =
                                         AnyView(
                                             VStack(alignment: .leading, spacing: 10) {
                                                 Text(
-                                                    "Choose between Total Daily Dose (TDD) or Total Insulin in Scope (TINS) to be displayed above the main glucose graph. Descriptions for each option found below."
+                                                    "Välj om Total dygnsdos (TDD) eller Totalt insulin inom tidsintervallet (TINS) ska visas ovanför huvudgrafen. En beskrivning av varje alternativ finns nedan."
                                                 )
+
                                                 VStack(alignment: .leading, spacing: 5) {
-                                                    Text("Total Daily Dose:").bold()
+                                                    Text("Total dygnsdos (TDD):").bold()
+
                                                     Text(
-                                                        "Displays the last 24 hours of total insulin administered, both basal and bolus."
+                                                        "Visar den totala mängden insulin som har administrerats under de senaste 24 timmarna, inklusive både basalinsulin och boluser."
                                                     )
                                                 }
+
                                                 VStack(alignment: .leading, spacing: 5) {
-                                                    Text("Total Insulin in Scope:").bold()
+                                                    Text("Totalt insulin inom tidsintervallet (TINS):").bold()
+
                                                     Text(
-                                                        "Displays the total amount of insulin given as a bolus (manual or SMB) and through temporary basal rates above zero during the selected timeframe of the main chart."
+                                                        "Visar den totala mängden insulin som har getts som bolus (manuell eller SMB) samt via temporära basalhastigheter över 0 E/timme under det tidsintervall som visas i huvudgrafen."
                                                     )
                                                 }
                                             }
                                         )
+
                                     shouldDisplayHint.toggle()
                                 },
                                 label: {
@@ -426,41 +478,49 @@ extension UserInterfaceSettings {
                                         Image(systemName: "questionmark.circle")
                                     }
                                 }
-                            ).buttonStyle(BorderlessButtonStyle())
-                        }.padding(.top)
-                    }.padding(.bottom)
+                            )
+                            .buttonStyle(BorderlessButtonStyle())
+                        }
+                        .padding(.top)
+                    }
+                    .padding(.bottom)
                 }.listRowBackground(Color.chart)
 
                 Section(
-                    header: Text("Trio Statistics"),
+                    header: Text("Trio-statistik"),
                     content: {
                         VStack {
                             Picker(
                                 selection: $state.hbA1cDisplayUnit,
-                                label: Text("HbA1c Display Unit")
+                                label: Text("Enhet för visning av HbA1c")
                             ) {
                                 ForEach(HbA1cDisplayUnit.allCases) { selection in
                                     Text(selection.displayName).tag(selection)
                                 }
-                            }.padding(.top)
+                            }
+                            .padding(.top)
 
                             HStack(alignment: .center) {
                                 Text(
-                                    "Choose to display HbA1c in percent or mmol/mol."
+                                    "Välj om HbA1c ska visas i procent eller mmol/mol."
                                 )
                                 .font(.footnote)
                                 .foregroundColor(.secondary)
                                 .lineLimit(nil)
+
                                 Spacer()
+
                                 Button(
                                     action: {
-                                        hintLabel = "HbA1c Display Unit"
+                                        hintLabel = "Enhet för visning av HbA1c"
+
                                         selectedVerboseHint =
                                             AnyView(
                                                 Text(
-                                                    "Choose which format you'd prefer the HbA1c value in the statistics view as a percentage (Example: 6.5%) or mmol/mol (Example: 48 mmol/mol)."
+                                                    "Välj vilket format HbA1c ska visas i på statistikskärmen: procent (till exempel 6,5 %) eller mmol/mol (till exempel 48 mmol/mol)."
                                                 )
                                             )
+
                                         shouldDisplayHint.toggle()
                                     },
                                     label: {
@@ -468,9 +528,12 @@ extension UserInterfaceSettings {
                                             Image(systemName: "questionmark.circle")
                                         }
                                     }
-                                ).buttonStyle(BorderlessButtonStyle())
-                            }.padding(.top)
-                        }.padding(.bottom)
+                                )
+                                .buttonStyle(BorderlessButtonStyle())
+                            }
+                            .padding(.top)
+                        }
+                        .padding(.bottom)
                     }
                 ).listRowBackground(Color.chart)
 
@@ -478,30 +541,36 @@ extension UserInterfaceSettings {
                     VStack(alignment: .leading) {
                         Picker(
                             selection: $state.timeInRangeChartStyle,
-                            label: Text("Time in Range Chart Style").multilineTextAlignment(.leading)
+                            label: Text("Diagramtyp tid inom mål")
+                                .multilineTextAlignment(.leading)
                         ) {
                             ForEach(TimeInRangeChartStyle.allCases) { selection in
                                 Text(selection.displayName).tag(selection)
                             }
-                        }.padding(.top)
+                        }
+                        .padding(.top)
 
                         HStack(alignment: .center) {
                             Text(
-                                "Choose the orientation of the Time in Range Chart."
+                                "Välj hur diagrammet för Tid inom målområdet ska visas."
                             )
                             .font(.footnote)
                             .foregroundColor(.secondary)
                             .lineLimit(nil)
+
                             Spacer()
+
                             Button(
                                 action: {
-                                    hintLabel = "Time in Range Chart Style"
+                                    hintLabel = "Diagramtyp tid inom mål"
+
                                     selectedVerboseHint =
                                         AnyView(
                                             Text(
-                                                "Choose which style for the time in range chart you'd prefer: a standing, i.e., vertical, bar chart or a laying, i.e., horizontal, line chart."
+                                                "Välj om diagrammet för Tid inom målområdet ska visas som ett stående stapeldiagram (vertikalt) eller som ett liggande stapeldiagram (horisontellt)."
                                             )
                                         )
+
                                     shouldDisplayHint.toggle()
                                 },
                                 label: {
@@ -509,9 +578,12 @@ extension UserInterfaceSettings {
                                         Image(systemName: "questionmark.circle")
                                     }
                                 }
-                            ).buttonStyle(BorderlessButtonStyle())
-                        }.padding(.top)
-                    }.padding(.bottom)
+                            )
+                            .buttonStyle(BorderlessButtonStyle())
+                        }
+                        .padding(.top)
+                    }
+                    .padding(.bottom)
                 }.listRowBackground(Color.chart)
 
                 SettingInputSection(
@@ -522,18 +594,24 @@ extension UserInterfaceSettings {
                         get: { selectedVerboseHint },
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = "Show Carbs Required Badge"
+                            hintLabel = "Visa indikator för kolhydratbehov"
                         }
                     ),
                     units: state.units,
                     type: .conditionalDecimal("carbsRequiredThreshold"),
-                    label: "Show Carbs Required Badge",
-                    conditionalLabel: "Carbs Required Threshold",
-                    miniHint: "Show carbs required as a red icon on the main graph icon.",
+                    label: "Visa indikator för kolhydratbehov",
+                    conditionalLabel: "Gränsvärde för kolhydratbehov",
+                    miniHint: "Visar en röd indikator för rekommenderat kolhydratbehov ovanför huvudgrafen.",
                     verboseHint: Text(
-                        "Turning this on will show the grams of carbs needed to prevent a low as a notification badge on the Trio home screen located above the main icon.\n\nOnce enabled, set the Carbs Required Threshold to the lowest number of carbs you'd like to be recommended. A recommendation will not be given if carbs required is below this number.\n\nNote: The carbs suggested with this feature are to be used as a recommendation, not as a requirement. Depending on the current accuracy of your sensor and the accuracy of your settings, the suggested carbs can vary widely. Use your best judgement before injesting the suggested quanitity of carbs."
+                        """
+                        När denna funktion är aktiverad visas den rekommenderade mängden kolhydrater som behövs för att förebygga lågt blodsocker som en röd indikator ovanför huvudgrafen på Trio-hemskärmen.
+
+                        När funktionen är aktiverad kan du ange ett gränsvärde för kolhydratbehov. En rekommendation visas endast om det beräknade kolhydratbehovet är lika med eller högre än detta värde.
+
+                        Obs: Den rekommenderade mängden kolhydrater är endast avsedd som vägledning och ska inte betraktas som ett absolut behov. Beroende på sensorns aktuella noggrannhet och hur väl dina inställningar är anpassade kan den rekommenderade mängden variera avsevärt. Använd alltid ditt eget omdöme innan du äter den föreslagna mängden kolhydrater.
+                        """
                     ),
-                    headerText: "Carbs Required Badge"
+                    headerText: "Indikator för kolhydratbehov"
                 )
             }
             .listSectionSpacing(sectionSpacing)
@@ -543,13 +621,13 @@ extension UserInterfaceSettings {
                     shouldDisplayHint: $shouldDisplayHint,
                     hintLabel: hintLabel ?? "",
                     hintText: selectedVerboseHint ?? AnyView(EmptyView()),
-                    sheetTitle: "Help"
+                    sheetTitle: "Hjälp"
                 )
             }
             .scrollContentBackground(.hidden)
             .background(appState.trioBackgroundColor(for: colorScheme))
             .onAppear(perform: configureView)
-            .navigationBarTitle("User Interface")
+            .navigationBarTitle("Användargränssnitt")
             .navigationBarTitleDisplayMode(.automatic)
         }
     }

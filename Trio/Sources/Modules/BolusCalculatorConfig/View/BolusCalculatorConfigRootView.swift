@@ -41,16 +41,16 @@ extension BolusCalculatorConfig {
                         get: { selectedVerboseHint },
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = "Display Meal Presets"
+                            hintLabel = "Sparade måltider"
                         }
                     ),
                     units: state.units,
                     type: .boolean,
-                    label: "Display Meal Presets",
-                    miniHint: "Allow the creation of saved, preset meals.",
+                    label: "Sparade måltider",
+                    miniHint: "Tillåt att måltider sparas som förval.",
                     verboseHint: VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: ON").bold()
-                        Text("Enabling this feature allows you to create and save preset meals.")
+                        Text("Standard: PÅ").bold()
+                        Text("Aktivera denna funktion för att kunna skapa och spara förvalda måltider.")
                     }
                 )
 
@@ -62,27 +62,29 @@ extension BolusCalculatorConfig {
                         get: { selectedVerboseHint },
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = "Recommended Bolus Percentage"
+                            hintLabel = "Rekommenderad bolusprocent"
                         }
                     ),
                     units: state.units,
                     type: .decimal("overrideFactor"),
-                    label: "Recommended Bolus Percentage",
-                    miniHint: "Percentage of bolus suggested in bolus calculator.",
+                    label: "Rekommenderad bolusprocent",
+                    miniHint: "Procent av beräknat totalt bolusbehov som föreslås i boluskalkylatorn.",
                     verboseHint:
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: 80%").bold()
+                        Text("Standard: 80%").bold()
                         Text(
-                            "Recommended Bolus Percentage is a safety feature built into Trio. Trio first calculates an insulin required value, which is the full dosage. That dosage is then multiplied by your Recommended Bolus Percentage to display your suggested insulin dose in the bolus calculator."
+                            "Rekommenderad bolusprocent är en inbyggd säkerhetsfunktion i Trio. Först beräknar Trio hur mycket insulin som behövs, vilket motsvarar den fullständigt beräknade dosen. Därefter multipliceras denna dos med din inställda rekommenderade bolusprocent för att beräkna den bolus som föreslås i boluskalkylatorn."
                         )
+
                         Text(
-                            "Because Trio utilizes SMBs and UAM SMBs to help you reach your target glucose and other AID systems do not bolus for COB the same way Trio does, this is initially set to below the full calculated amount (80%). When SMBs and UAM SMBs are enabled, you may find your current CR results in lows and needs to be increased before you increase this setting closer to or at 100%."
+                            "Eftersom Trio använder SMB och UAM-SMB för att hjälpa dig att nå ditt glukosmål, och andra AID-system inte doserar för COB på samma sätt som Trio, är standardvärdet satt till 80 % av den beräknade dosen. När SMB och UAM-SMB är aktiverade kan du märka att ditt nuvarande kolhydratförhållande (CR) leder till låga glukosvärden. I så fall kan CR behöva höjas innan du ökar denna inställning mot eller upp till 100 %."
                         )
+
                         Text(
-                            "Tip: If you are a new Trio user, it is not advised to set this to 100% until you have verified that your core settings (basal rates, ISF, and CR) do not need adjusting."
+                            "Tips: Om du är ny användare av Trio rekommenderas det att inte höja denna inställning till 100 % förrän du har verifierat att dina grundinställningar – basalhastigheter, ISF och CR – inte behöver justeras."
                         )
                     },
-                    headerText: "Calculator Configuration"
+                    headerText: "Boluskalkylator konfiguration"
                 )
 
                 SettingInputSection(
@@ -93,29 +95,34 @@ extension BolusCalculatorConfig {
                         get: { selectedVerboseHint },
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = "Fatty Meal"
+                            hintLabel = "Fet mat"
                         }
                     ),
                     units: state.units,
                     type: .conditionalDecimal("fattyMealFactor"),
-                    label: "Enable Fatty Meal Option",
-                    conditionalLabel: "Fatty Meal Bolus Percentage",
-                    miniHint: "Add and set a bolus option for meals that absorb slowly.",
+                    label: "Aktivera val för fet mat",
+                    conditionalLabel: "Bolusprocent för fet mat",
+                    miniHint: "Lägg till ett val för måltider som absorberas långsamt.",
                     verboseHint:
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: OFF").bold()
-                        Text("Default Percent: 70%").bold()
-                        Text("Do not enable this feature until you have optimized your CR (carb ratio) setting.").bold()
+                        Text("Standard: AV").bold()
+                        Text("Standardprocent: 70%").bold()
+                        Text("Aktivera endast denna funktion om du har testat och optimerat din insulinkvot (CR).").bold()
                         Text(
-                            "Enabling this setting adds a \"Fatty Meal\" option to the bolus calculator. Once this feature is enabled, a percentage setting will appear for you to select."
+                            "När denna inställning är aktiverad läggs alternativet 'Fet mat' till i boluskalkylatorn. När funktionen har aktiverats visas även en inställning där du kan välja en procentandel för Fet mat."
                         )
+
                         Text(
-                            "When \"Fatty Meal\" is selected in the bolus calculator, the recommended bolus will be multiplied by the \"Fatty Meal Bolus Percentage\" as well as the \"Recommended Bolus Percentage\"."
+                            "Om 'Fet mat' är valt i boluskalkylatorn multipliceras den rekommenderade bolusen både med 'Bolusprocent för fet mat' och med 'Rekommenderad bolusprocent'."
                         )
+
                         Text(
-                            "If you have a \"Recommended Bolus Percentage\" of 80%, and a \"Fatty Meal Bolus Percentage\" of 70%, your recommended bolus will be multiplied by: (80 × 70) ÷ 100 = 56%."
+                            "Om du har en rekommenderad bolusprocent på 80 % och en bolusprocent för fet mat på 70 % beräknas den rekommenderade bolusen enligt: (80 × 70) ÷ 100 = 56 %."
                         )
-                        Text("This could be useful for slow absorbing meals like pizza.")
+
+                        Text(
+                            "Detta kan vara användbart för måltider som absorberas långsamt, till exempel pizza."
+                        )
                     }
                 )
 
@@ -127,29 +134,40 @@ extension BolusCalculatorConfig {
                         get: { selectedVerboseHint },
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = "Super Bolus"
+                            hintLabel = "Superbolus"
                         }
                     ),
                     units: state.units,
                     type: .conditionalDecimal("sweetMealFactor"),
-                    label: "Enable Super Bolus Option",
-                    conditionalLabel: "Super Bolus Percentage",
-                    miniHint: "Add and set a bolus option for meals that absorb quickly.",
+                    label: "Aktivera val för superbolus",
+
+                    conditionalLabel: "Superbolusprocent",
+
+                    miniHint: "Lägg till ett val för måltider som absorberas snabbt.",
+
                     verboseHint:
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: OFF").bold()
-                        Text("Default Percent: 100%").bold()
-                        Text("Do not enable this feature until you have optimized your CR (carb ratio) setting.").bold()
+                        Text("Standard: AV").bold()
+
+                        Text("Standardprocent: 100 %").bold()
+
+                        Text("Aktivera inte denna funktion förrän du har testat och optimerat din insulinkvot (CR).").bold()
+
                         Text(
-                            "Enabling this setting adds a \"Super Bolus\" option to the bolus calculator. Once this feature is enabled, a percentage setting will appear for you to select."
+                            "När denna inställning är aktiverad läggs alternativet 'Superbolus' till i boluskalkylatorn. När funktionen har aktiverats visas även en inställning där du kan välja en superbolusprocent."
                         )
+
                         Text(
-                            "When \"Super Bolus\" is selected in the bolus calculator, your current basal rate multiplied by \"Super Bolus Percentage\" will be added to your bolus recommendation."
+                            "När 'Superbolus' är valt i boluskalkylatorn läggs den aktuella basalhastigheten, multiplicerad med superbolusprocenten, till den rekommenderade bolusen."
                         )
+
                         Text(
-                            "If your current basal rate is 0.8 U/hr and \"Super Bolus Percentage\" is set to 200%: 0.8 × (200 ÷ 100) = 1.6 units will be added to your bolus recommendation."
+                            "Om din aktuella basalhastighet är 0,8 E/timme och superbolusprocenten är inställd på 200 %: 0,8 × (200 ÷ 100) = 1,6 E läggs till den rekommenderade bolusen."
                         )
-                        Text("This could be useful for fast absorbing meals like sugary cereal.")
+
+                        Text(
+                            "Detta kan vara användbart för måltider som absorberas snabbt, till exempel sötade frukostflingor."
+                        )
                     }
                 )
             }
@@ -160,12 +178,12 @@ extension BolusCalculatorConfig {
                     shouldDisplayHint: $shouldDisplayHint,
                     hintLabel: hintLabel ?? "",
                     hintText: selectedVerboseHint ?? AnyView(EmptyView()),
-                    sheetTitle: "Help"
+                    sheetTitle: "Hjälp"
                 )
             }
             .scrollContentBackground(.hidden).background(appState.trioBackgroundColor(for: colorScheme))
             .onAppear(perform: configureView)
-            .navigationBarTitle("Bolus Calculator")
+            .navigationBarTitle("Boluskalkylator")
             .navigationBarTitleDisplayMode(.automatic)
         }
     }

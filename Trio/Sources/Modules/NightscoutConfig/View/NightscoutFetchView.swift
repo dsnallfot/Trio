@@ -1,4 +1,3 @@
-
 import SwiftUI
 
 struct NightscoutFetchView: View {
@@ -24,20 +23,21 @@ struct NightscoutFetchView: View {
                     get: { selectedVerboseHint },
                     set: {
                         selectedVerboseHint = $0.map { AnyView($0) }
-                        hintLabel = "Allow Fetching from Nightscout"
+                        hintLabel = "Tillåt hämtning från Nightscout"
                     }
                 ),
                 units: state.units,
                 type: .boolean,
-                label: "Allow Fetching from Nightscout",
-                miniHint: "Enable fetching of selected data sets from Nightscout.",
+                label: "Tillåt hämtning från Nightscout",
+                miniHint: "Aktivera hämtning av valda data från Nightscout.",
                 verboseHint: VStack(alignment: .leading, spacing: 10) {
-                    Text("Default: OFF").bold()
+                    Text("Standard: AV").bold()
+
                     Text(
-                        "The Fetch Treatments toggle enables fetching of carbs and temp targets entered in Careportal or by another uploading device than Trio from Nightscout."
+                        "När funktionen Hämta behandlingar är aktiverad hämtas kolhydrater och tillfälliga glukosmål som har registrerats i Careportal eller av en annan enhet än Trio och laddats upp till Nightscout."
                     )
                 },
-                headerText: "Fetch NS Care Portal Data"
+                headerText: "Hämta data från Nightscout Careportal"
             )
         }
         .listSectionSpacing(sectionSpacing)
@@ -47,10 +47,10 @@ struct NightscoutFetchView: View {
                 shouldDisplayHint: $shouldDisplayHint,
                 hintLabel: hintLabel ?? "",
                 hintText: selectedVerboseHint ?? AnyView(EmptyView()),
-                sheetTitle: "Help"
+                sheetTitle: "Hjälp"
             )
         }
-        .navigationTitle("Fetch")
+        .navigationTitle("Hämtning")
         .navigationBarTitleDisplayMode(.automatic)
         .scrollContentBackground(.hidden)
         .background(appState.trioBackgroundColor(for: colorScheme))

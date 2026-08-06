@@ -22,21 +22,28 @@ extension ShortcutsConfig {
         var body: some View {
             List {
                 Section(
-                    header: Text("Shortcuts Integration"),
+                    header: Text("Integrering med Genvägar"),
                     content: {
                         Text(
-                            "Trio lets you create automations using iOS Shortcuts. Go to the Shortcuts app to create new automations."
+                            "Med Trio kan du skapa automatiseringar med hjälp av iOS-appen Genvägar. Öppna appen Genvägar för att skapa nya automatiseringar."
                         )
                     }
-                ).listRowBackground(Color.chart)
+                )
+                .listRowBackground(Color.chart)
 
                 Section {
                     Button {
                         UIApplication.shared.open(URL(string: "shortcuts://")!)
+                    } label: {
+                        Label(
+                            "Öppna Genvägar",
+                            systemImage: "arrow.triangle.branch"
+                        )
+                        .font(.title3)
+                        .padding()
                     }
-                    label: { Label("Open iOS Shortcuts", systemImage: "arrow.triangle.branch").font(.title3).padding() }
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .buttonStyle(.bordered)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .buttonStyle(.bordered)
                 }
                 .listRowBackground(Color.clear)
 
@@ -48,19 +55,24 @@ extension ShortcutsConfig {
                         get: { selectedVerboseHint },
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = "Allow Bolusing with Shortcuts"
+                            hintLabel = "Tillåt bolus via Genvägar"
                         }
                     ),
                     units: state.units,
                     type: .boolean,
-                    label: "Allow Bolusing with Shortcuts",
-                    miniHint: "Automate boluses using the iOS Shortcuts App.",
-                    verboseHint: VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: OFF").bold()
+                    label: "Tillåt bolus via Genvägar",
+                    miniHint: "Automatisera bolusdoser med iOS-appen Genvägar.",
+                    verboseHint:
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Standard: AV").bold()
+
                         VStack(alignment: .leading, spacing: 10) {
-                            Text("Enabling this setting allows the iOS Shortcuts App to send bolus commands to Trio.")
                             Text(
-                                "Disabling this setting will still allow other commands, like Temp Targets, Add Carbs, and Start/End Overrides"
+                                "När denna inställning är aktiverad kan iOS-appen Genvägar skicka boluskommandon till Trio."
+                            )
+
+                            Text(
+                                "Om inställningen är avstängd kan Genvägar fortfarande skicka andra kommandon, till exempel ange tillfälliga mål, registrera kolhydrater samt starta eller avsluta overrides."
                             )
                         }
                     }
@@ -73,12 +85,13 @@ extension ShortcutsConfig {
                     shouldDisplayHint: $shouldDisplayHint,
                     hintLabel: hintLabel ?? "",
                     hintText: selectedVerboseHint ?? AnyView(EmptyView()),
-                    sheetTitle: "Help"
+                    sheetTitle: "Hjälp"
                 )
             }
-            .scrollContentBackground(.hidden).background(appState.trioBackgroundColor(for: colorScheme))
+            .scrollContentBackground(.hidden)
+            .background(appState.trioBackgroundColor(for: colorScheme))
             .onAppear(perform: configureView)
-            .navigationTitle("Shortcuts")
+            .navigationTitle("Genvägar")
             .navigationBarTitleDisplayMode(.automatic)
         }
     }

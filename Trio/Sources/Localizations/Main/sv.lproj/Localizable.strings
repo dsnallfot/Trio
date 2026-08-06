@@ -2217,7 +2217,7 @@ Enact a temp Basal or a temp target */
 "Horizontal Scroll View Visible hours" = "Antal synliga timmar i hemfönstret";
 
 /* Notification option */
-"Live Activity" = "Liveaktiviteter";
+"Live Activity" = "Liveaktivitet";
 
 /* Notification option */
 "Live activity displays blood glucose live on the lock screen and on the dynamic island (if available)" = "Liveaktivitet visar senaste blodsockeravläsning på låsskärmen och på Dynamic Island, om sådan finns på din iPhone-modell";

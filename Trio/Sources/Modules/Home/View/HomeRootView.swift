@@ -1202,9 +1202,9 @@ func formatHrMin(_ durationInMinutes: Int) -> String {
     case let (0, m):
         return "\(m) min"
     case let (h, 0):
-        return "\(h) hr"
+        return "\(h) h"
     default:
-        return "\(hours) hr \(minutes) min"
+        return "\(hours) h \(minutes) min"
     }
 }
 

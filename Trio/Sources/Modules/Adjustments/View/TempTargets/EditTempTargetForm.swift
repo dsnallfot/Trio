@@ -256,7 +256,7 @@ struct EditTempTargetForm: View {
                                 label: Text("")
                             ) {
                                 ForEach(0 ..< 24) { hour in
-                                    Text("\(hour) hr").tag(hour)
+                                    Text("\(hour) h").tag(hour)
                                 }
                             }
                             .pickerStyle(WheelPickerStyle())

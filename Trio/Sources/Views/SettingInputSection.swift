@@ -217,13 +217,13 @@ struct SettingInputSection<VerboseHint: View>: View {
         case .factor:
             return Text("\(decimalValue * 100) %")
         case .insulinUnit:
-            return Text("\(decimalValue) U")
+            return Text("\(decimalValue) E")
         case .gram:
             return Text("\(decimalValue) g")
         case .minute:
             return Text("\(decimalValue) min")
         case .hour:
-            return Text("\(decimalValue) hr")
+            return Text("\(decimalValue) h")
         }
     }
 

@@ -24,95 +24,126 @@ extension NightscoutConfig {
             ZStack {
                 List {
                     Section(
-                        header: Text("Nightscout Integration"),
+                        header: Text("Nightscout-integrering"),
                         content: {
-                            NavigationLink(destination: NightscoutConnectView(state: state), label: {
-                                HStack {
-                                    Text("Connect")
-                                    ZStack {
-                                        if state.isConnectedToNS {
-                                            Image(systemName: "network")
-                                            Image(systemName: "checkmark.circle.fill").foregroundColor(.green).font(.caption2)
-                                                .offset(x: 9, y: 6)
-                                        } else {
-                                            Image(systemName: "network.slash")
+                            NavigationLink(
+                                destination: NightscoutConnectView(state: state),
+                                label: {
+                                    HStack {
+                                        Text("Anslut")
+
+                                        ZStack {
+                                            if state.isConnectedToNS {
+                                                Image(systemName: "network")
+
+                                                Image(systemName: "checkmark.circle.fill")
+                                                    .foregroundColor(.green)
+                                                    .font(.caption2)
+                                                    .offset(x: 9, y: 6)
+                                            } else {
+                                                Image(systemName: "network.slash")
+                                            }
                                         }
                                     }
                                 }
-                            })
-                            NavigationLink("Upload", destination: NightscoutUploadView(state: state))
-                            NavigationLink("Fetch", destination: NightscoutFetchView(state: state))
+                            )
+
+                            NavigationLink(
+                                "Uppladdning",
+                                destination: NightscoutUploadView(state: state)
+                            )
+
+                            NavigationLink(
+                                "Hämtning",
+                                destination: NightscoutFetchView(state: state)
+                            )
                         }
-                    ).listRowBackground(Color.chart)
+                    )
+                    .listRowBackground(Color.chart)
 
                     Section {
                         VStack {
                             Button {
                                 importAlert = Alert(
-                                    title: Text("Import Therapy Settings?"),
-                                    message: Text("Are you sure you want to import profile settings from Nightscout?\n\n")
-                                        + Text("This will overwrite the following Trio therapy settings:\n")
-                                        + Text("• Basal Rates\n")
-                                        + Text("• Insulin Sensitivities\n")
-                                        + Text("• Carb Ratios\n")
-                                        + Text("• Glucose Targets\n")
-                                        + Text("• Duration of Insulin Action"),
+                                    title: Text("Importera behandlingsinställningar?"),
+                                    message:
+                                    Text(
+                                        "Är du säker på att du vill importera profilinställningar från Nightscout?\n\n"
+                                    )
+                                        + Text(
+                                            "Detta skriver över följande behandlingsinställningar i Trio:\n"
+                                        )
+                                        + Text("• Basalhastigheter\n")
+                                        + Text("• Insulinkänslighet\n")
+                                        + Text("• Kolhydratförhållanden\n")
+                                        + Text("• Glukosmål\n")
+                                        + Text("• Insulinets verkningstid"),
                                     primaryButton: .default(
-                                        Text("Yes, Import!"),
+                                        Text("Ja, importera!"),
                                         action: {
                                             Task {
                                                 await state.importSettings()
-                                                if state.importStatus == .failed, state.importErrors.isNotEmpty,
+
+                                                if state.importStatus == .failed,
+                                                   state.importErrors.isNotEmpty,
                                                    let errorMessage = state.importErrors.first
                                                 {
                                                     DispatchQueue.main.async {
                                                         importAlert = Alert(
-                                                            title: Text("Import Failed"),
+                                                            title: Text("Importen misslyckades"),
                                                             message: Text(errorMessage.description),
                                                             dismissButton: .default(Text("OK"))
                                                         )
+
                                                         isImportAlertPresented = true
                                                     }
                                                 }
                                             }
                                         }
                                     ),
-                                    secondaryButton: .cancel()
+                                    secondaryButton: .cancel(Text("Avbryt"))
                                 )
+
                                 isImportAlertPresented = true
                             } label: {
-                                Text("Import Settings")
-                                    .font(.title3) }
-                                .frame(maxWidth: .infinity, alignment: .center)
-                                .buttonStyle(.bordered)
-                                .disabled(state.url.isEmpty || state.connecting)
+                                Text("Importera inställningar")
+                                    .font(.title3)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .buttonStyle(.bordered)
+                            .disabled(state.url.isEmpty || state.connecting)
 
                             HStack(alignment: .center) {
                                 Text(
-                                    "Import therapy settings from Nightscout.\nSee hint for the list of settings available for import."
+                                    "Importera behandlingsinställningar från Nightscout.\nSe hjälptexten för en lista över vilka inställningar som kan importeras."
                                 )
                                 .font(.footnote)
                                 .foregroundColor(.secondary)
                                 .lineLimit(nil)
+
                                 Spacer()
+
                                 Button(
                                     action: {
-                                        hintLabel = "Import Settings from Nightscout"
+                                        hintLabel = "Importera inställningar från Nightscout"
+
                                         selectedVerboseHint =
                                             AnyView(
                                                 VStack(alignment: .leading, spacing: 10) {
                                                     Text(
-                                                        "This will overwrite the following Trio therapy settings:"
+                                                        "Detta skriver över följande behandlingsinställningar i Trio:"
                                                     )
+
                                                     VStack(alignment: .leading) {
-                                                        Text("• Basal Rates")
-                                                        Text("• Insulin Sensitivities")
-                                                        Text("• Carb Ratios")
-                                                        Text("• Glucose Targets")
-                                                        Text("• Duration of Insulin Action")
+                                                        Text("• Basalprofil")
+                                                        Text("• Insulinkänslighet")
+                                                        Text("• Insulinkvoter")
+                                                        Text("• Målglukos")
+                                                        Text("• Insulinets verkningstid")
                                                     }
                                                 }
                                             )
+
                                         shouldDisplayHint.toggle()
                                     },
                                     label: {
@@ -120,43 +151,55 @@ extension NightscoutConfig {
                                             Image(systemName: "questionmark.circle")
                                         }
                                     }
-                                ).buttonStyle(BorderlessButtonStyle())
-                            }.padding(.top)
-                        }.padding(.vertical)
-                    }.listRowBackground(Color.chart)
+                                )
+                                .buttonStyle(BorderlessButtonStyle())
+                            }
+                            .padding(.top)
+                        }
+                        .padding(.vertical)
+                    }
+                    .listRowBackground(Color.chart)
 
                     Section(
-                        content:
-                        {
+                        content: {
                             VStack {
                                 Button {
                                     Task {
                                         await state.backfillGlucose()
                                     }
                                 } label: {
-                                    Text("Backfill Glucose")
-                                        .font(.title3) }
-                                    .frame(maxWidth: .infinity, alignment: .center)
-                                    .buttonStyle(.bordered)
-                                    .disabled(state.url.isEmpty || state.connecting || state.backfilling)
+                                    Text("Återfyll glukosdata")
+                                        .font(.title3)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .center)
+                                .buttonStyle(.bordered)
+                                .disabled(
+                                    state.url.isEmpty ||
+                                        state.connecting ||
+                                        state.backfilling
+                                )
 
                                 HStack(alignment: .center) {
                                     Text(
-                                        "Backfill missing glucose data from Nightscout."
+                                        "Återfyll saknade glukosdata från Nightscout."
                                     )
                                     .font(.footnote)
                                     .foregroundColor(.secondary)
                                     .lineLimit(nil)
+
                                     Spacer()
+
                                     Button(
                                         action: {
-                                            hintLabel = "Backfill Glucose from Nightscout"
+                                            hintLabel = "Återfyll glukosdata från Nightscout"
+
                                             selectedVerboseHint =
                                                 AnyView(
                                                     Text(
-                                                        "This will backfill 24 hours of glucose data from your connected Nightscout URL to Trio"
+                                                        "Detta hämtar och återfyller de senaste 24 timmarnas glukosdata från din anslutna Nightscout-adress till Trio."
                                                     )
                                                 )
+
                                             shouldDisplayHint.toggle()
                                         },
                                         label: {
@@ -164,22 +207,32 @@ extension NightscoutConfig {
                                                 Image(systemName: "questionmark.circle")
                                             }
                                         }
-                                    ).buttonStyle(BorderlessButtonStyle())
-                                }.padding(.top)
-                            }.padding(.vertical)
+                                    )
+                                    .buttonStyle(BorderlessButtonStyle())
+                                }
+                                .padding(.top)
+                            }
+                            .padding(.vertical)
                         }
-                    ).listRowBackground(Color.chart)
+                    )
+                    .listRowBackground(Color.chart)
                 }
                 .listSectionSpacing(sectionSpacing)
                 .blur(radius: state.importStatus == .running ? 5 : 0)
 
                 if state.importStatus == .running {
-                    CustomProgressView(text: "Importerar Profil...")
+                    CustomProgressView(text: "Importerar profil...")
                 }
             }
-            .fullScreenCover(isPresented: $state.isImportResultReviewPresented, content: {
-                NightscoutImportResultView(resolver: resolver, state: state)
-            })
+            .fullScreenCover(
+                isPresented: $state.isImportResultReviewPresented,
+                content: {
+                    NightscoutImportResultView(
+                        resolver: resolver,
+                        state: state
+                    )
+                }
+            )
             .sheet(isPresented: $shouldDisplayHint) {
                 SettingInputHintView(
                     hintDetent: $hintDetent,
@@ -192,9 +245,10 @@ extension NightscoutConfig {
             .navigationBarTitle("Nightscout")
             .navigationBarTitleDisplayMode(.automatic)
             .alert(isPresented: $isImportAlertPresented) {
-                importAlert ?? Alert(title: Text("Unknown Error"))
+                importAlert ?? Alert(title: Text("Okänt fel"))
             }
-            .scrollContentBackground(.hidden).background(appState.trioBackgroundColor(for: colorScheme))
+            .scrollContentBackground(.hidden)
+            .background(appState.trioBackgroundColor(for: colorScheme))
             .onAppear(perform: configureView)
         }
     }

@@ -49,20 +49,22 @@ extension GlucoseNotificationSettings {
                         get: { selectedVerboseHint },
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = "Play Alarm Sound"
+                            hintLabel = "Spela upp larmljud"
                         }
                     ),
                     units: state.units,
                     type: .boolean,
-                    label: "Play Alarm Sound",
-                    miniHint: "Alarm with every Trio notification.",
+                    label: "Spela upp larmljud",
+                    miniHint: "Spela upp ett larmljud vid Trio-notiser.",
                     verboseHint: VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: OFF").bold()
+                        Text("Standard: AV").bold()
+
                         Text(
-                            "This will cause a sound to be triggered by Trio notifications for Carbs Required, and Glucose Low/High Alarms."
+                            "När denna funktion är aktiverad spelas ett larmljud upp för Trio-notiser om kolhydratbehov samt vid larm för lågt och högt glukos."
                         )
                     }
                 )
+
                 SettingInputSection(
                     decimalValue: $decimalPlaceholder,
                     booleanValue: $state.notificationsPump,
@@ -71,24 +73,32 @@ extension GlucoseNotificationSettings {
                         get: { selectedVerboseHint },
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = "Always Notify Pump"
+                            hintLabel = "Visa alltid pumpnotiser"
                         }
                     ),
                     units: state.units,
                     type: .boolean,
-                    label: "Always Notify Pump",
-                    miniHint: "Always Notify Pump Warnings.",
+                    label: "Visa alltid pumpnotiser",
+                    miniHint: "Visa alltid pumpvarningar.",
                     verboseHint:
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: ON").bold()
+                        Text("Standard: På").bold()
+
                         Text(
-                            "With iOS Trio Notifications enabled, you can let Trio display most Pump Notifications in iOS Notification Center as a Banner, List and on the Lock Screen. It allows you to refer to Trio Information at a glance and troubleshoot any informational issue. Set iOS Notifications Banner Style to Persistent to display banners in the app until dismissed."
+                            "När Trio-notiser är aktiverade i iOS kan Trio visa de flesta pumpnotiser i iOS Notiscenter som banderoller, i notislistan och på låsskärmen. Det gör det enkelt att snabbt se viktig information och felsöka eventuella problem. Ställ in Banderollstil i iOS på Bestående om du vill att banderoller ska ligga kvar tills de avfärdas."
                         )
-                        Text("If iOS Trio Notifications is disabled, Trio will display these messages in-app as a banner only.")
-                        Text("An example of a Pump Warning is 'Pod Expiration Reminder'")
+
+                        Text(
+                            "Om Trio-notiser är avstängda i iOS visas dessa meddelanden endast som en banderoll i appen."
+                        )
+
+                        Text(
+                            "Exempel på en pumpvarning: \"Påminnelse om poddens utgångstid\"."
+                        )
                     },
-                    headerText: "Trio Information Notifications"
+                    headerText: "Informationsnotiser från Trio"
                 )
+
                 SettingInputSection(
                     decimalValue: $decimalPlaceholder,
                     booleanValue: $state.notificationsCgm,
@@ -97,23 +107,31 @@ extension GlucoseNotificationSettings {
                         get: { selectedVerboseHint },
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = "Always Notify CGM"
+                            hintLabel = "Visa alltid CGM-notiser"
                         }
                     ),
                     units: state.units,
                     type: .boolean,
-                    label: "Always Notify CGM",
-                    miniHint: "Always Notify CGM Warnings.",
+                    label: "Visa alltid CGM-notiser",
+                    miniHint: "Visa alltid CGM-varningar.",
                     verboseHint:
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: ON").bold()
+                        Text("Standard: På").bold()
+
                         Text(
-                            "With iOS Trio Notifications enabled, you can let Trio display most CGM Notifications in iOS Notification Center as a Banner, List and on the Lock Screen. It allows you to refer to Trio Information at a glance and troubleshoot any informational issue. Set iOS Notifications Banner Style to Persistent to display banners in the app until dismissed."
+                            "När Trio-notiser är aktiverade i iOS kan Trio visa de flesta CGM-notiser i iOS Notiscenter som banderoller, i notislistan och på låsskärmen. Det gör det enkelt att snabbt se viktig information och felsöka eventuella problem. Ställ in Banderollstil i iOS på Bestående om du vill att banderoller ska ligga kvar tills de avfärdas."
                         )
-                        Text("If iOS Trio Notifications is disabled, Trio will display these messages in-app as a banner only.")
-                        Text("An example of a CGM Warning is 'Unable to open the app'")
+
+                        Text(
+                            "Om Trio-notiser är avstängda i iOS visas dessa meddelanden endast som en banderoll i appen."
+                        )
+
+                        Text(
+                            "Exempel på en CGM-varning: \"Det gick inte att öppna appen\"."
+                        )
                     }
                 )
+
                 SettingInputSection(
                     decimalValue: $decimalPlaceholder,
                     booleanValue: $state.notificationsCarb,
@@ -122,21 +140,28 @@ extension GlucoseNotificationSettings {
                         get: { selectedVerboseHint },
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = "Always Notify Carb"
+                            hintLabel = "Visa alltid kolhydratnotiser"
                         }
                     ),
                     units: state.units,
                     type: .boolean,
-                    label: "Always Notify Carb",
-                    miniHint: "Always Notify Carb Warnings.",
+                    label: "Visa alltid kolhydratnotiser",
+                    miniHint: "Visa alltid kolhydratvarningar.",
                     verboseHint:
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: ON").bold()
+                        Text("Standard: På").bold()
+
                         Text(
-                            "With iOS Trio Notifications enabled, you can let Trio display most Carb Notifications in iOS Notification Center as a Banner, List and on the Lock Screen. It allows you to refer to Trio Information at a glance and troubleshoot any informational issue. Set iOS Notifications Banner Style to Persistent to display banners in the app until dismissed."
+                            "När Trio-notiser är aktiverade i iOS kan Trio visa de flesta kolhydratnotiser i iOS Notiscenter som banderoller, i notislistan och på låsskärmen. Det gör det enkelt att snabbt se viktig information och felsöka eventuella problem. Ställ in Banderollstil i iOS på Bestående om du vill att banderoller ska ligga kvar tills de avfärdas."
                         )
-                        Text("If iOS Trio Notifications is disabled, Trio will display these messages in-app as a banner only.")
-                        Text("An example of a Carb Warning is 'Carbs required: 30 g'")
+
+                        Text(
+                            "Om Trio-notiser är avstängda i iOS visas dessa meddelanden endast som en banderoll i appen."
+                        )
+
+                        Text(
+                            "Exempel på en kolhydratvarning: \"Kolhydratbehov: 30 g\"."
+                        )
                     }
                 )
                 SettingInputSection(
@@ -147,22 +172,27 @@ extension GlucoseNotificationSettings {
                         get: { selectedVerboseHint },
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = "Always Notify Algorithm"
+                            hintLabel = "Visa alltid algoritmnotiser"
                         }
                     ),
                     units: state.units,
                     type: .boolean,
-                    label: "Always Notify Algorithm",
-                    miniHint: "Always Notify Algorithm Warnings.",
+                    label: "Visa alltid algoritmnotiser",
+                    miniHint: "Visa alltid varningar från algoritmen.",
                     verboseHint:
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: ON").bold()
+                        Text("Standard: På").bold()
+
                         Text(
-                            "With iOS Trio Notifications enabled, you can let Trio display most Algorithm Notifications in iOS Notification Center as a Banner, List and on the Lock Screen. It allows you to refer to Trio Information at a glance and troubleshoot any informational issue. Set iOS Notifications Banner Style to Persistent to display banners in the app until dismissed."
+                            "När Trio-notiser är aktiverade i iOS kan Trio visa de flesta algoritmnotiser i iOS Notiscenter som banderoller, i notislistan och på låsskärmen. Det gör det enkelt att snabbt se viktig information och felsöka eventuella problem. Ställ in Banderollstil i iOS på Bestående om du vill att banderoller ska ligga kvar tills de avfärdas."
                         )
-                        Text("If iOS Trio Notifications is disabled, Trio will display these messages in-app as a banner only.")
+
                         Text(
-                            "An example of an Algorithm Warning is 'Error: Invalid glucose: Not enough glucose data'"
+                            "Om Trio-notiser är avstängda i iOS visas dessa meddelanden endast som en banderoll i appen."
+                        )
+
+                        Text(
+                            "Exempel på en algoritmvarning: \"Fel: Ogiltigt glukosvärde – otillräckligt med glukosdata\"."
                         )
                     }
                 )
@@ -175,18 +205,19 @@ extension GlucoseNotificationSettings {
                         get: { selectedVerboseHint },
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = "Always Notify Remote Commands"
+                            hintLabel = "Visa alltid notiser för fjärrkommandon"
                         }
                     ),
                     units: state.units,
                     type: .boolean,
-                    label: "Always Notify Remote Commands",
-                    miniHint: "Always Notify Remote Commands.",
+                    label: "Visa alltid notiser för fjärrkommandon",
+                    miniHint: "Visa alltid mottagna fjärrkommandon.",
                     verboseHint:
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: OFF").bold()
+                        Text("Standard: AV").bold()
+
                         Text(
-                            "With iOS Trio Notifications enabled, you can let Trio display received remote command Notifications in iOS Notification Center as a Banner, List and on the Lock Screen. It allows you to refer to Trio Information at a glance and troubleshoot any informational issue. Set iOS Notifications Banner Style to Persistent to display banners in the app until dismissed."
+                            "När Trio-notiser är aktiverade i iOS kan Trio visa notiser om mottagna fjärrkommandon i iOS Notiscenter som banderoller, i notislistan och på låsskärmen. Det gör det enkelt att snabbt se viktig information och felsöka eventuella problem. Ställ in Banderollstil i iOS på Bestående om du vill att banderoller ska ligga kvar tills de avfärdas."
                         )
                     }
                 )
@@ -199,68 +230,79 @@ extension GlucoseNotificationSettings {
                         get: { selectedVerboseHint },
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = "Show Glucose App Badge"
+                            hintLabel = "Visa glukosindikator på appikonen"
                         }
                     ),
                     units: state.units,
                     type: .boolean,
-                    label: "Show Glucose App Badge",
-                    miniHint: "Show your current glucose on Trio app icon.",
+                    label: "Visa glukosindikator på appikonen",
+                    miniHint: "Visa ditt aktuella glukosvärde på Trio-appens ikon.",
                     verboseHint: VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: OFF").bold()
+                        Text("Standard: AV").bold()
+
                         Text(
-                            "This will add your current glucose on the top right of your Trio icon as a red notification badge. Changing setting takes effect on next Glucose reading."
+                            "Detta visar ditt aktuella glukosvärde som en röd notifieringsindikator uppe till höger på Trio-appens ikon. Ändringen börjar gälla vid nästa glukosvärde."
                         )
                     },
-                    headerText: "Various Glucose Notifications"
+                    headerText: "Övriga glukosnotiser"
                 )
 
                 Section {
                     VStack {
                         Picker(
                             selection: $state.glucoseNotificationsOption,
-                            label: Text("Glucose Notifications")
+                            label: Text("Glukosnotiser")
                         ) {
                             ForEach(GlucoseNotificationsOption.allCases) { selection in
                                 Text(selection.displayName).tag(selection)
                             }
-                        }.padding(.top)
+                        }
+                        .padding(.top)
 
                         HStack(alignment: .center) {
                             Text(
-                                "Choose glucose notifications option. See hint for more details."
+                                "Välj hur glukosnotiser ska användas. Se hjälptexten för mer information."
                             )
                             .font(.footnote)
                             .foregroundColor(.secondary)
                             .lineLimit(nil)
+
                             Spacer()
+
                             Button(
                                 action: {
-                                    hintLabel = "Glucose Notifications"
+                                    hintLabel = "Glukosnotiser"
+
                                     selectedVerboseHint =
                                         AnyView(
                                             VStack(alignment: .leading, spacing: 10) {
                                                 Text(
-                                                    "Set the Glucose Notifications Option. Descriptions for each option found below."
+                                                    "Välj hur glukosnotiser ska visas. En beskrivning av varje alternativ finns nedan."
                                                 )
+
                                                 VStack(alignment: .leading, spacing: 5) {
-                                                    Text("Disabled:").bold()
-                                                    Text("No Glucose Notificatitons will be triggered.")
-                                                }
-                                                VStack(alignment: .leading, spacing: 5) {
-                                                    Text("Always:").bold()
+                                                    Text("Avaktiverade:").bold()
                                                     Text(
-                                                        "A notification will be triggered every time your glucose is updated in Trio."
+                                                        "Inga glukosnotiser kommer att skickas."
                                                     )
                                                 }
+
                                                 VStack(alignment: .leading, spacing: 5) {
-                                                    Text("Only Alarm Limits:").bold()
+                                                    Text("Alltid:").bold()
                                                     Text(
-                                                        "A notification will be triggered only when glucose levels are below the LOW limit or above the HIGH limit, as specified in Glucose Alarm Limits below."
+                                                        "En notis skickas varje gång glukosvärdet uppdateras i Trio."
+                                                    )
+                                                }
+
+                                                VStack(alignment: .leading, spacing: 5) {
+                                                    Text("Endast vid larmgränser:").bold()
+                                                    Text(
+                                                        "En notis skickas endast när glukosvärdet ligger under den låga larmgränsen eller över den höga larmgränsen som anges under Glukoslarmgränser nedan."
                                                     )
                                                 }
                                             }
                                         )
+
                                     shouldDisplayHint.toggle()
                                 },
                                 label: {
@@ -268,13 +310,18 @@ extension GlucoseNotificationSettings {
                                         Image(systemName: "questionmark.circle")
                                     }
                                 }
-                            ).buttonStyle(BorderlessButtonStyle())
-                        }.padding(.top)
-                    }.padding(.bottom)
-                }.listRowBackground(Color.chart)
+                            )
+                            .buttonStyle(BorderlessButtonStyle())
+                        }
+                        .padding(.top)
+                    }
+                    .padding(.bottom)
+                }
+                .listRowBackground(Color.chart)
 
                 if state.glucoseNotificationsOption != GlucoseNotificationsOption.disabled {
                     self.lowAndHighGlucoseAlertSection
+
                     SettingInputSection(
                         decimalValue: $decimalPlaceholder,
                         booleanValue: $state.addSourceInfoToGlucoseNotifications,
@@ -283,16 +330,19 @@ extension GlucoseNotificationSettings {
                             get: { selectedVerboseHint },
                             set: {
                                 selectedVerboseHint = $0.map { AnyView($0) }
-                                hintLabel = "Add Glucose Source to Alarm"
+                                hintLabel = "Lägg till glukoskälla i larmet"
                             }
                         ),
                         units: state.units,
                         type: .boolean,
-                        label: "Add Glucose Source to Alarm",
-                        miniHint: "Source of the glucose reading will be added to the notification.",
+                        label: "Lägg till glukoskälla i larmet",
+                        miniHint: "Glukosvärdets källa läggs till i notisen.",
                         verboseHint: VStack(alignment: .leading, spacing: 10) {
-                            Text("Default: OFF").bold()
-                            Text("The source of the glucose reading will be added to the notification.")
+                            Text("Standard: AV").bold()
+
+                            Text(
+                                "Källan till glukosvärdet läggs till i notisen."
+                            )
                         }
                     )
                 }
@@ -304,12 +354,13 @@ extension GlucoseNotificationSettings {
                     shouldDisplayHint: $shouldDisplayHint,
                     hintLabel: hintLabel ?? "",
                     hintText: selectedVerboseHint ?? AnyView(EmptyView()),
-                    sheetTitle: "Help"
+                    sheetTitle: "Hjälp"
                 )
             }
-            .scrollContentBackground(.hidden).background(appState.trioBackgroundColor(for: colorScheme))
+            .scrollContentBackground(.hidden)
+            .background(appState.trioBackgroundColor(for: colorScheme))
             .onAppear(perform: configureView)
-            .navigationBarTitle("Trio Notifications")
+            .navigationBarTitle("Trio-notiser")
             .navigationBarTitleDisplayMode(.automatic)
         }
 
@@ -318,17 +369,24 @@ extension GlucoseNotificationSettings {
                 VStack {
                     VStack {
                         HStack {
-                            Text("Low Glucose Alarm Limit")
+                            Text("Låg glukoslarmgräns")
 
                             Spacer()
 
                             Group {
                                 Text(
-                                    state.units == .mgdL ? state.lowGlucose.description : state.lowGlucose.formattedAsMmolL
+                                    state.units == .mgdL
+                                        ? state.lowGlucose.description
+                                        : state.lowGlucose.formattedAsMmolL
                                 )
-                                .foregroundColor(!displayPickerLowGlucose ? .primary : .accentColor)
+                                .foregroundColor(
+                                    !displayPickerLowGlucose ? .primary : .accentColor
+                                )
 
-                                Text(state.units == .mgdL ? " mg/dL" : " mmol/L").foregroundColor(.secondary)
+                                Text(
+                                    state.units == .mgdL ? " mg/dL" : " mmol/L"
+                                )
+                                .foregroundColor(.secondary)
                             }
                         }
                         .onTapGesture {
@@ -342,10 +400,16 @@ extension GlucoseNotificationSettings {
 
                         Picker(selection: $state.lowGlucose, label: Text("")) {
                             ForEach(
-                                PickerSettingsProvider.shared.generatePickerValues(from: setting, units: state.units),
+                                PickerSettingsProvider.shared.generatePickerValues(
+                                    from: setting,
+                                    units: state.units
+                                ),
                                 id: \.self
                             ) { value in
-                                let displayValue = state.units == .mgdL ? value.description : value.formattedAsMmolL
+                                let displayValue = state.units == .mgdL
+                                    ? value.description
+                                    : value.formattedAsMmolL
+
                                 Text(displayValue).tag(value)
                             }
                         }
@@ -355,17 +419,24 @@ extension GlucoseNotificationSettings {
 
                     VStack {
                         HStack {
-                            Text("High Glucose Alarm Limit")
+                            Text("Hög glukoslarmgräns")
 
                             Spacer()
 
                             Group {
                                 Text(
-                                    state.units == .mgdL ? state.highGlucose.description : state.highGlucose.formattedAsMmolL
+                                    state.units == .mgdL
+                                        ? state.highGlucose.description
+                                        : state.highGlucose.formattedAsMmolL
                                 )
-                                .foregroundColor(!displayPickerHighGlucose ? .primary : .accentColor)
+                                .foregroundColor(
+                                    !displayPickerHighGlucose ? .primary : .accentColor
+                                )
 
-                                Text(state.units == .mgdL ? " mg/dL" : " mmol/L").foregroundColor(.secondary)
+                                Text(
+                                    state.units == .mgdL ? " mg/dL" : " mmol/L"
+                                )
+                                .foregroundColor(.secondary)
                             }
                         }
                         .onTapGesture {
@@ -376,12 +447,19 @@ extension GlucoseNotificationSettings {
 
                     if displayPickerHighGlucose {
                         let setting = PickerSettingsProvider.shared.settings.highGlucose
+
                         Picker(selection: $state.highGlucose, label: Text("")) {
                             ForEach(
-                                PickerSettingsProvider.shared.generatePickerValues(from: setting, units: state.units),
+                                PickerSettingsProvider.shared.generatePickerValues(
+                                    from: setting,
+                                    units: state.units
+                                ),
                                 id: \.self
                             ) { value in
-                                let displayValue = state.units == .mgdL ? value.description : value.formattedAsMmolL
+                                let displayValue = state.units == .mgdL
+                                    ? value.description
+                                    : value.formattedAsMmolL
+
                                 Text(displayValue).tag(value)
                             }
                         }
@@ -391,34 +469,56 @@ extension GlucoseNotificationSettings {
 
                     HStack(alignment: .center) {
                         Text(
-                            "Sets the lower and upper limit for glucose alarms."
+                            "Anger den låga och höga larmgränsen för glukos."
                         )
                         .lineLimit(nil)
                         .font(.footnote)
                         .foregroundColor(.secondary)
+
                         Spacer()
+
                         Button(
                             action: {
-                                hintLabel = "Low and High Glucose Alarm Limits"
+                                hintLabel = "Låg och hög glukoslarmgräns"
+
                                 selectedVerboseHint =
-                                    AnyView(VStack(alignment: .leading, spacing: 10) {
-                                        let low: Decimal = 70
-                                        let high: Decimal = 180
-                                        let labelLow = (state.units == .mgdL ? low.description : low.formattedAsMmolL) + " " +
-                                            state.units.rawValue
-                                        let labelHigh = (state.units == .mgdL ? high.description : high.formattedAsMmolL) + " " +
-                                            state.units.rawValue
-                                        Text("Low Default: " + labelLow).bold()
-                                        Text("High Default: " + labelHigh).bold()
+                                    AnyView(
                                         VStack(alignment: .leading, spacing: 10) {
-                                            Text(
-                                                "These two settings determine the range outside of which you will be notified via push notifications."
-                                            )
-                                            Text(
-                                                "If your CGM readings are below the Low value or above the High value, you will receive a glucose alarm."
-                                            )
+                                            let low: Decimal = 70
+                                            let high: Decimal = 180
+
+                                            let labelLow =
+                                                (
+                                                    state.units == .mgdL
+                                                        ? low.description
+                                                        : low.formattedAsMmolL
+                                                ) + " " + state.units.rawValue
+
+                                            let labelHigh =
+                                                (
+                                                    state.units == .mgdL
+                                                        ? high.description
+                                                        : high.formattedAsMmolL
+                                                ) + " " + state.units.rawValue
+
+                                            Text("Lågt standardvärde: " + labelLow)
+                                                .bold()
+
+                                            Text("Högt standardvärde: " + labelHigh)
+                                                .bold()
+
+                                            VStack(alignment: .leading, spacing: 10) {
+                                                Text(
+                                                    "Dessa två inställningar anger det glukosintervall utanför vilket du får en pushnotis."
+                                                )
+
+                                                Text(
+                                                    "Om CGM-värdet ligger under den låga gränsen eller över den höga gränsen får du ett glukoslarm."
+                                                )
+                                            }
                                         }
-                                    })
+                                    )
+
                                 shouldDisplayHint.toggle()
                             },
                             label: {
@@ -426,7 +526,8 @@ extension GlucoseNotificationSettings {
                                     Image(systemName: "questionmark.circle")
                                 }
                             }
-                        ).buttonStyle(BorderlessButtonStyle())
+                        )
+                        .buttonStyle(BorderlessButtonStyle())
                     }.padding(.top)
                 }.padding(.bottom)
             }.listRowBackground(Color.chart)

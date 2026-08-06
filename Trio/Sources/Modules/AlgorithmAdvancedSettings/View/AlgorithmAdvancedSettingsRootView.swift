@@ -244,7 +244,7 @@ extension AlgorithmAdvancedSettings {
 
                                     verboseHint:
                                     VStack(alignment: .leading, spacing: 10) {
-                                        Text("Standard: Av").bold()
+                                        Text("Standard: AV").bold()
 
                                         Text(
                                             "När denna funktion är aktiverad kan Trio automatiskt återuppta pumpen om du glömmer att göra det själv, förutsatt att en temporär basal på 0 E/tim först har satts. Funktionen fungerar som en extra säkerhet genom att återstarta insulintillförseln om du glömmer att återuppta pumpen manuellt."

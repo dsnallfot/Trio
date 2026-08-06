@@ -1,4 +1,3 @@
-
 import SwiftUI
 import Swinject
 
@@ -17,47 +16,55 @@ struct TidepoolStartView: BaseView {
     var body: some View {
         Form {
             Section(
-                header: Text("Tidepool Integration"),
-                content:
-                {
+                header: Text("Tidepool-integrering"),
+                content: {
                     VStack {
                         if let serviceUIType = state.serviceUIType,
                            let pluginHost = state.provider.tidepoolManager.getTidepoolPluginHost()
                         {
-                            if let serviceUI = state.provider.tidepoolManager.getTidepoolServiceUI()
-                            {
+                            if let serviceUI = state.provider.tidepoolManager.getTidepoolServiceUI() {
                                 Button {
                                     state.setupTidepool.toggle()
-                                }
-                                label: {
+                                } label: {
                                     HStack {
-                                        Text("Connected to Tidepool").font(.title3)
+                                        Text("Ansluten till Tidepool")
+                                            .font(.title3)
+
                                         ZStack {
                                             Image(systemName: "network")
+
                                             Image(systemName: "checkmark.circle.fill")
-                                                .foregroundColor(.green).font(.caption2)
+                                                .foregroundColor(.green)
+                                                .font(.caption2)
                                                 .offset(x: 9, y: 6)
                                         }
                                     }
                                 }
                                 .frame(maxWidth: .infinity, alignment: .center)
                                 .buttonStyle(.bordered)
+
                             } else {
                                 Button {
                                     state.setupTidepool.toggle()
+                                } label: {
+                                    Text("Anslut till Tidepool")
+                                        .font(.title3)
                                 }
-                                label: { Text("Connect to Tidepool").font(.title3) }
-                                    .frame(maxWidth: .infinity, alignment: .center)
-                                    .buttonStyle(.bordered)
+                                .frame(maxWidth: .infinity, alignment: .center)
+                                .buttonStyle(.bordered)
                             }
                         }
 
                         HStack(alignment: .center) {
-                            Text("You can connect Trio to seamlessly upload and manage your diabetes data on Tidepool.")
-                                .font(.footnote)
-                                .foregroundColor(.secondary)
-                                .lineLimit(nil)
+                            Text(
+                                "Du kan ansluta Trio till Tidepool för att automatiskt ladda upp och hantera dina diabetesdata."
+                            )
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                            .lineLimit(nil)
+
                             Spacer()
+
                             Button(
                                 action: {
                                     shouldDisplayHint.toggle()
@@ -67,21 +74,25 @@ struct TidepoolStartView: BaseView {
                                         Image(systemName: "questionmark.circle")
                                     }
                                 }
-                            ).buttonStyle(BorderlessButtonStyle())
-                        }.padding(.top)
-                    }.padding(.vertical)
+                            )
+                            .buttonStyle(BorderlessButtonStyle())
+                        }
+                        .padding(.top)
+                    }
+                    .padding(.vertical)
                 }
-            ).listRowBackground(Color.chart)
+            )
+            .listRowBackground(Color.chart)
 
             if state.serviceUIType != nil {
                 Section {
                     Toggle(isOn: $state.uploadPumpSettings) {
-                        Text("Include Therapy Settings")
+                        Text("Inkludera profil")
                     }
                     .disabled(state.provider.tidepoolManager.getTidepoolServiceUI() == nil)
 
                     Text(
-                        "Uploads your therapy settings (basal schedules, carb ratios, insulin sensitivities, and blood glucose targets) to Tidepool. This helps your care team see your therapy configuration alongside your data."
+                        "Laddar upp din profil (basalscheman, kolhydratförhållanden, insulinkänslighet och glukosmål) till Tidepool. Detta gör det möjligt för ditt vårdteam att se dina behandlingsinställningar tillsammans med dina diabetesdata."
                     )
                     .font(.caption)
                     .foregroundColor(.secondary)
@@ -113,14 +124,21 @@ struct TidepoolStartView: BaseView {
             SettingInputHintView(
                 hintDetent: $hintDetent,
                 shouldDisplayHint: $shouldDisplayHint,
-                hintLabel: "Connect to Tidepool",
+                hintLabel: "Anslut till Tidepool",
                 hintText: Text(
-                    "When connected, uploading of carbs, bolus, basal and glucose from Trio to your Tidepool account is enabled.\n\nYou can optionally enable therapy settings upload (basal schedules, carb ratios, insulin sensitivities, and blood glucose targets) by tapping the Connected to Tidepool button and enabling the \"Include Therapy Settings\" toggle. This helps your care team see your therapy configuration alongside your data.\n\nUse your Tidepool credentials to login. If you dont already have a Tidepool account, you can sign up for one on the login page."
+                    """
+                    När Trio är anslutet laddas kolhydrater, boluser, basalinsulin och glukosvärden automatiskt upp till ditt Tidepool-konto.
+
+                    Du kan även välja att ladda upp dina behandlingsinställningar (basalscheman, insulinkvoter, insulinkänslighet och målglukos) genom att trycka på knappen "Ansluten till Tidepool" och aktivera alternativet "Inkludera behandlingsinställningar". Detta gör det möjligt för ditt vårdteam att se dina behandlingsinställningar tillsammans med dina diabetesdata.
+
+                    Logga in med dina Tidepool-uppgifter. Om du ännu inte har ett Tidepool-konto kan du skapa ett från inloggningssidan.
+                    """
                 ),
-                sheetTitle: "Help"
+                sheetTitle: "Hjälp"
             )
         }
-        .scrollContentBackground(.hidden).background(appState.trioBackgroundColor(for: colorScheme))
+        .scrollContentBackground(.hidden)
+        .background(appState.trioBackgroundColor(for: colorScheme))
         .navigationTitle("Tidepool")
         .navigationBarTitleDisplayMode(.automatic)
         .onAppear(perform: configureView)

@@ -26,40 +26,50 @@ extension CalendarEventSettings {
                         get: { selectedVerboseHint },
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = "Create Events in Calendar"
+                            hintLabel = "Skapa händelser i Kalender"
                         }
                     ),
                     units: state.units,
                     type: .boolean,
-                    label: "Create Events in Calendar",
-                    miniHint: "Use calendar events to display current data.",
+                    label: "Skapa händelser i Kalender",
+                    miniHint: "Visa aktuella diabetesdata med hjälp av kalenderhändelser.",
                     verboseHint:
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: OFF").bold()
+                        Text("Standard: AV").bold()
+
                         Text(
-                            "When enabled, Trio will create a customizable calendar event to keep you notified of your current glucose reading with every successful loop cycle."
+                            "När funktionen är aktiverad skapar Trio en anpassningsbar kalenderhändelse med ditt aktuella glukosvärde efter varje slutförd loopcykel."
                         )
+
                         Text(
-                            "This is useful if you use CarPlay or a variety of other external services that limit the view of most apps, but allow the calendar app."
+                            "Detta är användbart om du använder CarPlay eller andra externa tjänster som begränsar visningen av de flesta appar men tillåter information från Kalender."
                         )
+
                         Text(
-                            "Once enabled, the available customizations will appear. You can customize with the calendar of your choosing, use of emoji labels, and the inclusion of IOB & COB data."
+                            "När funktionen är aktiverad visas de tillgängliga anpassningsalternativen. Du kan välja vilken kalender som ska användas, visa emoji-etiketter och inkludera IOB- och COB-värden."
                         )
-                        Text("Note: Once a new calendar event is created, the previous event will be deleted.")
+
+                        Text(
+                            "Obs: När en ny kalenderhändelse skapas tas den föregående händelsen bort."
+                        )
                     },
-                    headerText: "Diabetes Data as Calendar Event"
+                    headerText: "Diabetesdata som kalenderhändelse"
                 )
 
                 if state.calendarIDs.isNotEmpty, state.useCalendar {
                     Section {
                         VStack {
-                            Picker("Choose Calendar", selection: $state.currentCalendarID) {
+                            Picker(
+                                "Välj kalender",
+                                selection: $state.currentCalendarID
+                            ) {
                                 ForEach(state.calendarIDs, id: \.self) {
                                     Text($0).tag($0)
                                 }
                             }
                         }
-                    }.listRowBackground(Color.chart)
+                    }
+                    .listRowBackground(Color.chart)
 
                     SettingInputSection(
                         decimalValue: $decimalPlaceholder,
@@ -69,27 +79,31 @@ extension CalendarEventSettings {
                             get: { selectedVerboseHint },
                             set: {
                                 selectedVerboseHint = $0.map { AnyView($0) }
-                                hintLabel = "Display Emojis as Labels"
+                                hintLabel = "Visa emojier som etiketter"
                             }
                         ),
                         units: state.units,
                         type: .boolean,
-                        label: "Display Emojis as Labels",
-                        miniHint: "Use emojis for calendar events. See hint for more details.",
+                        label: "Visa emojier som etiketter",
+                        miniHint: "Använd emojier i kalenderhändelser. Se hjälptexten för mer information.",
                         verboseHint: VStack(alignment: .leading, spacing: 10) {
-                            Text("Default: OFF").bold()
+                            Text("Standard: AV").bold()
+
                             VStack(alignment: .leading, spacing: 5) {
                                 Text(
-                                    "When enabled, the calendar event created will indicate whether glucose readings are in-range or out-of-range using the following color emojis:"
+                                    "När funktionen är aktiverad visar den skapade kalenderhändelsen om glukosvärdet ligger inom eller utanför målområdet med hjälp av följande färgade emojier:"
                                 )
-                                Text("🟢: In-Range")
-                                Text("🟠: Above-Range")
-                                Text("🔴: Below-Range")
+
+                                Text("🟢: Inom målområdet")
+                                Text("🟠: Över målområdet")
+                                Text("🔴: Under målområdet")
                             }
+
                             VStack(alignment: .leading, spacing: 5) {
                                 Text(
-                                    "If \"Display IOB and COB\" is also enabled, \"IOB\" and \"COB\" will be replaced with the following emojis:"
+                                    "Om \"Visa IOB och COB\" också är aktiverat ersätts \"IOB\" och \"COB\" med följande emojier:"
                                 )
+
                                 Text("💉: IOB")
                                 Text("🥨: COB")
                             }
@@ -104,28 +118,30 @@ extension CalendarEventSettings {
                             get: { selectedVerboseHint },
                             set: {
                                 selectedVerboseHint = $0.map { AnyView($0) }
-                                hintLabel = "Display IOB and COB"
+                                hintLabel = "Visa IOB och COB"
                             }
                         ),
                         units: state.units,
                         type: .boolean,
-                        label: "Display IOB and COB",
-                        miniHint: "Include IOB & COB in the calendar event data.",
+                        label: "Visa IOB och COB",
+                        miniHint: "Inkludera IOB och COB i kalenderhändelsens information.",
                         verboseHint: VStack(alignment: .leading, spacing: 10) {
-                            Text("Default: OFF").bold()
+                            Text("Standard: AV").bold()
+
                             Text(
-                                "When enabled, Trio will include the current IOB and COB values, along with the current glucose reading, in each calendar event created."
+                                "När funktionen är aktiverad inkluderar Trio aktuella IOB- och COB-värden tillsammans med det aktuella glukosvärdet i varje kalenderhändelse som skapas."
                             )
                         }
                     )
                 } else if state.useCalendar {
                     if #available(iOS 17.0, *) {
                         Text(
-                            "If you are not seeing calendars to choose here, please go to Settings -> Trio -> Calendars and change permissions to \"Full Access\""
-                        ).font(.footnote)
+                            "Om inga kalendrar visas här går du till Inställningar → Trio → Kalendrar och ändrar behörigheten till \"Full åtkomst\"."
+                        )
+                        .font(.footnote)
 
-                        Button("Open Settings") {
-                            // Get the settings URL and open it
+                        Button("Öppna Inställningar") {
+                            // Hämta webbadressen till inställningarna och öppna den
                             if let url = URL(string: UIApplication.openSettingsURLString) {
                                 UIApplication.shared.open(url)
                             }
@@ -140,12 +156,13 @@ extension CalendarEventSettings {
                     shouldDisplayHint: $shouldDisplayHint,
                     hintLabel: hintLabel ?? "",
                     hintText: selectedVerboseHint ?? AnyView(EmptyView()),
-                    sheetTitle: "Help"
+                    sheetTitle: "Hjälp"
                 )
             }
-            .scrollContentBackground(.hidden).background(appState.trioBackgroundColor(for: colorScheme))
+            .scrollContentBackground(.hidden)
+            .background(appState.trioBackgroundColor(for: colorScheme))
             .onAppear(perform: configureView)
-            .navigationTitle("Calendar Events")
+            .navigationTitle("Kalenderhändelser")
             .navigationBarTitleDisplayMode(.automatic)
         }
     }

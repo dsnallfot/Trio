@@ -17,7 +17,7 @@ struct NightscoutConnectView: View {
     var body: some View {
         List {
             Section(
-                header: Text("Connect to Nightscout"),
+                header: Text("Anslut till Nightscout"),
                 content: {
                     HStack {
                         TextField("URL", text: $state.url)
@@ -25,23 +25,29 @@ struct NightscoutConnectView: View {
                             .textContentType(.URL)
                             .autocapitalization(.none)
                             .keyboardType(.URL)
+
                         if state.message.isNotEmpty && !state.isValidURL {
                             Image(systemName: "exclamationmark.triangle.fill")
                                 .foregroundStyle(.orange)
                         }
                     }
-                    SecureField("API secret", text: $state.secret)
+
+                    SecureField("API-hemlighet", text: $state.secret)
                         .disableAutocorrection(true)
                         .autocapitalization(.none)
                         .textContentType(.password)
                         .keyboardType(.asciiCapable)
+
                     if state.message.isNotEmpty {
                         Text(state.message)
                     }
+
                     if state.connecting {
                         HStack {
-                            Text("Connecting...")
+                            Text("Ansluter...")
+
                             Spacer()
+
                             ProgressView()
                         }
                     }
@@ -50,16 +56,17 @@ struct NightscoutConnectView: View {
                         Button {
                             state.connect()
                         } label: {
-                            Text("Connect to Nightscout")
-                                .font(.title3) }
-                            .frame(maxWidth: .infinity, alignment: .center)
-                            .buttonStyle(.bordered)
-                            .disabled(state.url.isEmpty && state.connecting)
+                            Text("Anslut till Nightscout")
+                                .font(.title3)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .buttonStyle(.bordered)
+                        .disabled(state.url.isEmpty && state.connecting)
                     } else {
                         Button(role: .destructive) {
                             state.delete()
                         } label: {
-                            Text("Disconnect and Remove")
+                            Text("Koppla från och ta bort")
                                 .font(.title3)
                         }
                         .frame(maxWidth: .infinity, alignment: .center)
@@ -67,23 +74,34 @@ struct NightscoutConnectView: View {
                         .tint(Color.loopRed)
                     }
                 }
-            ).listRowBackground(Color.chart)
+            )
+            .listRowBackground(Color.chart)
 
             if state.isConnectedToNS {
                 Section {
                     Button {
-                        UIApplication.shared.open(URL(string: state.url)!, options: [:], completionHandler: nil)
+                        UIApplication.shared.open(
+                            URL(string: state.url)!,
+                            options: [:],
+                            completionHandler: nil
+                        )
+                    } label: {
+                        Label(
+                            "Öppna Nightscout",
+                            systemImage: "waveform.path.ecg.rectangle"
+                        )
+                        .font(.title3)
+                        .padding()
                     }
-                    label: { Label("Open Nightscout", systemImage: "waveform.path.ecg.rectangle").font(.title3).padding() }
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .buttonStyle(.bordered)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .buttonStyle(.bordered)
                 }
                 .listRowBackground(Color.clear)
             }
 
-            // TODO: Find out if this is still required or needed ?!
+            // TODO: Ta reda på om detta fortfarande behövs.
 //            Section {
-//                Toggle("Use local glucose server", isOn: $state.useLocalSource)
+//                Toggle("Använd lokal glukosserver", isOn: $state.useLocalSource)
 //                HStack {
 //                    Text("Port")
 //                    TextFieldWithToolBar(
@@ -94,10 +112,11 @@ struct NightscoutConnectView: View {
 //                        allowDecimalSeparator: false
 //                    )
 //                }
-//            } header: { Text("Local glucose source") }.listRowBackground(Color.chart)
+//            } header: { Text("Lokal glukoskälla") }
+//            .listRowBackground(Color.chart)
         }
         .listSectionSpacing(sectionSpacing)
-        .navigationTitle("Connect")
+        .navigationTitle("Anslut")
         .navigationBarTitleDisplayMode(.automatic)
         .scrollContentBackground(.hidden)
         .background(appState.trioBackgroundColor(for: colorScheme))

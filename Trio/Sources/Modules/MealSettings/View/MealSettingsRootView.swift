@@ -43,12 +43,12 @@ extension MealSettings {
         var body: some View {
             List {
                 Section(
-                    header: Text("Limits per Entry"),
+                    header: Text("Begränsning per registrering"),
                     content: {
                         VStack {
                             VStack {
                                 HStack {
-                                    Text("Max Carbs")
+                                    Text("Max kolhydrater")
 
                                     Spacer()
 
@@ -81,7 +81,7 @@ extension MealSettings {
                             if state.useFPUconversion {
                                 VStack {
                                     HStack {
-                                        Text("Max Protein")
+                                        Text("Max protein")
 
                                         Spacer()
 
@@ -114,7 +114,7 @@ extension MealSettings {
 
                                 VStack {
                                     HStack {
-                                        Text("Max Fat")
+                                        Text("Max fett")
 
                                         Spacer()
 
@@ -148,7 +148,7 @@ extension MealSettings {
 
                             HStack(alignment: .center) {
                                 Text(
-                                    "Set limits for each type of macro per meal entry."
+                                    "Set gränser för varje typ av makronutrient per måltidsregistrering."
                                 )
                                 .lineLimit(nil)
                                 .font(.footnote)
@@ -157,16 +157,16 @@ extension MealSettings {
                                 Spacer()
                                 Button(
                                     action: {
-                                        hintLabel = "Limits per Entry"
+                                        hintLabel = "Gräns per registreringLimits per Entry"
                                         selectedVerboseHint =
                                             AnyView(
                                                 VStack(alignment: .leading, spacing: 5) {
-                                                    Text("Max Carbs:").bold()
-                                                    Text("Enter the largest carb value allowed per meal entry")
-                                                    Text("Max Fat:").bold()
-                                                    Text("Enter the largest fat value allowed per meal entry")
-                                                    Text("Max Protein:").bold()
-                                                    Text("Enter the largest protein value allowed per meal entry")
+                                                    Text("Max kolhydrater:").bold()
+                                                    Text("Ange den största mängden kolhydrater som tillåts per registrering.")
+                                                    Text("Max fett:").bold()
+                                                    Text("Ange den största mängden fett som tillåts per registrering.")
+                                                    Text("Max protein:").bold()
+                                                    Text("Ange den största mängden protein som tillåts per registrering.")
                                                 }
                                             )
                                         shouldDisplayHint.toggle()
@@ -190,24 +190,27 @@ extension MealSettings {
                         get: { selectedVerboseHint },
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = "Maximum Meal Absorption Time"
+                            hintLabel = "Maximal måltidsabsorptionstid"
                         }
                     ),
                     units: state.units,
                     type: .decimal("maxMealAbsorptionTime"),
-                    label: "Max Meal Absorption Time",
-                    miniHint: "The maximum duration for tracking carb entries in estimating Carbs on Board (COB)",
+                    label: "Maximal måltidsabsorptionstid",
+                    miniHint: "Den längsta tid som kolhydrater följs för att beräkna kolhydrater ombord (COB).",
                     verboseHint:
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: 6 hours").bold()
+                        Text("Standard: 6 timmar").bold()
+
                         Text(
-                            "Carb entries will be fully decayed by the number of hours specified as Max Meal Absorption Time. Meals that are high in fat and/or protein can have long lasting effects on BG levels. To allow such late meal effects to be considered by the carb decay model, a longer Max Meal Absorption Time than the default 6 hours can be set."
+                            "Registrerade kolhydrater kommer att vara helt avräknade efter det antal timmar som anges som maximal måltidsabsorptionstid. Måltider med mycket fett och/eller protein kan påverka glukosnivån under lång tid. För att sådana sena måltidseffekter ska kunna tas med i beräkningen av kolhydratabsorption kan en längre maximal måltidsabsorptionstid än standardvärdet på 6 timmar användas."
                         )
+
                         Text(
-                            "If carb entries decay too slowly, it is possible to set a lower than default setting. But this should typically be adressed by tuning ISF and CR settings instead, which in combination determines the rate of carb decay."
+                            "Om registrerade kolhydrater räknas av för långsamt kan ett lägre värde än standard användas. I de flesta fall är det dock bättre att justera ISF och CR, eftersom dessa tillsammans avgör hur snabbt kolhydrater räknas av."
                         )
+
                         Text(
-                            "Min 4 hours, max 10 hours."
+                            "Minst 4 timmar, högst 10 timmar."
                         )
                     }
                 )
@@ -220,47 +223,59 @@ extension MealSettings {
                         get: { selectedVerboseHint },
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = "Enable Fat and Protein Entries"
+                            hintLabel = "Aktivera registrering av fett och protein"
                         }
                     ),
                     units: state.units,
                     type: .boolean,
-                    label: "Enable Fat and Protein Entries",
-                    miniHint: "Add fat and protein macros to meal entries.",
+                    label: "Aktivera registrering av fett och protein",
+                    miniHint: "Lägg till fett och protein i måltidsregistreringar.",
                     verboseHint: VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: OFF").bold()
+                        Text("Standard: AV").bold()
+
                         VStack(spacing: 10) {
                             Text(
-                                "Enabling this setting allows you to log fat and protein, which are then converted into future carb equivalents using the Warsaw Method."
+                                "När denna inställning är aktiverad kan du registrera mängden fett och protein i dina måltider. Dessa omvandlas sedan till framtida kolhydratekvivalenter med hjälp av Warszawa-metoden."
                             )
+
                             VStack(alignment: .leading, spacing: 5) {
-                                Text("Warsaw Method:").bold()
+                                Text("Warszawa-metoden").bold()
+
                                 Text(
-                                    "The Warsaw Method helps account for the delayed glucose spikes caused by fat and protein in meals. It uses Fat-Protein Units (FPU) to calculate the carb effect from fat and protein. The system spreads insulin delivery over several hours to mimic natural insulin release, helping to manage post-meal glucose spikes."
+                                    "Warszawa-metoden tar hänsyn till de fördröjda glukosstegringar som fett och protein kan orsaka efter en måltid. Den använder fett-proteinenheter (FPU) för att beräkna kolhydrateffekten från fett och protein. Därefter fördelas insulintillförseln över flera timmar för att efterlikna kroppens naturliga insulinbehov och minska glukosstegringar efter måltider."
                                 )
                             }
+
                             VStack(alignment: .center, spacing: 5) {
-                                Text("Fat Conversion").bold()
-                                Text("𝑭 = fat(g) × 90%")
+                                Text("Omvandling av fett").bold()
+
+                                Text("𝑭 = fett (g) × 90 %")
                             }
+
                             VStack(alignment: .center, spacing: 5) {
-                                Text("Protein Conversion").bold()
-                                Text("𝑷 = protein(g) × 40%")
+                                Text("Omvandling av protein").bold()
+
+                                Text("𝑷 = protein (g) × 40 %")
                             }
+
                             VStack(alignment: .center, spacing: 5) {
-                                Text("FPU Conversion").bold()
-                                Text("𝑭 + 𝑷 = g CHO")
+                                Text("FPU-omvandling").bold()
+
+                                Text("𝑭 + 𝑷 = g kolhydrater")
                             }
+
                             VStack(alignment: .leading, spacing: 5) {
                                 Text(
-                                    "You can personalize the conversion calculation by adjusting the following settings that will appear when this option is enabled:"
+                                    "När denna funktion är aktiverad kan du anpassa beräkningen ytterligare med följande inställningar:"
                                 )
-                                Text("• Fat and Protein Delay")
-                                Text("• Fat and Protein Percentage")
+
+                                Text("• Fördröjning för fett och protein")
+
+                                Text("• Andel fett och protein")
                             }
                         }
                     },
-                    headerText: "Fat and Protein"
+                    headerText: "Fett och protein"
                 )
                 if state.useFPUconversion {
                     SettingInputSection(
@@ -271,21 +286,23 @@ extension MealSettings {
                             get: { selectedVerboseHint },
                             set: {
                                 selectedVerboseHint = $0.map { AnyView($0) }
-                                hintLabel = "Fat and Protein Delay"
+                                hintLabel = "Fördröjning för fett och protein"
                             }
                         ),
                         units: state.units,
                         type: .decimal("delay"),
-                        label: "Fat and Protein Delay",
-                        miniHint: "Delay between fat & protein entry and first FPU entry.",
+                        label: "Fördröjning för fett och protein",
+                        miniHint: "Tidsfördröjning mellan registrering av fett och protein och den första FPU-beräkningen.",
                         verboseHint:
                         VStack(alignment: .leading, spacing: 10) {
-                            Text("Default: 60 min").bold()
+                            Text("Standard: 60 min").bold()
+
                             Text(
-                                "The Fat and Protein Delay setting defines the time between when you log fat and protein and when the system starts delivering insulin for the Fat-Protein Unit Carb Equivalents (FPUs)."
+                                "Inställningen Fördröjning för fett och protein anger hur lång tid som ska gå mellan att du registrerar fett och protein och att systemet börjar dosera insulin för de kolhydratekvivalenter som beräknas från fett-proteinenheter (FPU)."
                             )
+
                             Text(
-                                "This delay accounts for the slower absorption of fat and protein, as calculated by the Warsaw Method, ensuring insulin delivery is properly timed to manage glucose spikes caused by high-fat, high-protein meals."
+                                "Denna fördröjning tar hänsyn till att fett och protein absorberas långsammare än kolhydrater, enligt Warszawa-metoden. På så sätt kan insulinet ges vid rätt tidpunkt för att bättre hantera glukosstegringar efter måltider med högt innehåll av fett och protein."
                             )
                         }
                     )
@@ -356,29 +373,36 @@ extension MealSettings {
                             get: { selectedVerboseHint },
                             set: {
                                 selectedVerboseHint = $0.map { AnyView($0) }
-                                hintLabel = "Fat and Protein Percentage"
+                                hintLabel = "Andel fett och protein"
                             }
                         ),
                         units: state.units,
                         type: .decimal("individualAdjustmentFactor"),
-                        label: "Fat and Protein Percentage",
-                        miniHint: "Adjust the Warsaw Method FPU Conversion rate.",
+                        label: "Andel fett och protein",
+                        miniHint: "Justerar FPU-omvandlingen enligt Warszawa-metoden.",
                         verboseHint: VStack(alignment: .leading, spacing: 10) {
-                            Text("Default: 50%").bold()
+                            Text("Standard: 50 %").bold()
+
                             VStack(spacing: 10) {
-                                Text("This setting changes how much effect the fat and protein entry has on FPUs.")
+                                Text(
+                                    "Den här inställningen avgör hur stor påverkan registrerat fett och protein har på beräkningen av fett-proteinenheter (FPU)."
+                                )
+
                                 VStack(alignment: .center, spacing: 5) {
-                                    Text("50% is half effect:").bold()
-                                    Text("(Fat × 45%) + (Protein × 20%)")
-                                    Text("100% is full effect:").bold()
-                                    Text("(Fat × 90%) + (Protein × 40%)")
-                                    Text("110% makes fat-to-carbs ratio essentially equal:").bold()
-                                    Text("(Fat × 99%) + (Protein x 44%)")
+                                    Text("50 % ger halv effekt:").bold()
+                                    Text("(Fett × 45 %) + (Protein × 20 %)")
+
+                                    Text("100 % ger full effekt:").bold()
+                                    Text("(Fett × 90 %) + (Protein × 40 %)")
+
+                                    Text("110 % gör förhållandet mellan fett och kolhydrater i princip 1:1:").bold()
+                                    Text("(Fett × 99 %) + (Protein × 44 %)")
                                 }
                                 .multilineTextAlignment(.center)
                                 .fixedSize(horizontal: false, vertical: true)
+
                                 Text(
-                                    "Tip: You may find that your normal carb ratio needs to increase to a larger number when you begin adding fat and protein entries. For this reason, it is best to start with a factor of about 50%."
+                                    "Tips: När du börjar registrera fett och protein kan du märka att ditt vanliga kolhydratförhållande (CR) behöver höjas. Därför rekommenderas att börja med en faktor på omkring 50 %."
                                 )
                             }
                         }
@@ -392,12 +416,12 @@ extension MealSettings {
                     shouldDisplayHint: $shouldDisplayHint,
                     hintLabel: hintLabel ?? "",
                     hintText: selectedVerboseHint ?? AnyView(EmptyView()),
-                    sheetTitle: "Help"
+                    sheetTitle: "Hjälp"
                 )
             }
             .scrollContentBackground(.hidden).background(appState.trioBackgroundColor(for: colorScheme))
             .onAppear(perform: configureView)
-            .navigationBarTitle("Meal Settings")
+            .navigationBarTitle("Måltidsinställningar")
             .navigationBarTitleDisplayMode(.automatic)
         }
     }

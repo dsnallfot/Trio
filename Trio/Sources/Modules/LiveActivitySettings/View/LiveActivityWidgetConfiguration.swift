@@ -78,13 +78,14 @@ struct LiveActivityWidgetConfiguration: BaseView {
         VStack {
             Group {
                 VStack(alignment: .trailing, spacing: 0) {
-                    Text("Live Activity Personalization".uppercased())
+                    Text("Anpassning av Liveaktivitet".uppercased())
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .foregroundColor(.secondary)
                         .font(.footnote)
                         .padding(.leading)
                 }
-            }.padding(.bottom, -15)
+            }
+            .padding(.bottom, -15)
 
             GroupBox {
                 VStack {
@@ -103,36 +104,45 @@ struct LiveActivityWidgetConfiguration: BaseView {
                     )
                     .cornerRadius(12)
                 }
-
-            }.padding(.vertical).groupBoxStyle(.dummyChart)
+            }
+            .padding(.vertical)
+            .groupBoxStyle(.dummyChart)
 
             Group {
                 HStack {
                     Image(systemName: "info.circle")
                     Text(
-                        "To re-order widgets, remove them and re-add them in the desired order."
+                        "Om du vill ändra ordningen på widgetarna behöver du först ta bort dem och sedan lägga till dem igen i önskad ordning."
                     )
                 }
-            }.frame(maxWidth: .infinity, alignment: .leading)
-                .foregroundColor(.secondary)
-                .font(.footnote)
-                .padding(.horizontal)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .foregroundColor(.secondary)
+            .font(.footnote)
+            .padding(.horizontal)
 
             Spacer()
         }
         .padding()
         .scrollContentBackground(.hidden)
         .background(appState.trioBackgroundColor(for: colorScheme))
-        .navigationTitle("Widget Configuration")
+        .navigationTitle("Widgetinställningar")
         .navigationBarTitleDisplayMode(.automatic)
         .onAppear {
             if glucoseData.isEmpty {
                 glucoseData = generateDummyGlucoseData()
             }
-            loadOrder() // Load the saved order when the view appears
+            loadOrder() // Ladda den sparade ordningen när vyn visas
         }
-        .confirmationDialog("Add Widget", isPresented: $showAddItemDialog, titleVisibility: .visible) {
-            ForEach(LiveActivityItem.allCases.filter { !selectedItems.contains($0) }, id: \.self) { item in
+        .confirmationDialog(
+            "Lägg till widget",
+            isPresented: $showAddItemDialog,
+            titleVisibility: .visible
+        ) {
+            ForEach(
+                LiveActivityItem.allCases.filter { !selectedItems.contains($0) },
+                id: \.self
+            ) { item in
                 Button(item.displayName) {
                     if let index = buttonIndexToUpdate {
                         addItem(item, at: index)
@@ -166,8 +176,8 @@ struct LiveActivityWidgetConfiguration: BaseView {
                         .font(.title3)
                 }
                 .offset(x: 10, y: -10)
-                .confirmationDialog("Remove Widget", isPresented: $isRemovalConfirmationPresented, titleVisibility: .hidden) {
-                    Button("Remove Widget", role: .destructive) {
+                .confirmationDialog("Ta bort widget", isPresented: $isRemovalConfirmationPresented, titleVisibility: .hidden) {
+                    Button("Ta bort widget", role: .destructive) {
                         if let itemToRemove = itemToRemove {
                             removeItem(itemToRemove)
                         }
@@ -228,8 +238,8 @@ struct LiveActivityWidgetConfiguration: BaseView {
                 )
 
                 PointMark(
-                    x: .value("Time", data.time),
-                    y: .value("Glucose Level", data.glucoseLevel)
+                    x: .value("Tid", data.time),
+                    y: .value("Glukosnivå", data.glucoseLevel)
                 ).foregroundStyle(pointMarkColor).symbolSize(15)
             }
         }
@@ -270,7 +280,7 @@ struct LiveActivityWidgetConfiguration: BaseView {
     private var currentGlucosePreview: some View {
         VStack {
             HStack(alignment: .center) {
-                Text("123")
+                Text("5.7")
                     .fontWeight(.bold)
                     .font(.caption)
             }
@@ -292,7 +302,7 @@ struct LiveActivityWidgetConfiguration: BaseView {
 
     private var iobPreview: some View {
         VStack(spacing: 2) {
-            Text("2 U").fontWeight(.bold).font(.caption)
+            Text("2 E").fontWeight(.bold).font(.caption)
             Text("IOB").font(.caption2).foregroundStyle(.primary)
         }
     }
@@ -304,13 +314,13 @@ struct LiveActivityWidgetConfiguration: BaseView {
                 .font(.caption)
                 .foregroundStyle(.primary)
 
-            Text("Updated").font(.caption2).foregroundStyle(.primary)
+            Text("Uppd.").font(.caption2).foregroundStyle(.primary)
         }
     }
 
     private var totalDailyDosePreview: some View {
         VStack {
-            Text("43.21 U")
+            Text("43.21 E")
                 .fontWeight(.bold)
                 .font(.caption)
                 .foregroundStyle(.primary)
@@ -383,17 +393,17 @@ enum LiveActivityItem: String, CaseIterable, Identifiable {
     var displayName: String {
         switch self {
         case .currentGlucoseLarge:
-            return "Glucose and Trend, no Delta"
+            return "Glukos och trend, inget delta"
         case .currentGlucose:
-            return "Glucose, Trend, Delta"
+            return "Glukos, trend, delta"
         case .iob:
-            return "Insulin on Board (IOB)"
+            return "Aktivt insulin (IOB)"
         case .cob:
-            return "Carbs on Board (IOB)"
+            return "Aktiva kh (COB)"
         case .updatedLabel:
-            return "Last Updated"
+            return "Senast uppdaterad"
         case .totalDailyDose:
-            return "Total Daily Dose"
+            return "Total daglig dos"
         }
     }
 }

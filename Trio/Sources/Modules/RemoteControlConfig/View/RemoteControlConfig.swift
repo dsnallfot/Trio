@@ -29,29 +29,31 @@ extension RemoteControlConfig {
                         get: { selectedVerboseHint },
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = "Enable Remote Command"
+                            hintLabel = "Aktivera fjärrstyrning"
                         }
                     ),
                     units: state.units,
                     type: .boolean,
-                    label: "Enable Remote Control",
-                    miniHint: "Allow Trio to receive commands from Loop Follow remotely.",
+                    label: "Aktivera fjärrstyrning",
+                    miniHint: "Tillåt Trio att ta emot kommandon från Loop Follow på distans.",
                     verboseHint: VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: OFF").bold()
+                        Text("Standard: AV").bold()
+
                         Text(
-                            "When Remote Control is enabled, you can send boluses, overrides, temporary targets, carbs, and other commands to Trio via push notifications."
+                            "När fjärrstyrning är aktiverad kan du skicka boluser, overrides, tillfälliga mål, kolhydrater och andra kommandon till Trio via pushnotiser."
                         )
+
                         Text(
-                            "To ensure security, these commands are protected by a shared secret, which must be entered in the Loop Follow app."
+                            "För att säkerställa säkerheten skyddas dessa kommandon med en delad hemlighet som måste anges i appen Loop Follow."
                         )
                     },
-                    headerText: "Trio Remote Control"
+                    headerText: "Trio Fjärrstyrning"
                 )
 
                 Section(
-                    header: Text("Shared Secret"),
+                    header: Text("Delad hemlighet"),
                     content: {
-                        TextField("Enter Shared Secret", text: $state.sharedSecret)
+                        TextField("Ange delad hemlighet", text: $state.sharedSecret)
                             .disableAutocorrection(true)
                             .autocapitalization(.none)
                             .padding(8)
@@ -62,15 +64,15 @@ extension RemoteControlConfig {
                             UIPasteboard.general.string = state.sharedSecret
                             isCopied = true
                         }) {
-                            Label("Copy Secret", systemImage: "doc.on.doc")
+                            Label("Kopiera hemlighet", systemImage: "doc.on.doc")
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.bordered)
                         .frame(maxWidth: .infinity)
                         .alert(isPresented: $isCopied) {
                             Alert(
-                                title: Text("Copied"),
-                                message: Text("Shared Secret copied to clipboard"),
+                                title: Text("Kopierad"),
+                                message: Text("Den delade hemligheten har kopierats till urklipp"),
                                 dismissButton: .default(Text("OK"))
                             )
                         }
@@ -78,14 +80,15 @@ extension RemoteControlConfig {
                         Button(action: {
                             state.generateNewSharedSecret()
                         }) {
-                            Label("Generate Secret", systemImage: "arrow.clockwise")
+                            Label("Generera ny hemlighet", systemImage: "arrow.clockwise")
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.borderedProminent)
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                     }
-                ).listRowBackground(Color.chart)
+                )
+                .listRowBackground(Color.chart)
             }
             .listSectionSpacing(sectionSpacing)
             .sheet(isPresented: $shouldDisplayHint) {
@@ -94,12 +97,13 @@ extension RemoteControlConfig {
                     shouldDisplayHint: $shouldDisplayHint,
                     hintLabel: hintLabel ?? "",
                     hintText: selectedVerboseHint ?? AnyView(EmptyView()),
-                    sheetTitle: "Help"
+                    sheetTitle: "Hjälp"
                 )
             }
-            .scrollContentBackground(.hidden).background(appState.trioBackgroundColor(for: colorScheme))
+            .scrollContentBackground(.hidden)
+            .background(appState.trioBackgroundColor(for: colorScheme))
             .onAppear(perform: configureView)
-            .navigationTitle("Remote Control")
+            .navigationTitle("Fjärrstyrning")
             .navigationBarTitleDisplayMode(.automatic)
         }
     }
