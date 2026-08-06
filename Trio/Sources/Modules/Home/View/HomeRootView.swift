@@ -834,7 +834,7 @@ extension Home {
 
         @ViewBuilder func mainViewElements(_ geo: GeometryProxy) -> some View {
             VStack(spacing: 0) {
-                mealPanel(geo) // .padding(.top, UIDevice.adjustPadding(min: nil, max: 30))
+                mealPanel(geo)
                     .padding(.top, 5)
                     .padding(.bottom, 20)
                     .safeAreaInset(edge: .top, spacing: 0) {
@@ -842,6 +842,7 @@ extension Home {
                             alertSafetyNotificationsView(geo: geo)
                         }
                     }
+
                 ZStack {
                     /// glucose bobble
                     glucoseView
@@ -850,49 +851,57 @@ extension Home {
                     HStack {
                         Spacer()
                         rightHeaderPanel(geo)
-                    }.padding(.trailing, 20)
+                    }
+                    .padding(.trailing, 20)
 
                     /// left panel with pump related info
                     HStack {
                         pumpView
                         Spacer()
-                    }.padding(.leading, 20)
-                }.padding(.bottom, 20)
+                    }
+                    .padding(.leading, 20)
+                }
+                .padding(.bottom, 20)
 
                 mainChart(geo: geo)
+                    .frame(minHeight: 0, maxHeight: .infinity)
+                    .layoutPriority(1)
 
                 HStack {
                     tappableButton(
-                        // buttonColor: (colorScheme == .dark ? Color.white : Color.black).opacity(0.8),
                         buttonColor: Color.secondary,
-                        // label: "", // "Stats",
-                        iconString: "chart.pie", // statsIconString,
-                        action: { state.showModal(for: .statistics) }
+                        iconString: "chart.pie",
+                        action: {
+                            state.showModal(for: .statistics)
+                        }
                     )
 
                     Spacer()
 
-                    timeIntervalButtons.padding(.top, UIDevice.adjustPadding(min: 0, max: 10))
+                    timeIntervalButtons
+                        .padding(.top, UIDevice.adjustPadding(min: 0, max: 10))
                         .padding(.bottom, UIDevice.adjustPadding(min: 0, max: 10))
 
                     Spacer()
 
                     tappableButton(
-                        // buttonColor: (colorScheme == .dark ? Color.white : Color.black).opacity(0.8),
                         buttonColor: Color.secondary,
-                        // label: "", // "Info",
-                        iconString: "info.circle", // "info",
-                        action: { state.isLegendPresented.toggle() }
+                        iconString: "info.circle",
+                        action: {
+                            state.isLegendPresented.toggle()
+                        }
                     )
                 }
                 .padding(.horizontal, 20)
-                .padding([.top, .bottom])
+                // .padding(.top, 2)
+                .padding(.bottom, 8)
 
                 if let progress = state.bolusProgress {
                     bolusView(geo: geo, progress)
-                        .padding(.bottom, UIDevice.adjustPadding(min: nil, max: 40))
+                        .padding(.bottom, 12)
                 } else {
-                    adjustmentView(geo: geo).padding(.bottom, UIDevice.adjustPadding(min: nil, max: 40))
+                    adjustmentView(geo: geo)
+                        .padding(.bottom, 12)
                 }
             }
             .background(appState.trioBackgroundColor(for: colorScheme))
@@ -901,6 +910,7 @@ extension Home {
                 perform: {
                     if notificationsDisabled != $0 {
                         notificationsDisabled = $0
+
                         if notificationsDisabled {
                             debug(.default, "notificationsDisabled")
                         }
