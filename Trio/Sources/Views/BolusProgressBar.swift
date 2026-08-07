@@ -6,7 +6,7 @@ struct BolusProgressBar: View {
     var body: some View {
         GeometryReader { geo in
             RoundedRectangle(cornerRadius: 15)
-                .frame(height: 6)
+                .frame(height: 7)
                 .foregroundColor(.clear)
                 .background(
                     LinearGradient(colors: [
@@ -23,6 +23,6 @@ struct BolusProgressBar: View {
                         }
                 )
         }
-        .frame(height: 6)
+        .frame(height: 7)
     }
 }

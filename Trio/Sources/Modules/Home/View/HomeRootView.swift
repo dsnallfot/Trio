@@ -792,8 +792,8 @@ extension Home {
                 .glassPanel(tint: .insulin, tintOpacity: 0.18, strokeOpacity: 0.30)
                 .overlay(alignment: .bottom) {
                     BolusProgressBar(progress: progress)
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 5)
+                        .padding(.horizontal, 46)
+                        .padding(.bottom, 4)
                 }
                 .padding(.horizontal, 10)
             }
