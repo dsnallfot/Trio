@@ -749,10 +749,16 @@ extension Home {
             if let bolusTotal = state.lastPumpBolus?.bolus?.amount {
                 let bolusFraction = progress * (bolusTotal as Decimal)
                 let bolusString =
-                    (bolusProgressFormatter.string(from: bolusFraction as NSNumber) ?? "0")
-                        + String(localized: " av ", comment: "Bolus string partial message: 'x U of y U' in home view") +
-                        (Formatter.decimalFormatterWithThreeFractionDigits.string(from: bolusTotal as NSNumber) ?? "0")
-                        + String(localized: " E", comment: "Insulin unit")
+                    (
+                        bolusProgressFormatter.string(from: bolusFraction as NSNumber)?
+                            .replacingOccurrences(of: ",", with: ".") ?? "0"
+                    )
+                    + String(localized: " av ", comment: "Bolus string partial message: 'x U of y U' in home view") +
+                    (
+                        Formatter.decimalFormatterWithThreeFractionDigits.string(from: bolusTotal as NSNumber)?
+                            .replacingOccurrences(of: ",", with: ".") ?? "0"
+                    )
+                    + String(localized: " E", comment: "Insulin unit")
                 let bolusLabel = String(localized: "Ger bolus")
 
                 HStack {
@@ -785,10 +791,9 @@ extension Home {
                 .frame(height: HomeLayout.bottomPanelHeight)
                 .glassPanel(tint: .insulin, tintOpacity: 0.18, strokeOpacity: 0.30)
                 .overlay(alignment: .bottom) {
-                    // bar hugs the panel's bottom edge (the slot no longer has outer bottom padding)
                     BolusProgressBar(progress: progress)
-                        .padding(.horizontal, 18)
-                        .padding(.bottom, 1)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 5)
                 }
                 .padding(.horizontal, 10)
             }

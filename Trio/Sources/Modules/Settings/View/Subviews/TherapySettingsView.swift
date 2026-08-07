@@ -29,7 +29,7 @@ struct TherapySettingsView: BaseView {
             Section(
                 header: Text("Insulin och målinställningar"),
                 content: {
-                    Text("Basalinställningar").navigationLink(to: .basalProfileEditor, from: self)
+                    Text("Basalprofil").navigationLink(to: .basalProfileEditor, from: self)
                     Text("Insulinkänslighet").navigationLink(to: .isfEditor, from: self)
                     Text("Insulinkvoter").navigationLink(to: .crEditor, from: self)
                     Text("Målglukos").navigationLink(to: .targetsEditor, from: self)

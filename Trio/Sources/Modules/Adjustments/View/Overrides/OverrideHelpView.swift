@@ -10,39 +10,49 @@ struct OverrideHelpView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     VStack(alignment: .leading, spacing: 0) {
                         Text(
-                            "This feature can be used to override these therapy settings for a chosen length of time:"
+                            "Den här funktionen kan användas för att tillfälligt åsidosätta följande behandlingsinställningar under en valfri tidsperiod:"
                         )
                         .fixedSize(horizontal: false, vertical: true)
-                        Text("• Basal Rate")
-                        Text("• Insulin Sensitivity")
-                        Text("• Carb Ratio")
-                        Text("• Glucose Target")
+                        Text("• Basalprofil")
+                        Text("• Insulinkänslighet")
+                        Text("• Insulinkvot")
+                        Text("• Glukosmål")
                     }
+
                     Text(
-                        "There are also options to override your Max SMB Minutes and Max UAM SMB Minutes, as well as to disable SMBs."
+                        "Du kan även åsidosätta Max SMB-minuter och Max UAM SMB-minuter samt välja att inaktivera SMB."
                     )
+
                     Text(
-                        "Select \"Start Override\" to immediately start using the Override, or select \"Save as Preset\" to be able to easily start the Override at a later time."
+                        "Välj \"Starta override\" för att aktivera override direkt, eller \"Spara som förval\" för att enkelt kunna starta samma override vid ett senare tillfälle."
                     )
+
                     Text(
-                        "If an active override preset is edited, the changes will also apply to the currently running override. However, if you edit the currently running override directly, the preset stays unchanged."
+                        "Om du redigerar en aktiv override-förval kommer ändringarna även att tillämpas på den override som för närvarande körs. Om du däremot redigerar den aktiva overriden direkt påverkas inte det sparade förvalet"
                     )
+
                     Text(
-                        "If using Dynamic ISF (without Sigmoid), overriding your ISF will only adjust the limits of the ISF the algorithm is allowed to set."
+                        "Om du använder Dynamisk ISF (utan Sigmoid) kommer en override av din ISF endast att justera de gränser som algoritmen får använda för att beräkna ISF."
                     )
+
                     Text(
-                        "If using Dynamic ISF (with Sigmoid), overriding your ISF will adjust the ISF used at your glucose target which extends to the ISF used at other glucose. Overriding your glucose target will change glucose level your ISF will be set to your profile ISF. Both of these can be combined in a single Override."
+                        "Om du använder Dynamisk ISF (med Sigmoid) kommer en override av din ISF att ändra det ISF-värde som används vid ditt målblodsocker, vilket även påverkar de ISF-värden som används vid andra glukosnivåer. Om du åsidosätter ditt glukosmål ändras även den glukosnivå där ISF återgår till ditt profilvärde. Båda dessa inställningar kan kombineras i samma override."
                     )
-                }.listRowBackground(Color.gray.opacity(0.1))
+                }
+                .listRowBackground(Color.gray.opacity(0.1))
             }
-            .navigationBarTitle("Help", displayMode: .inline)
+            .navigationBarTitle("Hjälp", displayMode: .inline)
 
-            Button { state.isHelpSheetPresented.toggle() }
-            label: { Text("Got it!").bold().frame(maxWidth: .infinity, minHeight: 30, alignment: .center) }
-                .buttonStyle(.bordered)
-                .padding(.top)
+            Button {
+                state.isHelpSheetPresented.toggle()
+            } label: {
+                Text("Uppfattat!")
+                    .bold()
+                    .frame(maxWidth: .infinity, minHeight: 30, alignment: .center)
+            }
+            .buttonStyle(.bordered)
+            .padding(.top)
         }
-
         .padding()
         .scrollContentBackground(.hidden)
         .presentationDetents(

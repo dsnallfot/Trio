@@ -109,6 +109,7 @@ struct CurrentGlucoseView: View {
                             )
                             .font(.system(size: 42, weight: .bold, design: .rounded))
                             .foregroundStyle(glucoseDisplayColor)
+
                         } else {
                             return Text("--")
                                 .font(.system(size: 42, weight: .bold, design: .rounded))
@@ -169,7 +170,7 @@ struct CurrentGlucoseView: View {
                         Image(systemName: "sensor.tag.radiowaves.forward.fill").font(.body).imageScale(.large)
                     }
                 HStack {
-                    Text("Add CGM").font(.caption).bold()
+                    Text("Lägg till CGM").font(.caption).bold()
                 }
             }.frame(alignment: .top)
         }
