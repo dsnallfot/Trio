@@ -662,9 +662,9 @@ Enact a temp Basal or a temp target */
 
 "Add Glucose" = " Logga glukos";
 
-"Add Override" = " Ny override";
+"Add Override" = " Override";
 
-"Add Temp Target" = " Nytt tillfälligt mål";
+"Add Temp Target" = " Tillfälligt mål";
 
 "Insulin" = "Behandling";
 
@@ -1785,10 +1785,10 @@ Enact a temp Basal or a temp target */
 "24 hours" = "24 timmar";
 
 /* Average BG = */
-"Average" = "Medelvärde";
+"Average" = "Medel";
 
 /* Median BG */
-"Median" = "Medianvärde";
+"Median" = "Median";
 
 /* CGM readings in statView */
 "Readings" = "Avläsningar";

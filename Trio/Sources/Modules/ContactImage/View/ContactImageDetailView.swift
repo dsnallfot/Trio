@@ -121,8 +121,8 @@ struct ContactImageDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom, spacing: 0) { stickySaveButton }
         .listSectionSpacing(10)
-        .padding(.top, 30)
-        .ignoresSafeArea(edges: .top)
+        // .padding(.top, 30)
+        // .ignoresSafeArea(edges: .top)
         .scrollContentBackground(.hidden)
         .background(appState.trioBackgroundColor(for: colorScheme))
         .toolbar {

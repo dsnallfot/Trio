@@ -12,17 +12,17 @@ struct LoopStatusHelpView: View {
         NavigationStack {
             VStack(alignment: .leading) {
                 Text(
-                    "The oref algorithm provides recommendations, showing key variables, decisions on temporary basal rates or super-micro-boluses, and a 'reason' field explaining its actions. Find all key terms of this 'reason' explained below:"
+                    "Oref-algoritmen ger doseringsrekommendationer och visar viktiga variabler, beslut om tillfälliga basaldoser eller supermikrobolusar (SMB), samt ett \"reason\"-fält som förklarar varför algoritmen agerar som den gör. Nedan hittar du en beskrivning av de viktigaste begreppen i detta \"reason\"-fält:"
                 )
                 .font(.subheadline)
                 .foregroundColor(.secondary)
-                .padding(.top, 50)
+                .padding(.top, 60)
 
                 List {
                     DefinitionRow(
-                        term: "Autosens Ratio",
+                        term: "Autosens ratio",
                         definition: Text(
-                            "The ratio of how sensitive or resistant to insulin you are in the current loop cycle. Baseline = 1.0, Sensitive < 1.0, Resistant > 1.0"
+                            "Förhållandet som beskriver hur insulinkänslig eller insulinresistent du är i den aktuella loopcykeln. Grundvärde = 1.0, känsligare < 1.0, mer insulinresistent > 1.0."
                         ),
                         color: .green
                     ).listRowBackground(Color.gray.opacity(0.1))
@@ -30,7 +30,7 @@ struct LoopStatusHelpView: View {
                     DefinitionRow(
                         term: "ISF",
                         definition: Text(
-                            "The first value is your profile Insulin Sensitivity Factor (ISF). The second value, after the arrow, is your adjusted ISF used for the most recent automated dosing calculation."
+                            "Det första värdet är din insulinkänslighetsfaktor (ISF) enligt din profil. Det andra värdet, efter pilen, är den justerade ISF som användes vid den senaste automatiska dosberäkningen."
                         ),
                         color: .green
                     ).listRowBackground(Color.gray.opacity(0.1))
@@ -38,7 +38,7 @@ struct LoopStatusHelpView: View {
                     DefinitionRow(
                         term: "COB",
                         definition: Text(
-                            "Amount of Carbs on Board (COB) used in the most recent automated dosing calculation."
+                            "Mängden aktiva kolhydrater (COB) som användes vid den senaste automatiska dosberäkningen."
                         ),
                         color: .green
                     ).listRowBackground(Color.gray.opacity(0.1))
@@ -46,7 +46,7 @@ struct LoopStatusHelpView: View {
                     DefinitionRow(
                         term: "Dev",
                         definition: Text(
-                            "Abbreviation for 'Deviation'. How much the actual glucose change deviated from the BGI."
+                            "Förkortning för \"Deviation\". Visar hur mycket den faktiska glukosförändringen avvek från den beräknade BGI."
                         ),
                         color: .green
                     ).listRowBackground(Color.gray.opacity(0.1))
@@ -54,7 +54,7 @@ struct LoopStatusHelpView: View {
                     DefinitionRow(
                         term: "BGI",
                         definition: Text(
-                            "The degree to which your glucose should be rising or falling based solely on insulin activity."
+                            "Visar hur mycket ditt glukos förväntas stiga eller sjunka enbart baserat på insulinets effekt."
                         ),
                         color: .green
                     ).listRowBackground(Color.gray.opacity(0.1))
@@ -62,15 +62,15 @@ struct LoopStatusHelpView: View {
                     DefinitionRow(
                         term: "CR",
                         definition: Text(
-                            "The first value is your profile Carb Ratio (CR). The second value, after the arrow, is your adjusted CR used for the most recent automated dosing calculation."
+                            "Det första värdet är ditt kolhydratförhållande (CR) enligt din profil. Det andra värdet, efter pilen, är det justerade CR som användes vid den senaste automatiska dosberäkningen."
                         ),
                         color: .green
                     ).listRowBackground(Color.gray.opacity(0.1))
 
                     DefinitionRow(
-                        term: "Target",
+                        term: "Mål",
                         definition: Text(
-                            "The first value is your target glucose from your settings. The second value, after the arrow, is your adjusted target glucose used for the most recent automated dosing calculation. A second value is shown if you have a temp target, override, or one of the Target Behavior options enabled."
+                            "Det första värdet är ditt målblodsocker enligt dina inställningar. Det andra värdet, efter pilen, är det justerade målblodsockret som användes vid den senaste automatiska dosberäkningen. Ett andra värde visas om du använder ett tillfälligt mål, en override eller någon av inställningarna för Target Behavior."
                         ),
                         color: .green
                     ).listRowBackground(Color.gray.opacity(0.1))
@@ -78,7 +78,7 @@ struct LoopStatusHelpView: View {
                     DefinitionRow(
                         term: "minPredBG",
                         definition: Text(
-                            "The lowest forecasted value that Trio has estimated for your future glucose."
+                            "Det lägsta framtida glukosvärde som Trio har prognostiserat."
                         ),
                         color: .green
                     ).listRowBackground(Color.gray.opacity(0.1))
@@ -86,7 +86,7 @@ struct LoopStatusHelpView: View {
                     DefinitionRow(
                         term: "minGuardBG",
                         definition: Text(
-                            "The lowest forecasted glucose during the remaining duration of insulin action (DIA)."
+                            "Det lägsta prognostiserade glukosvärdet under den återstående insulinverkningstiden (DIA)."
                         ),
                         color: .green
                     ).listRowBackground(Color.gray.opacity(0.1))
@@ -94,7 +94,7 @@ struct LoopStatusHelpView: View {
                     DefinitionRow(
                         term: "IOBpredBG",
                         definition: Text(
-                            "The forecasted glucose value in 4 hours calculated based on IOB only."
+                            "Det prognostiserade glukosvärdet om 4 timmar, beräknat enbart utifrån aktivt insulin (IOB)."
                         ),
                         color: .green
                     ).listRowBackground(Color.gray.opacity(0.1))
@@ -102,7 +102,7 @@ struct LoopStatusHelpView: View {
                     DefinitionRow(
                         term: "COBpredBG",
                         definition: Text(
-                            "The forecasted glucose value in 4 hours calculated based on current IOB and COB."
+                            "Det prognostiserade glukosvärdet om 4 timmar, beräknat utifrån aktuellt IOB och COB."
                         ),
                         color: .green
                     ).listRowBackground(Color.gray.opacity(0.1))
@@ -110,7 +110,7 @@ struct LoopStatusHelpView: View {
                     DefinitionRow(
                         term: "UAMpredBG",
                         definition: Text(
-                            "The forecasted glucose value in 4 hours based on current deviations ramping down to zero at the same rate they have been recently."
+                            "Det prognostiserade glukosvärdet om 4 timmar, baserat på de aktuella avvikelserna som gradvis avtar till noll i samma takt som de har gjort den senaste tiden."
                         ),
                         color: .green
                     ).listRowBackground(Color.gray.opacity(0.1))
@@ -118,7 +118,7 @@ struct LoopStatusHelpView: View {
                     DefinitionRow(
                         term: "TDD",
                         definition: Text(
-                            "Abbreviation for 'Total Daily Dose'. Last 24 hours of total insulin administered, both basal and bolus."
+                            "Förkortning för \"Total Daily Dose\". Den totala mängden insulin som administrerats under de senaste 24 timmarna, både basal och bolus."
                         ),
                         color: .insulin
                     ).listRowBackground(Color.gray.opacity(0.1))
@@ -126,35 +126,39 @@ struct LoopStatusHelpView: View {
                     DefinitionRow(
                         term: "Bolus/Basal %",
                         definition: Text(
-                            "Of the total insulin delivered in the past 24 hours, this indicates what percentage was administered through basals and what was given through bolus."
+                            "Visar hur stor andel av det insulin som levererats under de senaste 24 timmarna som gavs som basalinsulin respektive bolus."
                         ),
                         color: .insulin
                     ).listRowBackground(Color.gray.opacity(0.1))
 
                     DefinitionRow(
-                        term: "Dynamic ISF/CR",
+                        term: "Dynamisk ISF/CR",
                         definition: Text(
-                            "A display of On/On indicates both Dynamic ISF and CR are enabled. On/Off indicates only Dynamic ISF is enabled. Dynamic CR cannot be enabled when Dynamic ISF is disabled."
+                            "\"På/På\" betyder att både Dynamisk ISF och Dynamisk CR är aktiverade. \"På/Av\" betyder att endast Dynamisk ISF är aktiverad. Dynamisk CR kan inte aktiveras om Dynamisk ISF är avstängd."
                         ),
                         color: .zt
                     ).listRowBackground(Color.gray.opacity(0.1))
 
                     DefinitionRow(
-                        term: "Sigmoid function",
-                        definition: Text("If shown, Sigmoid Dynamic ISF is enabled."),
+                        term: "Sigmoid funktion",
+                        definition: Text(
+                            "Om detta visas betyder det att Sigmoid Dynamisk ISF är aktiverad."
+                        ),
                         color: .zt
                     ).listRowBackground(Color.gray.opacity(0.1))
 
                     DefinitionRow(
-                        term: "Logarithmic formula",
-                        definition: Text("If shown, Logarithmic Dynamic ISF is enabled."),
+                        term: "Logaritmisk formel",
+                        definition: Text(
+                            "Om detta visas betyder det att Logaritmisk Dynamisk ISF är aktiverad."
+                        ),
                         color: .zt
                     ).listRowBackground(Color.gray.opacity(0.1))
 
                     DefinitionRow(
                         term: "AF",
                         definition: Text(
-                            "Displays the Adjustment Factor (AF) for either Logathmic or Sigmoid Dynamic ISF in use."
+                            "Visar den justeringsfaktor (AF) som används för antingen Logarithmisk eller Sigmoid Dynamisk ISF."
                         ),
                         color: .zt
                     ).listRowBackground(Color.gray.opacity(0.1))
@@ -162,19 +166,21 @@ struct LoopStatusHelpView: View {
                     DefinitionRow(
                         term: "SMB Ratio",
                         definition: Text(
-                            "SMB Delivery Ratio of calculated insulin required that is given as SMB."
+                            "Den SMB-andel av den beräknade insulinmängden som levereras som en supermikrobolus."
                         ),
                         color: .uam
                     ).listRowBackground(Color.gray.opacity(0.1))
 
                     DefinitionRow(
                         term: "Smoothing",
-                        definition: Text("Indicates glucose smoothing is enabled."),
+                        definition: Text(
+                            "Visar att glukosutjämning (glucose smoothing) är aktiverad."
+                        ),
                         color: .gray
                     ).listRowBackground(Color.gray.opacity(0.1))
                 }
                 .scrollContentBackground(.hidden)
-                .navigationBarTitle("Glossary", displayMode: .inline)
+                .navigationBarTitle("Ordlista", displayMode: .inline)
                 .padding(.bottom, 15)
 
                 Button {

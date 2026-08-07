@@ -64,7 +64,7 @@ extension Adjustments.RootView {
             }
             .listRowBackground(Color.chart)
         } header: {
-            Text("Override förval")
+            Text("")
         } footer: {
             HStack {
                 Image(systemName: "hand.draw.fill").foregroundStyle(.primary)

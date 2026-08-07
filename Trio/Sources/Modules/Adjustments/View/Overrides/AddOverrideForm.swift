@@ -28,11 +28,11 @@ struct AddOverrideForm: View {
                 saveButton
             }
             .listSectionSpacing(10)
-            .padding(.top, 30)
-            .ignoresSafeArea(edges: .top)
+            // .padding(.top, 30)
+            // .ignoresSafeArea(edges: .top)
             .scrollContentBackground(.hidden)
             .background(appState.trioBackgroundColor(for: colorScheme))
-            .navigationTitle("Add Override")
+            .navigationTitle("Ny Override")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {

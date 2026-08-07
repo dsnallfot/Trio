@@ -149,8 +149,8 @@ struct AddContactImageSheet: View {
             .navigationTitle("Lägg till kontakt")
             .navigationBarTitleDisplayMode(.inline)
             .listSectionSpacing(10)
-            .padding(.top, 30)
-            .ignoresSafeArea(edges: .top)
+            // .padding(.top, 30)
+            // .ignoresSafeArea(edges: .top)
             .scrollContentBackground(.hidden)
             .background(appState.trioBackgroundColor(for: colorScheme))
             .toolbar {

@@ -246,7 +246,7 @@ struct CircleShape: View {
             .stroke(gradient, lineWidth: 1.5)
             .background(
                 Circle()
-                    .fill(backgroundColor.opacity(0.3))
+                    .fill(backgroundColor.opacity(0.6))
             )
             .frame(width: 130, height: 130)
     }

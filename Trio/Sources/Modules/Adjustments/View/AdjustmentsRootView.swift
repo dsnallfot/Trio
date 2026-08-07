@@ -91,7 +91,7 @@ extension Adjustments {
                                 showOverrideCreationSheet = true
                             }, label: {
                                 HStack {
-                                    Text("Add Override")
+                                    Text(" Override")
                                     Image(systemName: "plus")
                                 }
                             })
@@ -100,7 +100,7 @@ extension Adjustments {
                                 showTempTargetCreationSheet = true
                             }, label: {
                                 HStack {
-                                    Text("Add Temp Target")
+                                    Text(" Tillfälligt mål")
                                     Image(systemName: "plus")
                                 }
                             })

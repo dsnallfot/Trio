@@ -132,7 +132,7 @@ extension DataTable {
                 action: action,
                 label: {
                     HStack {
-                        Text("Add Glucose")
+                        Text(" Fingerstick")
                         Image(systemName: "plus")
                             .font(.title2)
                     }

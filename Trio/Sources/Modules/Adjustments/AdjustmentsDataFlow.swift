@@ -14,9 +14,9 @@ enum Adjustments {
             var name: String = ""
             switch self {
             case .overrides:
-                name = "Overrides"
+                name = "Override"
             case .tempTargets:
-                name = "Temp Targets"
+                name = "Tillfälliga mål"
             }
 
             return NSLocalizedString(name, comment: "Selected Tab")

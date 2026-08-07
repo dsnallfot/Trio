@@ -85,8 +85,8 @@ struct EditOverrideForm: View {
                 saveButton
             }
             .listSectionSpacing(10)
-            .padding(.top, 30)
-            .ignoresSafeArea(edges: .top)
+            // .padding(.top, 30)
+            // .ignoresSafeArea(edges: .top)
             .scrollContentBackground(.hidden)
             .background(appState.trioBackgroundColor(for: colorScheme))
             .navigationTitle("Edit Override")

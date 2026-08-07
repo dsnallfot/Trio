@@ -52,7 +52,7 @@ extension Adjustments.RootView {
             }
             .listRowBackground(Color.chart)
         } header: {
-            Text("Tillfälliga mål förval")
+            Text("")
         } footer: {
             HStack {
                 Image(systemName: "hand.draw.fill").foregroundStyle(.primary)
