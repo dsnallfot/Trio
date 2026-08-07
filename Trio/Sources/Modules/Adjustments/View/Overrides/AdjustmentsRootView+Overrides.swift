@@ -102,7 +102,7 @@ extension Adjustments.RootView {
                 selectedOverride = preset
                 state.showOverrideEditSheet = true
             }, label: {
-                Label("Edit", systemImage: "pencil")
+                Label("Redigera", systemImage: "pencil")
                     .tint(.blue)
             })
         }

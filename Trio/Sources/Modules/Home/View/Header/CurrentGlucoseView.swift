@@ -107,11 +107,11 @@ struct CurrentGlucoseView: View {
                             return Text(
                                 glucoseValue == 400 ? "HIGH" : displayGlucose
                             )
-                            .font(.system(size: 40, weight: .bold, design: .rounded))
+                            .font(.system(size: 42, weight: .bold, design: .rounded))
                             .foregroundStyle(glucoseDisplayColor)
                         } else {
                             return Text("--")
-                                .font(.system(size: 40, weight: .bold, design: .rounded))
+                                .font(.system(size: 42, weight: .bold, design: .rounded))
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -124,12 +124,14 @@ struct CurrentGlucoseView: View {
                                     NSLocalizedString("min", comment: "Short form for minutes") + " "
                             )
                         )
-                        .font(.caption2).foregroundStyle(colorScheme == .dark ? Color.white.opacity(0.9) : Color.secondary)
+                        .font(.caption).foregroundStyle(colorScheme == .dark ? Color.white.opacity(0.9) : Color.secondary)
+                        .fontWeight(.semibold)
 
                         Text(
                             delta
                         )
-                        .font(.caption2).foregroundStyle(colorScheme == .dark ? Color.white.opacity(0.9) : Color.secondary)
+                        .font(.caption).foregroundStyle(colorScheme == .dark ? Color.white.opacity(0.9) : Color.secondary)
+                        .fontWeight(.semibold)
                     }.frame(alignment: .top)
                 }
             }

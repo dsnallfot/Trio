@@ -91,7 +91,7 @@ extension Adjustments.RootView {
                 selectedTempTarget = tempTarget
                 state.showTempTargetEditSheet = true
             }, label: {
-                Label("Edit", systemImage: "pencil")
+                Label("Redigera", systemImage: "pencil")
                     .tint(.blue)
             })
         }
