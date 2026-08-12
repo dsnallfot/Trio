@@ -54,7 +54,7 @@ struct LoopStatusView: View {
 
                 if let errorMessage = state.errorMessage, let date = state.errorDate {
                     Group {
-                        Text("Error During Algorithm Run at \(Formatter.dateFormatter.string(from: date))").font(.headline)
+                        Text("Fel vid senaste loop \(Formatter.dateFormatter.string(from: date))").font(.headline)
                             .fixedSize(horizontal: false, vertical: true)
                         Text(errorMessage).font(.caption).fixedSize(horizontal: false, vertical: true)
                     }.foregroundColor(.loopRed)
@@ -62,13 +62,13 @@ struct LoopStatusView: View {
 
                 if let determination = state.determinationsFromPersistence.first {
                     if determination.glucose == 400 {
-                        Text("Invalid CGM reading (HIGH).")
+                        Text("Ogiltigt CGM-värde (HÖG).")
                             .bold()
                             .padding(.top)
                             .foregroundStyle(Color.loopRed)
                             .fixedSize(horizontal: false, vertical: true)
 
-                        Text("SMBs and Non-Zero Temp. Basal Rates are disabled.")
+                        Text("SMB och Temp basal inaktiverade.")
                             .font(.subheadline)
                             .fixedSize(horizontal: false, vertical: true)
 
@@ -107,7 +107,7 @@ struct LoopStatusView: View {
                         .fixedSize(horizontal: false, vertical: true)
                     }
                 } else {
-                    Text("No recent oref algorithm determination.")
+                    Text("Ingen aktuell oref algoritm slutsats.")
                 }
 
                 Spacer()
