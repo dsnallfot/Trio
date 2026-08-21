@@ -17,7 +17,7 @@
 [submodule "G7SensorKit"]
 	path = G7SensorKit
 	url = https://github.com/dsnallfot/G7SensorKit.git
-	branch = trio
+	branch = main
 [submodule "MinimedKit"]
 	path = MinimedKit
 	url = https://github.com/loopandlearn/MinimedKit.git
