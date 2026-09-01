@@ -48,7 +48,7 @@ struct GlucoseChartView: ChartContent {
                             .foregroundStyle(.red)
                     } else {
                         Image(systemName: "circle.fill")
-                            .font(.system(size: 5))
+                            .font(.system(size: 7))
                             .bold()
                             .foregroundStyle(pointMarkColor)
                     }

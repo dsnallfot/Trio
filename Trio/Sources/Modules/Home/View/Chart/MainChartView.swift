@@ -78,15 +78,35 @@ struct MainChartView: View {
                             mainChart
                             Spacer()
                             cobIobChart
-                        }.onChange(of: screenHours) {
-                            scroller.scrollTo("MainChart", anchor: .trailing)
+                        }
+                        .onChange(of: screenHours) {
+                            if screenHours == 3 {
+                                scroller.scrollTo("MainChart", anchor: UnitPoint(x: 0.9375, y: 0.5))
+                            } else {
+                                scroller.scrollTo("MainChart", anchor: .trailing)
+                            }
                         }
                         .onChange(of: state.glucoseFromPersistence.last?.glucose) {
-                            scroller.scrollTo("MainChart", anchor: .trailing)
+                            if screenHours == 3 {
+                                scroller.scrollTo(
+                                    "MainChart",
+                                    anchor: UnitPoint(x: 0.9375, y: 0.5)
+                                )
+                            } else {
+                                scroller.scrollTo("MainChart", anchor: .trailing)
+                            }
+
                             state.updateStartEndMarkers()
                         }
                         .onChange(of: state.enactedAndNonEnactedDeterminations.first?.deliverAt) {
-                            scroller.scrollTo("MainChart", anchor: .trailing)
+                            if screenHours == 3 {
+                                scroller.scrollTo(
+                                    "MainChart",
+                                    anchor: UnitPoint(x: 0.9375, y: 0.5)
+                                )
+                            } else {
+                                scroller.scrollTo("MainChart", anchor: .trailing)
+                            }
                         }
                         .onChange(of: units) {
                             // TODO: - Refactor this to only update the Y Axis Scale
@@ -94,7 +114,18 @@ struct MainChartView: View {
                         }
                         .onAppear {
                             if !mainChartHasInitialized {
-                                scroller.scrollTo("MainChart", anchor: .trailing)
+                                if screenHours == 3 {
+                                    // 24 h historik + 3 h prognos = 27 h total chart-bredd.
+                                    // Vid 3 h screentime vill vi initialt visa:
+                                    // 1,5 h historik + NOW + 1,5 h prognos.
+                                    scroller.scrollTo(
+                                        "MainChart",
+                                        anchor: UnitPoint(x: 0.9375, y: 0.5)
+                                    )
+                                } else {
+                                    scroller.scrollTo("MainChart", anchor: .trailing)
+                                }
+
                                 state.updateStartEndMarkers()
                                 calculateTempBasalsInBackground()
                                 mainChartHasInitialized = true

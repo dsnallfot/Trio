@@ -4,13 +4,13 @@ import SwiftUI
 
 private struct DonutSymbol: ChartSymbolShape {
     var perceptualUnitRect: CGRect {
-        CGRect(origin: .zero, size: CGSize(width: 1, height: 1))
+        CGRect(origin: .zero, size: CGSize(width: 1.75, height: 1.75))
     }
 
     func path(in rect: CGRect) -> Path {
         var path = Path()
         let outerRadius = min(rect.width, rect.height) / 2
-        let innerRadius = outerRadius / 2
+        let innerRadius = outerRadius / 1.5
         path.addArc(
             center: CGPoint(x: rect.midX, y: rect.midY),
             radius: outerRadius,
@@ -107,7 +107,7 @@ struct ForecastView: ChartContent {
             let displayValue = units == .mmolL ? valueAsDecimal.asMmolL : valueAsDecimal
             let xValue = timeForIndex(forecastValue.index)
 
-            if xValue <= Date(timeIntervalSinceNow: TimeInterval(hours: 2.5)) {
+            if xValue <= Date(timeIntervalSinceNow: TimeInterval(hours: 1.5)) {
                 // LineMark(
                 PointMark(
                     x: .value("Time", xValue),

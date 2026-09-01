@@ -67,7 +67,7 @@ extension Home {
         var displayYgridLines: Bool = false
         var thresholdLines: Bool = false
         var timeZone: TimeZone?
-        var hours: Int16 = 6
+        var hours: Int16 = 3
         var totalBolus: Decimal = 0
         var isLoopStatusPresented: Bool = false
         var isLegendPresented: Bool = false
