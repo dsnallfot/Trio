@@ -68,7 +68,7 @@ struct ForecastView: ChartContent {
                         Decimal(minForecast[index] + 1)
                         .asMmolL
 
-                    if xValue <= Date(timeIntervalSinceNow: TimeInterval(hours: 2.5)) {
+                    if xValue <= Date(timeIntervalSinceNow: TimeInterval(hours: 3)) {
                         AreaMark(
                             x: .value("Time", xValue),
                             // maxValue is already parsed to user units, no need to parse
@@ -84,7 +84,7 @@ struct ForecastView: ChartContent {
                     let yMaxValue = units == .mgdL ? Decimal(maxForecast[index]) : Decimal(maxForecast[index])
                         .asMmolL
 
-                    if xValue <= Date(timeIntervalSinceNow: TimeInterval(hours: 2.5)) {
+                    if xValue <= Date(timeIntervalSinceNow: TimeInterval(hours: 3)) {
                         AreaMark(
                             x: .value("Time", xValue),
                             // maxValue is already parsed to user units, no need to parse
@@ -107,7 +107,7 @@ struct ForecastView: ChartContent {
             let displayValue = units == .mmolL ? valueAsDecimal.asMmolL : valueAsDecimal
             let xValue = timeForIndex(forecastValue.index)
 
-            if xValue <= Date(timeIntervalSinceNow: TimeInterval(hours: 1.5)) {
+            if xValue <= Date(timeIntervalSinceNow: TimeInterval(hours: 3)) {
                 // LineMark(
                 PointMark(
                     x: .value("Time", xValue),

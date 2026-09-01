@@ -81,7 +81,7 @@ struct MainChartView: View {
                         }
                         .onChange(of: screenHours) {
                             if screenHours == 3 {
-                                scroller.scrollTo("MainChart", anchor: UnitPoint(x: 0.9375, y: 0.5))
+                                scroller.scrollTo("MainChart", anchor: UnitPoint(x: 0.9444, y: 0.5))
                             } else {
                                 scroller.scrollTo("MainChart", anchor: .trailing)
                             }
@@ -90,7 +90,7 @@ struct MainChartView: View {
                             if screenHours == 3 {
                                 scroller.scrollTo(
                                     "MainChart",
-                                    anchor: UnitPoint(x: 0.9375, y: 0.5)
+                                    anchor: UnitPoint(x: 0.9444, y: 0.5)
                                 )
                             } else {
                                 scroller.scrollTo("MainChart", anchor: .trailing)
@@ -102,7 +102,7 @@ struct MainChartView: View {
                             if screenHours == 3 {
                                 scroller.scrollTo(
                                     "MainChart",
-                                    anchor: UnitPoint(x: 0.9375, y: 0.5)
+                                    anchor: UnitPoint(x: 0.9444, y: 0.5)
                                 )
                             } else {
                                 scroller.scrollTo("MainChart", anchor: .trailing)
@@ -120,7 +120,7 @@ struct MainChartView: View {
                                     // 1,5 h historik + NOW + 1,5 h prognos.
                                     scroller.scrollTo(
                                         "MainChart",
-                                        anchor: UnitPoint(x: 0.9375, y: 0.5)
+                                        anchor: UnitPoint(x: 0.9444, y: 0.5)
                                     )
                                 } else {
                                     scroller.scrollTo("MainChart", anchor: .trailing)
