@@ -39,8 +39,8 @@ enum MainChartHelper {
     }
 
     enum Config {
-        static let bolusSize: CGFloat = 7
-        static let bolusScale: CGFloat = 1.8
+        static let bolusMinSize: CGFloat = 9
+        static let bolusMaxSize: CGFloat = 22
         static let carbsSize: CGFloat = 7
         static let maxCarbSize: CGFloat = 30
         static let carbsScale: CGFloat = 0.3
