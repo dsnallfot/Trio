@@ -15,7 +15,7 @@ final class PluginSource: GlucoseSource {
 
     // Prevent spamming the same note repeatedly
     private var lastUploadedNote: (message: String, date: Date)?
-    private let noteThrottleInterval: TimeInterval = 10 * 60
+    private let noteThrottleInterval: TimeInterval = 5 * 60 // 5 minuter mellan uppladdningar notes
 
     var glucoseManager: FetchGlucoseManager?
 
