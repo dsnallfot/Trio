@@ -115,7 +115,8 @@ extension PluginSource: CGMManagerDelegate {
     ) {
         debug(.deviceManager, "device Manager for \(String(describing: deviceIdentifier)) : \(message)")
 
-        if message.contains("Sensor disconnected: suspectedEndOfSession=true") {
+        // Trigga ENDAST när en sensorsession definitivt har övergetts/avslutats
+        if message.contains("Forgetting existing sensor and starting scan for new sensor.") {
             let sensorName = deviceIdentifier ?? "okänd sensor"
             let note = "⛔️ Sensorsession \(sensorName) avslutades i Trio"
             let now = Date()
