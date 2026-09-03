@@ -116,7 +116,7 @@ protocol BloodGlucoseGenerator {
 class OscillatingGenerator: BloodGlucoseGenerator {
     /// Default values for simulator parameters
     enum Defaults {
-        static let centerValue: Double = 120.0
+        static let centerValue: Double = 90.0
         static let amplitude: Double = 45.0
         static let period: Double = 10800.0 // 3 hours in seconds
         static let noiseAmplitude: Double = 5.0
