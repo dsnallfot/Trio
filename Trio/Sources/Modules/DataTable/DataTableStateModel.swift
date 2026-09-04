@@ -94,12 +94,12 @@ extension DataTable {
             }
         }
 
-        func addManualGlucose() {
+        func addManualGlucose() async {
             // Always save value in mg/dL
             let glucose = units == .mmolL ? manualGlucose.asMgdL : manualGlucose
             let glucoseAsInt = Int(glucose)
 
-            glucoseStorage.addManualGlucose(glucose: glucoseAsInt)
+            await glucoseStorage.addManualGlucose(glucose: glucoseAsInt, date: Date())
         }
 
         // Carb and FPU deletion from history

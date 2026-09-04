@@ -9,6 +9,7 @@ class TrioRemoteControl: Injectable {
 
     @Injected() internal var tempTargetsStorage: TempTargetsStorage!
     @Injected() internal var carbsStorage: CarbsStorage!
+    @Injected() internal var glucoseStorage: GlucoseStorage!
     @Injected() internal var nightscoutManager: NightscoutManager!
     @Injected() internal var overrideStorage: OverrideStorage!
     @Injected() internal var settings: SettingsManager!
@@ -121,6 +122,8 @@ class TrioRemoteControl: Injectable {
             await handleStartOverrideCommand(pushMessage)
         case .cancelOverride:
             await handleCancelOverrideCommand(pushMessage)
+        case .glucose:
+            await handleGlucoseCommand(pushMessage)
         }
     }
 
@@ -141,6 +144,13 @@ class TrioRemoteControl: Injectable {
             bolusAmount = NSDecimalNumber(decimal: bolusAmountValue).stringValue
         } else {
             bolusAmount = "nil"
+        }
+
+        let glucose: String
+        if let glucoseValue = pushMessage.glucose {
+            glucose = NSDecimalNumber(decimal: glucoseValue).stringValue
+        } else {
+            glucose = "nil"
         }
 
         let carbs: String
@@ -187,6 +197,7 @@ class TrioRemoteControl: Injectable {
             timestamp,
             scheduledTime,
             bolusAmount,
+            glucose,
             carbs,
             fat,
             protein,
@@ -241,6 +252,7 @@ extension TrioRemoteControl {
         case combo
         case startOverride = "start_override"
         case cancelOverride = "cancel_override"
+        case glucose
 
         var description: String {
             switch self {
@@ -260,6 +272,8 @@ extension TrioRemoteControl {
                 return "Starta Override"
             case .cancelOverride:
                 return "Avbryt Override"
+            case .glucose:
+                return "Blodsocker"
             }
         }
     }

@@ -457,10 +457,13 @@ extension DataTable {
                         Section {
                             HStack {
                                 Button {
-                                    state.addManualGlucose()
-                                    isAmountUnconfirmed = false
-                                    showManualGlucose = false
-                                    state.mode = .glucose
+                                    Task {
+                                        await state.addManualGlucose()
+
+                                        isAmountUnconfirmed = false
+                                        showManualGlucose = false
+                                        state.mode = .glucose
+                                    }
                                 }
                                 label: { Text("Save") }
                                     .frame(maxWidth: .infinity, alignment: .center)

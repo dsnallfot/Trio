@@ -40,6 +40,17 @@ struct AppShortcuts: AppShortcutsProvider {
             systemImageName: "fork.knife"
         )
         AppShortcut(
+            intent: ManualGlucoseIntent(),
+            phrases: [
+                "Registrera blodsocker i \(.applicationName)",
+                "\(.applicationName) registrera blodsocker",
+                "Registrera fingerstick i \(.applicationName)",
+                "\(.applicationName) registrera fingerstick"
+            ],
+            shortTitle: "Manual Glucose",
+            systemImageName: "drop.fill"
+        )
+        AppShortcut(
             intent: ApplyOverridePresetIntent(),
             phrases: [
                 "Aktivera en override i \(.applicationName)",

@@ -12,7 +12,7 @@ struct UnlockError: Error {
 final class BaseUnlockManager: UnlockManager {
     @MainActor func unlock() async throws -> Bool {
         let context = LAContext()
-        let reason = "We need to make sure you are the owner of the device."
+        let reason = "Vi behöver vara säkra på att det är du som äger telefonen."
 
         do {
             _ = try await context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: reason)

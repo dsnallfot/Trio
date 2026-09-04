@@ -14,6 +14,7 @@ struct PushMessage: Codable, Sendable {
     var timestamp: TimeInterval
     var overrideName: String?
     var scheduledTime: TimeInterval?
+    var glucose: Decimal?
 
     enum CodingKeys: String, CodingKey {
         case aps
@@ -30,6 +31,7 @@ struct PushMessage: Codable, Sendable {
         case timestamp
         case overrideName
         case scheduledTime = "scheduled_time"
+        case glucose
     }
 
     func encode(to encoder: Encoder) throws {
@@ -49,6 +51,7 @@ struct PushMessage: Codable, Sendable {
         if let scheduledTime = scheduledTime {
             try container.encode(scheduledTime, forKey: .scheduledTime)
         }
+        try container.encodeIfPresent(glucose, forKey: .glucose)
     }
 
     init(from decoder: Decoder) throws {
@@ -66,6 +69,7 @@ struct PushMessage: Codable, Sendable {
         timestamp = try container.decode(TimeInterval.self, forKey: .timestamp)
         overrideName = try container.decodeIfPresent(String.self, forKey: .overrideName)
         scheduledTime = try container.decodeIfPresent(TimeInterval.self, forKey: .scheduledTime)
+        glucose = try container.decodeIfPresent(Decimal.self, forKey: .glucose)
     }
 
     init(
@@ -81,7 +85,8 @@ struct PushMessage: Codable, Sendable {
         sharedSecret: String,
         timestamp: TimeInterval,
         overrideName: String? = nil,
-        scheduledTime: TimeInterval? = nil
+        scheduledTime: TimeInterval? = nil,
+        glucose: Decimal? = nil
     ) {
         self.user = user
         self.commandType = commandType
@@ -96,6 +101,7 @@ struct PushMessage: Codable, Sendable {
         self.timestamp = timestamp
         self.overrideName = overrideName
         self.scheduledTime = scheduledTime
+        self.glucose = glucose
     }
 
     func humanReadableDescription() -> String {
@@ -149,6 +155,11 @@ struct PushMessage: Codable, Sendable {
             }
         case .cancelOverride:
             description += "Cancel Override command."
+        case .glucose:
+            let glucoseDesc = glucose != nil
+                ? "\(glucose!)"
+                : "okänt blodsocker"
+            description += "Blodsocker: \(glucoseDesc)."
         }
 
         if let scheduledTime = scheduledTime {
