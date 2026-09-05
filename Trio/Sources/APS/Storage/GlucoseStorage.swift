@@ -116,13 +116,19 @@ final class BaseGlucoseStorage: GlucoseStorage, Injectable {
                     )
                 }
 
-                debug(.deviceManager, "start storage cgmState")
+                let latestGlucose = glucose.max { $0.dateString < $1.dateString }
+                let latestValue = latestGlucose?.glucose.map(String.init) ?? "nil"
+                let latestDate = latestGlucose?.dateString.description ?? "nil"
+                let hasSessionStart = glucose.contains { $0.sessionStartDate != nil }
+                debug(
+                    .deviceManager,
+                    "storeGlucose count=\(glucose.count) latest=\(latestValue) date=\(latestDate) hasSessionStart=\(hasSessionStart)"
+                )
                 self.storage.transaction { storage in
                     let file = OpenAPS.Monitor.cgmState
                     var treatments = storage.retrieve(file, as: [NightscoutTreatment].self) ?? []
                     var updated = false
                     for x in glucose {
-                        debug(.deviceManager, "storeGlucose \(x)")
                         guard let sessionStartDate = x.sessionStartDate else {
                             continue
                         }

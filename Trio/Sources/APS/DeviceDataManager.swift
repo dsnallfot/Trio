@@ -631,6 +631,18 @@ extension BaseDeviceDataManager: DeviceManagerDelegate {
         }
     }
 
+    private func shouldLogDeviceMessage(_ message: String) -> Bool {
+        if message.contains("[heartbeat]") {
+            return false
+        }
+
+        if message.range(of: #"^[0-9a-fA-F]{16,}$"#, options: .regularExpression) != nil {
+            return false
+        }
+
+        return true
+    }
+
     func deviceManager(
         _: DeviceManager,
         logEventForDeviceIdentifier _: String?,
@@ -638,6 +650,8 @@ extension BaseDeviceDataManager: DeviceManagerDelegate {
         message: String,
         completion _: ((Error?) -> Void)?
     ) {
+        guard shouldLogDeviceMessage(message) else { return }
+
         debug(.deviceManager, "Device message: \(message)")
     }
 }

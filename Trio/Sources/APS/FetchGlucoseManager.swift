@@ -311,7 +311,7 @@ final class BaseFetchGlucoseManager: FetchGlucoseManager, Injectable {
                     return Empty().eraseToAnyPublisher()
                 }
 
-                debug(.nightscout, "FetchGlucoseManager timer heartbeat")
+                // Minska loggning // debug(.nightscout, "FetchGlucoseManager timer heartbeat")
                 if let glucoseSource = self.glucoseSource {
                     return glucoseSource.fetch(self.timer).eraseToAnyPublisher()
                 } else {
@@ -321,7 +321,7 @@ final class BaseFetchGlucoseManager: FetchGlucoseManager, Injectable {
             .sink { [weak self] glucose in
                 guard let self = self else { return }
 
-                debug(.nightscout, "FetchGlucoseManager callback sensor")
+                // Minska loggning // debug(.nightscout, "FetchGlucoseManager callback sensor")
                 self.glucoseStoreAndHeartDecision(
                     syncDate: self.glucoseStorage.syncDate(),
                     glucose: glucose

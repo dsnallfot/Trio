@@ -619,12 +619,12 @@ extension Treatments {
 extension Treatments.StateModel: DeterminationObserver, BolusFailureObserver {
     func determinationDidUpdate(_: Determination) {
         guard isActive else {
-            debug(.bolusState, "skipping determinationDidUpdate; view not active")
+            // Minska loggning // debug(.bolusState, "skipping determinationDidUpdate; view not active")
             return
         }
 
         DispatchQueue.main.async {
-            debug(.bolusState, "determinationDidUpdate fired")
+            // Minska loggning // debug(.bolusState, "determinationDidUpdate fired")
             self.waitForSuggestion = false
             if self.addButtonPressed {
                 self.hideModal()
@@ -805,16 +805,16 @@ extension Treatments.StateModel {
     @MainActor func updateForecasts(with forecastData: Determination? = nil) async {
         guard isActive else {
             return
-                debug(.bolusState, "updateForecasts not fired")
+                // Minska loggning // debug(.bolusState, "updateForecasts not fired")
         }
 
-        debug(.bolusState, "updateForecasts fired")
+        // Minska loggning // debug(.bolusState, "updateForecasts fired")
         if let forecastData = forecastData {
             simulatedDetermination = forecastData
         } else {
             simulatedDetermination = await Task { [self] in
-                debug(.bolusState, "calling simulateDetermineBasal to get forecast data")
-                return await apsManager.simulateDetermineBasal(carbs: carbs, iob: amount)
+                // Minska loggning // debug(.bolusState, "calling simulateDetermineBasal to get forecast data")
+                await apsManager.simulateDetermineBasal(carbs: carbs, iob: amount)
             }.value
         }
 

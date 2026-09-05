@@ -113,7 +113,9 @@ extension PluginSource: CGMManagerDelegate {
         message: String,
         completion _: ((Error?) -> Void)?
     ) {
-        debug(.deviceManager, "device Manager for \(String(describing: deviceIdentifier)) : \(message)")
+        if shouldLogCGMDeviceMessage(message) {
+            debug(.deviceManager, "device Manager for \(String(describing: deviceIdentifier)) : \(message)")
+        }
 
         // Trigga ENDAST när en sensorsession definitivt har övergetts/avslutats
         if message.contains("Forgetting existing sensor and starting scan for new sensor.") {
@@ -135,6 +137,22 @@ extension PluginSource: CGMManagerDelegate {
                 }
             }
         }
+    }
+
+    private func shouldLogCGMDeviceMessage(_ message: String) -> Bool {
+        if message == "Sensor connected" {
+            return false
+        }
+
+        if message.contains("Sensor disconnected: suspectedEndOfSession=false") {
+            return false
+        }
+
+        if message.contains("Sensor didRead G7GlucoseMessage") {
+            return false
+        }
+
+        return true
     }
 
     func issueAlert(_: LoopKit.Alert) {}
@@ -266,8 +284,7 @@ extension PluginSource: CGMManagerDelegate {
 
     // Här kan en logg som ser ut såhär skapas vid sensorfel: 2026-01-08T00:38:32+0100 [DeviceManager] PluginSource.swift - readCGMResult(readingResult:) - 197 - DEV: PLUGIN CGM - Process CGM Reading Result launched with error(G7SensorKit.AlgorithmError.unreliableState(temporarySensorIssue))
     private func readCGMResult(readingResult: CGMReadingResult) -> Result<[BloodGlucose], Error> {
-        let debugMessage = "PLUGIN CGM - Process CGM Reading Result launched with \(readingResult)"
-        debug(.deviceManager, debugMessage)
+        logCGMReadingResult(readingResult)
 
         // If this is a Dexcom G7 error, optionally upload a user-friendly note to Nightscout.
         // NOTE: G7SensorKit.AlgorithmError is internal (not public), so we can't type-cast to it here.
@@ -403,6 +420,25 @@ extension PluginSource: CGMManagerDelegate {
             setContactImagesForceStaleBG(true)
             refreshContactImagesIfBGStaleStateChanged()
             return .failure(error)
+        }
+    }
+
+    private func logCGMReadingResult(_ readingResult: CGMReadingResult) {
+        switch readingResult {
+        case let .newData(values):
+            guard let latest = values.first else { return }
+
+            let latestValue = Int(latest.quantity.doubleValue(for: .milligramsPerDeciliter))
+            debug(
+                .deviceManager,
+                "PLUGIN CGM - newData count=\(values.count) latest=\(latestValue) date=\(latest.date) trend=\(String(describing: latest.trend)) displayOnly=\(latest.isDisplayOnly)"
+            )
+        case .noData:
+            return
+        case .unreliableData:
+            debug(.deviceManager, "PLUGIN CGM - unreliableData")
+        case let .error(error):
+            debug(.deviceManager, "PLUGIN CGM - error(\(error))")
         }
     }
 }

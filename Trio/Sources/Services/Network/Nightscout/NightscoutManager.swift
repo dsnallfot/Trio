@@ -687,14 +687,14 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
                let latestDeliverAt = latest.deliverAt
             {
                 let diff = suggestedDeliverAt.timeIntervalSince(latestDeliverAt)
-                debug(.nightscout, "Enacted deliverAt vs suggested deliverAt diff is \(diff) seconds")
+                // Minska loggning // debug(.nightscout, "Enacted deliverAt vs suggested deliverAt diff is \(diff) seconds")
 
                 // If the difference is less than 240 seconds (4 minutes), we consider the enacted status "fresh"
                 // so set received to true.
                 // Otherwise, if the enacted deliverAt is 240 seconds or more older, set it to false to make NS show X Not enacted.
                 if diff < 240 {
                     received = true
-                    debug(.nightscout, "Enacted deliverAt < 4 min older than suggested deliverAt -> enacted.received set to true")
+                    // Minska loggning // debug(.nightscout, "Enacted deliverAt < 4 min older than suggested deliverAt -> enacted.received set to true")
                 } else {
                     received = nil
                     debug(.nightscout, "Enacted deliverAt > 4 min older than suggested deliverAt -> enacted.received set to nil")

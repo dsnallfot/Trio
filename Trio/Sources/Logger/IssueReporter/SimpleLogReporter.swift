@@ -4,12 +4,14 @@ import System
 
 final class SimpleLogReporter: IssueReporter {
     private let fileManager = FileManager.default
+    private var isLogDirectoryReady = false
+    private var activeLogStartOfDay: Date?
 
-    private var dateFormatter: DateFormatter {
+    private let dateFormatter: DateFormatter = {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
         return dateFormatter
-    }
+    }()
 
     func setup() {}
 
@@ -23,29 +25,52 @@ final class SimpleLogReporter: IssueReporter {
         let now = Date()
         let startOfDay = Calendar.current.startOfDay(for: now)
 
-        if !fileManager.fileExists(atPath: SimpleLogReporter.logDir) {
-            try? fileManager.createDirectory(
-                atPath: SimpleLogReporter.logDir,
-                withIntermediateDirectories: false,
-                attributes: nil
-            )
-        }
-
-        if !fileManager.fileExists(atPath: SimpleLogReporter.logFile) {
-            createFile(at: startOfDay)
-        } else {
-            if let attributes = try? fileManager.attributesOfItem(atPath: SimpleLogReporter.logFile),
-               let creationDate = attributes[.creationDate] as? Date, creationDate < startOfDay
-            {
-                try? fileManager.removeItem(atPath: SimpleLogReporter.logFilePrev)
-                try? fileManager.moveItem(atPath: SimpleLogReporter.logFile, toPath: SimpleLogReporter.logFilePrev)
-                createFile(at: startOfDay)
-            }
-        }
+        prepareLogFileIfNeeded(for: startOfDay)
 
         let logEntry = "\(dateFormatter.string(from: now)) [\(category)] \(file.file) - \(function) - \(line) - \(message)\n"
         let data = logEntry.data(using: .utf8)!
         try? data.append(fileURL: URL(fileURLWithPath: SimpleLogReporter.logFile))
+    }
+
+    private func prepareLogFileIfNeeded(for startOfDay: Date) {
+        if !isLogDirectoryReady {
+            try? fileManager.createDirectory(
+                atPath: SimpleLogReporter.logDir,
+                withIntermediateDirectories: true,
+                attributes: nil
+            )
+            isLogDirectoryReady = true
+        }
+
+        if activeLogStartOfDay == startOfDay {
+            return
+        }
+
+        guard fileManager.fileExists(atPath: SimpleLogReporter.logFile) else {
+            createFile(at: startOfDay)
+            activeLogStartOfDay = startOfDay
+            return
+        }
+
+        if let attributes = try? fileManager.attributesOfItem(atPath: SimpleLogReporter.logFile),
+           let creationDate = attributes[.creationDate] as? Date
+        {
+            let logFileStartOfDay = Calendar.current.startOfDay(for: creationDate)
+            if logFileStartOfDay < startOfDay {
+                rotateLogFile(to: startOfDay)
+            } else {
+                activeLogStartOfDay = logFileStartOfDay
+            }
+        } else {
+            activeLogStartOfDay = startOfDay
+        }
+    }
+
+    private func rotateLogFile(to startOfDay: Date) {
+        try? fileManager.removeItem(atPath: SimpleLogReporter.logFilePrev)
+        try? fileManager.moveItem(atPath: SimpleLogReporter.logFile, toPath: SimpleLogReporter.logFilePrev)
+        createFile(at: startOfDay)
+        activeLogStartOfDay = startOfDay
     }
 
     private func createFile(at date: Date) {
