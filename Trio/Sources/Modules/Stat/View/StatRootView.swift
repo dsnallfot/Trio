@@ -56,13 +56,7 @@ extension Stat {
                         hbA1cDisplayUnit: state.hbA1cDisplayUnit
                     )
                 case .Total:
-                    StatsView(
-                        filter: filter.total,
-                        highLimit: state.highLimit,
-                        lowLimit: state.lowLimit,
-                        units: state.units,
-                        hbA1cDisplayUnit: state.hbA1cDisplayUnit
-                    )
+                    EmptyView()
                 }
             }
         }
@@ -106,14 +100,7 @@ extension Stat {
                     glucose: state.glucoseFromPersistence
                 )
             case .Total:
-                ChartsView(
-                    highLimit: state.highLimit,
-                    lowLimit: state.lowLimit,
-                    units: state.units,
-                    hbA1cDisplayUnit: state.hbA1cDisplayUnit,
-                    timeInRangeChartStyle: state.timeInRangeChartStyle,
-                    glucose: state.glucoseFromPersistence
-                )
+                EmptyView()
             }
         }
 

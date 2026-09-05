@@ -25,6 +25,11 @@ extension Stat {
             case Week
             case Month
             case Total
+
+            static var allCases: [Duration] {
+                [.Today, .Day, .Week, .Month]
+            }
+
             var id: Self { self }
         }
 
@@ -58,7 +63,7 @@ extension Stat {
             case .Month:
                 predicate = NSPredicate.glucoseForStatsMonth
             case .Total:
-                predicate = NSPredicate.glucoseForStatsTotal
+                predicate = NSPredicate.glucoseForStatsMonth
             }
 
             let results = await CoreDataStack.shared.fetchEntitiesAsync(
