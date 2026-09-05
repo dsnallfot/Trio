@@ -47,6 +47,11 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
     private let uploadCarbsSubject = PassthroughSubject<Void, Never>()
     private let processQueue = DispatchQueue(label: "BaseNetworkManager.processQueue")
     private var ping: TimeInterval?
+    private var lastNetworkReachabilityWasReachable: Bool?
+    private var lastReachabilityRetryDate: Date = .distantPast
+    private let reachabilityRetryInterval: TimeInterval = 30
+    private var lastDeferredUploadLogDate: Date = .distantPast
+    private let deferredUploadLogInterval: TimeInterval = 60
 
     private var backgroundContext = CoreDataStack.shared.newTaskContext()
 
@@ -171,9 +176,63 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
     }
 
     private func subscribe() {
-        _ = reachabilityManager.startListening(onQueue: processQueue) { status in
+        _ = reachabilityManager.startListening(onQueue: processQueue) { [weak self] status in
             debug(.nightscout, "Network status: \(status)")
+            self?.handleReachabilityChange(status)
         }
+    }
+
+    private func handleReachabilityChange(_ status: ReachabilityStatus) {
+        let reachable = isReachable(status)
+        let wasReachable = lastNetworkReachabilityWasReachable
+        lastNetworkReachabilityWasReachable = reachable
+
+        guard reachable, wasReachable == false else {
+            return
+        }
+
+        retryPendingUploadsAfterReachabilityRestored()
+    }
+
+    private func isReachable(_ status: ReachabilityStatus) -> Bool {
+        if case .reachable = status {
+            return true
+        }
+
+        return false
+    }
+
+    private func retryPendingUploadsAfterReachabilityRestored() {
+        let now = Date()
+        guard now.timeIntervalSince(lastReachabilityRetryDate) > reachabilityRetryInterval else {
+            return
+        }
+
+        lastReachabilityRetryDate = now
+
+        Task { [weak self] in
+            guard let self = self else { return }
+
+            await self.uploadGlucose()
+            await self.uploadDeviceStatus()
+            await self.uploadPumpHistory()
+            await self.uploadCarbs()
+            await self.uploadOverrides()
+            await self.uploadTempTargets()
+        }
+    }
+
+    private func shouldAttemptNightscoutRequest(_ operation: String) -> Bool {
+        guard isNetworkReachable else {
+            let now = Date()
+            if now.timeIntervalSince(lastDeferredUploadLogDate) > deferredUploadLogInterval {
+                debug(.nightscout, "Network not reachable; deferring Nightscout uploads. Latest skipped operation: \(operation).")
+                lastDeferredUploadLogDate = now
+            }
+            return false
+        }
+
+        return true
     }
 
     private func registerHandlers() {
@@ -577,6 +636,10 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
     /// - Note: Ensure `nightscoutAPI` is initialized and `isUploadEnabled` is set to `true` before invoking this function.
     /// - Returns: Nothing.
     func uploadDeviceStatus() async {
+        guard shouldAttemptNightscoutRequest("status") else {
+            return
+        }
+
         guard let nightscout = nightscoutAPI, isUploadEnabled else {
             debug(.nightscout, "NS API not available or upload disabled. Aborting NS Status upload.")
             return
@@ -1182,6 +1245,10 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
     }
 
     func uploadManualGlucose() async {
+        guard shouldAttemptNightscoutRequest("manual glucose") else {
+            return
+        }
+
         await uploadManualGlucose(glucoseStorage.getManualGlucoseNotYetUploadedToNightscout())
     }
 
@@ -1194,6 +1261,10 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
     // MARK: - Upload: Pump History with Deduplication
 
     func uploadPumpHistory() async {
+        guard shouldAttemptNightscoutRequest("pump history") else {
+            return
+        }
+
         let allTreatments = await pumpHistoryStorage.getPumpHistoryNotYetUploadedToNightscout(using: backgroundContext)
         debugPrint("Total treatments fetched for upload: \(allTreatments.count)")
 
@@ -1238,21 +1309,37 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
     }
 
     func uploadCarbs() async {
+        guard shouldAttemptNightscoutRequest("carbs") else {
+            return
+        }
+
         await uploadCarbs(carbsStorage.getCarbsNotYetUploadedToNightscout())
         await uploadCarbs(carbsStorage.getFPUsNotYetUploadedToNightscout())
     }
 
     func uploadOverrides() async {
+        guard shouldAttemptNightscoutRequest("overrides") else {
+            return
+        }
+
         await uploadOverrides(overridesStorage.getOverridesNotYetUploadedToNightscout())
         await uploadOverrideRuns(overridesStorage.getOverrideRunsNotYetUploadedToNightscout())
     }
 
     func uploadTempTargets() async {
+        guard shouldAttemptNightscoutRequest("temp targets") else {
+            return
+        }
+
         await uploadTempTargets(await tempTargetsStorage.getTempTargetsNotYetUploadedToNightscout())
         await uploadTempTargetRuns(await tempTargetsStorage.getTempTargetRunsNotYetUploadedToNightscout())
     }
 
     private func uploadGlucose(_ glucose: [BloodGlucose]) async {
+        guard shouldAttemptNightscoutRequest("glucose") else {
+            return
+        }
+
         guard !glucose.isEmpty, let nightscout = nightscoutAPI, isUploadEnabled, isUploadGlucoseEnabled else {
             return
         }
@@ -1295,6 +1382,10 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
     }
 
     private func uploadNonCoreDataTreatments(_ treatments: [NightscoutTreatment]) async {
+        guard shouldAttemptNightscoutRequest("CGM state treatments") else {
+            return
+        }
+
         guard !treatments.isEmpty, let nightscout = nightscoutAPI, isUploadEnabled else {
             return
         }

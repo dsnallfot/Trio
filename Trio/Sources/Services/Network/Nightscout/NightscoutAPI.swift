@@ -17,7 +17,7 @@ class NightscoutAPI {
         static let statusPath = "/api/v1/devicestatus.json"
         static let profilePath = "/api/v1/profile.json"
         static let retryCount = 1
-        static let timeout: TimeInterval = 60
+        static let timeout: TimeInterval = 20
     }
 
     enum Error: LocalizedError {
