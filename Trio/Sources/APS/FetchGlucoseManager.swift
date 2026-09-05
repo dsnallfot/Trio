@@ -306,28 +306,26 @@ final class BaseFetchGlucoseManager: FetchGlucoseManager, Injectable {
     private func subscribe() {
         timer.publisher
             .receive(on: processQueue)
-            .flatMap { [self] _ -> AnyPublisher<[BloodGlucose], Never> in
+            .flatMap { [weak self] _ -> AnyPublisher<[BloodGlucose], Never> in
+                guard let self = self else {
+                    return Empty().eraseToAnyPublisher()
+                }
+
                 debug(.nightscout, "FetchGlucoseManager timer heartbeat")
                 if let glucoseSource = self.glucoseSource {
                     return glucoseSource.fetch(self.timer).eraseToAnyPublisher()
                 } else {
-                    return Empty(completeImmediately: false).eraseToAnyPublisher()
+                    return Empty().eraseToAnyPublisher()
                 }
             }
-            .sink { glucose in
+            .sink { [weak self] glucose in
+                guard let self = self else { return }
+
                 debug(.nightscout, "FetchGlucoseManager callback sensor")
-                Publishers.CombineLatest(
-                    Just(glucose),
-                    Just(self.glucoseStorage.syncDate())
+                self.glucoseStoreAndHeartDecision(
+                    syncDate: self.glucoseStorage.syncDate(),
+                    glucose: glucose
                 )
-                .eraseToAnyPublisher()
-                .sink { newGlucose, syncDate in
-                    self.glucoseStoreAndHeartDecision(
-                        syncDate: syncDate,
-                        glucose: newGlucose
-                    )
-                }
-                .store(in: &self.lifetime)
             }
             .store(in: &lifetime)
         timer.fire()
