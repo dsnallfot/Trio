@@ -54,8 +54,38 @@ enum APSError: LocalizedError {
     }
 }
 
+private actor LoopGate {
+    private var isRunning = false
+
+    enum StartResult {
+        case started
+        case alreadyRunning
+        case tooSoon(Date)
+    }
+
+    func tryStart(lastLoopDate: Date, lastLoopStartDate: Date, interval: TimeInterval, now: Date = Date()) -> StartResult {
+        guard !isRunning else {
+            return .alreadyRunning
+        }
+
+        if lastLoopDate > lastLoopStartDate,
+           lastLoopStartDate.addingTimeInterval(interval) >= now
+        {
+            return .tooSoon(lastLoopStartDate)
+        }
+
+        isRunning = true
+        return .started
+    }
+
+    func finish() {
+        isRunning = false
+    }
+}
+
 final class BaseAPSManager: APSManager, Injectable {
     private let processQueue = DispatchQueue(label: "BaseAPSManager.processQueue")
+    private let loopGate = LoopGate()
     @Injected() private var storage: FileStorage!
     @Injected() private var pumpHistoryStorage: PumpHistoryStorage!
     @Injected() private var alertHistoryStorage: AlertHistoryStorage!
@@ -185,105 +215,121 @@ final class BaseAPSManager: APSManager, Injectable {
     // Loop entry point
     private func loop() {
         Task {
-            // check the last start of looping is more the loopInterval but the previous loop was completed
-            if lastLoopDate > lastLoopStartDate {
-                guard lastLoopStartDate.addingTimeInterval(Config.loopInterval) < Date() else {
-                    debug(.apsManager, "för nära inpå senaste loop : \(lastLoopStartDate)")
-                    return
+            await runLoopIfPossible()
+        }
+    }
+
+    private func runLoopIfPossible() async {
+        let loopStartDate = Date()
+        let startResult = await loopGate.tryStart(
+            lastLoopDate: lastLoopDate,
+            lastLoopStartDate: lastLoopStartDate,
+            interval: Config.loopInterval,
+            now: loopStartDate
+        )
+
+        switch startResult {
+        case .started:
+            break
+        case .alreadyRunning:
+            warning(.apsManager, "Loop pågår. Ignorerar rekommendation.")
+            return
+        case let .tooSoon(previousStartDate):
+            debug(.apsManager, "för nära inpå senaste loop : \(previousStartDate)")
+            return
+        }
+
+        let loopGate = loopGate
+        defer {
+            Task {
+                await loopGate.finish()
+            }
+        }
+
+        lastLoopStartDate = loopStartDate
+        isLooping.send(true)
+
+        // start background time extension
+        backGroundTaskID = await UIApplication.shared.beginBackgroundTask(withName: "Loop startar") {
+            guard let backgroundTask = self.backGroundTaskID else { return }
+            Task {
+                UIApplication.shared.endBackgroundTask(backgroundTask)
+            }
+            self.backGroundTaskID = .invalid
+        }
+
+        let interval: Double?
+        do {
+            let context = privateContext
+            interval = try await context.perform {
+                let requestStats = LoopStatRecord.fetchRequest() as NSFetchRequest<LoopStatRecord>
+                let sortStats = NSSortDescriptor(key: "end", ascending: false)
+                requestStats.sortDescriptors = [sortStats]
+                requestStats.fetchLimit = 1
+                let previousLoop = try context.fetch(requestStats)
+
+                if (previousLoop.first?.end ?? .distantFuture) < loopStartDate {
+                    let minutes = (loopStartDate - (previousLoop.first?.end ?? Date())).timeInterval / 60
+                    return round(minutes * 10) / 10
                 }
+
+                return nil
             }
-
-            guard !isLooping.value else {
-                warning(.apsManager, "Loop pågår. Ignorerar rekommendation.")
-                return
-            }
-
-            // start background time extension
-            backGroundTaskID = await UIApplication.shared.beginBackgroundTask(withName: "Loop startar") {
-                guard let backgroundTask = self.backGroundTaskID else { return }
-                Task {
-                    UIApplication.shared.endBackgroundTask(backgroundTask)
-                }
-                self.backGroundTaskID = .invalid
-            }
-
-            lastLoopStartDate = Date()
-
-            var previousLoop = [LoopStatRecord]()
-            var interval: Double?
-
-            do {
-                try await privateContext.perform {
-                    let requestStats = LoopStatRecord.fetchRequest() as NSFetchRequest<LoopStatRecord>
-                    let sortStats = NSSortDescriptor(key: "end", ascending: false)
-                    requestStats.sortDescriptors = [sortStats]
-                    requestStats.fetchLimit = 1
-                    previousLoop = try self.privateContext.fetch(requestStats)
-
-                    if (previousLoop.first?.end ?? .distantFuture) < self.lastLoopStartDate {
-                        interval = self.roundDouble(
-                            (self.lastLoopStartDate - (previousLoop.first?.end ?? Date())).timeInterval / 60,
-                            1
-                        )
-                    }
-                }
-            } catch let error as NSError {
-                debugPrint(
-                    "\(DebuggingIdentifiers.failed) \(#file) \(#function) Failed to fetch the last loop with error: \(error.userInfo)"
-                )
-            }
-
-            var loopStatRecord = LoopStats(
-                start: lastLoopStartDate,
-                loopStatus: "Startar",
-                interval: interval
+        } catch let error as NSError {
+            debugPrint(
+                "\(DebuggingIdentifiers.failed) \(#file) \(#function) Failed to fetch the last loop with error: \(error.userInfo)"
             )
+            interval = nil
+        }
 
-            isLooping.send(true)
+        var loopStatRecord = LoopStats(
+            start: lastLoopStartDate,
+            loopStatus: "Startar",
+            interval: interval
+        )
 
-            do {
-                if await !determineBasal() {
-                    throw APSError.apsError(message: "Determine basal misslyckades")
-                }
+        do {
+            if await !determineBasal() {
+                throw APSError.apsError(message: "Determine basal misslyckades")
+            }
 
-                // Open loop completed
-                guard settings.closedLoop else {
-                    loopStatRecord.end = Date()
-                    loopStatRecord.duration = roundDouble((loopStatRecord.end! - loopStatRecord.start).timeInterval / 60, 2)
-                    loopStatRecord.loopStatus = "Success"
-                    await loopCompleted(loopStatRecord: loopStatRecord)
-                    return
-                }
-
-                // Closed loop - enact Determination
-                try await enactDetermination()
+            // Open loop completed
+            guard settings.closedLoop else {
                 loopStatRecord.end = Date()
                 loopStatRecord.duration = roundDouble((loopStatRecord.end! - loopStatRecord.start).timeInterval / 60, 2)
                 loopStatRecord.loopStatus = "Success"
                 await loopCompleted(loopStatRecord: loopStatRecord)
-            } catch {
-                loopStatRecord.end = Date()
-                loopStatRecord.duration = roundDouble((loopStatRecord.end! - loopStatRecord.start).timeInterval / 60, 2)
-                loopStatRecord.loopStatus = error.localizedDescription
-                await loopCompleted(error: error, loopStatRecord: loopStatRecord)
+                return
             }
 
-            if let nightscoutManager = nightscout {
-                await nightscoutManager.uploadCarbs()
-                await nightscoutManager.uploadPumpHistory()
-                await nightscoutManager.uploadOverrides()
-                await nightscoutManager.uploadTempTargets()
-            }
+            // Closed loop - enact Determination
+            try await enactDetermination()
+            loopStatRecord.end = Date()
+            loopStatRecord.duration = roundDouble((loopStatRecord.end! - loopStatRecord.start).timeInterval / 60, 2)
+            loopStatRecord.loopStatus = "Success"
+            await loopCompleted(loopStatRecord: loopStatRecord)
+        } catch {
+            loopStatRecord.end = Date()
+            loopStatRecord.duration = roundDouble((loopStatRecord.end! - loopStatRecord.start).timeInterval / 60, 2)
+            loopStatRecord.loopStatus = error.localizedDescription
+            await loopCompleted(error: error, loopStatRecord: loopStatRecord)
+        }
 
-            // End background task after all the operations are completed
-            if let backgroundTask = self.backGroundTaskID {
-                await UIApplication.shared.endBackgroundTask(backgroundTask)
-                self.backGroundTaskID = .invalid
-            }
+        if let nightscoutManager = nightscout {
+            await nightscoutManager.uploadCarbs()
+            await nightscoutManager.uploadPumpHistory()
+            await nightscoutManager.uploadOverrides()
+            await nightscoutManager.uploadTempTargets()
+        }
+
+        // End background task after all the operations are completed
+        if let backgroundTask = backGroundTaskID {
+            await UIApplication.shared.endBackgroundTask(backgroundTask)
+            backGroundTaskID = .invalid
         }
     }
 
-//     Loop exit point
+    //     Loop exit point
     private func loopCompleted(error: Error? = nil, loopStatRecord: LoopStats) async {
         isLooping.send(false)
 
@@ -1112,11 +1158,6 @@ final class BaseAPSManager: APSManager, Injectable {
             fetchLimit: 288 * 7 * 30,
             batchSize: 500
         )
-        let glucoseThreeMonths = await fetchGlucose(
-            predicate: NSPredicate.predicateForThreeMonths,
-            fetchLimit: 288 * 7 * 30 * 3,
-            batchSize: 1000
-        )
 
         var result: (
             oneDayGlucose: (
@@ -1140,9 +1181,9 @@ final class BaseAPSManager: APSManager, Injectable {
             let units = self.settingsManager.settings.units
 
             // First date
-            let previous = glucoseThreeMonths.last?.date ?? Date()
+            let previous = glucoseOneMonth.last?.date ?? Date()
             // Last date (recent)
-            let current = glucoseThreeMonths.first?.date ?? Date()
+            let current = glucoseOneMonth.first?.date ?? Date()
             // Total time in days
             let numberOfDays = (current - previous).timeInterval / 8.64E4
 
@@ -1150,7 +1191,7 @@ final class BaseAPSManager: APSManager, Injectable {
             let oneDayGlucose = self.glucoseStats(glucose24h)
             let sevenDaysGlucose = self.glucoseStats(glucoseOneWeek)
             let thirtyDaysGlucose = self.glucoseStats(glucoseOneMonth)
-            let totalDaysGlucose = self.glucoseStats(glucoseThreeMonths)
+            let totalDaysGlucose = thirtyDaysGlucose
 
             let median = Durations(
                 day: self.roundDecimal(Decimal(oneDayGlucose.median), 1),
@@ -1179,12 +1220,11 @@ final class BaseAPSManager: APSManager, Injectable {
             var oneDay_: (TIR: Double, hypos: Double, hypers: Double, normal_: Double) = (0.0, 0.0, 0.0, 0.0)
             var sevenDays_: (TIR: Double, hypos: Double, hypers: Double, normal_: Double) = (0.0, 0.0, 0.0, 0.0)
             var thirtyDays_: (TIR: Double, hypos: Double, hypers: Double, normal_: Double) = (0.0, 0.0, 0.0, 0.0)
-            var totalDays_: (TIR: Double, hypos: Double, hypers: Double, normal_: Double) = (0.0, 0.0, 0.0, 0.0)
             // Get TIR computations for every case
             oneDay_ = self.tir(glucose24h)
             sevenDays_ = self.tir(glucoseOneWeek)
             thirtyDays_ = self.tir(glucoseOneMonth)
-            totalDays_ = self.tir(glucoseThreeMonths)
+            let totalDays_ = thirtyDays_
 
             let tir = Durations(
                 day: self.roundDecimal(Decimal(oneDay_.TIR), 1),
