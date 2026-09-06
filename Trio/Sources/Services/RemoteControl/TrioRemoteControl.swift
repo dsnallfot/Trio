@@ -124,6 +124,8 @@ class TrioRemoteControl: Injectable {
             await handleCancelOverrideCommand(pushMessage)
         case .glucose:
             await handleGlucoseCommand(pushMessage)
+        case .deleteGlucose:
+            await handleDeleteGlucoseCommand(pushMessage)
         }
     }
 
@@ -253,6 +255,7 @@ extension TrioRemoteControl {
         case startOverride = "start_override"
         case cancelOverride = "cancel_override"
         case glucose
+        case deleteGlucose
 
         var description: String {
             switch self {
@@ -274,6 +277,8 @@ extension TrioRemoteControl {
                 return "Avbryt Override"
             case .glucose:
                 return "Blodsocker"
+            case .deleteGlucose:
+                return "Radera Blodsocker"
             }
         }
     }

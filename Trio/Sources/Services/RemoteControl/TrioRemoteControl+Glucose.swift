@@ -1,3 +1,4 @@
+import CoreData
 import Foundation
 
 extension TrioRemoteControl {
@@ -21,7 +22,7 @@ extension TrioRemoteControl {
             return
         }
 
-        let glucoseDate = Date(timeIntervalSince1970: pushMessage.timestamp)
+        let glucoseDate = Date(timeIntervalSince1970: pushMessage.scheduledTime ?? pushMessage.timestamp)
 
         // Wait for Core Data to finish saving before trying to upload
         // the new manual glucose to Nightscout.
@@ -112,6 +113,78 @@ extension TrioRemoteControl {
         notificationManager.notifyTrioRemoteControl(
             title: "Remote Blodsocker",
             body: "\(displayValue) \(unit) registrerades."
+        )
+    }
+
+    @MainActor func handleDeleteGlucoseCommand(_ pushMessage: PushMessage) async {
+        // timestamp is the command time; scheduled_time identifies the original fingerstick.
+        let deletionTimestamp = pushMessage.scheduledTime ?? pushMessage.timestamp
+        guard deletionTimestamp.isFinite, deletionTimestamp > 0 else {
+            await logError("Kommandot avvisades: ogiltig tidsstämpel för blodsockerradering.", pushMessage: pushMessage)
+            return
+        }
+
+        // Match one second to support timestamps without fractional seconds, without
+        // accidentally selecting a different fingerstick later in the same minute.
+        let startDate = Date(timeIntervalSince1970: floor(deletionTimestamp))
+        let endDate = startDate.addingTimeInterval(1)
+        let context = CoreDataStack.shared.newTaskContext()
+        let matches: [(NSManagedObjectID, String?)]
+        do {
+            matches = try await context.perform {
+                let request: NSFetchRequest<GlucoseStored> = GlucoseStored.fetchRequest()
+                request.predicate = NSPredicate(
+                    format: "isManual == YES AND date >= %@ AND date < %@",
+                    startDate as NSDate,
+                    endDate as NSDate
+                )
+                request.fetchLimit = 2
+                return try context.fetch(request).map { ($0.objectID, $0.id?.uuidString) }
+            }
+        } catch {
+            await logError(
+                "Kommandot avvisades: kunde inte söka efter fingerstick att radera. \(error.localizedDescription)",
+                pushMessage: pushMessage
+            )
+            return
+        }
+
+        guard matches.count == 1, let match = matches.first else {
+            await logError(
+                matches.isEmpty
+                    ? "Kommandot avvisades: inget matchande fingerstick hittades för den angivna tiden."
+                    : "Kommandot avvisades: flera fingerstick matchar den angivna tiden.",
+                pushMessage: pushMessage
+            )
+            return
+        }
+
+        // Use the same service deletions as DataTable.StateModel.deleteGlucose.
+        // Await them directly so they finish within the remote command's lifetime.
+        let resolver = TrioApp.resolver
+        if let id = match.1 {
+            await nightscoutManager.deleteManualGlucose(withID: id)
+            await nightscoutManager.deleteGlucose(withID: id)
+            if let healthkitManager = resolver.resolve(HealthKitManager.self) {
+                await healthkitManager.deleteGlucose(syncID: id)
+            }
+        }
+        await glucoseStorage.deleteGlucose(match.0)
+
+        if let apsManager = resolver.resolve(APSManager.self) {
+            await apsManager.determineBasalSync()
+            await nightscoutManager.uploadDeviceStatus()
+        }
+
+        debug(.remoteControl, "Remote blodsockerradering behandlades. \(pushMessage.humanReadableDescription())")
+        guard settings.settings.notificationsRemote else { return }
+
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        formatter.timeStyle = .medium
+        notificationManager.notifyTrioRemoteControl(
+            title: "Remote Radera Blodsocker",
+            body: "Fingerstick: \(formatter.string(from: startDate))\nRaderat av: \(pushMessage.user)"
         )
     }
 }

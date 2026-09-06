@@ -155,6 +155,9 @@ struct PushMessage: Codable, Sendable {
             }
         case .cancelOverride:
             description += "Cancel Override command."
+        case .deleteGlucose:
+            let timestampDesc = scheduledTime ?? timestamp
+            description += "Radera fingerstick vid tidsstämpel \(timestampDesc)."
         case .glucose:
             let glucoseDesc = glucose != nil
                 ? "\(glucose!)"
