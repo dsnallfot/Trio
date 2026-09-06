@@ -274,10 +274,10 @@ extension PluginSource: CGMManagerDelegate {
     }
 
     func cgmManager(_: CGMManager, didUpdate status: CGMManagerStatus) {
-        debug(.deviceManager, "CGM status updated: hasValidSensorSession=\(status.hasValidSensorSession)")
         processQueue.async {
             if self.cgmHasValidSensorSession != status.hasValidSensorSession {
                 self.cgmHasValidSensorSession = status.hasValidSensorSession
+                debug(.deviceManager, "CGM status updated: hasValidSensorSession=\(status.hasValidSensorSession)")
             }
         }
     }

@@ -117,8 +117,12 @@ final class BaseFetchGlucoseManager: FetchGlucoseManager, Injectable {
     }
 
     func updateGlucoseSource(cgmGlucoseSourceType: CGMType, cgmGlucosePluginId: String, newManager: CGMManagerUI?) {
+        let oldCGMGlucoseSourceType = self.cgmGlucoseSourceType
+        let oldCGMGlucosePluginId = self.cgmGlucosePluginId
+        let oldManagerName = cgmManager.map { "\(type(of: $0))" } ?? "nil"
+
         // if changed, remove all calibrations
-        if self.cgmGlucoseSourceType != cgmGlucoseSourceType || self.cgmGlucosePluginId != cgmGlucosePluginId {
+        if oldCGMGlucoseSourceType != cgmGlucoseSourceType || oldCGMGlucosePluginId != cgmGlucosePluginId {
             removeCalibrations()
             cgmManager = nil
             glucoseSource = nil
@@ -131,7 +135,6 @@ final class BaseFetchGlucoseManager: FetchGlucoseManager, Injectable {
         // if plugin, if the same pluginID, no change required because the manager is available
         // if plugin, if not the same pluginID, need to reset the cgmManager
         // if plugin and newManager provides, update cgmManager
-        debug(.apsManager, "plugin : \(String(describing: cgmManager?.pluginIdentifier))")
         if let manager = newManager
         {
             cgmManager = manager
@@ -142,6 +145,17 @@ final class BaseFetchGlucoseManager: FetchGlucoseManager, Injectable {
 
         } else {
             saveConfigManager()
+        }
+
+        let newManagerName = cgmManager.map { "\(type(of: $0))" } ?? "nil"
+        if oldCGMGlucoseSourceType != cgmGlucoseSourceType ||
+            oldCGMGlucosePluginId != cgmGlucosePluginId ||
+            oldManagerName != newManagerName
+        {
+            debug(
+                .apsManager,
+                "CGM source updated: type=\(cgmGlucoseSourceType) plugin=\(cgmGlucosePluginId) manager=\(newManagerName)"
+            )
         }
 
         if glucoseSource == nil {

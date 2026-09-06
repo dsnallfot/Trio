@@ -363,7 +363,7 @@ extension BaseTidepoolManager {
                 return result
             }
 
-            debug(.service, "TIDEPOOL DOSE ENTRIES: \(insulinDoseEvents)")
+            debug(.service, "TIDEPOOL DOSE ENTRIES count=\(insulinDoseEvents.count)")
 
             let pumpEvents: [PersistedPumpEvent] = events.compactMap { event -> PersistedPumpEvent? in
                 if let pumpEventType = event.type.mapEventTypeToPumpEventType() {
