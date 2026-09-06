@@ -17,6 +17,7 @@ extension DataTable {
         @State private var showAlert = false
         @State private var showFutureEntries: Bool = false // default to hide future entries
         @State private var showManualGlucose: Bool = false
+        @State private var manualGlucoseDate = Date()
         @State private var isAmountUnconfirmed: Bool = true
 
         @Environment(\.colorScheme) var colorScheme
@@ -437,6 +438,7 @@ extension DataTable {
         @ViewBuilder private func addGlucoseView() -> some View {
             let limitLow: Decimal = state.units == .mmolL ? 0.8 : 14
             let limitHigh: Decimal = state.units == .mmolL ? 40 : 720
+            let now = Date()
 
             NavigationView {
                 VStack {
@@ -452,13 +454,19 @@ extension DataTable {
                                 )
                                 Text(state.units.rawValue).foregroundStyle(.secondary)
                             }
+                            DatePicker(
+                                "Time",
+                                selection: $manualGlucoseDate,
+                                in: Calendar.current.startOfDay(for: now) ... now,
+                                displayedComponents: .hourAndMinute
+                            )
                         }.listRowBackground(Color.chart)
 
                         Section {
                             HStack {
                                 Button {
                                     Task {
-                                        await state.addManualGlucose()
+                                        await state.addManualGlucose(date: manualGlucoseDate)
 
                                         isAmountUnconfirmed = false
                                         showManualGlucose = false
@@ -479,6 +487,9 @@ extension DataTable {
                 }
                 .onAppear(perform: configureView)
                 .navigationTitle("Add Glucose")
+                .onAppear {
+                    manualGlucoseDate = Date()
+                }
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
