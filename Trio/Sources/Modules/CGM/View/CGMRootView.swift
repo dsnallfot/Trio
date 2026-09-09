@@ -9,6 +9,13 @@ extension CGM {
         @StateObject var state = StateModel()
         @State private var setupCGM = false
 
+        @AppStorage(OscillatingGenerator.UserDefaultsKeys.centerValue) private var simulatorCenterValue = OscillatingGenerator
+            .Defaults.centerValue
+        @AppStorage(OscillatingGenerator.UserDefaultsKeys.amplitude) private var simulatorAmplitude = OscillatingGenerator
+            .Defaults.amplitude
+        @AppStorage(OscillatingGenerator.UserDefaultsKeys.noiseAmplitude) private var simulatorNoiseAmplitude =
+            OscillatingGenerator.Defaults.noiseAmplitude
+
         @State private var shouldDisplayHint: Bool = false
         @State var hintDetent = PresentationDetent.large
         @State var selectedVerboseHint: AnyView?
@@ -18,6 +25,34 @@ extension CGM {
 
         @Environment(\.colorScheme) var colorScheme
         @Environment(AppState.self) var appState
+
+        private var simulatorMaximumAmplitude: Double {
+            OscillatingGenerator.maximumAmplitude(centerValue: simulatorCenterValue)
+        }
+
+        private var simulatorCenterBinding: Binding<Double> {
+            Binding(
+                get: { simulatorCenterValue },
+                set: { value in
+                    // Lower amplitude first so the generator cannot observe an oversized amplitude.
+                    simulatorAmplitude = min(simulatorAmplitude, OscillatingGenerator.maximumAmplitude(centerValue: value))
+                    simulatorCenterValue = value
+                }
+            )
+        }
+
+        private func simulatorPicker(_ title: String, selection: Binding<Double>, values: [Int]) -> some View {
+            Picker(title, selection: selection) {
+                // Keep legacy values visible without changing simulator output on opening this screen.
+                if !values.map(Double.init).contains(selection.wrappedValue) {
+                    Text("\(selection.wrappedValue.formatted()) mg/dL (sparat)").tag(selection.wrappedValue)
+                }
+                ForEach(values, id: \.self) { value in
+                    Text("\(value) mg/dL").tag(Double(value))
+                }
+            }
+            .pickerStyle(.menu)
+        }
 
         var body: some View {
             NavigationView {
@@ -216,6 +251,28 @@ extension CGM {
                             )
                         }
                     )
+
+                    if state.cgmCurrent.type == .simulator {
+                        Section(header: Text("Simulatorinställningar")) {
+                            simulatorPicker(
+                                "Centervärde", selection: simulatorCenterBinding,
+                                values: Array(stride(from: 40, through: 140, by: 10))
+                            )
+                            simulatorPicker(
+                                "Amplitud", selection: $simulatorAmplitude,
+                                values: Array(stride(
+                                    from: min(10, Int(simulatorMaximumAmplitude)),
+                                    through: Int(simulatorMaximumAmplitude),
+                                    by: 5
+                                ))
+                            )
+                            simulatorPicker("Brus", selection: $simulatorNoiseAmplitude, values: Array(0 ... 10))
+                        }
+                        .listRowBackground(Color.chart)
+                        .onAppear {
+                            simulatorAmplitude = max(0, min(simulatorAmplitude, simulatorMaximumAmplitude))
+                        }
+                    }
                 }
                 .scrollContentBackground(.hidden).background(appState.trioBackgroundColor(for: colorScheme))
                 .onAppear(perform: configureView)

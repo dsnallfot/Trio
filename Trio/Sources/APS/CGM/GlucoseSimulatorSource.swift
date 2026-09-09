@@ -53,7 +53,7 @@ final class GlucoseSimulatorSource: GlucoseSource {
     }
 
     /// The glucose generator used to create simulated values
-    /// Uses OscillatingGenerator to create a sinusoidal pattern around 120 mg/dL
+    /// Uses OscillatingGenerator with the persisted simulator settings.
     private lazy var generator: BloodGlucoseGenerator = {
         OscillatingGenerator()
     }()
@@ -114,6 +114,10 @@ protocol BloodGlucoseGenerator {
 /// A glucose generator that creates a sinusoidal pattern around a center value
 /// This generator simulates a realistic oscillating glucose pattern with configurable parameters
 class OscillatingGenerator: BloodGlucoseGenerator {
+    static func maximumAmplitude(centerValue: Double) -> Double {
+        max(0, min(80, floor((centerValue - 30) / 5) * 5))
+    }
+
     /// Default values for simulator parameters
     enum Defaults {
         static let centerValue: Double = 90.0
@@ -124,7 +128,7 @@ class OscillatingGenerator: BloodGlucoseGenerator {
     }
 
     /// UserDefaults keys for storing simulator parameters
-    private enum UserDefaultsKeys {
+    enum UserDefaultsKeys {
         static let centerValue = "GlucoseSimulator_CenterValue"
         static let amplitude = "GlucoseSimulator_Amplitude"
         static let period = "GlucoseSimulator_Period"
@@ -132,11 +136,13 @@ class OscillatingGenerator: BloodGlucoseGenerator {
         static let produceStaleValues = "GlucoseSimulator_ProduceStaleValues"
     }
 
-    /// Amplitude of the oscillation (±45 mg/dL to create range from ~80 to ~170)
+    /// Amplitude of the oscillation in mg/dL.
     private var amplitude: Double {
-        get { UserDefaults.standard.double(forKey: UserDefaultsKeys.amplitude) != 0 ?
-            UserDefaults.standard.double(forKey: UserDefaultsKeys.amplitude) :
-            Defaults.amplitude }
+        get {
+            let stored = UserDefaults.standard.object(forKey: UserDefaultsKeys.amplitude) != nil ?
+                UserDefaults.standard.double(forKey: UserDefaultsKeys.amplitude) : Defaults.amplitude
+            return max(0, min(stored, Self.maximumAmplitude(centerValue: centerValue)))
+        }
         set { UserDefaults.standard.set(newValue, forKey: UserDefaultsKeys.amplitude) }
     }
 
@@ -150,7 +156,7 @@ class OscillatingGenerator: BloodGlucoseGenerator {
 
     /// Center value of the oscillation (target glucose level)
     private var centerValue: Double {
-        get { UserDefaults.standard.double(forKey: UserDefaultsKeys.centerValue) != 0 ?
+        get { UserDefaults.standard.object(forKey: UserDefaultsKeys.centerValue) != nil ?
             UserDefaults.standard.double(forKey: UserDefaultsKeys.centerValue) :
             Defaults.centerValue }
         set { UserDefaults.standard.set(newValue, forKey: UserDefaultsKeys.centerValue) }
@@ -158,7 +164,7 @@ class OscillatingGenerator: BloodGlucoseGenerator {
 
     /// Amplitude of random noise to add to the values (±5 mg/dL)
     private var noiseAmplitude: Double {
-        get { UserDefaults.standard.double(forKey: UserDefaultsKeys.noiseAmplitude) != 0 ?
+        get { UserDefaults.standard.object(forKey: UserDefaultsKeys.noiseAmplitude) != nil ?
             UserDefaults.standard.double(forKey: UserDefaultsKeys.noiseAmplitude) :
             Defaults.noiseAmplitude }
         set { UserDefaults.standard.set(newValue, forKey: UserDefaultsKeys.noiseAmplitude) }
