@@ -304,9 +304,9 @@ final class BaseCalendarManager: CalendarManager, Injectable {
             //     glucoseIcon = freshLoop > 15 ? "🚫" : glucoseIcon
             // }
 
-            let glucoseText = glucoseFormatter.string(from: Double(
-                settingsManager.settings.units == .mmolL ? Int(lastGlucoseValue).asMmolL : Decimal(lastGlucoseValue)
-            ) as NSNumber)!
+            let displayGlucose = settingsManager.settings.units == .mmolL ?
+                Int(lastGlucoseValue).asMmolL : Decimal(lastGlucoseValue)
+            let glucoseText = glucoseFormatter.string(from: displayGlucose as NSNumber) ?? "--"
 
             let directionText = lastGlucoseObject.directionEnum?.symbol ?? "↔︎"
 
@@ -314,14 +314,11 @@ final class BaseCalendarManager: CalendarManager, Injectable {
             let deltaText = deltaFormatter.string(from: deltaValue as NSNumber) ?? "--"
 
             // Daniel: What could the BG be within 15 min if current trend cintinues linear (for school resource watch)
-            let cleanedDelta = deltaText
-                .replacingOccurrences(of: ",", with: ".")
-                .replacingOccurrences(of: "+", with: "")
-                .replacingOccurrences(of: "−", with: "-") // Replace any em dash characters with a regular minus sign
             let cleanedDisplayDelta = deltaText.replacingOccurrences(of: ",", with: ".")
             let cleanedGlucose = glucoseText.replacingOccurrences(of: ",", with: ".")
-            let glucoseValueFifteen = Double(cleanedGlucose) ?? 0.0
-            let deltaValueClean = Double(cleanedDelta)!
+            // Compute from numeric values, never from locale-dependent display text.
+            let glucoseValueFifteen = NSDecimalNumber(decimal: displayGlucose).doubleValue
+            let deltaValueClean = NSDecimalNumber(decimal: deltaValue).doubleValue
             let computedValue = glucoseValueFifteen + deltaValueClean * 2.5
             // Use string interpolation with format specifier to display one decimal place
             let formattedComputedValue = String(format: "%.1f", computedValue)
