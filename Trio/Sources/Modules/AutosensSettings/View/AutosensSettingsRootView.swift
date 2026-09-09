@@ -84,12 +84,13 @@ extension AutosensSettings {
                         if state.units == .mgdL {
                             Text(
                                 !state.settingsManager.preferences
-                                    .useNewFormula ? newISF!.description : (dynamicISF ?? 0).description
+                                    .useNewFormula ? (newISF?.description ?? "Saknas") : (dynamicISF ?? 0).description
                             )
                         } else {
                             Text((
                                 !state.settingsManager.preferences
-                                    .useNewFormula ? newISF!.formattedAsMmolL : dynamicISF?.decimalValue.formattedAsMmolL
+                                    .useNewFormula ? (newISF?.formattedAsMmolL ?? "Saknas") : dynamicISF?.decimalValue
+                                    .formattedAsMmolL
                             ) ?? "0")
                         }
                         Text(state.units.rawValue + "/E").foregroundColor(.secondary)

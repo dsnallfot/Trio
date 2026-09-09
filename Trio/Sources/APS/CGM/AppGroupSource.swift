@@ -61,9 +61,13 @@ struct AppGroupSource: GlucoseSource {
         for sgv in sgvs.prefix(count) {
             guard
                 let glucose = sgv["Value"] as? Int,
-                let timestamp = sgv["DT"] as? String,
-                let date = parseDate(timestamp)
+                let timestamp = sgv["DT"] as? String
             else { continue }
+
+            guard let date = parseDate(timestamp) else {
+                warning(.deviceManager, "AppGroup CGM: skipping reading with invalid timestamp")
+                continue
+            }
 
             var direction: String?
 
@@ -103,15 +107,17 @@ struct AppGroupSource: GlucoseSource {
 
     private func parseDate(_ timestamp: String) -> Date? {
         // timestamp looks like "/Date(1462404576000)/"
-        guard let re = try? NSRegularExpression(pattern: "\\((.*)\\)"),
-              let match = re.firstMatch(in: timestamp, range: NSMakeRange(0, timestamp.count))
+        guard let re = try? NSRegularExpression(pattern: #"\A/Date\((-?[0-9]+)\)/\z"#),
+              let match = re.firstMatch(in: timestamp, range: NSRange(timestamp.startIndex..., in: timestamp)),
+              let milliseconds = Int64((timestamp as NSString).substring(with: match.range(at: 1)))
         else {
             return nil
         }
 
-        let matchRange = match.range(at: 1)
-        let epoch = Double((timestamp as NSString).substring(with: matchRange))! / 1000
-        return Date(timeIntervalSince1970: epoch)
+        let date = Date(timeIntervalSince1970: Double(milliseconds) / 1000)
+        // Reject extreme dates before downstream conversion back to integer milliseconds.
+        guard date >= .distantPast, date <= .distantFuture else { return nil }
+        return date
     }
 
     func sourceInfo() -> [String: Any]? {
