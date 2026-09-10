@@ -100,7 +100,8 @@ struct ForecastView: ChartContent {
     }
 
     private func drawForecastsLines() -> some ChartContent {
-        ForEach(preprocessedData, id: \.id) { tuple in
+        //ForEach(preprocessedData, id: \.id) { tuple in
+        ForEach(preprocessedData, id: \.forecastValue.objectID) { tuple in //iOS 27 fix Mike P
             let forecastValue = tuple.forecastValue
             let forecast = tuple.forecast
             let valueAsDecimal = Decimal(forecastValue.value)
