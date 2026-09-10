@@ -256,8 +256,13 @@ final class BaseFetchGlucoseManager: FetchGlucoseManager, Injectable {
         var backGroundFetchBGTaskID: UIBackgroundTaskIdentifier?
         backGroundFetchBGTaskID = UIApplication.shared.beginBackgroundTask(withName: "save BG starting") {
             guard let bg = backGroundFetchBGTaskID else { return }
+            BackgroundTaskDiagnostics.shared.record(.expiration, id: bg, name: "glucose", reason: "time-limit")
             UIApplication.shared.endBackgroundTask(bg)
+            BackgroundTaskDiagnostics.shared.record(.end, id: bg, name: "glucose", reason: "expiration")
             backGroundFetchBGTaskID = .invalid
+        }
+        if let id = backGroundFetchBGTaskID {
+            BackgroundTaskDiagnostics.shared.record(.start, id: id, name: "glucose")
         }
 
         guard newGlucose.isNotEmpty else {
@@ -265,6 +270,7 @@ final class BaseFetchGlucoseManager: FetchGlucoseManager, Injectable {
 
             if let backgroundTask = backGroundFetchBGTaskID {
                 UIApplication.shared.endBackgroundTask(backgroundTask)
+                BackgroundTaskDiagnostics.shared.record(.end, id: backgroundTask, name: "glucose", reason: "empty")
                 backGroundFetchBGTaskID = .invalid
             }
             return
@@ -279,6 +285,7 @@ final class BaseFetchGlucoseManager: FetchGlucoseManager, Injectable {
             // end of the Background tasks
             if let backgroundTask = backGroundFetchBGTaskID {
                 UIApplication.shared.endBackgroundTask(backgroundTask)
+                BackgroundTaskDiagnostics.shared.record(.end, id: backgroundTask, name: "glucose", reason: "filtered-empty")
                 backGroundFetchBGTaskID = .invalid
             }
             return
@@ -312,6 +319,7 @@ final class BaseFetchGlucoseManager: FetchGlucoseManager, Injectable {
         // End of the Background tasks
         if let backgroundTask = backGroundFetchBGTaskID {
             UIApplication.shared.endBackgroundTask(backgroundTask)
+            BackgroundTaskDiagnostics.shared.record(.end, id: backgroundTask, name: "glucose", reason: "processed")
             backGroundFetchBGTaskID = .invalid
         }
     }
@@ -379,5 +387,53 @@ extension CGMManager {
             "managerIdentifier": pluginIdentifier,
             "state": rawState
         ]
+    }
+}
+
+// Observes only the loop/glucose task IDs; it never starts or ends UIKit tasks.
+// All mutable bookkeeping is protected by lock.
+final class BackgroundTaskDiagnostics: @unchecked Sendable {
+    static let shared = BackgroundTaskDiagnostics()
+
+    enum Event: String {
+        case start
+        case end
+        case expiration
+    }
+
+    private let lock = NSLock()
+    private var openTasks: [UIBackgroundTaskIdentifier: TimeInterval] = [:]
+    private var sequence: UInt64 = 0
+
+    func record(_ event: Event, id: UIBackgroundTaskIdentifier, name: String, reason: String = "-") {
+        lock.lock()
+        sequence += 1
+        let serial = sequence
+        let now = ProcessInfo.processInfo.systemUptime
+        let started = openTasks[id]
+        let valid = id != .invalid
+        let status: String
+        switch event {
+        case .start:
+            status = !valid ? "invalid-id" : (started == nil ? "ok" : "already-open")
+            if valid, started == nil { openTasks[id] = now }
+        case .end:
+            status = !valid ? "invalid-id" : (started == nil ? "untracked-id" : "ok")
+            openTasks.removeValue(forKey: id)
+        case .expiration:
+            status = !valid ? "invalid-id" : (started == nil ? "untracked-id" : "ok")
+        }
+        let duration = started.map { String(format: "%.3f", now - $0) } ?? (event == .start && valid ? "0.000" : "unknown")
+        let openCount = openTasks.count
+        let oldest = openTasks.values.min().map { String(format: "%.3f", now - $0) } ?? "0.000"
+        lock.unlock()
+
+        guard DiagnosticLogging.isEnabled else { return }
+        debug(
+            .deviceManager,
+            "BGTask pid=\(ProcessInfo.processInfo.processIdentifier) seq=\(serial) name=\(name) id=\(id.rawValue) " +
+                "event=\(event.rawValue) reason=\(reason) durationSec=\(duration) trackedOpen=\(openCount) " +
+                "oldestOpenSec=\(oldest) status=\(status)"
+        )
     }
 }

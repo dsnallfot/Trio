@@ -448,7 +448,11 @@ extension BaseDeviceDataManager: PumpManagerDelegate {
 
     /// heartbeat with pump occurs some issues in the backgroundtask - so never used
     func pumpManagerBLEHeartbeatDidFire(_: PumpManager) {
-        debug(.deviceManager, "Pump Heartbeat: do nothing. Pump connection is OK")
+        guard DiagnosticLogging.isEnabled else { return }
+        debug(
+            .deviceManager,
+            "[heartbeat-diag] pid=\(ProcessInfo.processInfo.processIdentifier) callback received; no glucose fetch or loop requested"
+        )
     }
 
     func pumpManagerMustProvideBLEHeartbeat(_: PumpManager) -> Bool {
@@ -633,7 +637,9 @@ extension BaseDeviceDataManager: DeviceManagerDelegate {
 
     private func shouldLogDeviceMessage(_ message: String) -> Bool {
         if message.contains("[heartbeat]") {
-            return false
+            // Expose the host request and the pump's applied schedule, keeping other heartbeat chatter muted.
+            // Scheduling and wake events tagged [delayedConnect] already pass through below.
+            return message.contains("setBLEHeartbeatRequest(") || message.contains("providesHeartbeat=")
         }
 
         if message.range(of: #"^[0-9a-fA-F]{16,}$"#, options: .regularExpression) != nil {
@@ -646,11 +652,18 @@ extension BaseDeviceDataManager: DeviceManagerDelegate {
     func deviceManager(
         _: DeviceManager,
         logEventForDeviceIdentifier _: String?,
-        type _: DeviceLogEntryType,
+        type: DeviceLogEntryType,
         message: String,
         completion _: ((Error?) -> Void)?
     ) {
-        guard shouldLogDeviceMessage(message) else { return }
+        if type != .error {
+            if !DiagnosticLogging.isEnabled,
+               ["[heartbeat]", "[heartbeat-diag]", "[delayedConnect]", "[lifecycle]"].contains(where: { message.contains($0) })
+            {
+                return
+            }
+            guard shouldLogDeviceMessage(message) else { return }
+        }
 
         debug(.deviceManager, "Device message: \(message)")
     }

@@ -827,13 +827,46 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             battery: Int(batteryLevel * 100),
             isCharging: batteryState == .charging || batteryState == .full
         )
-        let userPreferences = storage.retrieve(OpenAPS.Settings.preferences, as: Preferences.self)
-        let additionalInfo: [String: Decimal] = [
+        let userPreferences = storage.retrieve(
+            OpenAPS.Settings.preferences,
+            as: Preferences.self
+        )
+
+        // Hämta senaste runtime-/minnesdiagnostiken från MainActor.
+        let runtimeDiagnostics = await MainActor.run {
+            let diagnostics = RuntimeDiagnosticsDisplay.shared
+
+            return (
+                latestMemoryMiB: diagnostics.latest?.mebibytes,
+                maxMemoryMiB: diagnostics.peak?.mebibytes,
+                sessionStart: diagnostics.sessionStart
+            )
+        }
+
+        var additionalInfo: [String: Decimal] = [
             "maxSMBBasalMinutes": userPreferences?.maxSMBBasalMinutes ?? 30,
             "maxUAMSMBBasalMinutes": userPreferences?.maxUAMSMBBasalMinutes ?? 30,
             "autosensMax": userPreferences?.autosensMax ?? 1.2,
             "autosensMin": userPreferences?.autosensMin ?? 0.7
         ]
+
+        // Senast uppmätta minnesanvändning i MiB.
+        if let latestMemoryMiB = runtimeDiagnostics.latestMemoryMiB {
+            additionalInfo["memoryUsageLatest"] = Decimal(latestMemoryMiB)
+        }
+
+        // Högsta uppmätta minnesanvändning under nuvarande Trio-session i MiB.
+        if let maxMemoryMiB = runtimeDiagnostics.maxMemoryMiB {
+            additionalInfo["memoryUsageMax"] = Decimal(maxMemoryMiB)
+        }
+
+        // Tidpunkt då nuvarande Trio-session startades.
+        // Skickas som Unix timestamp i sekunder.
+        if let sessionStart = runtimeDiagnostics.sessionStart {
+            additionalInfo["latestRestart"] = Decimal(
+                sessionStart.timeIntervalSince1970
+            )
+        }
 
         // Daniel: Minska loggning // debug(.nightscout, "Additional Info: \(additionalInfo)")
 

@@ -89,19 +89,15 @@ final class TempPresetsIntentRequest: BaseIntentsRequest {
         var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
         backgroundTaskID = UIApplication.shared.beginBackgroundTask(withName: "TempTarget Upload") {
             guard backgroundTaskID != .invalid else { return }
-            Task {
-                // End background task when the time is about to expire
-                UIApplication.shared.endBackgroundTask(backgroundTaskID)
-            }
+            // End synchronously before invalidating the task identifier.
+            UIApplication.shared.endBackgroundTask(backgroundTaskID)
             backgroundTaskID = .invalid
         }
 
         // Defer block to end background task when function exits
         defer {
             if backgroundTaskID != .invalid {
-                Task {
-                    UIApplication.shared.endBackgroundTask(backgroundTaskID)
-                }
+                UIApplication.shared.endBackgroundTask(backgroundTaskID)
                 backgroundTaskID = .invalid
             }
         }
@@ -181,10 +177,7 @@ final class TempPresetsIntentRequest: BaseIntentsRequest {
             // Start background task
             backgroundTaskID = UIApplication.shared.beginBackgroundTask(withName: "TempTarget Cancel") {
                 guard backgroundTaskID != .invalid else { return }
-                Task {
-                    // End background task when the time is about to expire
-                    UIApplication.shared.endBackgroundTask(backgroundTaskID)
-                }
+                UIApplication.shared.endBackgroundTask(backgroundTaskID)
                 backgroundTaskID = .invalid
             }
         }
@@ -192,9 +185,7 @@ final class TempPresetsIntentRequest: BaseIntentsRequest {
         // Defer block to end background task when function exits, only if it was started
         defer {
             if shouldStartBackgroundTask, backgroundTaskID != .invalid {
-                Task {
-                    UIApplication.shared.endBackgroundTask(backgroundTaskID)
-                }
+                UIApplication.shared.endBackgroundTask(backgroundTaskID)
                 backgroundTaskID = .invalid
             }
         }

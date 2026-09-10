@@ -10,8 +10,6 @@ import UIKit
         case noActiveOverride
     }
 
-    private var currentBackgroundTaskID: UIBackgroundTaskIdentifier = .invalid
-    private var previousTaskID: UIBackgroundTaskIdentifier = .invalid
     private var isAwaitingNotification: Bool = false
 
     func fetchAndProcessOverrides() async -> [OverridePreset] {
@@ -83,31 +81,20 @@ import UIKit
     }
 
     @MainActor func enactOverride(_ preset: OverridePreset) async -> Bool {
-        // Ensure any previous background task is ended before starting a new one
-        if previousTaskID != .invalid {
-            UIApplication.shared.endBackgroundTask(previousTaskID)
-            debugPrint("🛑 Previous background task ended: \(previousTaskID)")
-            previousTaskID = .invalid
-        }
-
-        // Start a new background task
+        // Each invocation owns its task, including when async invocations overlap.
         var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
         backgroundTaskID = UIApplication.shared.beginBackgroundTask(withName: "Override Upload") {
             guard backgroundTaskID != .invalid else { return }
-            Task {
-                UIApplication.shared.endBackgroundTask(backgroundTaskID)
-            }
+            UIApplication.shared.endBackgroundTask(backgroundTaskID)
             backgroundTaskID = .invalid
         }
-        previousTaskID = currentBackgroundTaskID
-        currentBackgroundTaskID = backgroundTaskID
 
         // Define a helper function to ensure proper background task cleanup
         func endBackgroundTask() {
-            if currentBackgroundTaskID == backgroundTaskID, currentBackgroundTaskID != .invalid {
-                UIApplication.shared.endBackgroundTask(currentBackgroundTaskID)
-                debugPrint("✅ Successfully ended background task: \(currentBackgroundTaskID)")
-                currentBackgroundTaskID = .invalid
+            if backgroundTaskID != .invalid {
+                UIApplication.shared.endBackgroundTask(backgroundTaskID)
+                debugPrint("✅ Successfully ended background task: \(backgroundTaskID)")
+                backgroundTaskID = .invalid
             }
         }
 
@@ -180,9 +167,7 @@ import UIKit
         if shouldStartBackgroundTask {
             backgroundTaskID = UIApplication.shared.beginBackgroundTask(withName: "Override Cancel") {
                 guard backgroundTaskID != .invalid else { return }
-                Task {
-                    UIApplication.shared.endBackgroundTask(backgroundTaskID)
-                }
+                UIApplication.shared.endBackgroundTask(backgroundTaskID)
                 backgroundTaskID = .invalid
             }
         }

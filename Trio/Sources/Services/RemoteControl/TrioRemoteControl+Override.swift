@@ -31,6 +31,8 @@ extension TrioRemoteControl {
     }
 
     @MainActor internal func handleStartOverrideCommand(_ pushMessage: PushMessage) async {
+        let diagnosticID = RuntimeDiagnostics.shared.begin("remoteOverride", force: true)
+        defer { RuntimeDiagnostics.shared.end("remoteOverride", id: diagnosticID, force: true) }
         guard let overrideName = pushMessage.overrideName, !overrideName.isEmpty else {
             await logError("Kommandot avvisades: override-namn saknas.", pushMessage: pushMessage)
             return
@@ -75,9 +77,7 @@ extension TrioRemoteControl {
         var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
         backgroundTaskID = UIApplication.shared.beginBackgroundTask(withName: "Remote Override Upload") {
             guard backgroundTaskID != .invalid else { return }
-            Task {
-                UIApplication.shared.endBackgroundTask(backgroundTaskID)
-            }
+            UIApplication.shared.endBackgroundTask(backgroundTaskID)
             backgroundTaskID = .invalid
         }
 
@@ -166,9 +166,7 @@ extension TrioRemoteControl {
         if shouldStartBackgroundTask {
             backgroundTaskID = UIApplication.shared.beginBackgroundTask(withName: "Remote Override Cancel") {
                 guard backgroundTaskID != .invalid else { return }
-                Task {
-                    UIApplication.shared.endBackgroundTask(backgroundTaskID)
-                }
+                UIApplication.shared.endBackgroundTask(backgroundTaskID)
                 backgroundTaskID = .invalid
             }
         }

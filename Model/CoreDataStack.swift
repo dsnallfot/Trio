@@ -95,6 +95,8 @@ class CoreDataStack: ObservableObject {
     }
 
     func fetchPersistentHistory() async {
+        let diagnosticID = RuntimeDiagnostics.shared.begin("historyFetch")
+        defer { RuntimeDiagnostics.shared.end("historyFetch", id: diagnosticID) }
         do {
             try await fetchPersistentHistoryTransactionsAndChanges()
         } catch {
@@ -120,15 +122,22 @@ class CoreDataStack: ObservableObject {
     }
 
     private func mergePersistentHistoryChanges(from history: [NSPersistentHistoryTransaction]) {
+        RuntimeDiagnostics.shared.increment("historyTransactions", by: history.count)
+        let diagnosticID = RuntimeDiagnostics.shared.begin("historyMerge")
 //        debugPrint("Received \(history.count) persistent history transactions")
         // Update view context with objectIDs from history change request
         /// - Tag: mergeChanges
         let viewContext = persistentContainer.viewContext
         viewContext.perform {
+            defer {
+                RuntimeDiagnostics.shared.increment("historyTransactions", by: -history.count)
+                RuntimeDiagnostics.shared.end("historyMerge", id: diagnosticID)
+            }
             for transaction in history {
                 viewContext.mergeChanges(fromContextDidSave: transaction.objectIDNotification())
                 self.lastToken = transaction.token
             }
+            RuntimeDiagnostics.shared.sampleObjects("viewRegistered", count: viewContext.registeredObjects.count)
         }
     }
 

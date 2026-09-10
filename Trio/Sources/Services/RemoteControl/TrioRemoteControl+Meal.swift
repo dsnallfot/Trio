@@ -5,6 +5,8 @@ import UIKit
 
 extension TrioRemoteControl {
     func handleMealCommand(_ pushMessage: PushMessage) async {
+        let diagnosticID = RuntimeDiagnostics.shared.begin("remoteMeal", force: true)
+        defer { RuntimeDiagnostics.shared.end("remoteMeal", id: diagnosticID, force: true) }
         // If bolusAmount is not nil but all others are nil, exit early without logging an error
         if pushMessage.bolusAmount != nil &&
             pushMessage.carbs == nil &&

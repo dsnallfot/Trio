@@ -5,6 +5,46 @@ import SwiftUI
 import Swinject
 
 extension Settings {
+    @MainActor private struct DiagnosticStatusView: View {
+        @ObservedObject private var diagnostics = RuntimeDiagnosticsDisplay.shared
+
+        private static let timeFormatter: DateFormatter = {
+            let formatter = DateFormatter()
+            formatter.locale = Locale(identifier: "en_US_POSIX")
+            formatter.timeZone = .autoupdatingCurrent
+            formatter.dateFormat = "HH:mm:ss"
+            return formatter
+        }()
+
+        private static let dateFormatter: DateFormatter = {
+            let formatter = DateFormatter()
+            formatter.locale = Locale(identifier: "en_US_POSIX")
+            formatter.timeZone = .autoupdatingCurrent
+            formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+            return formatter
+        }()
+
+        private func memoryText(_ sample: RuntimeDiagnosticsDisplay.MemorySample?) -> String {
+            guard let sample else { return "Inväntar mätning" }
+            return "\(Self.timeFormatter.string(from: sample.date))  \(String(format: "%.1f", sample.mebibytes)) MiB"
+        }
+
+        var body: some View {
+            Group {
+                LabeledContent("Minnesanvändning", value: memoryText(diagnostics.latest))
+                LabeledContent("Max användning uppmätt", value: memoryText(diagnostics.peak))
+                LabeledContent(
+                    "Senaste omstart",
+                    value: diagnostics.sessionStart.map { Self.dateFormatter.string(from: $0) } ?? "Inväntar appstart"
+                )
+            }
+            .font(.caption)
+            .monospacedDigit()
+            .lineLimit(1)
+            .minimumScaleFactor(0.75)
+        }
+    }
+
     struct VersionInfo: Equatable {
         var latestVersion: String?
         var isUpdateAvailable: Bool
@@ -14,6 +54,7 @@ extension Settings {
     struct RootView: BaseView {
         let resolver: Resolver
         @StateObject var state = StateModel()
+        @AppStorage(DiagnosticLogging.enabledKey) private var logDiagnostics = DiagnosticLogging.defaultEnabled
 
         @State private var showShareSheet = false
         @State private var searchText: String = ""
@@ -165,23 +206,23 @@ extension Settings {
                                 }
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
-
-                            Button {
-                                if let url = URL(string: "https://github.com/nightscout/Trio/issues/new/choose") {
-                                    UIApplication.shared.open(url)
-                                }
-                            } label: {
-                                HStack {
-                                    Text("Registrera en ticket på GitHub")
-                                        .foregroundColor(.primary)
-                                    Spacer()
-                                    Image(systemName: "chevron.right")
-                                        .foregroundColor(.secondary)
-                                        .font(.footnote)
-                                }
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-
+                            /*
+                             Button {
+                                 if let url = URL(string: "https://github.com/nightscout/Trio/issues/new/choose") {
+                                     UIApplication.shared.open(url)
+                                 }
+                             } label: {
+                                 HStack {
+                                     Text("Registrera en ticket på GitHub")
+                                         .foregroundColor(.primary)
+                                     Spacer()
+                                     Image(systemName: "chevron.right")
+                                         .foregroundColor(.secondary)
+                                         .font(.footnote)
+                                 }
+                             }
+                             .frame(maxWidth: .infinity, alignment: .leading)
+                             */
                             Button {
                                 if let url = URL(string: "https://discord.gg/FnwFEFUwXE") {
                                     UIApplication.shared.open(url)
@@ -197,23 +238,23 @@ extension Settings {
                                 }
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
-
-                            Button {
-                                if let url = URL(string: "https://m.facebook.com/groups/1351938092206709/") {
-                                    UIApplication.shared.open(url)
-                                }
-                            } label: {
-                                HStack {
-                                    Text("Trio Facebook")
-                                        .foregroundColor(.primary)
-                                    Spacer()
-                                    Image(systemName: "chevron.right")
-                                        .foregroundColor(.secondary)
-                                        .font(.footnote)
-                                }
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-
+                            /*
+                             Button {
+                                 if let url = URL(string: "https://m.facebook.com/groups/1351938092206709/") {
+                                     UIApplication.shared.open(url)
+                                 }
+                             } label: {
+                                 HStack {
+                                     Text("Trio Facebook")
+                                         .foregroundColor(.primary)
+                                     Spacer()
+                                     Image(systemName: "chevron.right")
+                                         .foregroundColor(.secondary)
+                                         .font(.footnote)
+                                 }
+                             }
+                             .frame(maxWidth: .infinity, alignment: .leading)
+                             */
                             Button {
                                 if let url = URL(string: "https://diy-trio.org/") {
                                     UIApplication.shared.open(url)
@@ -233,10 +274,20 @@ extension Settings {
                     ).listRowBackground(Color.chart)
 
                     Section(
-                        // header: Text(""),
+                        header: Text("Avancerade alternativ"),
                         content: {
-                            Toggle("Avancerade alternativ", isOn: $state.debugOptions)
+                            Toggle("Visa", isOn: $state.debugOptions)
+                        }
+                    ).listRowBackground(Color.chart)
+
+                    Section(
+                        // header: Text("diagnostik"),
+                        content: {
                             if state.debugOptions {
+                                Toggle("Logga diagnostik", isOn: $logDiagnostics)
+                                if logDiagnostics {
+                                    DiagnosticStatusView()
+                                }
                                 Button {
                                     Task {
                                         await state.uploadProfile()

@@ -252,10 +252,15 @@ final class BaseAPSManager: APSManager, Injectable {
         // start background time extension
         backGroundTaskID = await UIApplication.shared.beginBackgroundTask(withName: "Loop startar") {
             guard let backgroundTask = self.backGroundTaskID else { return }
+            BackgroundTaskDiagnostics.shared.record(.expiration, id: backgroundTask, name: "loop", reason: "time-limit")
             Task {
                 UIApplication.shared.endBackgroundTask(backgroundTask)
+                BackgroundTaskDiagnostics.shared.record(.end, id: backgroundTask, name: "loop", reason: "expiration")
             }
             self.backGroundTaskID = .invalid
+        }
+        if let id = backGroundTaskID {
+            BackgroundTaskDiagnostics.shared.record(.start, id: id, name: "loop")
         }
 
         let interval: Double?
@@ -325,6 +330,7 @@ final class BaseAPSManager: APSManager, Injectable {
         // End background task after all the operations are completed
         if let backgroundTask = backGroundTaskID {
             await UIApplication.shared.endBackgroundTask(backgroundTask)
+            BackgroundTaskDiagnostics.shared.record(.end, id: backgroundTask, name: "loop", reason: "after-uploads")
             backGroundTaskID = .invalid
         }
     }
@@ -340,6 +346,7 @@ final class BaseAPSManager: APSManager, Injectable {
             await nightscout.uploadErrors(withNotes: errorDescription)
             if let backgroundTask = backGroundTaskID {
                 await UIApplication.shared.endBackgroundTask(backgroundTask)
+                BackgroundTaskDiagnostics.shared.record(.end, id: backgroundTask, name: "loop", reason: "loop-error")
                 backGroundTaskID = .invalid
             }
             processError(error)
@@ -358,6 +365,7 @@ final class BaseAPSManager: APSManager, Injectable {
         // End of the BG tasks
         if let backgroundTask = backGroundTaskID {
             await UIApplication.shared.endBackgroundTask(backgroundTask)
+            BackgroundTaskDiagnostics.shared.record(.end, id: backgroundTask, name: "loop", reason: "loop-completed")
             backGroundTaskID = .invalid
         }
     }
@@ -396,6 +404,8 @@ final class BaseAPSManager: APSManager, Injectable {
     }
 
     func determineBasal() async -> Bool {
+        let diagnosticID = RuntimeDiagnostics.shared.begin("determination", force: true)
+        defer { RuntimeDiagnostics.shared.end("determination", id: diagnosticID, force: true) }
         debug(.apsManager, "Starta determine basal")
 
         // Fetch glucose asynchronously
@@ -484,6 +494,8 @@ final class BaseAPSManager: APSManager, Injectable {
     private var bolusReporter: DoseProgressReporter?
 
     func enactBolus(amount: Double, isSMB: Bool, callback: ((Bool, String) -> Void)?) async {
+        let diagnosticID = RuntimeDiagnostics.shared.begin("bolus", force: !isSMB)
+        defer { RuntimeDiagnostics.shared.end("bolus", id: diagnosticID, force: !isSMB) }
         if amount <= 0 {
             return
         }

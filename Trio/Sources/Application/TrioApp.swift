@@ -61,6 +61,10 @@ import Swinject
     }
 
     init() {
+        let sessionStart = Date()
+        Task { @MainActor in
+            RuntimeDiagnosticsDisplay.shared.markSessionStart(sessionStart)
+        }
         let submodulesInfo = BuildDetails.shared.submodules.map { key, value in
             "\(key): \(value.branch) \(value.commitSHA)"
         }.joined(separator: ", ")

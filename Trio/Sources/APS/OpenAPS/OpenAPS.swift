@@ -33,6 +33,7 @@ final class OpenAPS {
     func processDetermination(_ determination: Determination) async {
         await context.perform {
             let newOrefDetermination = OrefDetermination(context: self.context)
+            var createdObjects: [NSManagedObject] = [newOrefDetermination]
             newOrefDetermination.id = UUID()
             newOrefDetermination.totalDailyDose = self.decimalToNSDecimalNumber(determination.tdd)
             newOrefDetermination.insulinSensitivity = self.decimalToNSDecimalNumber(determination.isf)
@@ -67,6 +68,7 @@ final class OpenAPS {
                     .forEach { type, values in
                         if let values = values {
                             let forecast = Forecast(context: self.context)
+                            createdObjects.append(forecast)
                             forecast.id = UUID()
                             forecast.type = type
                             forecast.date = Date()
@@ -74,6 +76,7 @@ final class OpenAPS {
 
                             for (index, value) in values.enumerated() {
                                 let forecastValue = ForecastValue(context: self.context)
+                                createdObjects.append(forecastValue)
                                 forecastValue.index = Int32(index)
                                 forecastValue.value = Int32(value)
                                 forecast.addToForecastValues(forecastValue)
@@ -82,17 +85,16 @@ final class OpenAPS {
                         }
                     }
             }
-        }
-
-        // First save the current Determination to Core Data
-        await attemptToSaveContext()
-    }
-
-    func attemptToSaveContext() async {
-        await context.perform {
             do {
                 guard self.context.hasChanges else { return }
                 try self.context.save()
+                // Break the new graph's relationship cycles only after saving successfully.
+                // Keep creation, save and refaulting on one context operation so another
+                // calculation cannot access the new objects between these steps.
+                for object in createdObjects {
+                    self.context.refresh(object, mergeChanges: false)
+                }
+                RuntimeDiagnostics.shared.sampleObjects("orefRegistered", count: self.context.registeredObjects.count)
             } catch {
                 debugPrint("\(DebuggingIdentifiers.failed) \(#file) \(#function) Failed to save Determination to Core Data")
             }
@@ -259,6 +261,9 @@ final class OpenAPS {
         iob: Decimal? = nil,
         simulation: Bool = false
     ) async throws -> Determination? {
+        let diagnosticKind = simulation ? "simulation" : "basal"
+        let diagnosticID = RuntimeDiagnostics.shared.begin(diagnosticKind)
+        defer { RuntimeDiagnostics.shared.end(diagnosticKind, id: diagnosticID) }
         debug(.openAPS, "Start determineBasal")
 
         // temp_basal
