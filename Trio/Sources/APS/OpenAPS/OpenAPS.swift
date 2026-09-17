@@ -647,9 +647,10 @@ final class OpenAPS {
                     Script(name: Bundle.determineBasal)
                 ])
 
-                if let middleware = self.middlewareScript(name: OpenAPS.Middleware.determineBasal) {
-                    worker.evaluate(script: middleware)
-                }
+                // Middleware is disabled, including any script saved by an older installation.
+                // if let middleware = self.middlewareScript(name: OpenAPS.Middleware.determineBasal) {
+                //     worker.evaluate(script: middleware)
+                // }
 
                 let result = worker.call(function: Function.generate, with: [
                     iob,

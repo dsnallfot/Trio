@@ -5,6 +5,8 @@ function generate(iob, currenttemp, glucose, profile, autosens = null, meal = nu
     var clock = new Date();
     
     var middleware_was_used = "";
+    // Middleware is disabled. Keep the empty argument for the algorithm's existing interface.
+    /*
     try {
         var middlewareReason = middleware(iob, currenttemp, glucose, profile, autosens, meal, reservoir, clock, pump_history, preferences, basalProfile, oref2_variables);
         middleware_was_used = (middlewareReason || "Nothing changed");
@@ -12,6 +14,7 @@ function generate(iob, currenttemp, glucose, profile, autosens = null, meal = nu
     } catch (error) {
         console.log("Invalid middleware: " + error);
     };
+    */
 
     var glucose_status = freeaps_glucoseGetLast(glucose);
     var autosens_data = null;
