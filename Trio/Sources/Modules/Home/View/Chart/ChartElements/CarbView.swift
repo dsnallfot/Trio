@@ -35,12 +35,25 @@ struct CarbView: ChartContent {
                     y: .value("Value", yPosition)
                 )
                 .symbol {
-                    Image(systemName: "arrowtriangle.down.fill").font(.system(size: size)).foregroundStyle(Color.orange)
-                        .rotationEffect(.degrees(180))
-                }
-                .annotation(position: .bottom) {
-                    Text(Formatter.integerFormatter.string(from: carbAmount as NSNumber)!).font(.caption2)
+                    VStack(spacing: 0) {
+                        Image(systemName: "arrowtriangle.down.fill")
+                            .font(.system(size: size))
+                            .foregroundStyle(Color.orange)
+                            .rotationEffect(.degrees(180))
+
+                        Text(
+                            Formatter.integerFormatter.string(
+                                from: carbAmount as NSNumber
+                            )!
+                        )
+                        .font(.caption2)
                         .foregroundStyle(Color.primary)
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
+                        .frame(minWidth: 40)
+                    }
+                    .frame(minWidth: 40)
+                    .offset(y: 5) // Flytta carbtriangel + text nedåt
                 }
             }
         }
