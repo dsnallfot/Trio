@@ -55,8 +55,8 @@ extension Stat {
                         units: state.units,
                         hbA1cDisplayUnit: state.hbA1cDisplayUnit
                     )
-                case .Total:
-                    EmptyView()
+                    // case .Total:
+                    // EmptyView()
                 }
             }
         }
@@ -99,8 +99,8 @@ extension Stat {
                     timeInRangeChartStyle: state.timeInRangeChartStyle,
                     glucose: state.glucoseFromPersistence
                 )
-            case .Total:
-                EmptyView()
+                // case .Total:
+                // EmptyView()
             }
         }
 
@@ -109,9 +109,13 @@ extension Stat {
                 chart().padding(.top, 20)
                 Picker("Duration", selection: $state.selectedDuration) {
                     ForEach(Stat.StateModel.Duration.allCases) { duration in
-                        Text(NSLocalizedString(duration.rawValue, comment: "")).tag(Optional(duration))
+                        Text(NSLocalizedString(duration.rawValue, comment: ""))
+                            .tag(duration)
                     }
-                }.onChange(of: state.selectedDuration) { _, newValue in
+                }
+                .pickerStyle(.segmented)
+                .background(.cyan.opacity(0.2))
+                .onChange(of: state.selectedDuration) { _, newValue in
                     state.setupGlucoseArray(for: newValue)
                 }
                 .pickerStyle(.segmented).background(.cyan.opacity(0.2))

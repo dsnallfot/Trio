@@ -24,13 +24,13 @@ extension Stat {
             case Day
             case Week
             case Month
-            case Total
-
-            static var allCases: [Duration] {
-                [.Today, .Day, .Week, .Month]
-            }
+            // case Total
 
             var id: Self { self }
+
+            static var selectableCases: [Duration] {
+                [.Today, .Day, .Week, .Month]
+            }
         }
 
         override func subscribe() {
@@ -62,8 +62,8 @@ extension Stat {
                 predicate = NSPredicate.glucoseForStatsToday
             case .Month:
                 predicate = NSPredicate.glucoseForStatsMonth
-            case .Total:
-                predicate = NSPredicate.glucoseForStatsMonth
+                // case .Total:
+                // predicate = NSPredicate.glucoseForStatsMonth
             }
 
             let results = await CoreDataStack.shared.fetchEntitiesAsync(

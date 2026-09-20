@@ -273,24 +273,40 @@ struct ChartsView: View {
         let hypoLimit = Int(lowLimit)
         let hyperLimit = Int(highLimit)
 
-        let justGlucoseArray = glucose.compactMap({ each in Int(each.glucose as Int16) })
+        let justGlucoseArray = glucose.map { Int($0.glucose) }
         let totalReadings = justGlucoseArray.count
 
-        let hyperArray = glucose.filter({ $0.glucose > hyperLimit })
-        let hyperReadings = hyperArray.compactMap({ each in each.glucose as Int16 }).count
-        let hyperPercentage = Double(hyperReadings) / Double(totalReadings) * 100
+        // No glucose data yet.
+        // Avoid division by zero -> NaN -> Decimal(NaN).
+        guard totalReadings > 0 else {
+            return [
+                (decimal: 0, string: "Low"),
+                (decimal: 0, string: "Normal"),
+                (decimal: 0, string: "High")
+            ]
+        }
 
-        let hypoArray = glucose.filter({ $0.glucose < hypoLimit })
-        let hypoReadings = hypoArray.compactMap({ each in each.glucose as Int16 }).count
-        let hypoPercentage = Double(hypoReadings) / Double(totalReadings) * 100
+        let hyperReadings = glucose.filter {
+            $0.glucose > hyperLimit
+        }.count
 
-        let tir = 100 - (hypoPercentage + hyperPercentage)
+        let hypoReadings = glucose.filter {
+            $0.glucose < hypoLimit
+        }.count
 
-        var array: [(decimal: Decimal, string: String)] = []
-        array.append((decimal: Decimal(hypoPercentage), string: "Low"))
-        array.append((decimal: Decimal(tir), string: "NormaL"))
-        array.append((decimal: Decimal(hyperPercentage), string: "High"))
+        let hyperPercentage =
+            Double(hyperReadings) / Double(totalReadings) * 100
 
-        return array
+        let hypoPercentage =
+            Double(hypoReadings) / Double(totalReadings) * 100
+
+        let tir =
+            100 - (hypoPercentage + hyperPercentage)
+
+        return [
+            (decimal: Decimal(hypoPercentage), string: "Low"),
+            (decimal: Decimal(tir), string: "Normal"),
+            (decimal: Decimal(hyperPercentage), string: "High")
+        ]
     }
 }
