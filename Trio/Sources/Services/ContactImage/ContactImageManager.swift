@@ -325,6 +325,8 @@ final class BaseContactImageManager: NSObject, ContactImageManager, Injectable {
 
             state.glucose = Formatter.glucoseFormatter(for: units).string(from: value as NSNumber)
             state.trend = firstGlucoseValue.directionEnum?.symbol
+            state.direction = firstGlucoseValue.directionEnum
+            state.glucoseDate = firstGlucoseValue.date
 
             let delta = glucoseObjects.count >= 2
                 ? Decimal(firstGlucoseValue.glucose) - Decimal(glucoseObjects.dropFirst().first?.glucose ?? 0)
@@ -359,6 +361,14 @@ final class BaseContactImageManager: NSObject, ContactImageManager, Injectable {
                 state.fifteenMinBg = "N/A"
                 state.fifteenLabel = "❓" // Fallback emoji for unavailable data
             }
+        } else {
+            state.glucose = nil
+            state.trend = nil
+            state.direction = nil
+            state.glucoseDate = nil
+            state.delta = nil
+            state.fifteenMinBg = nil
+            state.fifteenLabel = "❓"
         }
 
         state.lastLoopDate = lastDetermination?.timestamp

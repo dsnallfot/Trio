@@ -33,6 +33,14 @@ struct ContactImageHelpView: View {
                     )
 
                     Text("• Delad: Delar upp värdena i två separata områden av samma storlek.")
+                    Text("• Glucose Bobble: Visar glukosvärdet med en färgad ring och trendpil.")
+                }).listRowBackground(Color.gray.opacity(0.1))
+
+                DefinitionRow(term: "Glucose Bobble", definition: VStack(alignment: .leading) {
+                    Text("Välj färg eller monokromt glukosvärde. Ringen och trendpilen behåller sina färger.")
+                    Text("Välj om minuter sedan mätning och delta ska visas under glukosvärdet.")
+                    Text("Gamla glukosvärden stryks över. När mätdata saknas visas streck.")
+                    Text("Den här layouten ersätter inställningarna för visningsvärden, ring och teckensnitt.")
                 }).listRowBackground(Color.gray.opacity(0.1))
 
                 DefinitionRow(term: "Ange visningsvärden", definition: VStack(alignment: .leading) {

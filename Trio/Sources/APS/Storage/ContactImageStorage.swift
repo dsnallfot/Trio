@@ -49,10 +49,14 @@ final class BaseContactImageStorage: ContactImageStorage, Injectable {
                     hasHighContrast: entry.hasHighContrast,
                     ringWidth: ContactImageEntry.RingWidth(rawValue: Int(entry.ringWidth)) ?? .regular,
                     ringGap: ContactImageEntry.RingGap(rawValue: Int(entry.ringGap)) ?? .small,
+                    colorMode: ContactImageEntry.ColorMode(rawValue: entry.colorMode ?? "") ?? .color,
+                    backgroundMode: ContactImageEntry.BackgroundMode(rawValue: entry.backgroundMode ?? "") ?? .transparent,
                     fontSize: ContactImageEntry.FontSize(rawValue: Int(entry.fontSize)) ?? .regular,
                     secondaryFontSize: ContactImageEntry.FontSize(rawValue: Int(entry.fontSizeSecondary)) ?? .small,
                     fontWeight: Font.Weight.fromString(entry.fontWeight ?? "regular"),
                     fontWidth: Font.Width.fromString(entry.fontWidth ?? "standard"),
+                    bobbleShowMinutesAgo: entry.bobbleShowMinutesAgo,
+                    bobbleShowDelta: entry.bobbleShowDelta,
                     managedObjectID: entry.objectID
                 )
             }
@@ -79,12 +83,16 @@ final class BaseContactImageStorage: ContactImageStorage, Injectable {
             newContactImageEntry.top = contactImageEntry.top.rawValue
             newContactImageEntry.bottom = contactImageEntry.bottom.rawValue
             newContactImageEntry.hasHighContrast = contactImageEntry.hasHighContrast
+            newContactImageEntry.colorMode = contactImageEntry.colorMode.rawValue
+            newContactImageEntry.backgroundMode = contactImageEntry.backgroundMode.rawValue
+            newContactImageEntry.bobbleShowMinutesAgo = contactImageEntry.bobbleShowMinutesAgo
+            newContactImageEntry.bobbleShowDelta = contactImageEntry.bobbleShowDelta
             newContactImageEntry.ringWidth = Int16(contactImageEntry.ringWidth.rawValue)
             newContactImageEntry.ringGap = Int16(contactImageEntry.ringGap.rawValue)
             newContactImageEntry.fontSize = Int16(contactImageEntry.fontSize.rawValue)
             newContactImageEntry.fontSizeSecondary = Int16(contactImageEntry.secondaryFontSize.rawValue)
-            newContactImageEntry.fontWidth = contactImageEntry.fontWeight.asString
-            newContactImageEntry.fontWeight = contactImageEntry.fontWidth.asString
+            newContactImageEntry.fontWidth = contactImageEntry.fontWidth.asString
+            newContactImageEntry.fontWeight = contactImageEntry.fontWeight.asString
 
             do {
                 guard self.backgroundContext.hasChanges else { return }
@@ -119,6 +127,10 @@ final class BaseContactImageStorage: ContactImageStorage, Injectable {
                     existingEntry.top = contactImageEntry.top.rawValue
                     existingEntry.bottom = contactImageEntry.bottom.rawValue
                     existingEntry.hasHighContrast = contactImageEntry.hasHighContrast
+                    existingEntry.colorMode = contactImageEntry.colorMode.rawValue
+                    existingEntry.backgroundMode = contactImageEntry.backgroundMode.rawValue
+                    existingEntry.bobbleShowMinutesAgo = contactImageEntry.bobbleShowMinutesAgo
+                    existingEntry.bobbleShowDelta = contactImageEntry.bobbleShowDelta
                     existingEntry.ringWidth = Int16(contactImageEntry.ringWidth.rawValue)
                     existingEntry.ringGap = Int16(contactImageEntry.ringGap.rawValue)
                     existingEntry.fontSize = Int16(contactImageEntry.fontSize.rawValue)

@@ -28,6 +28,10 @@ struct ContactPicture: View {
         let fontWeight = contact.fontWeight
 
         UIGraphicsBeginImageContext(rect.size)
+        if contact.backgroundMode == .black {
+            UIColor.black.setFill()
+            UIRectFill(rect)
+        }
         if let context = UIGraphicsGetCurrentContext() {
             context.setShouldAntialias(true)
             context.setAllowsAntialiasing(true)
@@ -37,7 +41,7 @@ struct ContactPicture: View {
         let ringGap = Double(contact.ringGap.rawValue) / 100.0
         let outerGap = 0.03
 
-        if contact.ring != .none {
+        if contact.layout != .bobble, contact.ring != .none {
             rect = CGRect(
                 x: rect.minX + width * outerGap,
                 y: rect.minY + height * outerGap,
@@ -169,6 +173,18 @@ struct ContactPicture: View {
                 )
             }
 
+        case .bobble:
+            // bobbleImage.size stays at the native point size regardless of scale, so size the
+            // destination rect from bobbleSize/rect instead of the image itself.
+            let bobbleSize = min(rect.width, rect.height)
+            let bobbleImage = makeGlucoseBobbleImage(contact: contact, state: state, pixelSize: bobbleSize)
+            bobbleImage.draw(in: CGRect(
+                x: rect.midX - bobbleSize / 2,
+                y: rect.midY - bobbleSize / 2,
+                width: bobbleSize,
+                height: bobbleSize
+            ))
+
         case .split:
             let centerX = rect.origin.x + rect.size.width / 2
             let centerY = rect.origin.y + rect.size.height / 2
@@ -267,15 +283,7 @@ struct ContactPicture: View {
         default: nil
         }
 
-        let glucoseValue = Decimal(string: state.glucose ?? "100") ?? 100
-
-        let dynamicColor: Color = Trio.getDynamicGlucoseColor(
-            glucoseValue: glucoseValue,
-            highGlucoseColorValue: state.highGlucoseColorValue,
-            lowGlucoseColorValue: state.lowGlucoseColorValue,
-            targetGlucose: state.targetGlucose,
-            glucoseColorScheme: state.glucoseColorScheme
-        )
+        let dynamicColor = dynamicGlucoseColor(for: state)
 
         let isStaleBG = state
             .forceStaleBG || (state.lastBGDate.map { Date().timeIntervalSince($0) > Config.staleBGThreshold } ?? false)
@@ -307,11 +315,76 @@ struct ContactPicture: View {
                 fontSize: fontSize,
                 fontWeight: fontWeight,
                 fontWidth: fontWidth,
-                color: textColor,
+                color: contact.colorMode == .color || shouldHighlightStaleTime ? textColor : .white,
                 opacity: shouldStrikeThrough ? 0.7 : 1.0,
                 strikeThrough: shouldStrikeThrough
             )
         }
+    }
+
+    private static func dynamicGlucoseColor(for state: ContactImageState) -> Color {
+        let glucoseValue = Decimal(string: state.glucose ?? "100") ?? 100
+        return Trio.getDynamicGlucoseColor(
+            glucoseValue: glucoseValue,
+            highGlucoseColorValue: state.highGlucoseColorValue,
+            lowGlucoseColorValue: state.lowGlucoseColorValue,
+            targetGlucose: state.targetGlucose,
+            glucoseColorScheme: state.glucoseColorScheme
+        )
+    }
+
+    // Matches CurrentGlucoseView's onChange(of: glucose.last?.directionEnum) mapping.
+    private static func rotationDegrees(for direction: BloodGlucose.Direction?) -> Double {
+        switch direction {
+        case .doubleUp,
+             .singleUp,
+             .tripleUp:
+            return -90
+        case .fortyFiveUp:
+            return -45
+        case .flat:
+            return 0
+        case .fortyFiveDown:
+            return 45
+        case .doubleDown,
+             .singleDown,
+             .tripleDown:
+            return 90
+        default:
+            return 0
+        }
+    }
+
+    private static func makeGlucoseBobbleImage(
+        contact: ContactImageEntry,
+        state: ContactImageState,
+        pixelSize: CGFloat
+    ) -> UIImage {
+        let hasReading = state.glucose != nil
+        let view = GlucoseBobbleContactView(
+            glucoseText: state.glucose ?? "– –",
+            minutesAgoText: hasReading && contact.bobbleShowMinutesAgo
+                ? minutesAgoText(from: state.glucoseDate) : nil,
+            deltaText: hasReading && contact.bobbleShowDelta ? state.delta : nil,
+            glucoseColor: hasReading
+                ? (contact.colorMode == .color ? dynamicGlucoseColor(for: state) : .white)
+                : .loopGray,
+            rotationDegrees: rotationDegrees(for: state.direction),
+            isStale: state
+                .forceStaleBG || (state.glucoseDate.map { Date().timeIntervalSince($0) > Config.staleBGThreshold } ?? false)
+        )
+
+        let renderer = ImageRenderer(content: view)
+        renderer.scale = pixelSize / GlucoseBobbleContactView.Layout.nativeSize
+        renderer.isOpaque = false
+        return renderer.uiImage ?? UIImage()
+    }
+
+    private static func minutesAgoText(from date: Date?) -> String? {
+        guard let date else { return nil }
+        let minutes = max(0, Date().timeIntervalSince(date) / 60)
+        let value = minutes <= 1 ? "< 1" : String(Int(minutes.rounded()))
+        return value + " " + NSLocalizedString("min", comment: "Short form for minutes")
     }
 
     private static func drawText(

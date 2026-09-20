@@ -21,6 +21,11 @@ struct AddContactImageSheet: View {
     @State private var fontWeight: Font.Weight = .medium
     @State private var fontWidth: Font.Width = .standard
 
+    @State private var colorMode: ContactImageEntry.ColorMode = .color
+    @State private var backgroundMode: ContactImageEntry.BackgroundMode = .transparent
+    @State private var bobbleShowMinutesAgo = true
+    @State private var bobbleShowDelta = true
+
     private var previewEntry: ContactImageEntry {
         ContactImageEntry(
             id: UUID(),
@@ -34,10 +39,14 @@ struct AddContactImageSheet: View {
             hasHighContrast: hasHighContrast,
             ringWidth: ringWidth,
             ringGap: ringGap,
+            colorMode: colorMode,
+            backgroundMode: backgroundMode,
             fontSize: fontSize,
             secondaryFontSize: secondaryFontSize,
             fontWeight: fontWeight,
-            fontWidth: fontWidth
+            fontWidth: fontWidth,
+            bobbleShowMinutesAgo: bobbleShowMinutesAgo,
+            bobbleShowDelta: bobbleShowDelta
         )
     }
 
@@ -82,66 +91,81 @@ struct AddContactImageSheet: View {
                         }.onChange(of: layout, { oldLayout, newLayout in
                             if oldLayout != newLayout, newLayout == .split {
                                 top = .glucose
-                            } else {
+                            } else if newLayout != .bobble {
                                 top = .none
                             }
                         })
-                        Toggle("Högkontrastläge", isOn: $hasHighContrast)
+
+                        if layout != .bobble {
+                            Toggle("Högkontrastläge", isOn: $hasHighContrast)
+                        }
                     }.listRowBackground(Color.chart)
 
-                    // Primary Value Section
-                    Section(header: Text("Visning värden")) {
-                        Picker("Övre värde", selection: $top) {
-                            ForEach(ContactImageValue.allCases, id: \.id) { value in
-                                Text(value.displayName).tag(value)
-                            }
-                        }
-                        if layout == .default {
-                            Picker("Primärt värde", selection: $primary) {
+                    if layout == .bobble {
+                        Section(header: Text("Glucose Bobble")) {
+                            colorModePicker
+                            Toggle("Visa minuter sedan mätning", isOn: $bobbleShowMinutesAgo)
+                            Toggle("Visa delta", isOn: $bobbleShowDelta)
+                        }.listRowBackground(Color.chart)
+                    }
+
+                    if layout != .bobble {
+                        // Primary Value Section
+                        Section(header: Text("Visning värden")) {
+                            Picker("Övre värde", selection: $top) {
                                 ForEach(ContactImageValue.allCases, id: \.id) { value in
                                     Text(value.displayName).tag(value)
                                 }
                             }
-                        }
-                        Picker("Nedre värde", selection: $bottom) {
-                            ForEach(ContactImageValue.allCases, id: \.id) { value in
-                                Text(value.displayName).tag(value)
-                            }
-                        }
-
-                    }.listRowBackground(Color.chart)
-
-                    // Ring Settings Section
-                    Section(header: Text("Ringinställningar")) {
-                        Picker("Ringtyp", selection: $ring) {
-                            ForEach(ContactImageLargeRing.allCases, id: \.self) { ring in
-                                Text(ring.displayName).tag(ring)
-                            }
-                        }
-
-                        if ring != .none {
-                            Picker("Ringbredd", selection: $ringWidth) {
-                                ForEach(ContactImageEntry.RingWidth.allCases, id: \.self) { width in
-                                    Text(width.displayName).tag(width)
+                            if layout == .default {
+                                Picker("Primärt värde", selection: $primary) {
+                                    ForEach(ContactImageValue.allCases, id: \.id) { value in
+                                        Text(value.displayName).tag(value)
+                                    }
                                 }
                             }
-                            Picker("Ringgap", selection: $ringGap) {
-                                ForEach(ContactImageEntry.RingGap.allCases, id: \.self) { gap in
-                                    Text(gap.displayName).tag(gap)
+                            Picker("Nedre värde", selection: $bottom) {
+                                ForEach(ContactImageValue.allCases, id: \.id) { value in
+                                    Text(value.displayName).tag(value)
                                 }
                             }
-                        }
-                    }.listRowBackground(Color.chart)
 
-                    // Font Settings Section
-                    Section(header: Text("Teckensnitt")) {
-                        fontSizePicker
-                        if layout == .split {
-                            secondaryFontSizePicker
-                        }
-                        fontWeightPicker
-                        fontWidthPicker
-                    }.listRowBackground(Color.chart)
+                        }.listRowBackground(Color.chart)
+
+                        // Ring Settings Section
+                        Section(header: Text("Ringinställningar")) {
+                            Picker("Ringtyp", selection: $ring) {
+                                ForEach(ContactImageLargeRing.allCases, id: \.self) { ring in
+                                    Text(ring.displayName).tag(ring)
+                                }
+                            }
+
+                            if ring != .none {
+                                Picker("Ringbredd", selection: $ringWidth) {
+                                    ForEach(ContactImageEntry.RingWidth.allCases, id: \.self) { width in
+                                        Text(width.displayName).tag(width)
+                                    }
+                                }
+                                Picker("Ringgap", selection: $ringGap) {
+                                    ForEach(ContactImageEntry.RingGap.allCases, id: \.self) { gap in
+                                        Text(gap.displayName).tag(gap)
+                                    }
+                                }
+                            }
+                        }.listRowBackground(Color.chart)
+
+                        // Font Settings Section
+                        Section(header: Text("Teckensnitt")) {
+                            backgroundModePicker
+                            colorModePicker
+                            fontSizePicker
+                            if layout == .split {
+                                secondaryFontSizePicker
+                            }
+                            fontWeightPicker
+                            fontWidthPicker
+                        }.listRowBackground(Color.chart)
+                    }
                 }
 
                 stickySaveButton
@@ -195,6 +219,22 @@ struct AddContactImageSheet: View {
                 .tint(.white)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
                 .padding(5)
+        }
+    }
+
+    private var backgroundModePicker: some View {
+        Picker("Background", selection: $backgroundMode) {
+            ForEach(ContactImageEntry.BackgroundMode.allCases, id: \.self) { mode in
+                Text(mode.displayName).tag(mode)
+            }
+        }
+    }
+
+    private var colorModePicker: some View {
+        Picker("Color Mode", selection: $colorMode) {
+            ForEach(ContactImageEntry.ColorMode.allCases, id: \.self) { mode in
+                Text(mode.displayName).tag(mode)
+            }
         }
     }
 
