@@ -6,6 +6,22 @@
       parallelizeBuildables = "NO"
       buildImplicitDependencies = "YES">
       <BuildActionEntries>
+         <!-- G7SensorKit imports LoopAlgorithm without declaring a package dependency.
+              Build the package first so unmodified submodules work in a clean build. -->
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "LoopAlgorithm"
+               BuildableName = "LoopAlgorithm"
+               BlueprintName = "LoopAlgorithm"
+               ReferencedContainer = "container:LoopAlgorithm">
+            </BuildableReference>
+         </BuildActionEntry>
          <BuildActionEntry
             buildForTesting = "YES"
             buildForRunning = "YES"
