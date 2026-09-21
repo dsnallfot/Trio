@@ -41,6 +41,7 @@ extension GlucoseNotificationSettings {
 
         var body: some View {
             List {
+                GlucoseAlarmSettingsSection(low: state.lowGlucose, high: state.highGlucose, units: state.units)
                 SettingInputSection(
                     decimalValue: $decimalPlaceholder,
                     booleanValue: $state.useAlarmSound,
@@ -49,18 +50,18 @@ extension GlucoseNotificationSettings {
                         get: { selectedVerboseHint },
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = "Spela upp larmljud"
+                            hintLabel = "Spela upp ljud för kolhydratbehov"
                         }
                     ),
                     units: state.units,
                     type: .boolean,
-                    label: "Spela upp larmljud",
-                    miniHint: "Spela upp ett larmljud vid Trio-notiser.",
+                    label: "Spela upp ljud för kolhydratbehov",
+                    miniHint: "Spela upp ljud vid notiser om kolhydratbehov.",
                     verboseHint: VStack(alignment: .leading, spacing: 10) {
                         Text("Standard: AV").bold()
 
                         Text(
-                            "När denna funktion är aktiverad spelas ett larmljud upp för Trio-notiser om kolhydratbehov samt vid larm för lågt och högt glukos."
+                            "När denna funktion är aktiverad spelas ett ljud upp för Trio-notiser om kolhydratbehov. Glukoslarmen har egna ljudinställningar ovan."
                         )
                     }
                 )
@@ -319,9 +320,9 @@ extension GlucoseNotificationSettings {
                 }
                 .listRowBackground(Color.chart)
 
-                if state.glucoseNotificationsOption != GlucoseNotificationsOption.disabled {
-                    self.lowAndHighGlucoseAlertSection
+                self.lowAndHighGlucoseAlertSection
 
+                if state.glucoseNotificationsOption != GlucoseNotificationsOption.disabled {
                     SettingInputSection(
                         decimalValue: $decimalPlaceholder,
                         booleanValue: $state.addSourceInfoToGlucoseNotifications,

@@ -78,6 +78,7 @@ final class BaseUserNotificationsManager: NSObject, UserNotificationsManager, In
     init(resolver: Resolver) {
         super.init()
         center.delegate = self
+        Task { @MainActor in _ = TrioAlertManager.shared }
         injectServices(resolver)
 
         coreDataPublisher =
@@ -272,9 +273,11 @@ final class BaseUserNotificationsManager: NSObject, UserNotificationsManager, In
                 try viewContext.existingObject(with: id) as? GlucoseStored
             }
 
-            guard let lastReading = glucoseObjects.first?.glucose,
-                  let secondLastReading = glucoseObjects.dropFirst().first?.glucose,
-                  let lastDirection = glucoseObjects.first?.directionEnum?.symbol else { return }
+            guard let lastReading = glucoseObjects.first?.glucose else { return }
+            let secondLastReading = glucoseObjects.dropFirst().first?.glucose
+            let lastDirection = glucoseObjects.first?.directionEnum?.symbol
+            // Informational glucose notifications are independent of low/high alarms.
+            // Their existing preference still controls banners; TrioAlertManager owns alarm audio.
 
             addAppBadge(glucose: (glucoseObjects.first?.glucose).map { Int($0) })
 
@@ -295,7 +298,7 @@ final class BaseUserNotificationsManager: NSObject, UserNotificationsManager, In
                 notificationAlarm = true
             }
 
-            let delta = glucoseObjects.count >= 2 ? lastReading - secondLastReading : nil
+            let delta = secondLastReading.map { lastReading - $0 }
             let body = glucoseText(
                 glucoseValue: Int(lastReading),
                 delta: Int(delta ?? 0),
@@ -312,8 +315,7 @@ final class BaseUserNotificationsManager: NSObject, UserNotificationsManager, In
                 content.body = body
 
                 if notificationAlarm {
-                    playSoundIfNeeded()
-                    content.sound = .default
+                    // Low/high audio is owned by TrioAlertManager.
                     content.userInfo[NotificationAction.key] = NotificationAction.snooze.rawValue
                 }
 
@@ -722,6 +724,15 @@ extension BaseUserNotificationsManager: UNUserNotificationCenterDelegate {
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
+        if response.notification.request.content.categoryIdentifier == TrioAlertManager.category,
+           let id = UUID(uuidString: response.notification.request.identifier)
+        {
+            Task { @MainActor in
+                TrioAlertManager.shared.acknowledge(id)
+                completionHandler()
+            }
+            return
+        }
         defer { completionHandler() }
         guard let actionRaw = response.notification.request.content.userInfo[NotificationAction.key] as? String,
               let action = NotificationAction(rawValue: actionRaw)

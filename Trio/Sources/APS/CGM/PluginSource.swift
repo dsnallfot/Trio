@@ -23,15 +23,6 @@ final class PluginSource: GlucoseSource {
 
     var cgmHasValidSensorSession: Bool = false
 
-    private var promise: Future<[BloodGlucose], Error>.Promise?
-
-    // --- Diagnostics: measure "push w/o awaiting fetch" frequency ---
-    private var directStoredCount: Int = 0 // hadPromise == false
-    private var timerFetchStoredCount: Int = 0 // hadPromise == true
-
-    private var lastCounterLogAt: Date = .distantPast
-    private let counterLogInterval: TimeInterval = 10 * 60 // logga summering max var 10:e minut
-
     init(glucoseStorage: GlucoseStorage, glucoseManager: FetchGlucoseManager) {
         self.glucoseStorage = glucoseStorage
         self.glucoseManager = glucoseManager
@@ -44,33 +35,11 @@ final class PluginSource: GlucoseSource {
         cgmManager?.cgmManagerDelegate = self
     }
 
-    /// Function that fetches blood glucose data
-    /// This function combines two data fetching mechanisms (`callBLEFetch` and `fetchIfNeeded`) into a single publisher.
-    /// It returns the first non-empty result from either of the sources within a 5-minute timeout period.
-    /// If no valid data is fetched within the timeout, it returns an empty array.
-    ///
-    /// - Parameter timer: An optional `DispatchTimer` (not used in the function but can be used to trigger fetch logic).
-    /// - Returns: An `AnyPublisher` that emits an array of `BloodGlucose` values or an empty array if an error occurs or the timeout is reached.
+    /// Poll only managers that need fetching. BLE pushes are handled by the delegate.
     func fetch(_: DispatchTimer?) -> AnyPublisher<[BloodGlucose], Never> {
-        Publishers.Merge(
-            callBLEFetch(),
-            fetchIfNeeded()
-        )
-        .filter { !$0.isEmpty }
-        .first()
-        .timeout(60 * 5, scheduler: processQueue, options: nil, customError: nil)
-        .replaceError(with: [])
-        .eraseToAnyPublisher()
-    }
-
-    func callBLEFetch() -> AnyPublisher<[BloodGlucose], Never> {
-        Future<[BloodGlucose], Error> { [weak self] promise in
-            self?.promise = promise
-        }
-        .timeout(60 * 5, scheduler: processQueue, options: nil, customError: nil)
-        .replaceError(with: [])
-        .replaceEmpty(with: [])
-        .eraseToAnyPublisher()
+        fetchIfNeeded()
+            .timeout(60 * 5, scheduler: processQueue)
+            .eraseToAnyPublisher()
     }
 
     func fetchIfNeeded() -> AnyPublisher<[BloodGlucose], Never> {
@@ -181,51 +150,12 @@ extension PluginSource: CGMManagerDelegate {
     }
 
     func cgmManager(_: CGMManager, hasNew readingResult: CGMReadingResult) {
-        // Convert the reading into Trio's BloodGlucose model (or an error)
-        let result = readCGMResult(readingResult: readingResult)
-
-        // If a fetch() call is currently awaiting a value, fulfill it.
-        // (We clear the stored promise to avoid accidentally completing it more than once.)
-        let hadPromise = (promise != nil)
-        let currentPromise = promise
-        promise = nil
-        currentPromise?(result)
-
-        // IMPORTANT:
-        // CGM managers can push readings at arbitrary times. If no fetch() is currently awaiting
-        // (i.e. `promise` is nil), the reading would otherwise be dropped, leading to missed
-        // "New glucose found" and missed loop cycles.
-        // To avoid that, we also store the glucose immediately on every successful push.
-        if case let .success(values) = result, !values.isEmpty {
-            // ✅ Store immediately so pushes aren't lost
-            glucoseManager?.updateGlucoseStore(newBloodGlucose: values)
-
-            // 1) Extra “försäkring”: logga explicit när Direct return done sker med hadPromise=false,
-            // så du kan mäta exakt hur ofta det händer och om det korrelerar med andra loggar.
-            if hadPromise {
-                debug(.deviceManager, "CGM PLUGIN - Direct return done (hadPromise=true) ✅ (timer/fetch was awaiting)")
-            } else {
-                warning(
-                    .deviceManager,
-                    "CGM PLUGIN - Direct return done (hadPromise=false) 🟡 Stored immediately (no fetch awaiting)"
-                )
-            }
-
-            // 2) Superlätt räknare: antal directStored / antal timerFetchStored
-            if hadPromise {
-                timerFetchStoredCount += 1
-            } else {
-                directStoredCount += 1
-            }
-
-            // Periodisk summering (för att inte spamma loggen)
-            let now = Date()
-            if now.timeIntervalSince(lastCounterLogAt) > counterLogInterval {
-                debug(
-                    .deviceManager,
-                    "CGM PLUGIN - Counters: directStored=\(directStoredCount), timerFetchStored=\(timerFetchStoredCount)"
-                )
-                lastCounterLogAt = now
+        processQueue.async {
+            switch self.readCGMResult(readingResult: readingResult) {
+            case let .success(values):
+                self.glucoseManager?.updateGlucoseStore(newBloodGlucose: values)
+            case .failure:
+                debug(.deviceManager, "CGM PLUGIN - unable to read CGM result")
             }
         }
     }

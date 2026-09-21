@@ -86,7 +86,7 @@ struct NotificationsView: BaseView {
             Section(
                 header: Text("Notiscenter"),
                 content: {
-                    Text("Trio-notiser")
+                    Text("Trio-notiser och larm")
                         .navigationLink(to: .glucoseNotificationSettings, from: self)
 
                     if #available(iOS 16.2, *) {
@@ -130,7 +130,7 @@ struct NotificationsView: BaseView {
         }
         .scrollContentBackground(.hidden)
         .background(appState.trioBackgroundColor(for: colorScheme))
-        .navigationTitle("Notiser")
+        .navigationTitle("Notiser och larm")
         .navigationBarTitleDisplayMode(.automatic)
     }
 }

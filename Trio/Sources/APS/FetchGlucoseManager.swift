@@ -190,11 +190,11 @@ final class BaseFetchGlucoseManager: FetchGlucoseManager, Injectable {
         return Manager.init(rawState: rawState)
     }
 
-    /// function called when a callback is fired by CGM BLE - no more used
+    /// Serialize BLE pushes with polled readings, including separately delivered backfill batches.
     public func updateGlucoseStore(newBloodGlucose: [BloodGlucose]) {
-        let syncDate = glucoseStorage.syncDate()
-        debug(.deviceManager, "CGM BLE FETCHGLUCOSE  : SyncDate is \(syncDate)")
-        glucoseStoreAndHeartDecision(syncDate: syncDate, glucose: newBloodGlucose)
+        processQueue.async {
+            self.glucoseStoreAndHeartDecision(syncDate: self.glucoseStorage.syncDate(), glucose: newBloodGlucose)
+        }
     }
 
     /// function to try to force the refresh of the CGM - generally provide by the pump heartbeat
@@ -210,7 +210,7 @@ final class BaseFetchGlucoseManager: FetchGlucoseManager, Injectable {
         .receive(on: processQueue)
         .sink { syncDate, glucose in
             debug(.nightscout, "refreshCGM FETCHGLUCOSE : SyncDate is \(syncDate)")
-            self.glucoseStoreAndHeartDecision(syncDate: syncDate, glucose: glucose)
+            self.glucoseStoreAndHeartDecision(syncDate: self.glucoseStorage.syncDate(), glucose: glucose)
         }
         .store(in: &lifetime)
     }
@@ -276,6 +276,11 @@ final class BaseFetchGlucoseManager: FetchGlucoseManager, Injectable {
             return
         }
 
+        let backfill = newGlucose.filter { $0.dateString <= syncDate }
+        if !backfill.isEmpty {
+            glucoseStorage.backfillGlucose(backfill)
+        }
+
         filteredByDate = newGlucose.filter { $0.dateString > syncDate }
         filtered = glucoseStorage.filterTooFrequentGlucose(filteredByDate, at: syncDate)
 
@@ -306,15 +311,16 @@ final class BaseFetchGlucoseManager: FetchGlucoseManager, Injectable {
             filtered = smoothedValues.filter { $0.dateString > syncDate }
         }
 
-        glucoseStorage.storeGlucose(filtered)
+        let storedGlucose = glucoseStorage.storeGlucose(filtered)
 
         // Push the fresh reading schedule so the pump can align its BLE heartbeat
-        deviceDataManager.updatePumpBLEHeartbeat(
-            lastCGMReadingDate: filtered.map(\.dateString).max(),
-            expectedCGMReadingInterval: cgmManager?.expectedGlucoseSampleInterval
-        )
-
-        deviceDataManager.heartbeat(date: Date())
+        if !storedGlucose.isEmpty {
+            deviceDataManager.updatePumpBLEHeartbeat(
+                lastCGMReadingDate: storedGlucose.map(\.dateString).max(),
+                expectedCGMReadingInterval: cgmManager?.expectedGlucoseSampleInterval
+            )
+            deviceDataManager.heartbeat(date: Date())
+        }
 
         // End of the Background tasks
         if let backgroundTask = backGroundFetchBGTaskID {
@@ -340,6 +346,7 @@ final class BaseFetchGlucoseManager: FetchGlucoseManager, Injectable {
                     return Empty().eraseToAnyPublisher()
                 }
             }
+            .receive(on: processQueue)
             .sink { [weak self] glucose in
                 guard let self = self else { return }
 

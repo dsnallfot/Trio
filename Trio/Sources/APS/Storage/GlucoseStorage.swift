@@ -9,7 +9,8 @@ import Swinject
 
 protocol GlucoseStorage {
     var updatePublisher: AnyPublisher<Void, Never> { get }
-    func storeGlucose(_ glucose: [BloodGlucose])
+    @discardableResult func storeGlucose(_ glucose: [BloodGlucose]) -> [BloodGlucose]
+    func backfillGlucose(_ glucose: [BloodGlucose])
     // func addManualGlucose(glucose: Int)
     func addManualGlucose(glucose: Int, date: Date) async
     func isGlucoseDataFresh(_ glucoseDate: Date?) -> Bool
@@ -62,27 +63,34 @@ final class BaseGlucoseStorage: GlucoseStorage, Injectable {
         return formatter
     }
 
-    func storeGlucose(_ glucose: [BloodGlucose]) {
+    func backfillGlucose(_ glucose: [BloodGlucose]) {
+        storeGlucose(glucose, timeBuffer: Config.filterTime)
+    }
+
+    @discardableResult func storeGlucose(_ glucose: [BloodGlucose]) -> [BloodGlucose] {
+        storeGlucose(glucose, timeBuffer: 1)
+    }
+
+    @discardableResult private func storeGlucose(_ glucose: [BloodGlucose], timeBuffer: TimeInterval) -> [BloodGlucose] {
         processQueue.sync {
-            self.coredataContext.perform {
-                let datesToCheck: Set<Date?> = Set(glucose.compactMap { $0.dateString as Date? })
-                let fetchRequest: NSFetchRequest<NSFetchRequestResult> = GlucoseStored.fetchRequest()
-                fetchRequest.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
-                    NSPredicate(format: "date IN %@", datesToCheck),
-                    NSPredicate.predicateForOneDayAgo
-                ])
-                fetchRequest.propertiesToFetch = ["date"]
-                fetchRequest.resultType = .dictionaryResultType
-
-                var existingDates = Set<Date>()
+            self.coredataContext.performAndWait {
+                let accepted: [BloodGlucose]
                 do {
-                    let results = try self.coredataContext.fetch(fetchRequest) as? [NSDictionary]
-                    existingDates = Set(results?.compactMap({ $0["date"] as? Date }) ?? [])
+                    // Check tombstones for both historical and newer readings: deleting the latest
+                    // reading moves syncDate backwards, so its replay may arrive through either path.
+                    let withoutDeleted = try self.filterGlucoseValues(
+                        glucose, entityName: "DeletedGlucoseStored", timeBuffer: 1, deduplicateBatch: false
+                    )
+                    accepted = try self.filterGlucoseValues(
+                        withoutDeleted, entityName: "GlucoseStored", timeBuffer: timeBuffer, deduplicateBatch: true
+                    )
                 } catch {
-                    debugPrint("Failed to fetch existing glucose dates: \(error)")
+                    // Never import unchecked values if the deletion/deduplication query fails.
+                    debugPrint("Failed to filter incoming glucose: \(error)")
+                    return []
                 }
-
-                var filteredGlucose = glucose.filter { !existingDates.contains($0.dateString) }
+                guard !accepted.isEmpty else { return [] }
+                var filteredGlucose = accepted
 
                 // prepare batch insert
                 let batchInsert = NSBatchInsertRequest(
@@ -114,21 +122,22 @@ final class BaseGlucoseStorage: GlucoseStorage, Injectable {
                     debugPrint(
                         "Glucose Storage: \(#function) \(DebuggingIdentifiers.failed) failed to execute batch insert: \(error)"
                     )
+                    return []
                 }
 
-                let latestGlucose = glucose.max { $0.dateString < $1.dateString }
+                let latestGlucose = accepted.max { $0.dateString < $1.dateString }
                 let latestValue = latestGlucose?.glucose.map(String.init) ?? "nil"
                 let latestDate = latestGlucose?.dateString.description ?? "nil"
-                let hasSessionStart = glucose.contains { $0.sessionStartDate != nil }
+                let hasSessionStart = accepted.contains { $0.sessionStartDate != nil }
                 debug(
                     .deviceManager,
-                    "storeGlucose count=\(glucose.count) latest=\(latestValue) date=\(latestDate) hasSessionStart=\(hasSessionStart)"
+                    "storeGlucose count=\(accepted.count) latest=\(latestValue) date=\(latestDate) hasSessionStart=\(hasSessionStart)"
                 )
                 self.storage.transaction { storage in
                     let file = OpenAPS.Monitor.cgmState
                     var treatments = storage.retrieve(file, as: [NightscoutTreatment].self) ?? []
                     var updated = false
-                    for x in glucose {
+                    for x in accepted {
                         guard let sessionStartDate = x.sessionStartDate else {
                             continue
                         }
@@ -178,8 +187,25 @@ final class BaseGlucoseStorage: GlucoseStorage, Injectable {
                         )
                     }
                 }
+                return accepted
             }
         }
+    }
+
+    private func filterGlucoseValues(
+        _ glucose: [BloodGlucose],
+        entityName: String,
+        timeBuffer: TimeInterval,
+        deduplicateBatch: Bool
+    ) throws -> [BloodGlucose] {
+        let indices = try GlucoseImportFilter.acceptedIndices(
+            dates: glucose.map(\.dateString),
+            entityName: entityName,
+            context: coredataContext,
+            timeBuffer: timeBuffer,
+            deduplicateBatch: deduplicateBatch
+        )
+        return indices.map { glucose[$0] }
     }
 
     /*
@@ -517,9 +543,8 @@ final class BaseGlucoseStorage: GlucoseStorage, Injectable {
     }
 
     func deleteGlucose(_ treatmentObjectID: NSManagedObjectID) async {
-        let taskContext = CoreDataStack.shared.newTaskContext()
-        taskContext.name = "deleteContext"
-        taskContext.transactionAuthor = "deleteGlucose"
+        // Serialize deletion and tombstone creation with incoming batches.
+        let taskContext = coredataContext
 
         await taskContext.perform {
             do {
@@ -530,12 +555,20 @@ final class BaseGlucoseStorage: GlucoseStorage, Injectable {
                     return
                 }
 
+                if let date = glucoseToDelete.date {
+                    let deletedEntry = DeletedGlucoseStored(context: taskContext)
+                    deletedEntry.date = date
+                    deletedEntry.glucose = glucoseToDelete.glucose
+                    deletedEntry.isManualGlucoseEntry = glucoseToDelete.isManual
+                }
                 taskContext.delete(glucoseToDelete)
 
                 guard taskContext.hasChanges else { return }
                 try taskContext.save()
+                self.updateSubject.send(())
                 debugPrint("\(#file) \(#function) \(DebuggingIdentifiers.succeeded) deleted glucose from core data")
             } catch {
+                taskContext.rollback()
                 debugPrint(
                     "\(#file) \(#function) \(DebuggingIdentifiers.failed) error while deleting glucose from core data: \(error.localizedDescription)"
                 )
