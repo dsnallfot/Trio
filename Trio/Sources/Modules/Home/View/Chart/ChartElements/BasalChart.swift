@@ -47,27 +47,58 @@ extension MainChartView {
 
 extension MainChartView {
     func drawTempBasals(dummy: Bool) -> some ChartContent {
-        ForEach(preparedTempBasals, id: \.rate) { basal in
+        ForEach(preparedTempBasals, id: \.start) { basal in
+            let seriesID = basal.start.timeIntervalSince1970
+
             if dummy {
                 RectangleMark(
                     xStart: .value("start", basal.start),
                     xEnd: .value("end", basal.end),
                     yStart: .value("rate-start", 0),
                     yEnd: .value("rate-end", basal.rate)
-                ).foregroundStyle(Color.clear)
+                )
+                .foregroundStyle(Color.clear)
 
-                LineMark(x: .value("Start Date", basal.start), y: .value("Amount", basal.rate))
-                    .lineStyle(.init(lineWidth: 1.5)).foregroundStyle(Color.clear)
+                LineMark(
+                    x: .value("Start Date", basal.start),
+                    y: .value("Amount", 0),
+                    series: .value("Temp Basal", seriesID)
+                )
+                .lineStyle(.init(lineWidth: 1.5))
+                .foregroundStyle(Color.clear)
 
-                LineMark(x: .value("End Date", basal.end), y: .value("Amount", basal.rate))
-                    .lineStyle(.init(lineWidth: 1.5)).foregroundStyle(Color.clear)
+                LineMark(
+                    x: .value("Start Date", basal.start),
+                    y: .value("Amount", basal.rate),
+                    series: .value("Temp Basal", seriesID)
+                )
+                .lineStyle(.init(lineWidth: 1.5))
+                .foregroundStyle(Color.clear)
+
+                LineMark(
+                    x: .value("End Date", basal.end),
+                    y: .value("Amount", basal.rate),
+                    series: .value("Temp Basal", seriesID)
+                )
+                .lineStyle(.init(lineWidth: 1.5))
+                .foregroundStyle(Color.clear)
+
+                LineMark(
+                    x: .value("End Date", basal.end),
+                    y: .value("Amount", 0),
+                    series: .value("Temp Basal", seriesID)
+                )
+                .lineStyle(.init(lineWidth: 1.5))
+                .foregroundStyle(Color.clear)
+
             } else {
                 RectangleMark(
                     xStart: .value("start", basal.start),
                     xEnd: .value("end", basal.end),
                     yStart: .value("rate-start", 0),
                     yEnd: .value("rate-end", basal.rate)
-                ).foregroundStyle(
+                )
+                .foregroundStyle(
                     .linearGradient(
                         colors: [
                             Color.insulin.opacity(0.5),
@@ -76,13 +107,40 @@ extension MainChartView {
                         startPoint: .bottom,
                         endPoint: .top
                     )
-                ).alignsMarkStylesWithPlotArea()
+                )
+                .alignsMarkStylesWithPlotArea()
 
-                LineMark(x: .value("Start Date", basal.start), y: .value("Amount", basal.rate))
-                    .lineStyle(.init(lineWidth: 1.5)).foregroundStyle(Color.insulin)
+                LineMark(
+                    x: .value("Start Date", basal.start),
+                    y: .value("Amount", 0),
+                    series: .value("Temp Basal", seriesID)
+                )
+                .lineStyle(.init(lineWidth: 1.5))
+                .foregroundStyle(Color.insulin)
 
-                LineMark(x: .value("End Date", basal.end), y: .value("Amount", basal.rate))
-                    .lineStyle(.init(lineWidth: 1.5)).foregroundStyle(Color.insulin)
+                LineMark(
+                    x: .value("Start Date", basal.start),
+                    y: .value("Amount", basal.rate),
+                    series: .value("Temp Basal", seriesID)
+                )
+                .lineStyle(.init(lineWidth: 1.5))
+                .foregroundStyle(Color.insulin)
+
+                LineMark(
+                    x: .value("End Date", basal.end),
+                    y: .value("Amount", basal.rate),
+                    series: .value("Temp Basal", seriesID)
+                )
+                .lineStyle(.init(lineWidth: 1.5))
+                .foregroundStyle(Color.insulin)
+
+                LineMark(
+                    x: .value("End Date", basal.end),
+                    y: .value("Amount", 0),
+                    series: .value("Temp Basal", seriesID)
+                )
+                .lineStyle(.init(lineWidth: 1.5))
+                .foregroundStyle(Color.insulin)
             }
         }
     }
