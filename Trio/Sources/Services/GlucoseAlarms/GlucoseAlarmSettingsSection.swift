@@ -88,7 +88,7 @@ struct GlucoseAlarmSettingsSection: View {
             }
         } footer: {
             Text(
-                "Gäller alla glukoskällor. Aktiverade akuta larm har företräde framför vanliga larm på samma sida, även under snooze. Vanlig låg/hög-snooze hindrar inte akuta larm. Utan kvittering upprepas larm tidigast efter 15 minuter vid ett nytt aktuellt värde. Stop pausar endast den aktuella larmtypen enligt dess snoozetid. Trios vanliga globala snooze pausar fortfarande alla fyra typerna. Utan tillåtna systemlarm används notisljud som kan tystas av iOS. Valet Glukosnotiser påverkar inte dessa larm. Informationsnotiser och kolhydratljud ställs in separat."
+                "Gäller alla glukoskällor. Aktiverade akuta larm har företräde framför vanliga larm på samma sida, även under snooze. Vanlig låg/hög-snooze hindrar inte akuta larm. Utan kvittering upprepas larm vid nästa nya aktuella glukosvärde, normalt var femte minut (minst 4,5 minuter mellan upprepningar). Ett larm som löper ut startar ingen snooze. Stop pausar endast den aktuella larmtypen enligt dess snoozetid. Trios vanliga globala snooze pausar fortfarande alla fyra typerna. Utan tillåtna systemlarm används notisljud som kan tystas av iOS. Valet Glukosnotiser påverkar inte dessa larm. Informationsnotiser och kolhydratljud ställs in separat."
             )
         }
         .listRowBackground(Color.chart)

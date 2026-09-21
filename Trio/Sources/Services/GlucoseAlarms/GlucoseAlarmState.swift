@@ -20,7 +20,9 @@ struct GlucoseAlarmState: Codable {
     }
 
     static let freshness: TimeInterval = 12 * 60
-    static let repeatInterval: TimeInterval = 15 * 60
+    // Allow the next five-minute CGM reading despite small delivery-time variations.
+    // A newer reading is still required; this is not a repeating timer on old data.
+    static let repeatInterval: TimeInterval = 4.5 * 60
     var lastSeen: Date?
     var lastAlertReading: Date?
     var lastAlertAt: Date?
@@ -56,7 +58,7 @@ struct GlucoseAlarmState: Codable {
         case .urgentLow: urgentLowSnoozeUntil = until
         case .urgentHigh: urgentHighSnoozeUntil = until
         }
-        // An explicit short snooze must not be extended by the automatic 15-minute repeat limit.
+        // Explicit acknowledgement starts the selected snooze, independently of the repeat guard.
         lastAlertAt = nil
         return id
     }
