@@ -73,15 +73,15 @@ import UserNotifications
         Task {
             let status = await center.notificationSettings()
             notificationText = status.authorizationStatus == .denied
-                ? "Vanliga notiser är avstängda i iOS. De kan inte användas som reserv om AlarmKit är avstängt eller misslyckas."
+                ? "Vanliga notiser är avstängda i iOS. De kan INTE användas som reserv om AlarmKit också är avstängt eller misslyckas."
                 : ""
         }
         switch AlarmManager.shared.authorizationState {
-        case .authorized: permissionText = "AlarmKit är tillåtet. Larmen kan höras genom tyst läge och Fokus."
+        case .authorized: permissionText = "AlarmKit är tillåtet i iOS inställningar. Larmen kan höras genom tyst läge och Fokusläge."
         case .denied: permissionText =
-            "AlarmKit är avstängt i iOS. Endast vanliga notiser används; de kan tystas av tyst läge och Fokus."
+            "AlarmKit är avstängt i iOS inställningar. Endast vanliga notiser används; de kan tystas av tyst läge och Fokusläge."
         case .notDetermined: permissionText =
-            "Tillåt AlarmKit för ljud genom tyst läge och Fokus. Tills dess används vanliga notiser."
+            "Tillåt AlarmKit för ljud genom tyst läge och Fokusläge. Tills dess används vanliga notiser."
         @unknown default: permissionText = "AlarmKit är inte tillgängligt. Vanliga notiser används."
         }
     }

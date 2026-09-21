@@ -20,16 +20,27 @@ struct GlucoseAlarmSettingsSection: View {
                 tonePicker("Ljud vid akut lågt glukos", selection: $preferences.urgentLowTone)
                 snoozePicker("Snooze för akut låglarm", selection: $preferences.urgentLowSnoozeMinutes)
             }
+        } header: {
+            Text("Lokala glukoslarm")
+        }
+        .listRowBackground(Color.chart)
+        Section {
             Toggle("Larm för lågt glukos", isOn: $preferences.lowEnabled)
             if preferences.lowEnabled {
                 tonePicker("Ljud vid lågt glukos", selection: $preferences.lowTone)
                 snoozePicker("Snooze för låglarm", selection: $preferences.lowSnoozeMinutes)
             }
+        }
+        .listRowBackground(Color.chart)
+        Section {
             Toggle("Larm för högt glukos", isOn: $preferences.highEnabled)
             if preferences.highEnabled {
                 tonePicker("Ljud vid högt glukos", selection: $preferences.highTone)
                 snoozePicker("Snooze för höglarm", selection: $preferences.highSnoozeMinutes)
             }
+        }
+        .listRowBackground(Color.chart)
+        Section {
             Toggle("Larm för akut högt glukos", isOn: $preferences.urgentHighEnabled)
             if preferences.urgentHighEnabled {
                 GlucoseAlarmThresholdPicker(
@@ -39,23 +50,31 @@ struct GlucoseAlarmSettingsSection: View {
                 tonePicker("Ljud vid akut högt glukos", selection: $preferences.urgentHighTone)
                 snoozePicker("Snooze för akut höglarm", selection: $preferences.urgentHighSnoozeMinutes)
             }
-            Toggle("Larma genom tyst läge och Fokus", isOn: $preferences.alarmKit)
+        }
+        .listRowBackground(Color.chart)
+        Section {
+            Toggle("Larma även vid tyst läge & Fokus", isOn: $preferences.alarmKit)
             if preferences.alarmKit {
+                Toggle("Visa mer inställningar", isOn: $preferences.showMoreSettings)
                 Text(manager.permissionText).font(.footnote).foregroundStyle(.secondary)
-                Button("Tillåt systemlarm") { Task { await manager.requestPermission() } }
-                Button("Testa lågljud om 10 sekunder") { Task { await manager.testAlarm(tone: preferences.lowTone) } }
-                Button("Testa högljud om 10 sekunder") { Task { await manager.testAlarm(tone: preferences.highTone) } }
-                Button("Testa akut lågljud om 10 sekunder") { Task { await manager.testAlarm(tone: preferences.urgentLowTone) } }
-                Button("Testa akut högljud om 10 sekunder") { Task { await manager.testAlarm(tone: preferences.urgentHighTone) } }
-                if manager.testAlarmID != nil {
-                    Button("Avbryt testlarm") { manager.cancelTestAlarm() }
-                }
-                Text(
-                    "Testlarmet ändrar inga glukosvärden och påverkar inte loopen. Lås gärna skärmen efter att du startat testet."
-                )
-                .font(.footnote).foregroundStyle(.secondary)
-                Button("Öppna iOS-inställningar") {
-                    if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
+                if preferences.showMoreSettings {
+                    Button("Tillåt systemlarm") { Task { await manager.requestPermission() } }
+                    Button("Testa lågljud om 10 sekunder") { Task { await manager.testAlarm(tone: preferences.lowTone) } }
+                    Button("Testa högljud om 10 sekunder") { Task { await manager.testAlarm(tone: preferences.highTone) } }
+                    Button("Testa akut lågljud om 10 sekunder") {
+                        Task { await manager.testAlarm(tone: preferences.urgentLowTone) } }
+                    Button("Testa akut högljud om 10 sekunder") {
+                        Task { await manager.testAlarm(tone: preferences.urgentHighTone) } }
+                    if manager.testAlarmID != nil {
+                        Button("Avbryt testlarm") { manager.cancelTestAlarm() }
+                    }
+                    Text(
+                        "Testlarmet ändrar inga glukosvärden och påverkar inte loopen. Lås gärna skärmen efter att du startat testet."
+                    )
+                    .font(.footnote).foregroundStyle(.secondary)
+                    Button("Öppna iOS-inställningar") {
+                        if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
+                    }
                 }
             }
             if !manager.notificationText.isEmpty {
@@ -67,8 +86,6 @@ struct GlucoseAlarmSettingsSection: View {
             if let error = manager.deliveryError {
                 Text(error).font(.footnote).foregroundStyle(.red)
             }
-        } header: {
-            Text("Lokala glukoslarm")
         } footer: {
             Text(
                 "Gäller alla glukoskällor. Aktiverade akuta larm har företräde framför vanliga larm på samma sida, även under snooze. Vanlig låg/hög-snooze hindrar inte akuta larm. Utan kvittering upprepas larm tidigast efter 15 minuter vid ett nytt aktuellt värde. Stop pausar endast den aktuella larmtypen enligt dess snoozetid. Trios vanliga globala snooze pausar fortfarande alla fyra typerna. Utan tillåtna systemlarm används notisljud som kan tystas av iOS. Valet Glukosnotiser påverkar inte dessa larm. Informationsnotiser och kolhydratljud ställs in separat."

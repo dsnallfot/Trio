@@ -24,6 +24,7 @@ import Foundation
     @Published var urgentHighSnoozeMinutes: Int { didSet { save() } }
     @Published var urgentLowTone: Tone { didSet { save() } }
     @Published var urgentHighTone: Tone { didSet { save() } }
+    @Published var showMoreSettings: Bool { didSet { save() } }
     private var player: AVAudioPlayer?
 
     private init() {
@@ -47,6 +48,7 @@ import Foundation
         urgentHighSnoozeMinutes = Configuration.validatedSnooze(config.urgentHighSnoozeMinutes)
         urgentLowTone = config.urgentLowTone ?? .urgentLow
         urgentHighTone = config.urgentHighTone ?? .critical
+        showMoreSettings = config.showMoreSettings ?? false
         save()
     }
 

@@ -84,7 +84,7 @@ struct NotificationsView: BaseView {
             .listRowBackground(Color.chart)
 
             Section(
-                header: Text("Notiscenter"),
+                header: Text("Inställningar"),
                 content: {
                     Text("Trio-notiser och larm")
                         .navigationLink(to: .glucoseNotificationSettings, from: self)

@@ -71,6 +71,7 @@ struct GlucoseAlarmConfiguration: Codable {
     var urgentHighSnoozeMinutes: Int?
     var urgentLowTone: GlucoseAlarmTone?
     var urgentHighTone: GlucoseAlarmTone?
+    var showMoreSettings: Bool?
 
     static func urgentLowThreshold(_ value: Decimal, low: Decimal) -> Decimal {
         max(40, min(value, low))
