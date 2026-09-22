@@ -51,13 +51,13 @@ extension GlucoseNotificationSettings {
                         get: { selectedVerboseHint },
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = "Visa alltid pumpnotiser"
+                            hintLabel = "Visa pumpnotiser"
                         }
                     ),
                     units: state.units,
                     type: .boolean,
-                    label: "Visa alltid pumpnotiser",
-                    miniHint: "Visa alltid pumpvarningar.",
+                    label: "Visa pumpnotiser",
+                    miniHint: "Visa pumpvarningar.",
                     verboseHint:
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Standard: På").bold()
@@ -85,13 +85,13 @@ extension GlucoseNotificationSettings {
                         get: { selectedVerboseHint },
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = "Visa alltid CGM-notiser"
+                            hintLabel = "Visa CGM-notiser"
                         }
                     ),
                     units: state.units,
                     type: .boolean,
-                    label: "Visa alltid CGM-notiser",
-                    miniHint: "Visa alltid CGM-varningar.",
+                    label: "Visa CGM-notiser",
+                    miniHint: "Visa CGM-varningar.",
                     verboseHint:
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Standard: På").bold()
@@ -118,13 +118,13 @@ extension GlucoseNotificationSettings {
                         get: { selectedVerboseHint },
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = "Visa alltid kolhydratnotiser"
+                            hintLabel = "Visa kolhydratnotiser"
                         }
                     ),
                     units: state.units,
                     type: .boolean,
-                    label: "Visa alltid kolhydratnotiser",
-                    miniHint: "Visa alltid kolhydratvarningar.",
+                    label: "Visa kolhydratnotiser",
+                    miniHint: "Visa kolhydratvarningar.",
                     verboseHint:
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Standard: På").bold()
@@ -175,13 +175,13 @@ extension GlucoseNotificationSettings {
                         get: { selectedVerboseHint },
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = "Visa alltid algoritmnotiser"
+                            hintLabel = "Visa algoritmnotiser"
                         }
                     ),
                     units: state.units,
                     type: .boolean,
-                    label: "Visa alltid algoritmnotiser",
-                    miniHint: "Visa alltid varningar från algoritmen.",
+                    label: "Visa algoritmnotiser",
+                    miniHint: "Visa varningar från algoritmen.",
                     verboseHint:
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Standard: På").bold()
@@ -208,13 +208,13 @@ extension GlucoseNotificationSettings {
                         get: { selectedVerboseHint },
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = "Visa alltid notiser för fjärrkommandon"
+                            hintLabel = "Visa notiser för fjärrkommandon"
                         }
                     ),
                     units: state.units,
                     type: .boolean,
-                    label: "Visa alltid notiser för fjärrkommandon",
-                    miniHint: "Visa alltid mottagna fjärrkommandon.",
+                    label: "Visa notiser för fjärrkommandon",
+                    miniHint: "Visa mottagna fjärrkommandon.",
                     verboseHint:
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Standard: AV").bold()
