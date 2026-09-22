@@ -96,7 +96,7 @@ struct GlucoseAlarmSettingsSection: View {
         }
         .listRowBackground(Color.chart)
         Section {
-            Toggle("Larm för akut lågt glukos", isOn: $preferences.urgentLowEnabled)
+            Toggle("Larm vid akut lågt glukos", isOn: $preferences.urgentLowEnabled)
 
             if preferences.urgentLowEnabled {
                 activePeriodPicker(
@@ -126,7 +126,7 @@ struct GlucoseAlarmSettingsSection: View {
         }
         .listRowBackground(Color.chart)
         Section {
-            Toggle("Larm för lågt glukos", isOn: $preferences.lowEnabled)
+            Toggle("Larm vid lågt glukos", isOn: $preferences.lowEnabled)
 
             if preferences.lowEnabled {
                 activePeriodPicker(
@@ -146,7 +146,7 @@ struct GlucoseAlarmSettingsSection: View {
         }
         .listRowBackground(Color.chart)
         Section {
-            Toggle("Larm för högt glukos", isOn: $preferences.highEnabled)
+            Toggle("Larm vid högt glukos", isOn: $preferences.highEnabled)
 
             if preferences.highEnabled {
                 activePeriodPicker(
@@ -166,7 +166,7 @@ struct GlucoseAlarmSettingsSection: View {
         }
         .listRowBackground(Color.chart)
         Section {
-            Toggle("Larm för akut högt glukos", isOn: $preferences.urgentHighEnabled)
+            Toggle("Larm vid akut högt glukos", isOn: $preferences.urgentHighEnabled)
 
             if preferences.urgentHighEnabled {
                 activePeriodPicker(
@@ -196,7 +196,7 @@ struct GlucoseAlarmSettingsSection: View {
 
         Section {
             Toggle(
-                "Larm för saknade värden",
+                "Larm vid saknade värden",
                 isOn: $preferences.missingGlucose.enabled
             )
 
@@ -358,7 +358,7 @@ struct SystemAlarmSettingsSection: View {
     @ObservedObject private var manager = TrioAlertManager.shared
     var body: some View {
         Section {
-            Toggle("Larm för missad loop", isOn: $preferences.missingLoop.enabled)
+            Toggle("Larm vid missad loop", isOn: $preferences.missingLoop.enabled)
             if preferences.missingLoop.enabled {
                 Picker(
                     "Aktiv tid",
@@ -399,48 +399,3 @@ struct SystemAlarmSettingsSection: View {
         .onDisappear { preferences.stopPreview() }
     }
 }
-
-/*
- private struct MissingDataAlarmSettingsSection: View {
-     let title: String
-     @Binding var configuration: MissingDataAlarmConfiguration
-     let isLoop: Bool
-     @ObservedObject private var preferences = GlucoseAlarmPreferences.shared
-     @ObservedObject private var manager = TrioAlertManager.shared
-     @ObservedObject private var deadlines = MissingDataAlarmManager.shared
-
-     var body: some View {
-         Section {
-             Toggle("Larm för missad loop", isOn: $preferences.missingLoop.enabled)
-             if preferences.missingLoop.enabled || isLoop {
-                 Picker("Första intervallet", selection: $preferences.missingLoop.first) {
-                     ForEach(MissingDataAlarmConfiguration.choices, id: \.self) { Text("\($0) minuter").tag($0) }
-                 }
-                 Picker("Andra intervallet", selection: $preferences.missingLoop.second) {
-                     ForEach(MissingDataAlarmConfiguration.choices, id: \.self) { Text("\($0) minuter").tag($0) }
-                 }
-             }
-             if preferences.missingLoop.enabled {
-                 Picker("Larmljud", selection: $preferences.missingLoop.tone) {
-                     ForEach(GlucoseAlarmTone.allCases) { Text($0.title).tag($0) }
-                 }
-                 Button("Lyssna på valt ljud") { preferences.preview(preferences.missingLoop.tone) }
-                 Button("Testa ljud om 10 sekunder") { Task { await manager.testAlarm(tone: preferences.missingLoop.tone) } }
-             }
-         } header: {
-             Text("Systemlarm")
-         } footer: {
-             Text(
-                     "Tiderna räknas från senaste lyckade loop och styr även de befintliga loopnotiserna. Misslyckade loopförsök flyttar inte fram larmen. AlarmKit är ett separat komplement till vanliga notiser."
-             )
-             Text(
-                 "Båda tiderna räknas från samma händelse. De ordnas tidsmässigt; lika tider ger ett larm. Kvittering stoppar bara det aktuella larmet. Dessa tidslarm har egen av/på-knapp och påverkas inte av glukoslarmens snooze eller reglage för tyst läge & Fokus."
-             )
-         }
-         .listRowBackground(Color.chart)
-         .onChange(of: preferences.missingLoop.enabled) { _, enabled in
-             if enabled { Task { await manager.requestPermission() } }
-         }
-         .onDisappear { preferences.stopPreview() }
-     }
- }*/
