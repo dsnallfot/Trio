@@ -229,7 +229,7 @@ import UserNotifications
         }
         let tone = preferences.tone(for: event.kind)
         let value = settings.settings.units == .mmolL
-            ? String(format: "%.1f mmol/L", NSDecimalNumber(decimal: event.reading.mgdL).doubleValue / 18)
+        ? String(format: "%.1f mmol/L", NSDecimalNumber(decimal: event.reading.mgdL).doubleValue * 0.0555)
             : "\(event.reading.mgdL) mg/dL"
         let label: String
         switch event.kind {

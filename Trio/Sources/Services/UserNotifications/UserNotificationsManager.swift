@@ -64,13 +64,17 @@ final class BaseUserNotificationsManager: NSObject, UserNotificationsManager, In
     private let center = UNUserNotificationCenter.current()
     private var lifetime = Lifetime()
 
-    private let viewContext = CoreDataStack.shared.persistentContainer.viewContext
     private let backgroundContext = CoreDataStack.shared.newTaskContext()
 
     // Queue for handling Core Data change notifications
     private let queue = DispatchQueue(label: "BaseUserNotificationsManager.queue", qos: .userInitiated)
     private var coreDataPublisher: AnyPublisher<Set<NSManagedObjectID>, Never>?
     private var subscriptions = Set<AnyCancellable>()
+
+    @MainActor private var glucoseUpdateRunning = false
+    @MainActor private var glucoseUpdatePending = false
+    @MainActor private var notificationPending = false
+    @MainActor private var lastBadgePreferences: String?
 
     let firstInterval = 20 // min
     let secondInterval = 40 // min
@@ -87,6 +91,7 @@ final class BaseUserNotificationsManager: NSObject, UserNotificationsManager, In
                 .share()
                 .eraseToAnyPublisher()
 
+        broadcaster.register(SettingsObserver.self, observer: self)
         broadcaster.register(DeterminationObserver.self, observer: self)
         broadcaster.register(BolusFailureObserver.self, observer: self)
         broadcaster.register(pumpNotificationObserver.self, observer: self)
@@ -120,7 +125,7 @@ final class BaseUserNotificationsManager: NSObject, UserNotificationsManager, In
 
     private func registerSubscribers() {
         glucoseStorage.updatePublisher
-            .receive(on: DispatchQueue.global(qos: .background))
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self = self else { return }
                 Task {
@@ -128,35 +133,37 @@ final class BaseUserNotificationsManager: NSObject, UserNotificationsManager, In
                 }
             }
             .store(in: &subscriptions)
+        Foundation.NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    await self?.sendGlucoseNotification(updateNotification: false)
+                }
+            }
+            .store(in: &subscriptions)
     }
 
-    private func addAppBadge(glucose: Int?) {
-        guard let glucose = glucose, settingsManager.settings.glucoseBadge else {
-            DispatchQueue.main.async {
-                self.center.setBadgeCount(0) { error in
-                    guard let error else {
-                        return
-                    }
-                    print(error)
-                }
-            }
-            return
-        }
+    @MainActor private func refreshBadgePreferences() async {
+        let settings = settingsManager.settings
+        let key = "\(settings.glucoseBadge)-\(settings.units.rawValue)"
+        guard key != lastBadgePreferences else { return }
+        lastBadgePreferences = key
+        await sendGlucoseNotification(updateNotification: false)
+    }
 
+    @MainActor private func addAppBadge(glucose: Int?, date: Date?) async {
         let badge: Int
-        if settingsManager.settings.units == .mmolL {
-            badge = Int(round(Double((glucose * 10).asMmolL)))
+        if let glucose, settingsManager.settings.glucoseBadge {
+            badge = settingsManager.settings.units == .mmolL
+                ? Int(round(Double((glucose * 10).asMmolL))) : glucose
         } else {
-            badge = glucose
+            badge = 0
         }
-
-        DispatchQueue.main.async {
-            self.center.setBadgeCount(badge) { error in
-                guard let error else {
-                    return
-                }
-                print(error)
-            }
+        do {
+            // Wait for iOS before releasing background time or starting the next update.
+            try await center.setBadgeCount(badge)
+            //debug(.service, "Glucose badge updated: count=\(badge), reading=\(String(describing: date))")
+        } catch {
+            warning(.service, "Glucose badge failed: count=\(badge), error=\(error)")
         }
     }
 
@@ -248,38 +255,57 @@ final class BaseUserNotificationsManager: NSObject, UserNotificationsManager, In
         )
     }
 
-    private func fetchGlucoseIDs() async -> [NSManagedObjectID] {
-        let results = await CoreDataStack.shared.fetchEntitiesAsync(
-            ofType: GlucoseStored.self,
-            onContext: backgroundContext,
-            predicate: NSPredicate.predicateFor20MinAgo,
-            key: "date",
-            ascending: false,
-            fetchLimit: 3
-        )
+    private struct GlucoseNotificationReading: Sendable {
+        let glucose: Int
+        let date: Date?
+        let direction: String?
+    }
 
-        return await backgroundContext.perform {
-            guard let fetchedResults = results as? [GlucoseStored] else { return [] }
-
-            return fetchedResults.map(\.objectID)
+    private func fetchGlucoseReadings() async throws -> [GlucoseNotificationReading] {
+        try await backgroundContext.perform {
+            let request = GlucoseStored.fetchRequest()
+            request.predicate = NSPredicate.predicateFor20MinAgo
+            request.sortDescriptors = [NSSortDescriptor(key: "date", ascending: false)]
+            request.fetchLimit = 3
+            request.shouldRefreshRefetchedObjects = true
+            // Read scalar values on the fetching context; no dependency on viewContext history merges.
+            return try self.backgroundContext.fetch(request).map {
+                GlucoseNotificationReading(glucose: Int($0.glucose), date: $0.date, direction: $0.directionEnum?.symbol)
+            }
         }
     }
 
-    @MainActor private func sendGlucoseNotification() async {
-        do {
-            addAppBadge(glucose: nil)
-            let glucoseIDs = await fetchGlucoseIDs()
-            let glucoseObjects = try glucoseIDs.compactMap { id in
-                try viewContext.existingObject(with: id) as? GlucoseStored
-            }
+    @MainActor private func sendGlucoseNotification(updateNotification: Bool = true) async {
+        glucoseUpdatePending = true
+        notificationPending = notificationPending || updateNotification
+        guard !glucoseUpdateRunning else { return }
+        glucoseUpdateRunning = true
+        //debug(.service, "Glucose badge refresh started: appState=\(UIApplication.shared.applicationState.rawValue)")
+        let backgroundTask = GlucoseBadgeBackgroundTask()
+        defer {
+            backgroundTask.end()
+            glucoseUpdateRunning = false
+        }
+        // Coalesce concurrent save/deletion/foreground events and serialize badge writes.
+        while glucoseUpdatePending {
+            glucoseUpdatePending = false
+            let shouldNotify = notificationPending
+            notificationPending = false
+            await updateGlucoseNotification(updateNotification: shouldNotify)
+        }
+    }
 
-            guard let lastReading = glucoseObjects.first?.glucose else { return }
-            let secondLastReading = glucoseObjects.dropFirst().first?.glucose
-            let lastDirection = glucoseObjects.first?.directionEnum?.symbol
+    @MainActor private func updateGlucoseNotification(updateNotification: Bool) async {
+        do {
+            let readings = try await fetchGlucoseReadings()
+            let latest = readings.first
+            // Do not clear before fetching: errors must not erase a previously valid badge.
+            await addAppBadge(glucose: latest?.glucose, date: latest?.date)
+            guard updateNotification, let lastReading = latest?.glucose else { return }
+            let secondLastReading = readings.dropFirst().first?.glucose
+            let lastDirection = latest?.direction
             // Informational glucose notifications are independent of low/high alarms.
             // Their existing preference still controls banners; TrioAlertManager owns alarm audio.
-
-            addAppBadge(glucose: (glucoseObjects.first?.glucose).map { Int($0) })
 
             var titles: [String] = []
             var notificationAlarm = false
@@ -329,9 +355,7 @@ final class BaseUserNotificationsManager: NSObject, UserNotificationsManager, In
                 )
             }
         } catch {
-            debugPrint(
-                "\(DebuggingIdentifiers.failed) \(#file) \(#function) Failed to send glucose notification with error: \(error.localizedDescription)"
-            )
+            warning(.service, "Glucose badge/notification fetch failed: \(error)")
         }
     }
 
@@ -752,5 +776,31 @@ extension BaseUserNotificationsManager: UNUserNotificationCenterDelegate {
             router.alertMessage.send(messageCont)
         default: break
         }
+    }
+}
+
+extension BaseUserNotificationsManager: SettingsObserver {
+    func settingsDidChange(_: TrioSettings) {
+        Task { @MainActor in await self.refreshBadgePreferences() }
+    }
+}
+
+/// Covers the database read and awaited system badge write during a brief CGM wake.
+@MainActor private final class GlucoseBadgeBackgroundTask {
+    private var id: UIBackgroundTaskIdentifier = .invalid
+    init() {
+        id = UIApplication.shared.beginBackgroundTask(withName: "Glucose badge") { [weak self] in
+            Task { @MainActor in
+                warning(.service, "Glucose badge background time expired before update finished")
+                self?.end()
+            }
+        }
+        if id == .invalid { warning(.service, "Glucose badge background time unavailable") }
+    }
+
+    func end() {
+        guard id != .invalid else { return }
+        UIApplication.shared.endBackgroundTask(id)
+        id = .invalid
     }
 }
