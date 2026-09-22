@@ -209,7 +209,7 @@
 		38FEF3FE2738083E00574A46 /* CGMProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38FEF3FD2738083E00574A46 /* CGMProvider.swift */; };
 		38FEF413273B317A00574A46 /* HKUnit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38FEF412273B317A00574A46 /* HKUnit.swift */; };
 		3D9D120FB993483EB46D32A0 /* Trio/Resources/GlucoseAlarmSounds/honk.caf in Resources */ = {isa = PBXBuildFile; fileRef = 12C6C9F783E2448DA35BDDA8 /* Trio/Resources/GlucoseAlarmSounds/honk.caf */; };
-		44FEE8F012024A0FAAB83A02 /* GlucoseAlarms/GlucoseAlarmConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAC802B3ECB14B7C8467E530 /* GlucoseAlarms/GlucoseAlarmConfiguration.swift */; };
+		44FEE8F012024A0FAAB83A02 /* GlucoseAlarmConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAC802B3ECB14B7C8467E530 /* GlucoseAlarmConfiguration.swift */; };
 		45252C95D220E796FDB3B022 /* ConfigEditorDataFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F8A87AA037BD079BA3528BA /* ConfigEditorDataFlow.swift */; };
 		45717281F743594AA9D87191 /* ConfigEditorRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 920DDB21E5D0EB813197500D /* ConfigEditorRootView.swift */; };
 		46651D1E7ABF44B19E6F76E3 /* Trio/Resources/GlucoseAlarmSounds/crying.caf in Resources */ = {isa = PBXBuildFile; fileRef = 3A5927B086504A2B8FF7BE1E /* Trio/Resources/GlucoseAlarmSounds/crying.caf */; };
@@ -292,6 +292,7 @@
 		6B1F539F9FF75646D1606066 /* SnoozeDataFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36A708CDB546692C2230B385 /* SnoozeDataFlow.swift */; };
 		6BCF84DD2B16843A003AD46E /* LiveActitiyAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BCF84DC2B16843A003AD46E /* LiveActitiyAttributes.swift */; };
 		6BCF84DE2B16843A003AD46E /* LiveActitiyAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BCF84DC2B16843A003AD46E /* LiveActitiyAttributes.swift */; };
+		6D42902204434E86A18691EF /* GlucoseAlarms/MissingDataAlarmManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43AC013B77C54AF4BCD5D9A6 /* GlucoseAlarms/MissingDataAlarmManager.swift */; };
 		6EADD581738D64431902AC0A /* (null) in Sources */ = {isa = PBXBuildFile; };
 		6FFAE524D1D9C262F2407CAE /* SnoozeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CAE81192B118804DCD23034 /* SnoozeProvider.swift */; };
 		711C0CB42CAABE788916BC9D /* ManualTempBasalDataFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96653287EDB276A111288305 /* ManualTempBasalDataFlow.swift */; };
@@ -979,6 +980,7 @@
 		3F60E97100041040446F44E7 /* PumpConfigStateModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PumpConfigStateModel.swift; sourceTree = "<group>"; };
 		3F8A87AA037BD079BA3528BA /* ConfigEditorDataFlow.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConfigEditorDataFlow.swift; sourceTree = "<group>"; };
 		42369F66CF91F30624C0B3A6 /* BasalProfileEditorProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BasalProfileEditorProvider.swift; sourceTree = "<group>"; };
+		43AC013B77C54AF4BCD5D9A6 /* GlucoseAlarms/MissingDataAlarmManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlucoseAlarms/MissingDataAlarmManager.swift; sourceTree = "<group>"; };
 		44080E4709E3AE4B73054563 /* ConfigEditorProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConfigEditorProvider.swift; sourceTree = "<group>"; };
 		46402BE99EE74C22942819BA /* DeletedGlucoseStored+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DeletedGlucoseStored+CoreDataClass.swift"; sourceTree = "<group>"; };
 		491D6FB92D56741C00C49F67 /* TempTargetRunStored+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TempTargetRunStored+CoreDataClass.swift"; sourceTree = "<group>"; };
@@ -1165,7 +1167,7 @@
 		C2A0A42E2CE0312C003B98E8 /* ConstantValues.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConstantValues.swift; sourceTree = "<group>"; };
 		C377490C77661D75E8C50649 /* ManualTempBasalRootView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ManualTempBasalRootView.swift; sourceTree = "<group>"; };
 		C8D1A7CA8C10C4403D4BBFA7 /* TreatmentsDataFlow.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TreatmentsDataFlow.swift; sourceTree = "<group>"; };
-		CAC802B3ECB14B7C8467E530 /* GlucoseAlarms/GlucoseAlarmConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlucoseAlarms/GlucoseAlarmConfiguration.swift; sourceTree = "<group>"; };
+		CAC802B3ECB14B7C8467E530 /* GlucoseAlarmConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = GlucoseAlarmConfiguration.swift; path = GlucoseAlarms/GlucoseAlarmConfiguration.swift; sourceTree = "<group>"; };
 		CC6C406D2ACDD69E009B8058 /* RawFetchedProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RawFetchedProfile.swift; sourceTree = "<group>"; };
 		CC76E9502BD4812E008BEB61 /* Forecast+helper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Forecast+helper.swift"; sourceTree = "<group>"; };
 		CE1856F42ADC4858007E39C7 /* AddCarbPresetIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddCarbPresetIntent.swift; sourceTree = "<group>"; };
@@ -1856,12 +1858,13 @@
 				A0398E7349694A5497DBC890 /* Trio/Resources/GlucoseAlarmSounds/trill.caf */,
 				12C6C9F783E2448DA35BDDA8 /* Trio/Resources/GlucoseAlarmSounds/honk.caf */,
 				AAB59DB7989341169F83BC92 /* Trio/Resources/GlucoseAlarmSounds/spring.caf */,
-				CAC802B3ECB14B7C8467E530 /* GlucoseAlarms/GlucoseAlarmConfiguration.swift */,
 				BE5125212A7648F091844060 /* Trio/Resources/GlucoseAlarmSounds/chime.caf */,
 				90EB7DE66A9E469F92A33B44 /* Trio/Resources/GlucoseAlarmSounds/high_chimes.caf */,
 				B9A17349AA3C4A2A893523A4 /* Trio/Resources/GlucoseAlarmSounds/urgent_low.caf */,
+				CAC802B3ECB14B7C8467E530 /* GlucoseAlarmConfiguration.swift */,
 				53ECDFE366CB4282B1249166 /* GlucoseAlarms/GlucoseAlarmSettingsSection.swift */,
 				E4DAAAAE95094D5EB9AAC053 /* GlucoseAlarms/TrioAlertManager.swift */,
+				43AC013B77C54AF4BCD5D9A6 /* GlucoseAlarms/MissingDataAlarmManager.swift */,
 				A8D6FA3316B742FA8341C3D6 /* GlucoseAlarms/GlucoseAlarmPreferences.swift */,
 				6FD3F53CC9BB4898B1DEE7F6 /* GlucoseAlarms/GlucoseAlarmState.swift */,
 				6545DD672D70D018007B0D70 /* AppVersionChecker */,
@@ -4169,10 +4172,11 @@
 				DDE179612C910127003CDDB7 /* StatsData+CoreDataProperties.swift in Sources */,
 				DDE179622C910127003CDDB7 /* Forecast+CoreDataClass.swift in Sources */,
 				DDE179632C910127003CDDB7 /* Forecast+CoreDataProperties.swift in Sources */,
-				44FEE8F012024A0FAAB83A02 /* GlucoseAlarms/GlucoseAlarmConfiguration.swift in Sources */,
+				44FEE8F012024A0FAAB83A02 /* GlucoseAlarmConfiguration.swift in Sources */,
 				DDE179642C910127003CDDB7 /* GlucoseStored+CoreDataClass.swift in Sources */,
 				5294D82B98084725BFF32709 /* GlucoseAlarms/GlucoseAlarmSettingsSection.swift in Sources */,
 				CC8E1D6AD1504F8C86713B4F /* GlucoseAlarms/TrioAlertManager.swift in Sources */,
+				6D42902204434E86A18691EF /* GlucoseAlarms/MissingDataAlarmManager.swift in Sources */,
 				7BD94703BA114C1F940D76D1 /* GlucoseAlarms/GlucoseAlarmPreferences.swift in Sources */,
 				F1A070653531420AA996EE7F /* GlucoseAlarms/GlucoseAlarmState.swift in Sources */,
 				D77B7FF64F6F473F8D9D1ACF /* GlucoseImportFilter.swift in Sources */,

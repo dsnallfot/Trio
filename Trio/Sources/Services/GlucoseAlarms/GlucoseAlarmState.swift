@@ -126,3 +126,49 @@ struct GlucoseAlarmState: Codable {
         return decision
     }
 }
+
+/// Persistent deadlines: duplicate callbacks, deletion and relaunch never move an outage forward.
+struct MissingDataAlarmState: Codable {
+    struct Slot: Codable, Equatable {
+        var id = UUID()
+        let anchor: Date
+        let minutes: Int
+        let tone: GlucoseAlarmTone
+        var scheduled = false
+        var acknowledged = false
+        var date: Date { anchor.addingTimeInterval(TimeInterval(minutes * 60)) }
+    }
+
+    var latest: Date?
+    var monitoringSince: Date?
+    var slots: [Slot] = []
+
+    mutating func reconcile(latest candidate: Date?, config: MissingDataAlarmConfiguration, now: Date) -> [UUID] {
+        if let candidate, candidate <= now, candidate > .distantPast,
+           latest.map({ candidate > $0 }) ?? true { latest = candidate }
+        guard config.enabled else {
+            let removed = slots.map(\.id)
+            slots = []
+            monitoringSince = nil
+            return removed
+        }
+        if monitoringSince == nil { monitoringSince = now }
+        let anchor = latest ?? monitoringSince!
+        let previous = slots
+        slots = config.intervals.map { minutes in
+            previous.first { $0.anchor == anchor && $0.minutes == minutes && $0.tone == config.tone }
+                ?? Slot(anchor: anchor, minutes: minutes, tone: config.tone)
+        }
+        return previous.filter { old in !slots.contains { $0.id == old.id } }.map(\.id)
+    }
+
+    func supersededOverdue(_ slot: Slot, now: Date) -> Bool {
+        slot.date <= now && slots.contains { $0.date > slot.date && $0.date <= now }
+    }
+
+    mutating func acknowledge(_ id: UUID) -> Bool {
+        guard let index = slots.firstIndex(where: { $0.id == id }) else { return false }
+        slots[index].acknowledged = true
+        return true
+    }
+}

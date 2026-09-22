@@ -60,6 +60,7 @@ import UserNotifications
             }
         }
         updatePermission()
+        _ = MissingDataAlarmManager.shared
         evaluate()
     }
 
@@ -86,6 +87,13 @@ import UserNotifications
             "Tillåt AlarmKit för ljud genom tyst läge och Fokusläge. Tills dess används vanliga notiser."
         @unknown default: permissionText = "AlarmKit är inte tillgängligt. Vanliga notiser används."
         }
+    }
+
+    private var usesDayNightRestrictions: Bool {
+        preferences.lowActivePeriod != .always ||
+            preferences.highActivePeriod != .always ||
+            preferences.urgentLowActivePeriod != .always ||
+            preferences.urgentHighActivePeriod != .always
     }
 
     func evaluate() {
@@ -120,25 +128,127 @@ import UserNotifications
                 ?
                 "Gränsen för lågt glukos måste vara lägre än gränsen för högt glukos. Larmen är pausade tills gränserna rättats."
                 : nil
+            let lowEnabled =
+                preferences.lowEnabled &&
+                preferences.isAllowed(
+                    during: preferences.lowActivePeriod,
+                    at: now
+                )
+
+            let highEnabled =
+                preferences.highEnabled &&
+                preferences.isAllowed(
+                    during: preferences.highActivePeriod,
+                    at: now
+                )
+
+            let urgentLowEnabled =
+                preferences.urgentLowEnabled &&
+                preferences.isAllowed(
+                    during: preferences.urgentLowActivePeriod,
+                    at: now
+                )
+
+            let urgentHighEnabled =
+                preferences.urgentHighEnabled &&
+                preferences.isAllowed(
+                    during: preferences.urgentHighActivePeriod,
+                    at: now
+                )
+
             let decision = state.evaluate(
-                reading, low: settings.settings.lowGlucose, high: settings.settings.highGlucose,
-                lowEnabled: preferences.lowEnabled, highEnabled: preferences.highEnabled, now: now, globalSnooze: snooze,
-                urgentLow: preferences.urgentLowThreshold, urgentHigh: preferences.urgentHighThreshold,
-                urgentLowEnabled: preferences.urgentLowEnabled, urgentHighEnabled: preferences.urgentHighEnabled
+                reading,
+                low: settings.settings.lowGlucose,
+                high: settings.settings.highGlucose,
+                lowEnabled: lowEnabled,
+                highEnabled: highEnabled,
+                now: now,
+                globalSnooze: snooze,
+                urgentLow: preferences.urgentLowThreshold,
+                urgentHigh: preferences.urgentHighThreshold,
+                urgentLowEnabled: urgentLowEnabled,
+                urgentHighEnabled: urgentHighEnabled
             )
             persist()
             if let id = decision.cancelled { cancel(id) }
             if let event = decision.issued { await deliver(event) }
             expirationTask?.cancel()
-            if let reading = reading, now.timeIntervalSince(reading.date) < GlucoseAlarmState.freshness {
-                let wakeDates = [
-                    reading.date.addingTimeInterval(GlucoseAlarmState.freshness + 1),
-                    max(state.snoozeDeadline(for: state.kind), snooze),
-                    state.lastAlertAt?.addingTimeInterval(GlucoseAlarmState.repeatInterval) ?? .distantPast
-                ].filter { $0 > Date() }
-                if let next = wakeDates.min() { scheduleEvaluation(at: next) }
+            if let reading = reading,
+               now.timeIntervalSince(reading.date) < GlucoseAlarmState.freshness
+            {
+                var wakeDates: [Date] = [
+                    reading.date.addingTimeInterval(
+                        GlucoseAlarmState.freshness + 1
+                    ),
+
+                    max(
+                        state.snoozeDeadline(for: state.kind),
+                        snooze
+                    ),
+
+                    state.lastAlertAt?.addingTimeInterval(
+                        GlucoseAlarmState.repeatInterval
+                    ) ?? .distantPast
+                ]
+
+                // Re-evaluate exactly when day/night changes.
+                if usesDayNightRestrictions,
+                   let boundary = nextDayNightBoundary(after: now)
+                {
+                    wakeDates.append(boundary)
+                }
+
+                wakeDates = wakeDates.filter {
+                    $0 > now
+                }
+
+                if let next = wakeDates.min() {
+                    scheduleEvaluation(at: next)
+                }
             }
         }
+    }
+
+    private func nextDayNightBoundary(after date: Date) -> Date? {
+        let calendar = Calendar.current
+
+        let dayStartMinutes = preferences.dayStartMinutes
+        let nightStartMinutes = preferences.nightStartMinutes
+
+        func nextOccurrence(of minutes: Int) -> Date? {
+            let hour = minutes / 60
+            let minute = minutes % 60
+
+            var components = calendar.dateComponents(
+                [.year, .month, .day],
+                from: date
+            )
+
+            components.hour = hour
+            components.minute = minute
+            components.second = 0
+
+            guard let today = calendar.date(from: components) else {
+                return nil
+            }
+
+            if today > date {
+                return today
+            }
+
+            return calendar.date(
+                byAdding: .day,
+                value: 1,
+                to: today
+            )
+        }
+
+        let nextDayStart = nextOccurrence(of: dayStartMinutes)
+        let nextNightStart = nextOccurrence(of: nightStartMinutes)
+
+        return [nextDayStart, nextNightStart]
+            .compactMap { $0 }
+            .min()
     }
 
     private func scheduleEvaluation(at date: Date) {
@@ -198,7 +308,7 @@ import UserNotifications
         systemIDs.insert(id)
         persist()
         let presentation = AlarmPresentation(alert: AlarmPresentation.Alert(
-            title: "Test av glukoslarm",
+            title: "Test av Trio-larm",
             stopButton: AlarmButton(text: "Stoppa test", textColor: .white, systemImageName: "stop.circle")
         ))
         let config = AlarmManager.AlarmConfiguration<GlucoseAlarmMetadata>.alarm(
@@ -229,7 +339,7 @@ import UserNotifications
         }
         let tone = preferences.tone(for: event.kind)
         let value = settings.settings.units == .mmolL
-        ? String(format: "%.1f mmol/L", NSDecimalNumber(decimal: event.reading.mgdL).doubleValue * 0.0555)
+            ? String(format: "%.1f mmol/L", NSDecimalNumber(decimal: event.reading.mgdL).doubleValue * 0.0555)
             : "\(event.reading.mgdL) mg/dL"
         let label: String
         switch event.kind {

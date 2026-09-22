@@ -42,7 +42,7 @@ extension GlucoseNotificationSettings {
         var body: some View {
             List {
                 GlucoseAlarmSettingsSection(low: state.lowGlucose, high: state.highGlucose, units: state.units)
-
+                SystemAlarmSettingsSection()
                 SettingInputSection(
                     decimalValue: $decimalPlaceholder,
                     booleanValue: $state.notificationsPump,

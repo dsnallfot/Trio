@@ -76,8 +76,9 @@ final class BaseUserNotificationsManager: NSObject, UserNotificationsManager, In
     @MainActor private var notificationPending = false
     @MainActor private var lastBadgePreferences: String?
 
-    let firstInterval = 20 // min
-    let secondInterval = 40 // min
+    private var firstInterval: Int { MissingDataAlarmConfiguration.savedLoop.intervals.first! }
+    private var secondInterval: Int { MissingDataAlarmConfiguration.savedLoop.intervals.last! }
+    @MainActor private var lastMissingLoopPlan: String?
 
     init(resolver: Resolver) {
         super.init()
@@ -108,9 +109,17 @@ final class BaseUserNotificationsManager: NSObject, UserNotificationsManager, In
     private func subscribeOnLoop() {
         apsManager.lastLoopDateSubject
             .sink { [weak self] date in
-                self?.scheduleMissingLoopNotifiactions(date: date)
+                Task { @MainActor in self?.scheduleMissingLoopNotifications(date: date) }
             }
             .store(in: &lifetime)
+        Foundation.NotificationCenter.default.publisher(for: GlucoseAlarmPreferences.changed)
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    guard let self else { return }
+                    self.scheduleMissingLoopNotifications(date: self.apsManager.lastLoopDate)
+                }
+            }.store(in: &lifetime)
+        Task { @MainActor in self.scheduleMissingLoopNotifications(date: self.apsManager.lastLoopDate) }
     }
 
     private func registerHandlers() {
@@ -150,7 +159,7 @@ final class BaseUserNotificationsManager: NSObject, UserNotificationsManager, In
         await sendGlucoseNotification(updateNotification: false)
     }
 
-    @MainActor private func addAppBadge(glucose: Int?, date: Date?) async {
+    @MainActor private func addAppBadge(glucose: Int?, date _: Date?) async {
         let badge: Int
         if let glucose, settingsManager.settings.glucoseBadge {
             badge = settingsManager.settings.units == .mmolL
@@ -161,7 +170,7 @@ final class BaseUserNotificationsManager: NSObject, UserNotificationsManager, In
         do {
             // Wait for iOS before releasing background time or starting the next update.
             try await center.setBadgeCount(badge)
-            //debug(.service, "Glucose badge updated: count=\(badge), reading=\(String(describing: date))")
+            // debug(.service, "Glucose badge updated: count=\(badge), reading=\(String(describing: date))")
         } catch {
             warning(.service, "Glucose badge failed: count=\(badge), error=\(error)")
         }
@@ -199,7 +208,13 @@ final class BaseUserNotificationsManager: NSObject, UserNotificationsManager, In
         )
     }
 
-    private func scheduleMissingLoopNotifiactions(date _: Date) {
+    @MainActor private func scheduleMissingLoopNotifications(date: Date) {
+        guard date > .distantPast, date <= Date() else { return }
+        let firstInterval = self.firstInterval
+        let secondInterval = self.secondInterval
+        let plan = "\(date.timeIntervalSince1970)-\(firstInterval)-\(secondInterval)"
+        guard plan != lastMissingLoopPlan else { return }
+        lastMissingLoopPlan = plan
         let title = NSLocalizedString("Trio Not Active", comment: "Trio Not Active")
         let body = NSLocalizedString("Last loop was more than %d min ago", comment: "Last loop was more than %d min ago")
 
@@ -213,8 +228,14 @@ final class BaseUserNotificationsManager: NSObject, UserNotificationsManager, In
         secondContent.body = String(format: body, secondInterval)
         secondContent.sound = .default
 
-        let firstTrigger = UNTimeIntervalNotificationTrigger(timeInterval: 60 * TimeInterval(firstInterval), repeats: false)
-        let secondTrigger = UNTimeIntervalNotificationTrigger(timeInterval: 60 * TimeInterval(secondInterval), repeats: false)
+        let firstTrigger = UNTimeIntervalNotificationTrigger(
+            timeInterval: max(1, date.addingTimeInterval(60 * TimeInterval(firstInterval)).timeIntervalSinceNow),
+            repeats: false
+        )
+        let secondTrigger = UNTimeIntervalNotificationTrigger(
+            timeInterval: max(1, date.addingTimeInterval(60 * TimeInterval(secondInterval)).timeIntervalSinceNow),
+            repeats: false
+        )
 
         addRequest(
             identifier: Identifier.noLoopFirstNotification.rawValue,
@@ -224,6 +245,11 @@ final class BaseUserNotificationsManager: NSObject, UserNotificationsManager, In
             messageType: .error,
             messageSubtype: .algorithm
         )
+        if firstInterval == secondInterval {
+            center.removePendingNotificationRequests(withIdentifiers: [Identifier.noLoopSecondNotification.rawValue])
+            center.removeDeliveredNotifications(withIdentifiers: [Identifier.noLoopSecondNotification.rawValue])
+            return
+        }
         addRequest(
             identifier: Identifier.noLoopSecondNotification.rawValue,
             content: secondContent,
@@ -280,7 +306,7 @@ final class BaseUserNotificationsManager: NSObject, UserNotificationsManager, In
         notificationPending = notificationPending || updateNotification
         guard !glucoseUpdateRunning else { return }
         glucoseUpdateRunning = true
-        //debug(.service, "Glucose badge refresh started: appState=\(UIApplication.shared.applicationState.rawValue)")
+        // debug(.service, "Glucose badge refresh started: appState=\(UIApplication.shared.applicationState.rawValue)")
         let backgroundTask = GlucoseBadgeBackgroundTask()
         defer {
             backgroundTask.end()

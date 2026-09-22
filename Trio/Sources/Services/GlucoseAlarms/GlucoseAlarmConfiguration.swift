@@ -44,6 +44,25 @@ enum GlucoseAlarmTone: String, CaseIterable, Identifiable, Codable {
     }
 }
 
+enum AlarmActivePeriod: String, CaseIterable, Identifiable, Codable {
+    case always
+    case day
+    case night
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .always:
+            return "Alltid"
+        case .day:
+            return "Dagtid"
+        case .night:
+            return "Nattid"
+        }
+    }
+}
+
 struct GlucoseAlarmConfiguration: Codable {
     var lowEnabled: Bool
     var highEnabled: Bool
@@ -62,7 +81,17 @@ struct GlucoseAlarmConfiguration: Codable {
         return minutes
     }
 
-    // Optional additions keep older saved configurations readable.
+    // Day / night configuration.
+    // Optional so existing saved configurations remain readable.
+    var dayStartMinutes: Int?
+    var nightStartMinutes: Int?
+
+    var urgentLowActivePeriod: AlarmActivePeriod?
+    var lowActivePeriod: AlarmActivePeriod?
+    var highActivePeriod: AlarmActivePeriod?
+    var urgentHighActivePeriod: AlarmActivePeriod?
+    var missingGlucoseActivePeriod: AlarmActivePeriod?
+    var missingLoopActivePeriod: AlarmActivePeriod?
     var urgentLowEnabled: Bool?
     var urgentHighEnabled: Bool?
     var urgentLowThreshold: Decimal?
@@ -72,6 +101,8 @@ struct GlucoseAlarmConfiguration: Codable {
     var urgentLowTone: GlucoseAlarmTone?
     var urgentHighTone: GlucoseAlarmTone?
     var showMoreSettings: Bool?
+    var missingGlucose: MissingDataAlarmConfiguration?
+    var missingLoop: MissingDataAlarmConfiguration?
 
     static func urgentLowThreshold(_ value: Decimal, low: Decimal) -> Decimal {
         max(40, min(value, low))
@@ -83,4 +114,33 @@ struct GlucoseAlarmConfiguration: Codable {
 
     var lowTone: GlucoseAlarmTone = .urgentLow
     var highTone: GlucoseAlarmTone = .highChimes
+
+    static let defaultDayStartMinutes = 7 * 60 // 07:00
+    static let defaultNightStartMinutes = 22 * 60 // 22:00
+
+    static func validatedTimeMinutes(_ value: Int?, fallback: Int) -> Int {
+        guard let value else { return fallback }
+        return min(23 * 60 + 59, max(0, value))
+    }
+}
+
+struct MissingDataAlarmConfiguration: Codable, Equatable {
+    var enabled = false
+    var first = 15
+    var second = 30
+    var tone: GlucoseAlarmTone = .chime
+    static let choices = Array(stride(from: 10, through: 60, by: 5))
+    static let loopDefaults = Self(first: 20, second: 40)
+    static var savedLoop: Self {
+        UserDefaults.standard.data(forKey: "Trio.glucoseAlarms.configuration.v1")
+            .flatMap { try? JSONDecoder().decode(GlucoseAlarmConfiguration.self, from: $0) }?.missingLoop ?? .loopDefaults
+    }
+
+    var intervals: [Int] {
+        Array(Set([Self.valid(first, fallback: 15), Self.valid(second, fallback: 30)])).sorted()
+    }
+
+    static func valid(_ value: Int, fallback: Int) -> Int {
+        choices.contains(value) ? value : fallback
+    }
 }
