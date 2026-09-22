@@ -359,7 +359,7 @@ extension NightscoutAPI {
 //        debugPrint("Upload successful, response data: \(String(data: data, encoding: .utf8) ?? "No data")")
     }
 
-    func uploadGlucose(_ glucose: [BloodGlucose]) async throws {
+    func uploadGlucose(_ glucose: [BloodGlucose], trioSentAt: Date) async throws {
         var components = URLComponents()
         components.scheme = url.scheme
         components.host = url.host
@@ -375,7 +375,8 @@ extension NightscoutAPI {
             request.addValue(secret.sha1(), forHTTPHeaderField: "api-secret")
         }
         do {
-            let encodedBody = try JSONCoding.encoder.encode(glucose)
+            let payload = glucose.map { NightscoutGlucoseUploadEntry(glucose: $0, trioSentAt: trioSentAt) }
+            let encodedBody = try JSONCoding.encoder.encode(payload)
             request.httpBody = encodedBody
 //            debugPrint("Payload glucose size: \(encodedBody.count) bytes")
 //            debugPrint(String(data: encodedBody, encoding: .utf8) ?? "Invalid payload")
@@ -610,5 +611,19 @@ private extension String {
         }
         let hexBytes = digest.map { String(format: "%02hhx", $0) }
         return hexBytes.joined()
+    }
+}
+
+/// Upload-only metadata. Preserve the flat Nightscout entry and its original measurement timestamps.
+private struct NightscoutGlucoseUploadEntry: Encodable {
+    let glucose: BloodGlucose
+    let trioSentAt: Date
+
+    private enum CodingKeys: String, CodingKey { case trioSentAt }
+
+    func encode(to encoder: Encoder) throws {
+        try glucose.encode(to: encoder)
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(trioSentAt, forKey: .trioSentAt)
     }
 }

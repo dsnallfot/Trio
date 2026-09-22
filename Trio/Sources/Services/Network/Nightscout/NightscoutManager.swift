@@ -1380,7 +1380,8 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         do {
             // Upload in Batches of 100
             for chunk in glucose.chunks(ofCount: 100) {
-                try await nightscout.uploadGlucose(Array(chunk))
+                // Timestamp each outgoing batch; do not persist transport metadata in Core Data.
+                try await nightscout.uploadGlucose(Array(chunk), trioSentAt: Date())
             }
 
             // If successful, update the isUploadedToNS property of the GlucoseStored objects
