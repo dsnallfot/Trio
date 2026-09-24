@@ -247,7 +247,9 @@ final class BaseDeviceDataManager: DeviceDataManager, Injectable {
     }
 
     private func updateMedtrumPatchDates(_ pump: MedtrumPumpManager) {
-        pumpExpiresAtDate.send(pump.state.patchExpiresAt)
+        // Display the patch lifespan without the grace period, matching Medtrum's UI and Omnipod.
+        // patchExpiresAt includes grace; patchGracePeriodFrom marks the end of the normal lifespan.
+        pumpExpiresAtDate.send(pump.state.patchGracePeriodFrom)
         switch pump.state.expiryMode {
         case .default:
             pumpActivatedAtDate.send(nil)
