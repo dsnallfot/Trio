@@ -40,6 +40,7 @@ extension Home {
         var reservoir: Decimal?
         var pumpName = ""
         var pumpExpiresAtDate: Date?
+        var pumpActivatedAtDate: Date?
         var highTTraisesSens: Bool = false
         var lowTTlowersSens: Bool = false
         var isExerciseModeActive: Bool = false
@@ -308,6 +309,11 @@ extension Home {
                 .weakAssign(to: \.pumpExpiresAtDate, on: self)
                 .store(in: &lifetime)
 
+            apsManager.pumpActivatedAtDate
+                .receive(on: DispatchQueue.main)
+                .weakAssign(to: \.pumpActivatedAtDate, on: self)
+                .store(in: &lifetime)
+
             apsManager.lastError
                 .receive(on: DispatchQueue.main)
                 .map { [weak self] error in
@@ -335,6 +341,7 @@ extension Home {
                         self.battery = nil
                         self.pumpName = ""
                         self.pumpExpiresAtDate = nil
+                        self.pumpActivatedAtDate = nil
                         self.setupPump = false
                     } else {
                         self.setupReservoir()

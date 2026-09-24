@@ -41,3 +41,7 @@
 	path = LoopAlgorithm
 	url = https://github.com/loopandlearn/LoopAlgorithm.git
 	branch = main
+[submodule "MedtrumKit"]
+	path = MedtrumKit
+	url = https://github.com/loopandlearn/MedtrumKit
+	branch = dev

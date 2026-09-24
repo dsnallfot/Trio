@@ -18,6 +18,7 @@ protocol APSManager {
     var lastLoopDateSubject: PassthroughSubject<Date, Never> { get }
     var bolusProgress: CurrentValueSubject<Decimal?, Never> { get }
     var pumpExpiresAtDate: CurrentValueSubject<Date?, Never> { get }
+    var pumpActivatedAtDate: CurrentValueSubject<Date?, Never> { get }
     var isManualTempBasal: Bool { get }
     func enactTempBasal(rate: Double, duration: TimeInterval) async
     func determineBasal() async -> Bool
@@ -137,6 +138,10 @@ final class BaseAPSManager: APSManager, Injectable {
 
     var pumpExpiresAtDate: CurrentValueSubject<Date?, Never> {
         deviceDataManager.pumpExpiresAtDate
+    }
+
+    var pumpActivatedAtDate: CurrentValueSubject<Date?, Never> {
+        deviceDataManager.pumpActivatedAtDate
     }
 
     var settings: TrioSettings {

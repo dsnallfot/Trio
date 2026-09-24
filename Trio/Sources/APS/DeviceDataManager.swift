@@ -6,6 +6,7 @@ import Foundation
 import HealthKit
 import LoopKit
 import LoopKitUI
+import MedtrumKit
 import MinimedKit
 import MockKit
 import OmnipodKit
@@ -25,6 +26,7 @@ protocol DeviceDataManager: GlucoseSource {
     var errorSubject: PassthroughSubject<Error, Never> { get }
     var pumpName: CurrentValueSubject<String, Never> { get }
     var pumpExpiresAtDate: CurrentValueSubject<Date?, Never> { get }
+    var pumpActivatedAtDate: CurrentValueSubject<Date?, Never> { get }
 
     func heartbeat(date: Date)
     func updatePumpBLEHeartbeat(lastCGMReadingDate: Date?, expectedCGMReadingInterval: TimeInterval?)
@@ -37,6 +39,7 @@ private let staticPumpManagers: [PumpManagerUI.Type] = [
     MinimedPumpManager.self,
     OmniPumpManager.self,
     DanaKitPumpManager.self,
+    MedtrumPumpManager.self,
     MockPumpManager.self
 ]
 
@@ -44,6 +47,7 @@ private let staticPumpManagersByIdentifier: [String: PumpManagerUI.Type] = [
     MinimedPumpManager.pluginIdentifier: MinimedPumpManager.self,
     OmniPumpManager.pluginIdentifier: OmniPumpManager.self,
     DanaKitPumpManager.pluginIdentifier: DanaKitPumpManager.self,
+    MedtrumPumpManager.pluginIdentifier: MedtrumPumpManager.self,
     MockPumpManager.pluginIdentifier: MockPumpManager.self
 ]
 
@@ -81,6 +85,8 @@ final class BaseDeviceDataManager: DeviceDataManager, Injectable {
             pumpManager?.delegateQueue = processQueue
             rawPumpManager = pumpManager?.rawValue
             UserDefaults.standard.clearLegacyPumpManagerRawValue()
+            pumpExpiresAtDate.send(nil)
+            pumpActivatedAtDate.send(nil)
             if let pumpManager = pumpManager {
                 // Re-apply the latest CGM-aligned heartbeat request to a freshly set pump
                 if let heartbeatRequest = lastPumpHeartbeatRequest {
@@ -126,6 +132,9 @@ final class BaseDeviceDataManager: DeviceDataManager, Injectable {
                         return
                     }
                     pumpExpiresAtDate.send(endTime)
+                }
+                if let medtrumPump = pumpManager as? MedtrumPumpManager {
+                    updateMedtrumPatchDates(medtrumPump)
                 }
                 if let simulatorPump = pumpManager as? MockPumpManager {
                     pumpDisplayState.value = PumpDisplayState(name: simulatorPump.localizedTitle, image: simulatorPump.smallImage)
@@ -214,6 +223,7 @@ final class BaseDeviceDataManager: DeviceDataManager, Injectable {
 
     let pumpDisplayState = CurrentValueSubject<PumpDisplayState?, Never>(nil)
     let pumpExpiresAtDate = CurrentValueSubject<Date?, Never>(nil)
+    let pumpActivatedAtDate = CurrentValueSubject<Date?, Never>(nil)
     let pumpName = CurrentValueSubject<String, Never>("Pump")
 
     init(resolver: Resolver) {
@@ -232,6 +242,16 @@ final class BaseDeviceDataManager: DeviceDataManager, Injectable {
                     expectedCGMReadingInterval: self.lastPumpHeartbeatRequest?.expectedCGMReadingInterval
                 )
             }
+    }
+
+    private func updateMedtrumPatchDates(_ pump: MedtrumPumpManager) {
+        pumpExpiresAtDate.send(pump.state.patchExpiresAt)
+        switch pump.state.expiryMode {
+        case .default:
+            pumpActivatedAtDate.send(nil)
+        case .extended:
+            pumpActivatedAtDate.send(pump.state.patchActivatedAt)
+        }
     }
 
     func setupPumpManager() {
@@ -509,6 +529,15 @@ extension BaseDeviceDataManager: PumpManagerDelegate {
             if let startTime = omni.state.podState?.activatedAt {
                 storage.save(startTime, as: OpenAPS.Monitor.podAge)
             }
+        }
+
+        if let medtrumPump = pumpManager as? MedtrumPumpManager {
+            let reservoir = Decimal(medtrumPump.state.reservoir)
+            storage.save(reservoir, as: OpenAPS.Monitor.reservoir)
+            broadcaster.notify(PumpReservoirObserver.self, on: processQueue) {
+                $0.pumpReservoirDidChange(reservoir)
+            }
+            updateMedtrumPatchDates(medtrumPump)
         }
 
         if let simulatorPump = pumpManager as? MockPumpManager {

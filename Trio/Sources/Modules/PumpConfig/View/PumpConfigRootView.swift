@@ -29,7 +29,11 @@ extension PumpConfig {
                                     state.setupPump = true
                                 } label: {
                                     HStack {
-                                        Image(uiImage: pumpState.image ?? UIImage()).padding()
+                                        Image(uiImage: pumpState.image ?? UIImage())
+                                            .resizable()
+                                            .scaledToFit()
+                                            .frame(maxWidth: 100)
+                                            .padding()
                                         Text(pumpState.name)
                                     }
                                 }
@@ -110,6 +114,7 @@ extension PumpConfig {
                                     Text("• Medtronic")
                                     Text("• Alla typer av Omnipod")
                                     Text("• Dana (RS/-i)")
+                                    Text("• Medtrum Nano (200u/300u)")
                                     Text("• Pumpsimulator")
                                 }
                                 Text(
@@ -124,6 +129,7 @@ extension PumpConfig {
                     Button("Medtronic") { state.addPump(.minimed) }
                     Button("Alla typer av Omnipod") { state.addPump(.omni) }
                     Button("Dana(RS/-i)") { state.addPump(.dana) }
+                    Button("Medtrum Nano") { state.addPump(.medtrum) }
                     Button("Pumpsimulator") { state.addPump(.simulator) }
                 } message: { Text("Välj Pumpmodell") }
             }

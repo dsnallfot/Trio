@@ -2229,3 +2229,7 @@ Enact a temp Basal or a temp target */
 
 /* Menu */
 "Menu" = "Menu";
+
+/* Medtrum pump selection */
+"Medtrum Nano" = "Medtrum Nano";
+"• Medtrum Nano (200u/300u)" = "• Medtrum Nano (200u/300u)";

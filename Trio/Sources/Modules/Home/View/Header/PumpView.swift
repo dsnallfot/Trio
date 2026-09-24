@@ -5,6 +5,7 @@ struct PumpView: View {
     let reservoir: Decimal?
     let name: String
     let expiresAtDate: Date?
+    let activatedAtDate: Date?
     let timerDate: Date
     let timeZone: TimeZone?
     let pumpStatusHighlightMessage: String?
@@ -100,7 +101,7 @@ struct PumpView: View {
 
                 if let date = expiresAtDate {
                     HStack {
-                        Image(systemName: "stopwatch.fill")
+                        Image(systemName: activatedAtDate == nil ? "stopwatch.fill" : "hourglass.badge.plus")
                             .font(.subheadline)
                             .foregroundStyle(timerColor)
                         Text(remainingTimeString(time: date.timeIntervalSince(timerDate)))
@@ -287,6 +288,10 @@ struct PumpView: View {
     }
 
     private var timerColor: Color {
+        if let activatedAt = activatedAtDate {
+            return timerDate.timeIntervalSince(activatedAt) > 80 * 3600 ? Color.yellow : Color.loopGreen
+        }
+
         guard let expisesAt = expiresAtDate else {
             return .gray
         }
