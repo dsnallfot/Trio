@@ -55,6 +55,8 @@ private let accessLock = NSRecursiveLock(label: "BaseDeviceDataManager.accessLoc
 
 final class BaseDeviceDataManager: DeviceDataManager, Injectable {
     private let processQueue = DispatchQueue.markedQueue(label: "BaseDeviceDataManager.processQueue")
+    private let heartbeatLogLock = NSLock()
+    private var lastHeartbeatLogMessages: [String: [String: String]] = [:]
     @Injected() private var pumpHistoryStorage: PumpHistoryStorage!
     @Injected() var alertHistoryStorage: AlertHistoryStorage!
     @Injected() private var storage: FileStorage!
@@ -664,11 +666,19 @@ extension BaseDeviceDataManager: DeviceManagerDelegate {
         }
     }
 
-    private func shouldLogDeviceMessage(_ message: String) -> Bool {
+    private func shouldLogDeviceMessage(_ message: String, deviceIdentifier: String?) -> Bool {
         if message.contains("[heartbeat]") {
-            // Expose the host request and the pump's applied schedule, keeping other heartbeat chatter muted.
-            // Scheduling and wake events tagged [delayedConnect] already pass through below.
-            return message.contains("setBLEHeartbeatRequest(") || message.contains("providesHeartbeat=")
+            // Track request and applied schedule separately: they normally alternate.
+            // Keep the first message and any changed request/target, suppress exact repeats.
+            guard let kind = ["setBLEHeartbeatRequest(", "providesHeartbeat="].first(where: { message.contains($0) }) else {
+                return false
+            }
+            let device = deviceIdentifier ?? ""
+            heartbeatLogLock.lock()
+            defer { heartbeatLogLock.unlock() }
+            guard lastHeartbeatLogMessages[device]?[kind] != message else { return false }
+            lastHeartbeatLogMessages[device, default: [:]][kind] = message
+            return true
         }
 
         if message.range(of: #"^[0-9a-fA-F]{16,}$"#, options: .regularExpression) != nil {
@@ -680,7 +690,7 @@ extension BaseDeviceDataManager: DeviceManagerDelegate {
 
     func deviceManager(
         _: DeviceManager,
-        logEventForDeviceIdentifier _: String?,
+        logEventForDeviceIdentifier deviceIdentifier: String?,
         type: DeviceLogEntryType,
         message: String,
         completion _: ((Error?) -> Void)?
@@ -691,7 +701,7 @@ extension BaseDeviceDataManager: DeviceManagerDelegate {
             {
                 return
             }
-            guard shouldLogDeviceMessage(message) else { return }
+            guard shouldLogDeviceMessage(message, deviceIdentifier: deviceIdentifier) else { return }
         }
 
         debug(.deviceManager, "Device message: \(message)")

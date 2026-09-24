@@ -78,11 +78,11 @@ extension PluginSource: CGMManagerDelegate {
     func deviceManager(
         _: LoopKit.DeviceManager,
         logEventForDeviceIdentifier deviceIdentifier: String?,
-        type _: LoopKit.DeviceLogEntryType,
+        type: LoopKit.DeviceLogEntryType,
         message: String,
         completion _: ((Error?) -> Void)?
     ) {
-        if shouldLogCGMDeviceMessage(message) {
+        if type == .error || shouldLogCGMDeviceMessage(message) {
             debug(.deviceManager, "device Manager for \(String(describing: deviceIdentifier)) : \(message)")
         }
 
@@ -109,6 +109,28 @@ extension PluginSource: CGMManagerDelegate {
     }
 
     private func shouldLogCGMDeviceMessage(_ message: String) -> Bool {
+        // Keep decoded readings and failures, but omit routine transport hex dumps.
+        if message.range(of: #"^(control|backfill|auth) [0-9a-fA-F]+$"#, options: .regularExpression) != nil {
+            return false
+        }
+
+        // Match known successful authentication messages narrowly so rejected verdicts,
+        // pairing/recovery messages and unexpected responses remain visible.
+        if [
+            "Authenticating with the saved key",
+            "Already authenticated and bonded",
+            "Challenge: the sensor's answer verified",
+            "Challenge: verdict auth=1 bond=1"
+        ].contains(message) {
+            return false
+        }
+
+        if message.hasPrefix("Characteristics: authentication ") ||
+            message.hasPrefix("Challenge: sending ours as display type ")
+        {
+            return false
+        }
+
         if message == "Sensor connected" {
             return false
         }
