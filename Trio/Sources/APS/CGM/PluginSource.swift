@@ -8,6 +8,10 @@ import LoopKitUI
 import Swinject
 
 final class PluginSource: GlucoseSource {
+    private enum SensorReadingError: Error {
+        case invalidG7GlucoseResponse
+    }
+
     private let processQueue = DispatchQueue(label: "DexcomSource.processQueue")
     private let glucoseStorage: GlucoseStorage!
     private let nightscoutManager: NightscoutManager?
@@ -16,6 +20,7 @@ final class PluginSource: GlucoseSource {
     // Prevent spamming the same note repeatedly
     private var lastUploadedNote: (message: String, date: Date)?
     private let noteThrottleInterval: TimeInterval = 5 * 60 // 5 minuter mellan uppladdningar notes
+    private var invalidGlucoseResponseNoteSent = false
 
     var glucoseManager: FetchGlucoseManager?
 
@@ -76,7 +81,7 @@ final class PluginSource: GlucoseSource {
 
 extension PluginSource: CGMManagerDelegate {
     func deviceManager(
-        _: LoopKit.DeviceManager,
+        _ manager: LoopKit.DeviceManager,
         logEventForDeviceIdentifier deviceIdentifier: String?,
         type: LoopKit.DeviceLogEntryType,
         message: String,
@@ -84,6 +89,16 @@ extension PluginSource: CGMManagerDelegate {
     ) {
         if type == .error || shouldLogCGMDeviceMessage(message) {
             debug(.deviceManager, "device Manager for \(String(describing: deviceIdentifier)) : \(message)")
+        }
+
+        // G7SensorKit only logs this failure; it does not emit a CGMReadingResult.
+        // Match narrowly: other transport errors do not establish this condition.
+        if manager is G7CGMManager, type == .error,
+           message == "Sensor error Unable to handle glucose control response"
+        {
+            processQueue.async {
+                _ = self.readCGMResult(readingResult: .error(SensorReadingError.invalidG7GlucoseResponse))
+            }
         }
 
         // Trigga ENDAST när en sensorsession definitivt har övergetts/avslutats
@@ -258,7 +273,17 @@ extension PluginSource: CGMManagerDelegate {
             }()
 
             let note: String?
-            if let token = stateToken {
+            var isNewGlucoseResponseFailure = false
+            if let sensorError = err as? SensorReadingError, case .invalidG7GlucoseResponse = sensorError {
+                // One note per outage; changing raw replies must not create more notes.
+                if invalidGlucoseResponseNoteSent {
+                    note = nil
+                } else {
+                    invalidGlucoseResponseNoteSent = true
+                    isNewGlucoseResponseFailure = true
+                    note = "⛔️ Dexcom G7: Kunde inte tolka sensorns glukossvar – inga nya glukosvärden från svaret"
+                }
+            } else if let token = stateToken {
                 switch token {
                 case "temporarySensorIssue":
                     note = "⚠️ Dexcom G7: Tillfälligt sensorfel!"
@@ -284,7 +309,8 @@ extension PluginSource: CGMManagerDelegate {
                 let now = Date()
                 let shouldUpload: Bool
                 if let last = lastUploadedNote {
-                    shouldUpload = (last.message != note) || (now.timeIntervalSince(last.date) > noteThrottleInterval)
+                    shouldUpload = isNewGlucoseResponseFailure || (last.message != note) ||
+                        (now.timeIntervalSince(last.date) > noteThrottleInterval)
                 } else {
                     shouldUpload = true
                 }
@@ -307,6 +333,10 @@ extension PluginSource: CGMManagerDelegate {
 
         switch readingResult {
         case let .newData(values):
+            // Old backfill or display-only readings do not establish recovery.
+            if values.contains(where: { !$0.isDisplayOnly && $0.date >= Date().addingTimeInterval(-5 * 60) }) {
+                invalidGlucoseResponseNoteSent = false
+            }
             if values.isNotEmpty {
                 setContactImagesForceStaleBG(false)
             }
