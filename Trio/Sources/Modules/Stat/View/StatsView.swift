@@ -82,7 +82,7 @@ struct StatsView: View {
                     Text(intervalAverage.formatted(.number.grouping(.never).rounded().precision(.fractionLength(1))) + " min")
                 }
                 VStack(spacing: 5) {
-                    Text("Duration").font(.subheadline).foregroundColor(headline)
+                    Text("Tid").font(.subheadline).foregroundColor(headline)
                     Text(
                         (medianDuration * 60)
                             .formatted(.number.grouping(.never).rounded().precision(.fractionLength(1))) + " s"
@@ -183,7 +183,7 @@ struct StatsView: View {
             let numberOfDays = (current - previous).timeInterval / 8.64E4
 
             VStack(spacing: 5) {
-                Text(numberOfDays < 1 ? "Readings" : "Readings / 24 h").font(.subheadline)
+                Text(numberOfDays < 1 ? "Readings" : "Readings / 24h").font(.subheadline)
                     .foregroundColor(.secondary)
                 Text(bgs.readings.formatted(.number.grouping(.never).rounded().precision(.fractionLength(0))))
             }
