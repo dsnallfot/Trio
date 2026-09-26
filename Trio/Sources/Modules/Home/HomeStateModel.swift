@@ -48,6 +48,7 @@ extension Home {
         var percentage: Int = 100
         var setupPump = false
         var errorMessage: String?
+        var sensorIssue: CGMSensorIssue?
         var errorDate: Date?
         var bolusProgress: Decimal?
         var eventualBG: Int?
@@ -133,6 +134,12 @@ extension Home {
         typealias PumpEvent = PumpEventStored.EventType
 
         override func subscribe() {
+            fetchGlucoseManager.sensorIssue
+                .removeDuplicates()
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] in self?.sensorIssue = $0 }
+                .store(in: &subscriptions)
+
             coreDataPublisher =
                 changedObjectsOnManagedObjectContextDidSavePublisher()
                     .receive(on: queue)

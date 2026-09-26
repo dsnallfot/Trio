@@ -74,6 +74,16 @@ final class PluginSource: GlucoseSource {
         }
     }
 
+    private func publishSensorIssue(_ message: String?) {
+        guard let glucoseManager = glucoseManager,
+              let activeSource = glucoseManager.glucoseSource as? PluginSource,
+              activeSource === self
+        else { return }
+        // Preserve the onset time across repeated reports and visits to Home.
+        guard glucoseManager.sensorIssue.value?.message != message else { return }
+        glucoseManager.sensorIssue.send(message.map { CGMSensorIssue(message: $0, since: Date()) })
+    }
+
     deinit {
         // dexcomManager.transmitter.stopScanning()
     }
@@ -274,14 +284,15 @@ extension PluginSource: CGMManagerDelegate {
 
             let note: String?
             var isNewGlucoseResponseFailure = false
+            var suppressRepeatedGlucoseResponseNote = false
             if let sensorError = err as? SensorReadingError, case .invalidG7GlucoseResponse = sensorError {
-                // One note per outage; changing raw replies must not create more notes.
+                // Keep the UI warning even when the Nightscout note is suppressed.
+                note = "⛔️ Dexcom G7: Kunde inte tolka sensorns glukossvar"
                 if invalidGlucoseResponseNoteSent {
-                    note = nil
+                    suppressRepeatedGlucoseResponseNote = true
                 } else {
                     invalidGlucoseResponseNoteSent = true
                     isNewGlucoseResponseFailure = true
-                    note = "⛔️ Dexcom G7: Kunde inte tolka sensorns glukossvar – inga nya glukosvärden från svaret"
                 }
             } else if let token = stateToken {
                 switch token {
@@ -305,7 +316,12 @@ extension PluginSource: CGMManagerDelegate {
                 note = "⚠️ Dexcom G7: Okänt fel"
             }
 
+            // A status token alone does not establish recovery; wait for usable readings.
             if let note = note {
+                publishSensorIssue(note)
+            }
+
+            if let note = note, !suppressRepeatedGlucoseResponseNote {
                 let now = Date()
                 let shouldUpload: Bool
                 if let last = lastUploadedNote {
@@ -336,6 +352,7 @@ extension PluginSource: CGMManagerDelegate {
             // Old backfill or display-only readings do not establish recovery.
             if values.contains(where: { !$0.isDisplayOnly && $0.date >= Date().addingTimeInterval(-5 * 60) }) {
                 invalidGlucoseResponseNoteSent = false
+                publishSensorIssue(nil)
             }
             if values.isNotEmpty {
                 setContactImagesForceStaleBG(false)

@@ -7,6 +7,11 @@ import SwiftDate
 import Swinject
 import UIKit
 
+struct CGMSensorIssue: Equatable {
+    let message: String
+    let since: Date
+}
+
 protocol FetchGlucoseManager: SourceInfoProvider {
     func updateGlucoseStore(newBloodGlucose: [BloodGlucose])
     func refreshCGM()
@@ -14,6 +19,7 @@ protocol FetchGlucoseManager: SourceInfoProvider {
     func deleteGlucoseSource()
     func removeCalibrations()
     var glucoseSource: GlucoseSource? { get }
+    var sensorIssue: CurrentValueSubject<CGMSensorIssue?, Never> { get }
     var cgmManager: CGMManagerUI? { get }
     var cgmGlucoseSourceType: CGMType { get set }
     var cgmGlucosePluginId: String { get }
@@ -83,7 +89,13 @@ final class BaseFetchGlucoseManager: FetchGlucoseManager, Injectable {
         subscribe()
     }
 
-    var glucoseSource: GlucoseSource?
+    let sensorIssue = CurrentValueSubject<CGMSensorIssue?, Never>(nil)
+
+    var glucoseSource: GlucoseSource? {
+        didSet {
+            sensorIssue.send(nil)
+        }
+    }
 
     func removeCalibrations() {
         calibrationService.removeAllCalibrations()

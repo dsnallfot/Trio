@@ -810,28 +810,35 @@ extension Home {
                 HStack {
                     Spacer()
                     VStack {
-                        Text("⚠️ Säkerhetsnotiser är AV")
+                        Text(state.sensorIssue.map {
+                            "Sensorstatus · " + $0.since.formatted(date: .omitted, time: .shortened)
+                        } ?? "⚠️ Säkerhetsnotiser är AV")
                             .font(.headline)
                             .fontWeight(.bold)
                             .fontDesign(.rounded)
                             .foregroundStyle(.white.gradient)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                        Text("Fixa det nu genom att aktivera notiser.")
+                        Text(state.sensorIssue?.message ?? "Fixa det nu genom att aktivera notiser.")
                             .font(.footnote)
                             .fontDesign(.rounded)
                             .foregroundStyle(.white.gradient)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }.padding(.leading, 5)
                     Spacer()
-                    Image(systemName: "chevron.right").foregroundColor(.white)
-                        .font(.headline)
+                    if state.sensorIssue == nil {
+                        Image(systemName: "chevron.right").foregroundColor(.white)
+                            .font(.headline)
+                    }
                 }.padding(.horizontal, 10)
+                    .padding(.vertical, state.sensorIssue == nil ? 0 : 8)
                     .padding(.trailing, 8)
                     .onTapGesture {
+                        guard state.sensorIssue == nil else { return }
                         UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!)
                     }
             }
-            .frame(height: HomeLayout.statsBannerHeight)
+            .frame(minHeight: HomeLayout.statsBannerHeight)
+            .fixedSize(horizontal: false, vertical: true)
             .glassPanel()
             .padding(.horizontal, 10)
             .padding(.top, 0)
@@ -844,7 +851,7 @@ extension Home {
                     .padding(.top, 5)
                     .padding(.bottom, 20)
                     .safeAreaInset(edge: .top, spacing: 0) {
-                        if notificationsDisabled {
+                        if notificationsDisabled || state.sensorIssue != nil {
                             alertSafetyNotificationsView(geo: geo)
                         }
                     }
