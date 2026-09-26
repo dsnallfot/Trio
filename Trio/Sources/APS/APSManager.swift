@@ -111,8 +111,6 @@ final class BaseAPSManager: APSManager, Injectable {
 
     private var lifetime = Lifetime()
 
-    private var backGroundTaskID: UIBackgroundTaskIdentifier?
-
     var pumpManager: PumpManagerUI? {
         get { deviceDataManager.pumpManager }
         set { deviceDataManager.pumpManager = newValue }
@@ -254,19 +252,9 @@ final class BaseAPSManager: APSManager, Injectable {
         lastLoopStartDate = loopStartDate
         isLooping.send(true)
 
-        // start background time extension
-        backGroundTaskID = await UIApplication.shared.beginBackgroundTask(withName: "Loop startar") {
-            guard let backgroundTask = self.backGroundTaskID else { return }
-            BackgroundTaskDiagnostics.shared.record(.expiration, id: backgroundTask, name: "loop", reason: "time-limit")
-            Task {
-                UIApplication.shared.endBackgroundTask(backgroundTask)
-                BackgroundTaskDiagnostics.shared.record(.end, id: backgroundTask, name: "loop", reason: "expiration")
-            }
-            self.backGroundTaskID = .invalid
-        }
-        if let id = backGroundTaskID {
-            BackgroundTaskDiagnostics.shared.record(.start, id: id, name: "loop")
-        }
+        // This lease belongs to this loop only. Uploads acquire their own lease before handoff returns.
+        let loopBackgroundTask = await UploadBackgroundTask(name: "loop")
+        await loopBackgroundTask.begin()
 
         let interval: Double?
         do {
@@ -309,6 +297,7 @@ final class BaseAPSManager: APSManager, Injectable {
                 loopStatRecord.duration = roundDouble((loopStatRecord.end! - loopStatRecord.start).timeInterval / 60, 2)
                 loopStatRecord.loopStatus = "Success"
                 await loopCompleted(loopStatRecord: loopStatRecord)
+                await finishLoopUploadHandoff(backgroundTask: loopBackgroundTask)
                 return
             }
 
@@ -325,19 +314,14 @@ final class BaseAPSManager: APSManager, Injectable {
             await loopCompleted(error: error, loopStatRecord: loopStatRecord)
         }
 
-        if let nightscoutManager = nightscout {
-            await nightscoutManager.uploadCarbs()
-            await nightscoutManager.uploadPumpHistory()
-            await nightscoutManager.uploadOverrides()
-            await nightscoutManager.uploadTempTargets()
-        }
+        await finishLoopUploadHandoff(backgroundTask: loopBackgroundTask)
+    }
 
-        // End background task after all the operations are completed
-        if let backgroundTask = backGroundTaskID {
-            await UIApplication.shared.endBackgroundTask(backgroundTask)
-            BackgroundTaskDiagnostics.shared.record(.end, id: backgroundTask, name: "loop", reason: "after-uploads")
-            backGroundTaskID = .invalid
+    private func finishLoopUploadHandoff(backgroundTask: UploadBackgroundTask) async {
+        if let nightscoutManager = nightscout {
+            await nightscoutManager.enqueueLoopUploads()
         }
+        await backgroundTask.end(reason: "upload-handoff")
     }
 
     //     Loop exit point
@@ -349,11 +333,6 @@ final class BaseAPSManager: APSManager, Injectable {
             warning(.apsManager, errorDescription)
             // Daniel: Added to upload loop failure reasons as a note to Nightscout
             await nightscout.uploadErrors(withNotes: errorDescription)
-            if let backgroundTask = backGroundTaskID {
-                await UIApplication.shared.endBackgroundTask(backgroundTask)
-                BackgroundTaskDiagnostics.shared.record(.end, id: backgroundTask, name: "loop", reason: "loop-error")
-                backGroundTaskID = .invalid
-            }
             processError(error)
         } else {
             // Daniel: Minska loggning // debug(.apsManager, "Loop lyckades")
@@ -367,12 +346,7 @@ final class BaseAPSManager: APSManager, Injectable {
             await reportEnacted(wasEnacted: error == nil)
         }
 
-        // End of the BG tasks
-        if let backgroundTask = backGroundTaskID {
-            await UIApplication.shared.endBackgroundTask(backgroundTask)
-            BackgroundTaskDiagnostics.shared.record(.end, id: backgroundTask, name: "loop", reason: "loop-completed")
-            backGroundTaskID = .invalid
-        }
+        // The caller ends the loop lease after Nightscout has acquired upload background time.
     }
 
     private func verifyStatus() -> Error? {

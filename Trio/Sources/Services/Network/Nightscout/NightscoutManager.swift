@@ -14,6 +14,8 @@ protocol NightscoutManager: GlucoseSource {
     func deleteManualGlucose(withID id: String) async
     func deleteGlucose(withID id: String) async
     func uploadDeviceStatus() async
+    /// Returns after upload background time is acquired, without waiting for the network.
+    func enqueueLoopUploads() async
     func uploadErrors(withNotes notes: String) async
     func uploadGlucose() async
     func uploadCarbs() async
@@ -136,6 +138,13 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
 
     private var lastEnactedDetermination: Determination?
     private var lastSuggestedDetermination: Determination?
+    // Only accessed by the serial status worker. Transport diagnostics are excluded from this key.
+    private var lastStatusUploadKey: Data?
+    private var lastStatusUploadDate = Date.distantPast
+    @MainActor private lazy var statusUploadWorker = NightscoutUploadWorker(name: "nightscout-status")
+    @MainActor private lazy var treatmentUploadCoordinator = NightscoutTreatmentUploadCoordinator()
+    @MainActor private lazy var loopUploadWorker = NightscoutUploadWorker(name: "nightscout-treatments")
+    @MainActor private lazy var podAgeUploadWorker = NightscoutUploadWorker(name: "nightscout-pod-age")
 
     // Queue for handling Core Data change notifications
     private let queue = DispatchQueue(label: "BaseNightscoutManager.queue", qos: .utility)
@@ -636,6 +645,37 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
     /// - Note: Ensure `nightscoutAPI` is initialized and `isUploadEnabled` is set to `true` before invoking this function.
     /// - Returns: Nothing.
     func uploadDeviceStatus() async {
+        let upload = await scheduleDeviceStatusUpload()
+        await upload.value
+    }
+
+    func enqueueLoopUploads() async {
+        _ = await scheduleDeviceStatusUpload()
+        _ = await scheduleLoopTreatmentUploads()
+    }
+
+    @MainActor private func scheduleDeviceStatusUpload() -> Task<Void, Never> {
+        statusUploadWorker.enqueue { [weak self] in
+            await self?.performDeviceStatusUpload()
+        }
+    }
+
+    @MainActor private func scheduleLoopTreatmentUploads() -> Task<Void, Never> {
+        loopUploadWorker.enqueue { [weak self] in
+            guard let self = self else { return }
+            guard !Task.isCancelled else { return }
+            await self.uploadCarbs()
+            guard !Task.isCancelled else { return }
+            await self.uploadPumpHistory()
+            guard !Task.isCancelled else { return }
+            await self.uploadOverrides()
+            guard !Task.isCancelled else { return }
+            await self.uploadTempTargets()
+        }
+    }
+
+    private func performDeviceStatusUpload() async {
+        guard !Task.isCancelled else { return }
         guard shouldAttemptNightscoutRequest("status") else {
             return
         }
@@ -879,9 +919,23 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             oref2: oref2Data
         )
 
+        let started = Date()
+        let revision =
+            "suggested=\(suggestedToUpload?.deliverAt?.description ?? "nil") enacted=\(enactedToUpload?.timestamp?.description ?? "nil")"
         do {
+            try Task.checkCancellation()
+            // Match the complete clinical payload, including enacted updates and pump state.
+            // Memory sampling must not turn a duplicate Core Data notification into another POST.
+            let uploadKey = try status.uploadComparisonKey(
+                destination: keychain.getValue(String.self, forKey: NightscoutConfig.Config.urlKey) ?? ""
+            )
+            if uploadKey == lastStatusUploadKey, Date().timeIntervalSince(lastStatusUploadDate) < 60 {
+                return
+            }
+            debug(.nightscout, "NS status start \(revision)")
             try await nightscout.uploadDeviceStatus(status)
-            // Daniel: Minska loggning // debug(.nightscout, "NSDeviceStatus with Determination uploaded")
+            // Do not acknowledge a cancelled attempt; the next trigger will fetch current status again.
+            try Task.checkCancellation()
 
             // Mark the suggested determination as uploaded.
             if let suggested = fetchedSuggestedDetermination {
@@ -902,12 +956,23 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             if let latestEnacted = processedEnactedDetermination {
                 lastEnactedDetermination = latestEnacted
             }
+            lastStatusUploadKey = uploadKey
+            lastStatusUploadDate = Date()
+            debug(.nightscout, "NS status success \(revision) elapsedSec=\(Date().timeIntervalSince(started))")
         } catch {
-            debug(.nightscout, error.localizedDescription)
+            let nsError = error as NSError
+            debug(
+                .nightscout,
+                "NS status failed \(revision) elapsedSec=\(Date().timeIntervalSince(started)) cancelled=\(Task.isCancelled) error=\(nsError.domain)/\(nsError.code): \(error.localizedDescription)"
+            )
         }
 
-        Task.detached {
-            await self.uploadPodAge()
+        guard !Task.isCancelled else { return }
+        await MainActor.run {
+            _ = podAgeUploadWorker.enqueue { [weak self] in
+                guard !Task.isCancelled else { return }
+                await self?.uploadPodAge()
+            }
         }
     }
 
@@ -1277,7 +1342,28 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         debug(.nightscout, "Local glucose upload successful: \(glucoseValue) mg/dL, date: \(latestGlucose.date)")
     }
 
+    // All callers enter here before fetching pending records. The worker owns the entire
+    // fetch -> network (including override deletion) -> persisted acknowledgement cycle.
+    @MainActor private func scheduleTreatmentUpload(_ kind: NightscoutTreatmentUploadKind) -> Task<Void, Never> {
+        treatmentUploadCoordinator.enqueue(kind) { [weak self] in
+            guard let self = self, !Task.isCancelled else { return }
+            switch kind {
+            case .manualGlucose: await self.performManualGlucoseUpload()
+            case .pumpHistory: await self.performPumpHistoryUpload()
+            case .carbs: await self.performCarbsUpload()
+            case .overrides: await self.performOverridesUpload()
+            case .tempTargets: await self.performTempTargetsUpload()
+            }
+        }
+    }
+
     func uploadManualGlucose() async {
+        let upload = await scheduleTreatmentUpload(.manualGlucose)
+        await upload.value
+    }
+
+    private func performManualGlucoseUpload() async {
+        guard !Task.isCancelled else { return }
         guard shouldAttemptNightscoutRequest("manual glucose") else {
             return
         }
@@ -1294,6 +1380,12 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
     // MARK: - Upload: Pump History with Deduplication
 
     func uploadPumpHistory() async {
+        let upload = await scheduleTreatmentUpload(.pumpHistory)
+        await upload.value
+    }
+
+    private func performPumpHistoryUpload() async {
+        guard !Task.isCancelled else { return }
         guard shouldAttemptNightscoutRequest("pump history") else {
             return
         }
@@ -1342,29 +1434,50 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
     }
 
     func uploadCarbs() async {
+        let upload = await scheduleTreatmentUpload(.carbs)
+        await upload.value
+    }
+
+    private func performCarbsUpload() async {
+        guard !Task.isCancelled else { return }
         guard shouldAttemptNightscoutRequest("carbs") else {
             return
         }
 
         await uploadCarbs(carbsStorage.getCarbsNotYetUploadedToNightscout())
+        guard !Task.isCancelled else { return }
         await uploadCarbs(carbsStorage.getFPUsNotYetUploadedToNightscout())
     }
 
     func uploadOverrides() async {
+        let upload = await scheduleTreatmentUpload(.overrides)
+        await upload.value
+    }
+
+    private func performOverridesUpload() async {
+        guard !Task.isCancelled else { return }
         guard shouldAttemptNightscoutRequest("overrides") else {
             return
         }
 
         await uploadOverrides(overridesStorage.getOverridesNotYetUploadedToNightscout())
+        guard !Task.isCancelled else { return }
         await uploadOverrideRuns(overridesStorage.getOverrideRunsNotYetUploadedToNightscout())
     }
 
     func uploadTempTargets() async {
+        let upload = await scheduleTreatmentUpload(.tempTargets)
+        await upload.value
+    }
+
+    private func performTempTargetsUpload() async {
+        guard !Task.isCancelled else { return }
         guard shouldAttemptNightscoutRequest("temp targets") else {
             return
         }
 
         await uploadTempTargets(await tempTargetsStorage.getTempTargetsNotYetUploadedToNightscout())
+        guard !Task.isCancelled else { return }
         await uploadTempTargetRuns(await tempTargetsStorage.getTempTargetRunsNotYetUploadedToNightscout())
     }
 
@@ -1397,7 +1510,9 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         await backgroundContext.perform {
             let ids = glucose.map(\.id) as NSArray
             let fetchRequest: NSFetchRequest<GlucoseStored> = GlucoseStored.fetchRequest()
-            fetchRequest.predicate = NSPredicate(format: "id IN %@", ids)
+            // Manual readings can also be sent as SGV entries, but their shared NS flag
+            // belongs to the BG Check upload. An SGV response must not skip that treatment.
+            fetchRequest.predicate = NSPredicate(format: "id IN %@ AND isManual == NO", ids)
 
             do {
                 let results = try self.backgroundContext.fetch(fetchRequest)
@@ -1437,6 +1552,18 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
 
     // Daniel: Added to upload bolus failure reasons as a note to Nightscout
     internal func uploadErrors(withNotes notes: String) async {
+        // Hand off before returning to the dosing/loop caller; network latency must not hold its gate.
+        await MainActor.run {
+            // Each error note is distinct; never coalesce or replace it with a later note.
+            let worker = NightscoutUploadWorker(name: "nightscout-error")
+            _ = worker.enqueue { [weak self] in
+                await self?.performErrorUpload(withNotes: notes)
+            }
+        }
+    }
+
+    private func performErrorUpload(withNotes notes: String) async {
+        guard !Task.isCancelled else { return }
         let errorNote = NightscoutTreatment(
             duration: nil,
             rawDuration: nil,
@@ -1621,8 +1748,6 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
                     newDuration: override.duration,
                     using: nightscout
                 )
-
-                try await nightscout.uploadOverrides([override])
 
                 processedOverrides.append(override)
             }
@@ -2100,5 +2225,133 @@ extension BaseNightscoutManager {
 
             debug(.nightscout, "✅ Test av parseReasonGlucoseValuesToMmolL slutförd")
         #endif
+    }
+}
+
+// MARK: - Upload background lifetime
+
+extension NightscoutStatus {
+    func uploadComparisonKey(destination: String) throws -> Data {
+        var comparison = self
+        comparison.additional?.removeValue(forKey: "memoryUsageLatest")
+        comparison.additional?.removeValue(forKey: "memoryUsageMax")
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        var key = try encoder.encode(comparison)
+        key.append(Data(destination.utf8))
+        return key
+    }
+}
+
+/// Main-actor ownership makes expiration and normal completion end a UIKit task exactly once.
+@MainActor final class UploadBackgroundTask {
+    private let name: String
+    private var identifier: UIBackgroundTaskIdentifier = .invalid
+    private var generation: UUID?
+    private var onExpiration: (() -> Void)?
+
+    var isActive: Bool { identifier != .invalid }
+
+    init(name: String) {
+        self.name = name
+    }
+
+    @discardableResult func begin(onExpiration: @escaping () -> Void = {}) -> Bool {
+        guard !isActive else { return true }
+        self.onExpiration = onExpiration
+        let generation = UUID()
+        self.generation = generation
+        identifier = UIApplication.shared.beginBackgroundTask(withName: name) { [weak self] in
+            // UIKit invokes expiration on the main thread.
+            MainActor.assumeIsolated {
+                guard let self = self, self.isActive, self.generation == generation else { return }
+                BackgroundTaskDiagnostics.shared.record(.expiration, id: self.identifier, name: self.name, reason: "time-limit")
+                let expiration = self.onExpiration
+                self.end(reason: "expiration")
+                expiration?()
+            }
+        }
+        guard isActive else {
+            self.onExpiration = nil
+            self.generation = nil
+            debug(.nightscout, "Background time unavailable: \(name)")
+            return false
+        }
+        BackgroundTaskDiagnostics.shared.record(.start, id: identifier, name: name)
+        return true
+    }
+
+    func end(reason: String) {
+        guard isActive else { return }
+        let id = identifier
+        identifier = .invalid
+        generation = nil
+        onExpiration = nil
+        UIApplication.shared.endBackgroundTask(id)
+        BackgroundTaskDiagnostics.shared.record(.end, id: id, name: name, reason: reason)
+    }
+}
+
+/// One request in flight and at most one pending refresh. Pending work always reads current data.
+/// The operation task is separate so expiration can cancel it without losing a later trigger.
+@MainActor final class NightscoutUploadWorker {
+    private let backgroundTask: UploadBackgroundTask
+    private var pending: (() async -> Void)?
+    private var drainTask: Task<Void, Never>?
+    private var operationTask: Task<Void, Never>?
+
+    init(name: String) {
+        backgroundTask = UploadBackgroundTask(name: name)
+    }
+
+    func enqueue(_ operation: @escaping () async -> Void) -> Task<Void, Never> {
+        guard backgroundTask.begin(onExpiration: { [weak self] in
+            self?.pending = nil
+            self?.operationTask?.cancel()
+        }) else {
+            // No timer/retry loop: another sensor, database, or reachability event will try again.
+            return drainTask ?? Task {}
+        }
+        pending = operation
+        if let drainTask = drainTask { return drainTask }
+        let task = Task {
+            while let operation = self.pending, self.backgroundTask.isActive {
+                self.pending = nil
+                let attempt = Task { await operation() }
+                self.operationTask = attempt
+                await attempt.value
+                self.operationTask = nil
+            }
+            self.drainTask = nil
+            self.backgroundTask.end(reason: "uploads-completed")
+        }
+        drainTask = task
+        return task
+    }
+}
+
+// One lane per treatment family. Override definitions and completed runs deliberately
+// share a lane because both can replace the same Nightscout entry.
+enum NightscoutTreatmentUploadKind: String, CaseIterable {
+    case manualGlucose
+    case pumpHistory
+    case carbs
+    case overrides
+    case tempTargets
+}
+
+@MainActor final class NightscoutTreatmentUploadCoordinator {
+    private var workers: [NightscoutTreatmentUploadKind: NightscoutUploadWorker] = [:]
+
+    func enqueue(_ kind: NightscoutTreatmentUploadKind, operation: @escaping () async -> Void) -> Task<Void, Never> {
+        let worker: NightscoutUploadWorker
+        if let existing = workers[kind] {
+            worker = existing
+        } else {
+            worker = NightscoutUploadWorker(name: "nightscout-\(kind.rawValue)")
+            workers[kind] = worker
+        }
+        // Coalesce triggers, never fetched payloads. Each pending pass fetches fresh data.
+        return worker.enqueue(operation)
     }
 }

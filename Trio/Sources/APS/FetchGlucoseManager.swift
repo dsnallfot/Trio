@@ -397,7 +397,7 @@ extension CGMManager {
     }
 }
 
-// Observes only the loop/glucose task IDs; it never starts or ends UIKit tasks.
+// Observes loop, glucose and upload task IDs; it never starts or ends UIKit tasks.
 // All mutable bookkeeping is protected by lock.
 final class BackgroundTaskDiagnostics: @unchecked Sendable {
     static let shared = BackgroundTaskDiagnostics()
