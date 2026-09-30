@@ -18,6 +18,13 @@ enum GlucoseImportFilter {
             first.addingTimeInterval(-timeBuffer) as NSDate,
             last.addingTimeInterval(timeBuffer) as NSDate
         )
+        // Only sensor readings (and deleted sensor readings) reserve CGM timestamps.
+        // A fingerstick may legitimately share a timestamp with an incoming sensor reading.
+        let manualKey = entityName == "DeletedGlucoseStored" ? "isManualGlucoseEntry" : "isManual"
+        request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
+            request.predicate!,
+            NSPredicate(format: "%K == NO OR %K == nil", manualKey, manualKey)
+        ])
         request.propertiesToFetch = ["date"]
         request.resultType = .dictionaryResultType
         var occupiedDates = try context.fetch(request).compactMap { $0["date"] as? Date }

@@ -21,6 +21,7 @@ enum Screen: Identifiable, Hashable {
     case cgm
     case cgmDirect
     case healthkit
+    case alarmKitSettings
     case glucoseNotificationSettings
     case mealSettings
     case iconConfig
@@ -94,6 +95,8 @@ extension Screen {
             CGM.RootView(resolver: resolver, displayClose: true)
         case .healthkit:
             AppleHealthKit.RootView(resolver: resolver)
+        case .alarmKitSettings:
+            AlarmKitSettings(resolver: resolver)
         case .glucoseNotificationSettings:
             GlucoseNotificationSettings.RootView(resolver: resolver)
         case .mealSettings:

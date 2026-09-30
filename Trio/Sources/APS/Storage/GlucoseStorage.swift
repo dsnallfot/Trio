@@ -267,7 +267,11 @@ final class BaseGlucoseStorage: GlucoseStorage, Injectable {
 
     func syncDate() -> Date {
         let fr = GlucoseStored.fetchRequest()
-        fr.predicate = NSPredicate.predicateForOneDayAgo
+        // Manual readings remain loop input, but must not advance the CGM import cursor.
+        fr.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
+            NSPredicate.predicateForOneDayAgo,
+            NSPredicate(format: "isManual == NO OR isManual == nil")
+        ])
         fr.sortDescriptors = [NSSortDescriptor(keyPath: \GlucoseStored.date, ascending: false)]
         fr.fetchLimit = 1
 

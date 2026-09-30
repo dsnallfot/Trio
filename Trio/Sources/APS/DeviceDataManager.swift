@@ -240,7 +240,7 @@ final class BaseDeviceDataManager: DeviceDataManager, Injectable {
             .sink { [weak self] _ in
                 guard let self = self else { return }
                 self.updatePumpBLEHeartbeat(
-                    lastCGMReadingDate: self.glucoseStorage.lastGlucoseDate(),
+                    lastCGMReadingDate: self.glucoseStorage.syncDate(),
                     expectedCGMReadingInterval: self.lastPumpHeartbeatRequest?.expectedCGMReadingInterval
                 )
             }

@@ -17,6 +17,12 @@ extension GlucoseNotificationSettings {
 
         var units: GlucoseUnits = .mgdL
 
+        func refreshGlucoseThresholds() {
+            let settings = settingsManager.settings
+            if lowGlucose != settings.lowGlucose { lowGlucose = settings.lowGlucose }
+            if highGlucose != settings.highGlucose { highGlucose = settings.highGlucose }
+        }
+
         override func subscribe() {
             let units = settingsManager.settings.units
             self.units = units

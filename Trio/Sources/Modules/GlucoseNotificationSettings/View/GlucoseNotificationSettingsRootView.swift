@@ -41,8 +41,6 @@ extension GlucoseNotificationSettings {
 
         var body: some View {
             List {
-                GlucoseAlarmSettingsSection(low: state.lowGlucose, high: state.highGlucose, units: state.units)
-                SystemAlarmSettingsSection()
                 SettingInputSection(
                     decimalValue: $decimalPlaceholder,
                     booleanValue: $state.notificationsPump,
@@ -162,7 +160,7 @@ extension GlucoseNotificationSettings {
                         Text("Standard: AV").bold()
 
                         Text(
-                            "När denna funktion är aktiverad spelas ett ljud upp för Trio-notiser om kolhydratbehov. Glukoslarmen har egna ljudinställningar ovan."
+                            "När denna funktion är aktiverad spelas ett ljud upp för Trio-notiser om kolhydratbehov. Glukoslarmen har egna ljudinställningar under Trio-alarm."
                         )
                     }
                 )
@@ -362,8 +360,11 @@ extension GlucoseNotificationSettings {
             }
             .scrollContentBackground(.hidden)
             .background(appState.trioBackgroundColor(for: colorScheme))
-            .onAppear(perform: configureView)
-            .navigationBarTitle("Trio-notiser och larm")
+            .onAppear {
+                configureView()
+                state.refreshGlucoseThresholds()
+            }
+            .navigationBarTitle("Trio-notiser")
             .navigationBarTitleDisplayMode(.automatic)
         }
 

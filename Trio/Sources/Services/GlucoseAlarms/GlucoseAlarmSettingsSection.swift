@@ -5,8 +5,8 @@ struct GlucoseAlarmSettingsSection: View {
     @ObservedObject private var manager = TrioAlertManager.shared
     @Environment(\.scenePhase) private var scenePhase
 
-    let low: Decimal
-    let high: Decimal
+    @Binding var low: Decimal
+    @Binding var high: Decimal
     let units: GlucoseUnits
 
     var body: some View {
@@ -133,6 +133,14 @@ struct GlucoseAlarmSettingsSection: View {
                     selection: $preferences.lowActivePeriod
                 )
 
+                GlucoseAlarmThresholdPicker(
+                    title: "Låg glukoslarmgräns",
+                    value: $low,
+                    lower: PickerSettingsProvider.shared.settings.lowGlucose.min,
+                    upper: PickerSettingsProvider.shared.settings.lowGlucose.max,
+                    units: units
+                )
+
                 tonePicker(
                     "Ljud vid lågt glukos",
                     selection: $preferences.lowTone
@@ -151,6 +159,14 @@ struct GlucoseAlarmSettingsSection: View {
             if preferences.highEnabled {
                 activePeriodPicker(
                     selection: $preferences.highActivePeriod
+                )
+
+                GlucoseAlarmThresholdPicker(
+                    title: "Hög glukoslarmgräns",
+                    value: $high,
+                    lower: PickerSettingsProvider.shared.settings.highGlucose.min,
+                    upper: PickerSettingsProvider.shared.settings.highGlucose.max,
+                    units: units
                 )
 
                 tonePicker(

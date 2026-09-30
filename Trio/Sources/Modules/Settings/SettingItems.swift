@@ -229,6 +229,7 @@ enum SettingItems {
 
     static let notificationItems = [
         SettingItem(title: "Manage iOS Preferences", view: .notificationSettings),
+        SettingItem(title: "Trio-alarm", view: .alarmKitSettings),
         SettingItem(
             title: "Trio Notifications",
             view: .glucoseNotificationSettings,

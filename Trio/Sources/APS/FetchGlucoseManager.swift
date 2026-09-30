@@ -231,7 +231,12 @@ final class BaseFetchGlucoseManager: FetchGlucoseManager, Injectable {
         CoreDataStack.shared.fetchEntities(
             ofType: GlucoseStored.self,
             onContext: context,
-            predicate: NSPredicate.predicateFor30MinAgo,
+            // Smoothing is applied to sensor readings only. In particular, a manual value
+            // newer than syncDate must not be smoothed and reinserted as a sensor reading.
+            predicate: NSCompoundPredicate(andPredicateWithSubpredicates: [
+                NSPredicate.predicateFor30MinAgo,
+                NSPredicate(format: "isManual == NO OR isManual == nil")
+            ]),
             key: "date",
             ascending: false,
             fetchLimit: 6

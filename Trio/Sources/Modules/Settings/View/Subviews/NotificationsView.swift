@@ -1,3 +1,4 @@
+import AlarmKit
 import Foundation
 import LoopKitUI
 import SwiftUI
@@ -7,6 +8,8 @@ struct NotificationsView: BaseView {
     let resolver: Resolver
 
     @ObservedObject var state: Settings.StateModel
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var alarmsAuthorized = false
     @State var notificationsDisabled = false
     @State var showAlert = false
     @State private var shouldDisplayHint: Bool = false
@@ -35,6 +38,44 @@ struct NotificationsView: BaseView {
                     manageNotifications
                 }
             )
+            .listRowBackground(Color.chart)
+
+            Section {
+                VStack {
+                    HStack {
+                        Text("Alarm")
+                        Spacer()
+                        onOff(alarmsAuthorized)
+                    }
+
+                    HStack(alignment: .top) {
+                        Text("Alarm kan höras även vid tyst läge och Fokus.")
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                            .lineLimit(nil)
+
+                        Spacer()
+
+                        Button {
+                            hintLabel = "Alarm"
+                            selectedVerboseHint = AnyView(
+                                VStack(alignment: .leading, spacing: 10) {
+                                    Text("Alarm kan höras även vid tyst läge och Fokus.")
+                                    Text(
+                                        "Tillåt alarm i iOS-inställningarna för Trio. Välj vilka larm du vill använda under Trio-alarm."
+                                    )
+                                }
+                            )
+                            shouldDisplayHint.toggle()
+                        } label: {
+                            Image(systemName: "questionmark.circle")
+                        }
+                        .buttonStyle(BorderlessButtonStyle())
+                    }
+                    .padding(.top)
+                }
+                .padding(.bottom)
+            }
             .listRowBackground(Color.chart)
 
             Section {
@@ -86,7 +127,10 @@ struct NotificationsView: BaseView {
             Section(
                 header: Text("Inställningar"),
                 content: {
-                    Text("Trio-notiser och larm")
+                    Text("Trio-alarm")
+                        .navigationLink(to: .alarmKitSettings, from: self)
+
+                    Text("Trio-notiser")
                         .navigationLink(to: .glucoseNotificationSettings, from: self)
 
                     if #available(iOS 16.2, *) {
@@ -101,6 +145,17 @@ struct NotificationsView: BaseView {
             .listRowBackground(Color.chart)
         }
         .listSectionSpacing(sectionSpacing)
+        .task {
+            alarmsAuthorized = AlarmManager.shared.authorizationState == .authorized
+            for await _ in AlarmManager.shared.authorizationUpdates {
+                alarmsAuthorized = AlarmManager.shared.authorizationState == .authorized
+            }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                alarmsAuthorized = AlarmManager.shared.authorizationState == .authorized
+            }
+        }
         .onReceive(
             resolver.resolve(AlertPermissionsChecker.self)!.$notificationsDisabled,
             perform: {

@@ -111,7 +111,7 @@ extension DexcomSourceG6: CGMManagerDelegate {
 
     func startDateToFilterNewData(for _: CGMManager) -> Date? {
         dispatchPrecondition(condition: .onQueue(processQueue))
-        return glucoseStorage.lastGlucoseDate()
+        return glucoseStorage.syncDate()
         //  return glucoseStore.latestGlucose?.startDate
     }
 
