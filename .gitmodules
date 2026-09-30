@@ -16,8 +16,8 @@
 	branch = trio
 [submodule "G7SensorKit"]
 	path = G7SensorKit
-	url = https://github.com/LoopKit/G7SensorKit.git
-	branch = next-dev
+	url = https://github.com/dsnallfot/G7SensorKit.git
+	branch = codex/trio-next-dev
 [submodule "MinimedKit"]
 	path = MinimedKit
 	url = https://github.com/loopandlearn/MinimedKit.git
