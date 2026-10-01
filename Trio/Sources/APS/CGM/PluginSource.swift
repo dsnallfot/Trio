@@ -20,7 +20,7 @@ final class PluginSource: GlucoseSource {
     // Prevent spamming the same note repeatedly
     private var lastUploadedNote: (message: String, date: Date)?
     private let noteThrottleInterval: TimeInterval = 5 * 60 // 5 minuter mellan uppladdningar notes
-    private var invalidGlucoseResponseNoteSent = false
+    private var reportedSensorIssueNotes: Set<String> = []
 
     var glucoseManager: FetchGlucoseManager?
 
@@ -283,17 +283,8 @@ extension PluginSource: CGMManagerDelegate {
             }()
 
             let note: String?
-            var isNewGlucoseResponseFailure = false
-            var suppressRepeatedGlucoseResponseNote = false
             if let sensorError = err as? SensorReadingError, case .invalidG7GlucoseResponse = sensorError {
-                // Keep the UI warning even when the Nightscout note is suppressed.
                 note = "⛔️ Dexcom G7: Kunde inte tolka sensorns glukossvar"
-                if invalidGlucoseResponseNoteSent {
-                    suppressRepeatedGlucoseResponseNote = true
-                } else {
-                    invalidGlucoseResponseNoteSent = true
-                    isNewGlucoseResponseFailure = true
-                }
             } else if let token = stateToken {
                 switch token {
                 case "temporarySensorIssue":
@@ -321,21 +312,10 @@ extension PluginSource: CGMManagerDelegate {
                 publishSensorIssue(note)
             }
 
-            if let note = note, !suppressRepeatedGlucoseResponseNote {
-                let now = Date()
-                let shouldUpload: Bool
-                if let last = lastUploadedNote {
-                    shouldUpload = isNewGlucoseResponseFailure || (last.message != note) ||
-                        (now.timeIntervalSince(last.date) > noteThrottleInterval)
-                } else {
-                    shouldUpload = true
-                }
-
-                if shouldUpload {
-                    lastUploadedNote = (note, now)
-                    Task { [weak self] in
-                        await self?.nightscoutManager?.uploadNoteTreatment(note: note)
-                    }
+            // Report each issue once until a usable reading establishes recovery.
+            if let note = note, reportedSensorIssueNotes.insert(note).inserted {
+                Task { [weak self] in
+                    await self?.nightscoutManager?.uploadNoteTreatment(note: note)
                 }
             }
         }
@@ -351,7 +331,12 @@ extension PluginSource: CGMManagerDelegate {
         case let .newData(values):
             // Old backfill or display-only readings do not establish recovery.
             if values.contains(where: { !$0.isDisplayOnly && $0.date >= Date().addingTimeInterval(-5 * 60) }) {
-                invalidGlucoseResponseNoteSent = false
+                if !reportedSensorIssueNotes.isEmpty {
+                    reportedSensorIssueNotes.removeAll()
+                    Task { [weak self] in
+                        await self?.nightscoutManager?.uploadNoteTreatment(note: "✅ Dexcom G7: Sensor återställd!")
+                    }
+                }
                 publishSensorIssue(nil)
             }
             if values.isNotEmpty {
