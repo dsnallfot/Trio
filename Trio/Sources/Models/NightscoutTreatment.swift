@@ -8,6 +8,7 @@ struct NightscoutTreatment: JSON, Hashable, Equatable {
     var rate: Decimal?
     var eventType: PumpEventStored.EventType
     var createdAt: Date?
+    var trioSentAt: Date?
     var enteredBy: String?
     var bolus: PumpHistoryEvent?
     var insulin: Decimal?
@@ -46,6 +47,7 @@ extension NightscoutTreatment {
         case rate
         case eventType
         case createdAt = "created_at"
+        case trioSentAt
         case enteredBy
         case bolus
         case insulin

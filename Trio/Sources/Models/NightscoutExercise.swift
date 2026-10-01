@@ -4,6 +4,7 @@ struct NightscoutExercise: JSON, Hashable, Equatable {
     var duration: Int?
     var eventType: OverrideStored.EventType
     var createdAt: Date
+    var trioSentAt: Date?
     var enteredBy: String?
     var notes: String?
     var id: UUID?
@@ -24,6 +25,7 @@ extension NightscoutExercise {
         case duration
         case eventType
         case createdAt = "created_at"
+        case trioSentAt
         case enteredBy
         case notes
         case id

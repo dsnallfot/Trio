@@ -39,6 +39,7 @@ extension NightscoutAPI {
             var eventType = "Note"
             var enteredBy = "Trio"
             var notes = "Trio connected"
+            var trioSentAt = Date()
         }
         let check = Check()
         var request = URLRequest(url: url.appendingPathComponent(Config.treatmentsPath))
@@ -339,7 +340,13 @@ extension NightscoutAPI {
         }
 
         do {
-            let encodedBody = try JSONCoding.encoder.encode(treatments)
+            let sentAt = Date()
+            let payload = treatments.map { treatment in
+                var treatment = treatment
+                treatment.trioSentAt = sentAt
+                return treatment
+            }
+            let encodedBody = try JSONCoding.encoder.encode(payload)
             request.httpBody = encodedBody
 //            debugPrint("Payload treatments size: \(encodedBody.count) bytes")
 //            debugPrint(String(data: encodedBody, encoding: .utf8) ?? "Invalid payload")
@@ -445,7 +452,9 @@ extension NightscoutAPI {
         if let secret = secret {
             request.addValue(secret.sha1(), forHTTPHeaderField: "api-secret")
         }
-        request.httpBody = try JSONCoding.encoder.encode(errorNote)
+        var payload = errorNote
+        payload.trioSentAt = Date()
+        request.httpBody = try JSONCoding.encoder.encode(payload)
         request.httpMethod = "POST"
         let (_, response) = try await URLSession.shared.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse, (200 ... 299).contains(httpResponse.statusCode) else {
@@ -538,7 +547,13 @@ extension NightscoutAPI {
             request.addValue(secret.sha1(), forHTTPHeaderField: "api-secret")
         }
         do {
-            let encodedBody = try JSONCoding.encoder.encode(overrides)
+            let sentAt = Date()
+            let payload = overrides.map { override in
+                var override = override
+                override.trioSentAt = sentAt
+                return override
+            }
+            let encodedBody = try JSONCoding.encoder.encode(payload)
             request.httpBody = encodedBody
         } catch {
             debug(.nightscout, "Error encoding payload: \(error.localizedDescription)")
