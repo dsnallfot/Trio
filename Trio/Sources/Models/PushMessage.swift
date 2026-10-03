@@ -142,6 +142,10 @@ struct PushMessage: Codable, Sendable {
 
             var comboDescription = "Combo \(noteDesc)\nBolus: \(bolusDesc), \(carbsDesc), \(fatDesc), \(proteinDesc)."
 
+            if let glucose = glucose {
+                comboDescription += "\nBlodsocker: \(glucose.formattedAsMmolL) mmol/L."
+            }
+
             if let override = overrideName, !override.isEmpty {
                 comboDescription += "\nOverride: \(override)."
             }
@@ -160,7 +164,7 @@ struct PushMessage: Codable, Sendable {
             description += "Radera fingerstick vid tidsstämpel \(timestampDesc)."
         case .glucose:
             let glucoseDesc = glucose != nil
-                ? "\(glucose!)"
+                ? "\(glucose!.formattedAsMmolL) mmol/L"
                 : "okänt blodsocker"
             description += "Blodsocker: \(glucoseDesc)."
         }

@@ -110,6 +110,10 @@ class TrioRemoteControl: Injectable {
             await handleMealCommand(pushMessage)
             markPendingRemoteCommandMealHandled(for: pushMessage)
 
+            if pushMessage.glucose != nil {
+                await handleGlucoseCommand(pushMessage)
+            }
+
             if let overrideName = pushMessage.overrideName,
                !overrideName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             {
