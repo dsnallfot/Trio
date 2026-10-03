@@ -14,6 +14,7 @@ struct PushMessage: Codable, Sendable {
     var timestamp: TimeInterval
     var overrideName: String?
     var scheduledTime: TimeInterval?
+    var originalTime: TimeInterval?
     var glucose: Decimal?
 
     enum CodingKeys: String, CodingKey {
@@ -31,6 +32,7 @@ struct PushMessage: Codable, Sendable {
         case timestamp
         case overrideName
         case scheduledTime = "scheduled_time"
+        case originalTime = "original_time"
         case glucose
     }
 
@@ -51,6 +53,7 @@ struct PushMessage: Codable, Sendable {
         if let scheduledTime = scheduledTime {
             try container.encode(scheduledTime, forKey: .scheduledTime)
         }
+        try container.encodeIfPresent(originalTime, forKey: .originalTime)
         try container.encodeIfPresent(glucose, forKey: .glucose)
     }
 
@@ -69,6 +72,7 @@ struct PushMessage: Codable, Sendable {
         timestamp = try container.decode(TimeInterval.self, forKey: .timestamp)
         overrideName = try container.decodeIfPresent(String.self, forKey: .overrideName)
         scheduledTime = try container.decodeIfPresent(TimeInterval.self, forKey: .scheduledTime)
+        originalTime = try container.decodeIfPresent(TimeInterval.self, forKey: .originalTime)
         glucose = try container.decodeIfPresent(Decimal.self, forKey: .glucose)
     }
 
@@ -86,6 +90,7 @@ struct PushMessage: Codable, Sendable {
         timestamp: TimeInterval,
         overrideName: String? = nil,
         scheduledTime: TimeInterval? = nil,
+        originalTime: TimeInterval? = nil,
         glucose: Decimal? = nil
     ) {
         self.user = user
@@ -101,6 +106,7 @@ struct PushMessage: Codable, Sendable {
         self.timestamp = timestamp
         self.overrideName = overrideName
         self.scheduledTime = scheduledTime
+        self.originalTime = originalTime
         self.glucose = glucose
     }
 
@@ -124,7 +130,11 @@ struct PushMessage: Codable, Sendable {
             description += "Temp Target: \(targetDesc), Duration: \(durationDesc)."
         case .cancelTempTarget:
             description += "Cancel Temp Target command."
-        case .meal:
+        case .editMeal,
+             .meal:
+            if commandType == .editMeal {
+                description += "Original meal time: \(originalTime.map { String($0) } ?? "missing"). "
+            }
             let carbsDesc = carbs != nil ? "\(carbs!)g carbs" : "unknown carbs"
             let fatDesc = fat != nil ? "\(fat!)g fat" : "unknown fat"
             let proteinDesc = protein != nil ? "\(protein!)g protein" : "unknown protein"

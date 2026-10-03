@@ -11,7 +11,7 @@ protocol CarbsObserver {
 protocol CarbsStorage {
     var updatePublisher: AnyPublisher<Void, Never> { get }
     func storeCarbs(_ carbs: [CarbsEntry], areFetchedFromRemote: Bool) async
-    func deleteCarbsEntryStored(_ treatmentObjectID: NSManagedObjectID) async
+    @discardableResult  func deleteCarbsEntryStored(_ treatmentObjectID: NSManagedObjectID) async -> Bool
     func syncDate() -> Date
     func recent() -> [CarbsEntry]
     func getCarbsNotYetUploadedToNightscout() async -> [NightscoutTreatment]
@@ -368,19 +368,18 @@ final class BaseCarbsStorage: CarbsStorage, Injectable {
         storage.retrieve(OpenAPS.Monitor.carbHistory, as: [CarbsEntry].self)?.reversed() ?? []
     }
 
-    func deleteCarbsEntryStored(_ treatmentObjectID: NSManagedObjectID) async {
+    @discardableResult  func deleteCarbsEntryStored(_ treatmentObjectID: NSManagedObjectID) async -> Bool {
         let taskContext = CoreDataStack.shared.newTaskContext()
         taskContext.name = "deleteContext"
         taskContext.transactionAuthor = "deleteCarbs"
 
-        var carbEntryFromCoreData: CarbEntryStored?
-
-        await taskContext.perform {
+        return await taskContext.perform {
             do {
-                carbEntryFromCoreData = try taskContext.existingObject(with: treatmentObjectID) as? CarbEntryStored
-                guard let carbEntry = carbEntryFromCoreData else {
+                guard let carbEntry = try taskContext.existingObject(with: treatmentObjectID) as? CarbEntryStored,
+                      !carbEntry.isDeleted, carbEntry.date != nil
+                else {
                     debugPrint("Carb entry for batch delete not found. \(DebuggingIdentifiers.failed)")
-                    return
+                    return false
                 }
 
                 // entry has fpuID
@@ -401,6 +400,7 @@ final class BaseCarbsStorage: CarbsStorage, Injectable {
                     debugPrint("\(DebuggingIdentifiers.succeeded) Deleted \(result?.result ?? 0) items with FpuID \(fpuID)")
 
                     // Notifiy subscribers of the batch delete
+                    guard let count = result?.result as? Int, count > 0 else { return false }
                     self.updateSubject.send(())
                 }
                 // entry has no fpuID
@@ -408,7 +408,7 @@ final class BaseCarbsStorage: CarbsStorage, Injectable {
                 else {
                     taskContext.delete(carbEntry)
 
-                    guard taskContext.hasChanges else { return }
+                    guard taskContext.hasChanges else { return false }
                     try taskContext.save()
 
                     debugPrint(
@@ -416,8 +416,10 @@ final class BaseCarbsStorage: CarbsStorage, Injectable {
                     )
                 }
 
+                return true
             } catch {
                 debugPrint("\(DebuggingIdentifiers.failed) Error deleting carb entry: \(error.localizedDescription)")
+                return false
             }
         }
     }

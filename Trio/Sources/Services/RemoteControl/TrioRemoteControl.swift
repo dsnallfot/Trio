@@ -100,6 +100,9 @@ class TrioRemoteControl: Injectable {
         case .deleteMeal:
             await handleDeleteMealCommand(pushMessage)
 
+        case .editMeal:
+            await handleEditMealCommand(pushMessage)
+
         case .combo:
             persistPendingRemoteCommandIfNeeded(for: pushMessage)
 
@@ -213,7 +216,11 @@ class TrioRemoteControl: Injectable {
             notes
         ]
 
-        return keyParts.joined(separator: "|")
+        let key = keyParts.joined(separator: "|")
+        if pushMessage.commandType == .editMeal {
+            return key + "|editMeal|" + (pushMessage.originalTime.map { String($0) } ?? "nil")
+        }
+        return key
     }
 
     internal func beginRemoteCommandIfNotDuplicate(_ key: String) -> Bool {
@@ -255,6 +262,7 @@ extension TrioRemoteControl {
         case cancelTempTarget = "cancel_temp_target"
         case meal
         case deleteMeal
+        case editMeal
         case combo
         case startOverride = "start_override"
         case cancelOverride = "cancel_override"
@@ -271,6 +279,8 @@ extension TrioRemoteControl {
                 return "Avbryt temporärt mål"
             case .meal:
                 return "Måltid"
+            case .editMeal:
+                return "Redigera Måltid"
             case .deleteMeal:
                 return "Radera Måltid"
             case .combo:

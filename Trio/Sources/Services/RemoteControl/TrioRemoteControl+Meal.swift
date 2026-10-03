@@ -4,28 +4,23 @@ import HealthKit
 import UIKit
 
 extension TrioRemoteControl {
-    func handleMealCommand(_ pushMessage: PushMessage) async {
+    @discardableResult  func handleMealCommand(_ pushMessage: PushMessage) async -> Bool {
         let diagnosticID = RuntimeDiagnostics.shared.begin("remoteMeal", force: true)
         defer { RuntimeDiagnostics.shared.end("remoteMeal", id: diagnosticID, force: true) }
         // If bolusAmount is not nil but all others are nil, exit early without logging an error
-        if pushMessage.bolusAmount != nil &&
-            pushMessage.carbs == nil &&
-            pushMessage.fat == nil &&
-            pushMessage.protein == nil
+        if pushMessage.bolusAmount != nil,
+           pushMessage.carbs == nil,
+           pushMessage.fat == nil,
+           pushMessage.protein == nil
         {
-            return
+            return false
         }
-        guard pushMessage.carbs != nil || pushMessage.fat != nil || pushMessage.protein != nil else {
-            await logError("Kommandot avvisades: måltidsdata är ofullständiga eller ogiltiga.", pushMessage: pushMessage)
-            return
-        }
-
         // --- DEDUPE START ---
         let commandKey = remoteCommandDedupKey(for: pushMessage, scope: .meal)
 
         guard beginRemoteCommandIfNotDuplicate(commandKey) else {
             debug(.remoteControl, "Remote måltid ignorerades som dublett. \(pushMessage.humanReadableDescription())")
-            return
+            return false
         }
 
         var shouldKeepMealDedupKey = false
@@ -49,46 +44,7 @@ extension TrioRemoteControl {
             notes = " Inlagt av: Trio (📲)"
         }
 
-        let settingsSelf = await TrioApp.resolver.resolve(SettingsManager.self)?.settings
-        let maxCarbs = settingsSelf?.maxCarbs ?? Decimal(0)
-        let maxFat = settingsSelf?.maxFat ?? Decimal(0)
-        let maxProtein = settingsSelf?.maxProtein ?? Decimal(0)
-
-        if let carbs = carbsDecimal, carbs > maxCarbs {
-            await logError(
-                "Kommandot avvisades: mängden kolhydrater (\(carbs)g) överskrider det maximalt tillåtna (\(maxCarbs)g).",
-                pushMessage: pushMessage
-            )
-            return
-        }
-
-        if let fat = fatDecimal, fat > maxFat {
-            await logError(
-                "Kommandot avvisades: mängden fett (\(fat)g) överskrider det maximalt tillåtna (\(maxFat)g).",
-                pushMessage: pushMessage
-            )
-            return
-        }
-
-        if let protein = proteinDecimal, protein > maxProtein {
-            await logError(
-                "Kommandot avvisades: mängden protein (\(protein)g) överskrider det maximalt tillåtna (\(maxProtein)g).",
-                pushMessage: pushMessage
-            )
-            return
-        }
-
-        let pushMessageDate = Date(timeIntervalSince1970: pushMessage.timestamp)
-        let recentCarbEntries = carbsStorage.recent()
-        let carbsAfterPushMessage = recentCarbEntries.filter { $0.createdAt > pushMessageDate }
-
-        if !carbsAfterPushMessage.isEmpty {
-            await logError(
-                "Kommandot avvisades: nyare måltidsregistreringar har loggats sedan kommandot skickades.",
-                pushMessage: pushMessage
-            )
-            return
-        }
+        guard await validateMealCommand(pushMessage) else { return false }
 
         let actualDate: Date?
         if let scheduledTime = pushMessage.scheduledTime {
@@ -153,7 +109,7 @@ extension TrioRemoteControl {
             "Remote måltid behandlades framgångsrikt. \(pushMessage.humanReadableDescription())"
         )
 
-        guard settings.settings.notificationsRemote else { return }
+        guard settings.settings.notificationsRemote else { return true }
 
         // Construct the notification body
         let cleanedNotes = notes
@@ -193,82 +149,173 @@ extension TrioRemoteControl {
         notificationBody = notificationBody.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
         // Send success notification
         notificationManager.notifyTrioRemoteControl(
-            title: "Remote Måltid",
+            title: pushMessage.commandType == .editMeal ? "Remote Redigera Måltid" : "Remote Måltid",
             body: notificationBody
         )
+        return true
     }
 
-    func handleDeleteMealCommand(_ pushMessage: PushMessage) async {
+    private func validateMealCommand(_ pushMessage: PushMessage) async -> Bool {
+        guard pushMessage.carbs != nil || pushMessage.fat != nil || pushMessage.protein != nil else {
+            await logError("Kommandot avvisades: måltidsdata är ofullständiga eller ogiltiga.", pushMessage: pushMessage)
+            return false
+        }
+
+        guard [pushMessage.carbs, pushMessage.fat, pushMessage.protein].allSatisfy({ ($0 ?? 0) >= 0 }),
+              pushMessage.scheduledTime.map({ $0.isFinite && $0 >= 0 && $0 < 253_402_300_800 }) ?? true
+        else {
+            await logError("Kommandot avvisades: ogiltiga måltidsvärden eller måltidstid.", pushMessage: pushMessage)
+            return false
+        }
+        let carbsDecimal = pushMessage.carbs.map { Decimal($0) }
+        let fatDecimal = pushMessage.fat.map { Decimal($0) }
+        let proteinDecimal = pushMessage.protein.map { Decimal($0) }
+        let settingsSelf = await TrioApp.resolver.resolve(SettingsManager.self)?.settings
+        let maxCarbs = settingsSelf?.maxCarbs ?? Decimal(0)
+        let maxFat = settingsSelf?.maxFat ?? Decimal(0)
+        let maxProtein = settingsSelf?.maxProtein ?? Decimal(0)
+
+        if let carbs = carbsDecimal, carbs > maxCarbs {
+            await logError(
+                "Kommandot avvisades: mängden kolhydrater (\(carbs)g) överskrider det maximalt tillåtna (\(maxCarbs)g).",
+                pushMessage: pushMessage
+            )
+            return false
+        }
+
+        if let fat = fatDecimal, fat > maxFat {
+            await logError(
+                "Kommandot avvisades: mängden fett (\(fat)g) överskrider det maximalt tillåtna (\(maxFat)g).",
+                pushMessage: pushMessage
+            )
+            return false
+        }
+
+        if let protein = proteinDecimal, protein > maxProtein {
+            await logError(
+                "Kommandot avvisades: mängden protein (\(protein)g) överskrider det maximalt tillåtna (\(maxProtein)g).",
+                pushMessage: pushMessage
+            )
+            return false
+        }
+
+        let pushMessageDate = Date(timeIntervalSince1970: pushMessage.timestamp)
+        let recentCarbEntries = carbsStorage.recent()
+        let carbsAfterPushMessage = recentCarbEntries.filter { $0.createdAt > pushMessageDate }
+
+        if pushMessage.commandType != .editMeal, !carbsAfterPushMessage.isEmpty {
+            await logError(
+                "Kommandot avvisades: nyare måltidsregistreringar har loggats sedan kommandot skickades.",
+                pushMessage: pushMessage
+            )
+            return false
+        }
+
+        return true
+    }
+
+    func handleEditMealCommand(_ pushMessage: PushMessage) async {
+        // timestamp is the send time; originalTime identifies the existing meal.
+        guard let originalTime = pushMessage.originalTime,
+              originalTime.isFinite, originalTime >= 0, originalTime < 253_402_300_800
+        else {
+            await logError("Kommandot avvisades: original_time krävs för måltidsredigering.", pushMessage: pushMessage)
+            return
+        }
+        guard pushMessage.bolusAmount == nil || pushMessage.bolusAmount == 0 else {
+            await logError("Kommandot avvisades: måltidsredigering får inte innehålla bolus.", pushMessage: pushMessage)
+            return
+        }
+
+        guard await validateMealCommand(pushMessage) else { return }
+        var replacement = pushMessage
+        replacement.scheduledTime = pushMessage.scheduledTime ?? originalTime
+        // This is a complete replacement. Omitted nutrients mean zero, not “keep old value”.
+        replacement.carbs = pushMessage.carbs ?? 0
+        replacement.fat = pushMessage.fat ?? 0
+        replacement.protein = pushMessage.protein ?? 0
+        replacement.bolusAmount = nil
+
+        // Reserve the entire edit before deletion, including duplicate pushes in flight.
+        let key = remoteCommandDedupKey(for: replacement, scope: .editMeal)
+        guard beginRemoteCommandIfNotDuplicate(key) else { return }
+        var completed = false
+        defer {
+            if completed {
+                finishRemoteCommandDedup(key)
+            } else {
+                cancelRemoteCommandDedup(key)
+            }
+        }
+
+        guard await handleDeleteMealCommand(replacement) else { return }
+        completed = await handleMealCommand(replacement)
+    }
+
+    @discardableResult  func handleDeleteMealCommand(_ pushMessage: PushMessage) async -> Bool {
         let resolver = TrioApp.resolver
         let provider: DataTable.Provider = resolver.resolve(DataTable.Provider.self) ?? DataTable.Provider(resolver: resolver)
 
-        let deletionTimestamp = pushMessage.scheduledTime ?? pushMessage.timestamp
-        let targetDate = Date(timeIntervalSince1970: deletionTimestamp)
-
-        let calendar = Calendar.current
-        let components = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: targetDate)
-        guard let startDate = calendar.date(from: components) else {
+        let isEdit = pushMessage.commandType == .editMeal
+        guard !isEdit || pushMessage.originalTime != nil else { return false }
+        let deletionTimestamp = isEdit ? pushMessage.originalTime! : (pushMessage.scheduledTime ?? pushMessage.timestamp)
+        guard deletionTimestamp.isFinite, deletionTimestamp >= 0, deletionTimestamp < 253_402_300_800 else {
             await logError(
                 "Kommandot avvisades: ogiltig tidsstämpel för måltidsradering.",
                 pushMessage: pushMessage
             )
-            return
+            return false
         }
 
-        let endDate = startDate.addingTimeInterval(60)
+        let startDate = Date(timeIntervalSince1970: deletionTimestamp.rounded(.down))
+
+        // Edits require one parent meal in the specified second. Keep legacy delete matching unchanged.
+        let endDate = startDate.addingTimeInterval(isEdit ? 1 : 60)
 
         let backgroundContext = CoreDataStack.shared.newTaskContext()
-        var matchingEntries: [CarbEntryStored] = []
+        let matchingIDs: [NSManagedObjectID]
 
         do {
-            try await backgroundContext.perform {
+            matchingIDs = try await backgroundContext.perform {
                 let request: NSFetchRequest<CarbEntryStored> = CarbEntryStored.fetchRequest()
                 request.predicate = NSPredicate(format: "date >= %@ AND date < %@", startDate as NSDate, endDate as NSDate)
-                request.fetchLimit = 1
-                matchingEntries = try backgroundContext.fetch(request)
+                if isEdit {
+                    request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
+                        request.predicate!, NSPredicate(format: "isFPU == NO")
+                    ])
+                }
+                request.fetchLimit = isEdit ? 2 : 1
+                return try backgroundContext.fetch(request).map(\.objectID)
             }
         } catch {
             await logError(
                 "Kommandot avvisades: kunde inte söka efter måltid att radera. \(error.localizedDescription)",
                 pushMessage: pushMessage
             )
-            return
+            return false
         }
 
-        guard let fetchedObjectID = matchingEntries.first?.objectID else {
+        guard !isEdit || matchingIDs.count <= 1 else {
+            await logError("Kommandot avvisades: flera måltider matchar original_time.", pushMessage: pushMessage)
+            return false
+        }
+
+        guard let treatmentObjectID = matchingIDs.first else {
             await logError(
                 "Kommandot avvisades: ingen matchande måltid hittades för den angivna tiden.",
                 pushMessage: pushMessage
             )
-            return
+            return false
         }
-
-        let mainContext = CoreDataStack.shared.persistentContainer.viewContext
-        let entryToDelete: CarbEntryStored
-
-        do {
-            entryToDelete = try await mainContext.perform {
-                guard let entry = try mainContext.existingObject(with: fetchedObjectID) as? CarbEntryStored else {
-                    throw NSError(
-                        domain: "TrioRemoteControl",
-                        code: 1,
-                        userInfo: [NSLocalizedDescriptionKey: "Failed to re-fetch entry on main context"]
-                    )
-                }
-                return entry
-            }
-        } catch {
-            await logError(
-                "Kommandot avvisades: kunde inte läsa måltiden som skulle raderas. \(error.localizedDescription)",
-                pushMessage: pushMessage
-            )
-            return
-        }
-
-        let treatmentObjectID = entryToDelete.objectID
 
         await deleteMealFromServices(treatmentObjectID, provider: provider)
-        await carbsStorage.deleteCarbsEntryStored(treatmentObjectID)
+        guard await carbsStorage.deleteCarbsEntryStored(treatmentObjectID) else {
+            await logError("Kommandot avvisades: måltiden kunde inte raderas lokalt.", pushMessage: pushMessage)
+            return false
+        }
+
+        // An edit recalculates and notifies after the replacement has been stored.
+        if isEdit { return true }
 
         if let apsManager: APSManager = resolver.resolve(APSManager.self) {
             await apsManager.determineBasalSync()
@@ -279,7 +326,7 @@ extension TrioRemoteControl {
             "Remote måltidsradering behandlades framgångsrikt. \(pushMessage.humanReadableDescription())"
         )
 
-        guard settings.settings.notificationsRemote else { return }
+        guard settings.settings.notificationsRemote else { return true }
 
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "HH:mm:ss"
@@ -289,6 +336,7 @@ extension TrioRemoteControl {
             title: "Remote Radera Måltid",
             body: "Tid: \(formattedTime)\nInlagt av: \(pushMessage.user)"
         )
+        return true
     }
 
     private func deleteMealFromServices(_ treatmentObjectID: NSManagedObjectID, provider: DataTable.Provider) async {
