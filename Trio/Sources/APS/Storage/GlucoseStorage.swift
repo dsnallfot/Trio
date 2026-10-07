@@ -141,12 +141,11 @@ final class BaseGlucoseStorage: GlucoseStorage, Injectable {
                         guard let sessionStartDate = x.sessionStartDate else {
                             continue
                         }
-                        if let lastTreatment = treatments.last,
-                           let createdAt = lastTreatment.createdAt,
-                           // When a new Dexcom sensor is started, it produces multiple consecutive
-                           // startDates. Disambiguate them by only allowing a session start per minute.
-                           abs(createdAt.timeIntervalSince(sessionStartDate)) < TimeInterval(60)
-                        {
+                        // Backfill can revisit older sessions; checking only the last entry
+                        // creates duplicates when readings arrive out of chronological order.
+                        if treatments.contains(where: {
+                            CGMSessionUploadState.matches($0, startedAt: sessionStartDate)
+                        }) {
                             continue
                         }
                         var notes = ""
@@ -422,7 +421,7 @@ final class BaseGlucoseStorage: GlucoseStorage, Injectable {
             .retrieveAsync(OpenAPS.Monitor.cgmState, as: [NightscoutTreatment].self) ?? []
 
         let (alreadyUploadedValues, allValuesSet) = await (alreadyUploaded, allValues)
-        return Array(Set(allValuesSet).subtracting(Set(alreadyUploadedValues)))
+        return CGMSessionUploadState.pending(allValuesSet, uploaded: alreadyUploadedValues)
     }
 
     // Fetch glucose that is not uploaded to Nightscout yet
@@ -615,5 +614,25 @@ enum GlucoseAlarm {
         case .low:
             return NSLocalizedString("HIGHALERT!", comment: "HIGHALERT!")
         }
+    }
+}
+
+/// Uses the same one-minute tolerance as sensor discovery. The persisted receipt list
+/// doubles as an uploaded flag per session and remains compatible with existing files.
+enum CGMSessionUploadState {
+    static func matches(_ treatment: NightscoutTreatment, startedAt: Date) -> Bool {
+        guard let createdAt = treatment.createdAt else { return false }
+        return abs(createdAt.timeIntervalSince(startedAt)) < 60
+    }
+
+    static func pending(_ treatments: [NightscoutTreatment], uploaded: [NightscoutTreatment]) -> [NightscoutTreatment] {
+        var result: [NightscoutTreatment] = []
+        for treatment in treatments.sorted(by: { ($0.createdAt ?? .distantPast) < ($1.createdAt ?? .distantPast) }) {
+            guard let start = treatment.createdAt,
+                  !uploaded.contains(where: { matches($0, startedAt: start) }),
+                  !result.contains(where: { matches($0, startedAt: start) }) else { continue }
+            result.append(treatment)
+        }
+        return result
     }
 }

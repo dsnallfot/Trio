@@ -49,6 +49,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
     private let uploadPumpHistorySubject = PassthroughSubject<Void, Never>()
     private let uploadCarbsSubject = PassthroughSubject<Void, Never>()
     private let processQueue = DispatchQueue(label: "BaseNetworkManager.processQueue")
+    @MainActor private var isUploadingCGMState = false
     private var ping: TimeInterval?
     private var lastNetworkReachabilityWasReachable: Bool?
     private var lastReachabilityRetryDate: Date = .distantPast
@@ -1237,7 +1238,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
 
         _ = await (nightscoutUpload, localUpload)
 
-        await uploadNonCoreDataTreatments(glucoseStorage.getCGMStateNotYetUploadedToNightscout())
+        await uploadCGMState()
     }
 
     private var isLocalGlucoseUploadEnabled: Bool {
@@ -1528,6 +1529,35 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
                     "\(DebuggingIdentifiers.failed) \(#file) \(#function) Failed to update isUploadedToNS: \(error.userInfo)"
                 )
             }
+        }
+    }
+
+    @MainActor private func uploadCGMState() async {
+        // Hold the gate across both reading receipts and writing the successful result.
+        guard !isUploadingCGMState else { return }
+        isUploadingCGMState = true
+        defer { isUploadingCGMState = false }
+
+        guard shouldAttemptNightscoutRequest("CGM state treatments"),
+              let nightscout = nightscoutAPI, isUploadEnabled else { return }
+
+        let treatments = await glucoseStorage.getCGMStateNotYetUploadedToNightscout()
+        do {
+            for chunk in treatments.chunks(ofCount: 100) {
+                try Task.checkCancellation()
+                try await nightscout.uploadTreatments(Array(chunk))
+                // Persist each successful chunk immediately, even if a later chunk fails
+                // or cancellation arrives after the server has confirmed this one.
+                storage.transaction { storage in
+                    let file = OpenAPS.Nightscout.uploadedCGMState
+                    let uploaded = storage.retrieve(file, as: [NightscoutTreatment].self) ?? []
+                    let receipts = uploaded + CGMSessionUploadState.pending(Array(chunk), uploaded: uploaded)
+                    storage.save(receipts, as: file)
+                }
+            }
+        } catch {
+            // Unacknowledged sessions remain pending for the next upload trigger.
+            debug(.nightscout, error.localizedDescription)
         }
     }
 
