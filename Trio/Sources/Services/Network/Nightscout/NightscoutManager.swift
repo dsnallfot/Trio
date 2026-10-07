@@ -42,6 +42,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
     @Injected() private var broadcaster: Broadcaster!
     @Injected() private var reachabilityManager: ReachabilityManager!
     @Injected() var healthkitManager: HealthKitManager!
+    @Injected() private var deviceManager: DeviceDataManager!
 
     private let orefDeterminationSubject = PassthroughSubject<Void, Never>()
     private let uploadOverridesSubject = PassthroughSubject<Void, Never>()
@@ -1014,7 +1015,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
                 enteredBy: NightscoutTreatment.local,
                 bolus: nil,
                 insulin: nil,
-                notes: nil,
+                notes: deviceManager.pumpManager?.localizedTitle,
                 carbs: nil,
                 fat: nil,
                 protein: nil,

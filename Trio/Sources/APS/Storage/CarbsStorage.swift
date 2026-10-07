@@ -11,7 +11,7 @@ protocol CarbsObserver {
 protocol CarbsStorage {
     var updatePublisher: AnyPublisher<Void, Never> { get }
     func storeCarbs(_ carbs: [CarbsEntry], areFetchedFromRemote: Bool) async
-    @discardableResult  func deleteCarbsEntryStored(_ treatmentObjectID: NSManagedObjectID) async -> Bool
+    @discardableResult func deleteCarbsEntryStored(_ treatmentObjectID: NSManagedObjectID) async -> Bool
     func syncDate() -> Date
     func recent() -> [CarbsEntry]
     func getCarbsNotYetUploadedToNightscout() async -> [NightscoutTreatment]
@@ -368,7 +368,7 @@ final class BaseCarbsStorage: CarbsStorage, Injectable {
         storage.retrieve(OpenAPS.Monitor.carbHistory, as: [CarbsEntry].self)?.reversed() ?? []
     }
 
-    @discardableResult  func deleteCarbsEntryStored(_ treatmentObjectID: NSManagedObjectID) async -> Bool {
+    @discardableResult func deleteCarbsEntryStored(_ treatmentObjectID: NSManagedObjectID) async -> Bool {
         let taskContext = CoreDataStack.shared.newTaskContext()
         taskContext.name = "deleteContext"
         taskContext.transactionAuthor = "deleteCarbs"

@@ -4,7 +4,7 @@ import HealthKit
 import UIKit
 
 extension TrioRemoteControl {
-    @discardableResult  func handleMealCommand(_ pushMessage: PushMessage) async -> Bool {
+    @discardableResult func handleMealCommand(_ pushMessage: PushMessage) async -> Bool {
         let diagnosticID = RuntimeDiagnostics.shared.begin("remoteMeal", force: true)
         defer { RuntimeDiagnostics.shared.end("remoteMeal", id: diagnosticID, force: true) }
         // If bolusAmount is not nil but all others are nil, exit early without logging an error
@@ -252,7 +252,7 @@ extension TrioRemoteControl {
         completed = await handleMealCommand(replacement)
     }
 
-    @discardableResult  func handleDeleteMealCommand(_ pushMessage: PushMessage) async -> Bool {
+    @discardableResult func handleDeleteMealCommand(_ pushMessage: PushMessage) async -> Bool {
         let resolver = TrioApp.resolver
         let provider: DataTable.Provider = resolver.resolve(DataTable.Provider.self) ?? DataTable.Provider(resolver: resolver)
 
