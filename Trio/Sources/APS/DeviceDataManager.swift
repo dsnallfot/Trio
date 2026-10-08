@@ -247,6 +247,12 @@ final class BaseDeviceDataManager: DeviceDataManager, Injectable {
     }
 
     private func updateMedtrumPatchDates(_ pump: MedtrumPumpManager) {
+        // Feed the same Nightscout Site Change upload path as Omnipod. This helper
+        // also runs when restoring a pump, so an already active patch is included.
+        if let startTime = pump.state.patchActivatedAt {
+            storage.save(startTime, as: OpenAPS.Monitor.podAge)
+        }
+
         // Display the patch lifespan without the grace period, matching Medtrum's UI and Omnipod.
         // patchExpiresAt includes grace; patchGracePeriodFrom marks the end of the normal lifespan.
         pumpExpiresAtDate.send(pump.state.patchGracePeriodFrom)
