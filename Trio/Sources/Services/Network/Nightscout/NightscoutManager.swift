@@ -50,6 +50,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
     private let uploadCarbsSubject = PassthroughSubject<Void, Never>()
     private let processQueue = DispatchQueue(label: "BaseNetworkManager.processQueue")
     @MainActor private var isUploadingCGMState = false
+    @MainActor private var isUploadingPodAge = false
     private var ping: TimeInterval?
     private var lastNetworkReachabilityWasReachable: Bool?
     private var lastReachabilityRetryDate: Date = .distantPast
@@ -1000,30 +1001,51 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         }
     }
 
-    func uploadPodAge() async {
-        let uploadedPodAge = storage.retrieve(OpenAPS.Nightscout.uploadedPodAge, as: [NightscoutTreatment].self) ?? []
-        if let podAge = storage.retrieve(OpenAPS.Monitor.podAge, as: Date.self),
-           uploadedPodAge.last?.createdAt == nil || podAge != uploadedPodAge.last!.createdAt!
-        {
-            let siteTreatment = NightscoutTreatment(
-                duration: nil,
-                rawDuration: nil,
-                rawRate: nil,
-                absolute: nil,
-                rate: nil,
-                eventType: .nsSiteChange,
-                createdAt: podAge,
-                enteredBy: NightscoutTreatment.local,
-                bolus: nil,
-                insulin: nil,
-                notes: deviceManager.pumpManager?.localizedTitle,
-                carbs: nil,
-                fat: nil,
-                protein: nil,
-                targetTop: nil,
-                targetBottom: nil
-            )
-            await uploadNonCoreDataTreatments([siteTreatment])
+    @MainActor func uploadPodAge() async {
+        // Keep receipt lookup, request and acknowledgement behind the same gate.
+        guard !isUploadingPodAge else { return }
+        isUploadingPodAge = true
+        defer { isUploadingPodAge = false }
+
+        guard shouldAttemptNightscoutRequest("Site Change treatments"),
+              let nightscout = nightscoutAPI, isUploadEnabled,
+              let podAge = storage.retrieve(OpenAPS.Monitor.podAge, as: Date.self) else { return }
+        let file = OpenAPS.Nightscout.uploadedPodAge
+        let uploaded = storage.retrieve(file, as: [NightscoutTreatment].self) ?? []
+        guard !uploaded.contains(where: { $0.createdAt == podAge }) else { return }
+
+        let siteTreatment = NightscoutTreatment(
+            duration: nil,
+            rawDuration: nil,
+            rawRate: nil,
+            absolute: nil,
+            rate: nil,
+            eventType: .nsSiteChange,
+            createdAt: podAge,
+            enteredBy: NightscoutTreatment.local,
+            bolus: nil,
+            insulin: nil,
+            notes: deviceManager.pumpManager?.localizedTitle,
+            carbs: nil,
+            fat: nil,
+            protein: nil,
+            targetTop: nil,
+            targetBottom: nil
+        )
+        do {
+            try Task.checkCancellation()
+            try await nightscout.uploadTreatments([siteTreatment])
+            // Acknowledge the date actually sent, even if the active patch changed
+            // while awaiting the server. Failed requests remain eligible for retry.
+            storage.transaction { storage in
+                var receipts = storage.retrieve(file, as: [NightscoutTreatment].self) ?? []
+                if !receipts.contains(where: { $0.createdAt == podAge }) {
+                    receipts.append(siteTreatment)
+                    storage.save(receipts, as: file)
+                }
+            }
+        } catch {
+            debug(.nightscout, error.localizedDescription)
         }
     }
 
