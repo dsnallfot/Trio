@@ -43,5 +43,5 @@
 	branch = main
 [submodule "MedtrumKit"]
 	path = MedtrumKit
-	url = https://github.com/loopandlearn/MedtrumKit
-	branch = dev
+	url = https://github.com/dsnallfot/MedtrumKit.git
+	branch = codex/trio-private

@@ -1,7 +1,15 @@
 # MedtrumKit integration
 
 Based on https://github.com/nightscout/Trio/pull/1039 (head `4dd90024dd8d9b5edf7f317946aed7ea3685687f`).
-MedtrumKit is pinned to `b7f3d44c06bb7c580be897e0414e64de2d6dd995`, the submodule revision in that PR.
+The initial integration used MedtrumKit revision `b7f3d44c06bb7c580be897e0414e64de2d6dd995` from that PR.
+
+## Private MedtrumKit repository
+
+MedtrumKit now uses `https://github.com/dsnallfot/MedtrumKit.git`, a private repository preserving the upstream Git history and local changes. The development branch is `codex/trio-private`; Trio's committed submodule pointer selects the exact revision used by a checkout.
+
+The local changes were captured in commit `97cb051`, based on upstream `ef866fa`. The official repository remains available as the local `upstream` remote at `https://github.com/loopandlearn/MedtrumKit`.
+
+Cloning or updating the private submodule requires GitHub credentials with read access to `dsnallfot/MedtrumKit`. CI credentials used to check out submodules must also have access to this repository.
 
 ## Adaptations for this fork
 
