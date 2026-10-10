@@ -1,7 +1,7 @@
 import Foundation
 
 /// Pure, persisted alarm decisions. No sensor, UI, notification or dosing dependencies.
-struct GlucoseAlarmState: Codable {
+struct GlucoseAlarmState: Codable, Equatable {
     enum Kind: String, Codable { case low, high, urgentLow, urgentHigh }
     struct Reading {
         let date: Date

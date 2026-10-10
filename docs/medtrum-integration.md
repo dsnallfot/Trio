@@ -24,6 +24,18 @@ Cloning or updating the private submodule requires GitHub credentials with read 
 
 No files under `Trio/Sources/Modules/Onboarding` were imported or modified. MedtrumKit's own pump pairing/setup UI is required for adding the pump and is included.
 
+## Status notifications and routine logging
+
+MedtrumKit compares value snapshots before notifying Trio. Repeated identical state does not trigger persistence or status observers. The snapshot includes every persisted field (including `lastSync`, doses and reservoir), live connection/Bluetooth state, priming progress, cancellation state and the computed LoopKit status. Changes to live state alone still notify observers without requesting pump-state persistence. The first notification is always delivered.
+
+Incoming Bluetooth packets are still parsed and synchronized, including duplicates. Pump commands, heartbeat scheduling, full synchronization, dose events and alert processing retain their existing behavior.
+
+Consecutive identical raw heartbeat and decoded-state log entries are suppressed. Changed routine decoded state is logged at debug level in MedtrumKit only; alarm-bearing, truncated and invalid state packets are retained at warning level and forwarded to Trio. Trio logs basal/bolus status only when the respective delivery status changes.
+
+`PumpStateSnapshotTests` covers unchanged keepalives, notification decisions, synchronization freshness, persisted changes, transient changes, bolus progress/completion, cancellation status and previous-patch snapshots.
+
+Validation on 2026-10-09: all 66 MedtrumKit tests passed, including eight new snapshot/notification tests. The complete Trio Debug build succeeded for the arm64 iOS simulator. The generic multi-architecture build encountered a LoopKitUI x86_64/sanitizer linking mismatch, so that configuration is not verified. Physical-pump behavior and battery savings still require device observation.
+
 ## Checkout and verification
 
 After cloning this fork, run `git submodule update --init --recursive` and open `Trio.xcworkspace`.

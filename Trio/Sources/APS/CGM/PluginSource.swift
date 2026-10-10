@@ -53,7 +53,14 @@ final class PluginSource: GlucoseSource {
             self.processQueue.async {
                 guard let cgmManager = self.cgmManager else { return }
                 cgmManager.fetchNewDataIfNeeded { result in
-                    promise(self.readCGMResult(readingResult: result))
+                    // G7 returns noData immediately after ensuring its BLE connection.
+                    // Actual readings/errors arrive separately through the delegate. A normal
+                    // poll completion must not force stale state or enter sensor error handling.
+                    if cgmManager is G7CGMManager, case .noData = result {
+                        promise(.success([]))
+                    } else {
+                        promise(self.readCGMResult(readingResult: result))
+                    }
                 }
             }
         }

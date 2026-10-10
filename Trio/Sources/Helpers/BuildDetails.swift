@@ -7,6 +7,11 @@ class BuildDetails: Injectable {
 
     let dict: [String: Any]
     let previousExpireDateKey = "previousExpireDate"
+    private let expirationLock = NSLock()
+    private var expirationLoaded = false
+    private var cachedExpiration: Date?
+    // The installed bundle cannot change within this process. A new build starts a new process.
+    private static let testFlightBuild = detectTestFlightBuild()
 
     init() {
         guard let url = Bundle.main.url(forResource: "BuildDetails", withExtension: "plist"),
@@ -46,7 +51,9 @@ class BuildDetails: Injectable {
     }
 
     // Determine if the build is from TestFlight
-    func isTestFlightBuild() -> Bool {
+    func isTestFlightBuild() -> Bool { Self.testFlightBuild }
+
+    private static func detectTestFlightBuild() -> Bool {
         #if targetEnvironment(simulator)
             return false
         #else
@@ -77,6 +84,15 @@ class BuildDetails: Injectable {
 
     // Calculate the expiration date based on the build type
     func calculateExpirationDate() -> Date? {
+        expirationLock.lock()
+        defer { expirationLock.unlock() }
+        if expirationLoaded { return cachedExpiration }
+        cachedExpiration = loadExpirationDate()
+        expirationLoaded = true // Cache nil for simulator / missing profile as well.
+        return cachedExpiration
+    }
+
+    private func loadExpirationDate() -> Date? {
         if isTestFlightBuild(), let buildDate = buildDate() {
             // For TestFlight, add 90 days to the build date
             return Calendar.current.date(byAdding: .day, value: 90, to: buildDate)!

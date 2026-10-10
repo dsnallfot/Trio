@@ -269,6 +269,13 @@ final class BaseFetchGlucoseManager: FetchGlucoseManager, Injectable {
         var filteredByDate: [BloodGlucose] = []
         var filtered: [BloodGlucose] = []
 
+        // An empty poll has nothing to store. Keep the age-based stale check, but
+        // do not acquire background execution time just to release it immediately.
+        guard newGlucose.isNotEmpty else {
+            refreshContactImagesIfBGStaleStateChanged()
+            return
+        }
+
         // start background time extension
         var backGroundFetchBGTaskID: UIBackgroundTaskIdentifier?
         backGroundFetchBGTaskID = UIApplication.shared.beginBackgroundTask(withName: "save BG starting") {
@@ -280,17 +287,6 @@ final class BaseFetchGlucoseManager: FetchGlucoseManager, Injectable {
         }
         if let id = backGroundFetchBGTaskID {
             BackgroundTaskDiagnostics.shared.record(.start, id: id, name: "glucose")
-        }
-
-        guard newGlucose.isNotEmpty else {
-            refreshContactImagesIfBGStaleStateChanged()
-
-            if let backgroundTask = backGroundFetchBGTaskID {
-                UIApplication.shared.endBackgroundTask(backgroundTask)
-                BackgroundTaskDiagnostics.shared.record(.end, id: backgroundTask, name: "glucose", reason: "empty")
-                backGroundFetchBGTaskID = .invalid
-            }
-            return
         }
 
         let backfill = newGlucose.filter { $0.dateString <= syncDate }

@@ -491,8 +491,12 @@ extension BaseDeviceDataManager: PumpManagerDelegate {
 
     func pumpManager(_ pumpManager: PumpManager, didUpdate status: PumpManagerStatus, oldStatus: PumpManagerStatus) {
         dispatchPrecondition(condition: .onQueue(processQueue))
-        debug(.deviceManager, "New pump status Bolus: \(status.bolusState)")
-        debug(.deviceManager, "New pump status Basal: \(String(describing: status.basalDeliveryState))")
+        if status.bolusState != oldStatus.bolusState {
+            debug(.deviceManager, "New pump status Bolus: \(status.bolusState)")
+        }
+        if status.basalDeliveryState != oldStatus.basalDeliveryState {
+            debug(.deviceManager, "New pump status Basal: \(String(describing: status.basalDeliveryState))")
+        }
 
         if case .inProgress = status.bolusState {
             bolusTrigger.send(true)

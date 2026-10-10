@@ -22,6 +22,41 @@ import UserNotifications
     private var systemIDs: Set<UUID>
     private var revision = 0
     private var lastAlarmKitChoice: Bool?
+    private var observedSnooze = Date.distantPast
+    private var observedSettings: EvaluationSettings?
+
+    private struct EvaluationSettings: Equatable {
+        let low: Decimal
+        let high: Decimal
+        let units: GlucoseUnits
+    }
+
+    private var evaluationSettings: EvaluationSettings {
+        EvaluationSettings(
+            low: settings.settings.lowGlucose,
+            high: settings.settings.highGlucose,
+            units: settings.settings.units
+        )
+    }
+
+    private var globalSnooze: Date {
+        UserDefaults.standard.getValue(Date.self, forKey: "UserNotificationsManager.snoozeUntilDate") ?? .distantPast
+    }
+
+    private func snoozeDidChange() {
+        let current = globalSnooze
+        guard current != observedSnooze else { return }
+        observedSnooze = current
+        evaluate()
+    }
+
+    private func alarmSettingsDidChange() {
+        let current = evaluationSettings
+        guard current != observedSettings else { return }
+        observedSettings = current
+        evaluate()
+    }
+
     @Published private(set) var testAlarmID: UUID?
     private var expirationTask: Task<Void, Never>?
     @Published private(set) var permissionText = ""
@@ -46,12 +81,17 @@ import UserNotifications
             .store(in: &subscriptions)
         for name in [
             GlucoseAlarmPreferences.changed,
-            UserDefaults.didChangeNotification,
             UIApplication.didBecomeActiveNotification
         ] {
             Foundation.NotificationCenter.default.publisher(for: name).receive(on: DispatchQueue.main)
                 .sink { [weak self] _ in self?.evaluate() }.store(in: &subscriptions)
         }
+        // Pump state and other unrelated defaults must not trigger alarm fetches or UI updates.
+        observedSnooze = globalSnooze
+        observedSettings = evaluationSettings
+        Foundation.NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.snoozeDidChange() }.store(in: &subscriptions)
         TrioApp.resolver.resolve(Broadcaster.self)!.register(SettingsObserver.self, observer: self)
         Task { [weak self] in
             for await _ in AlarmManager.shared.authorizationUpdates {
@@ -122,12 +162,12 @@ import UserNotifications
             }
             guard evaluation == revision else { return }
             let now = Date()
-            let snooze = UserDefaults.standard
-                .getValue(Date.self, forKey: "UserNotificationsManager.snoozeUntilDate") ?? .distantPast
-            thresholdWarning = settings.settings.lowGlucose >= settings.settings.highGlucose
+            let snooze = globalSnooze
+            let warning: String? = settings.settings.lowGlucose >= settings.settings.highGlucose
                 ?
                 "Gränsen för lågt glukos måste vara lägre än gränsen för högt glukos. Larmen är pausade tills gränserna rättats."
                 : nil
+            if thresholdWarning != warning { thresholdWarning = warning }
             let lowEnabled =
                 preferences.lowEnabled &&
                 preferences.isAllowed(
@@ -261,7 +301,10 @@ import UserNotifications
     }
 
     private func persist() {
-        if let data = try? JSONEncoder().encode(state), data != UserDefaults.standard.data(forKey: Self.stateKey) {
+        let storedState = UserDefaults.standard.data(forKey: Self.stateKey)
+            .flatMap { try? JSONDecoder().decode(GlucoseAlarmState.self, from: $0) }
+        // Compare values, not JSON bytes (key ordering is not part of alarm state).
+        if storedState != state, let data = try? JSONEncoder().encode(state) {
             UserDefaults.standard.set(data, forKey: Self.stateKey)
         }
         let ids = systemIDs.map(\.uuidString).sorted()
@@ -422,7 +465,7 @@ struct StopGlucoseAlarmIntent: LiveActivityIntent {
 
 extension TrioAlertManager: SettingsObserver {
     nonisolated func settingsDidChange(_: TrioSettings) {
-        Task { @MainActor in self.evaluate() }
+        Task { @MainActor in self.alarmSettingsDidChange() }
     }
 }
 
