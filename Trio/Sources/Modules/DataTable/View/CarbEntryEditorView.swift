@@ -96,8 +96,8 @@ struct CarbEntryEditorView: View {
                 action: {
                     guard let entryToEdit = entryToEdit else { return }
 
-                    // prefix a star ✩ for each edit
-                    editedNote = "✩" + editedNote
+                    // prefix a pen ✎ for each edit
+                    editedNote = "✎" + editedNote
 
                     state.updateEntry(
                         entryToEdit,
