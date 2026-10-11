@@ -657,7 +657,7 @@ extension DataTable {
                 ).tint(.red)
 
                 Button(
-                    "Edit",
+                    "Ändra",
                     systemImage: "pencil",
                     role: .none,
                     action: {

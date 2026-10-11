@@ -69,7 +69,7 @@ struct CarbEntryEditorView: View {
             return Text("Max Protein of \(state.settingsManager.settings.maxProtein.description) g Exceeded")
         }
 
-        return Text("Save and Update")
+        return Text("Spara och uppdatera")
     }
 
     private var buttonBackgroundColor: Color {
