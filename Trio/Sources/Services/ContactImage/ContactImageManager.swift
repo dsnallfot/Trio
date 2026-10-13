@@ -54,6 +54,9 @@ final class BaseContactImageManager: NSObject, ContactImageManager, Injectable {
 
     @MainActor private var refreshDebounceTask: Task<Void, Never>?
 
+    // One encoded image per configured contact; accessed only on the main actor.
+    @MainActor private var renderedImages: [String: (key: ContactPicture.RenderKey, data: Data)] = [:]
+
     private let refreshCoordinator = ContactImageRefreshCoordinator()
     private var lastRenderedBGStaleState: Bool?
 
@@ -599,12 +602,7 @@ final class BaseContactImageManager: NSObject, ContactImageManager, Injectable {
 
         await refreshCoordinator.acquire()
 
-        let newImage = await ContactPicture.getImage(
-            contact: contactEntry,
-            state: state
-        )
-
-        guard let imageData = newImage.pngData() else {
+        guard let imageData = await renderedImageData(for: contactEntry) else {
             debugPrint(
                 "\(DebuggingIdentifiers.failed) Failed to encode image for contact ID: \(contactId)"
             )
@@ -631,17 +629,14 @@ final class BaseContactImageManager: NSObject, ContactImageManager, Injectable {
         let contactEntries = await contactImageStorage
             .fetchContactImageEntries()
 
+        await pruneRenderedImages(keeping: Set(contactEntries.compactMap(\.contactId)))
+
         for contactEntry in contactEntries {
             guard let contactId = contactEntry.contactId else {
                 continue
             }
 
-            let newImage = await ContactPicture.getImage(
-                contact: contactEntry,
-                state: state
-            )
-
-            guard let imageData = newImage.pngData() else {
+            guard let imageData = await renderedImageData(for: contactEntry) else {
                 debugPrint(
                     "\(DebuggingIdentifiers.failed) Failed to encode image for contact ID: \(contactId)"
                 )
@@ -653,6 +648,26 @@ final class BaseContactImageManager: NSObject, ContactImageManager, Injectable {
                 toContactWithIdentifier: contactId
             )
         }
+    }
+
+    @MainActor private func pruneRenderedImages(keeping identifiers: Set<String>) {
+        renderedImages = renderedImages.filter { identifiers.contains($0.key) }
+    }
+
+    @MainActor private func renderedImageData(for contact: ContactImageEntry, now: Date = Date()) -> Data? {
+        guard let contactId = contact.contactId else { return nil }
+        let snapshot = state
+        let key = ContactPicture.renderKey(contact: contact, state: snapshot, now: now)
+        if let cached = renderedImages[contactId], cached.key == key {
+            return cached.data
+        }
+
+        guard let data = ContactPicture.getImage(contact: contact, state: snapshot, now: now).pngData() else {
+            renderedImages.removeValue(forKey: contactId)
+            return nil
+        }
+        renderedImages[contactId] = (key, data)
+        return data
     }
 
     func createContact(name: String) async -> String? {

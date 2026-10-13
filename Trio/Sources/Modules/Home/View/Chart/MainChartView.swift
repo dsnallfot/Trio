@@ -26,7 +26,7 @@ struct MainChartView: View {
 
     @State var mainChartHasInitialized = false
 
-    let now = Date.now
+    var now: Date = .now
 
     private let context = CoreDataStack.shared.persistentContainer.viewContext
 
@@ -127,6 +127,9 @@ struct MainChartView: View {
                                 }
 
                                 state.updateStartEndMarkers()
+                                // The chart is recreated after backgrounding/tab changes;
+                                // rebuild both locally cached basal series on every mount.
+                                calculateBasals()
                                 calculateTempBasalsInBackground()
                                 mainChartHasInitialized = true
                             }

@@ -3,6 +3,7 @@ import CoreData
 import Foundation
 import LoopKit
 import LoopKitUI
+import MedtrumKit
 import SwiftDate
 import Swinject
 
@@ -85,6 +86,7 @@ private actor LoopGate {
 }
 
 final class BaseAPSManager: APSManager, Injectable {
+    private let medtrumValueGate = PumpReceiverValueGate()
     private let processQueue = DispatchQueue(label: "BaseAPSManager.processQueue")
     private let loopGate = LoopGate()
     @Injected() private var storage: FileStorage!
@@ -1392,10 +1394,22 @@ private extension PumpManager {
 }
 
 extension BaseAPSManager: PumpManagerStatusObserver {
-    func pumpManager(_: PumpManager, didUpdate status: PumpManagerStatus, oldStatus _: PumpManagerStatus) {
+    func pumpManager(_ pumpManager: PumpManager, didUpdate status: PumpManagerStatus, oldStatus _: PumpManagerStatus) {
+        let medtrum = pumpManager as? MedtrumPumpManager
+        medtrum?.recordWork("apsStatusCallbacks")
         let percent = Int((status.pumpBatteryChargeRemaining ?? 1) * 100)
 
         privateContext.perform {
+            // Retain a five-minute timestamp refresh so the 30-minute battery query stays current.
+            if let medtrum, !self.medtrumValueGate.accept(
+                "battery",
+                owner: medtrum,
+                value: AnyHashable(status.pumpBatteryChargeRemaining),
+                maxAge: 300
+            ) {
+                medtrum.recordWork("batterySuppressed")
+                return
+            }
             /// only update the last item with the current battery infos instead of saving a new one each time
             let fetchRequest: NSFetchRequest<OpenAPS_Battery> = OpenAPS_Battery.fetchRequest()
             fetchRequest.sortDescriptors = [NSSortDescriptor(key: "date", ascending: false)]
@@ -1421,12 +1435,23 @@ extension BaseAPSManager: PumpManagerStatusObserver {
 
                 guard self.privateContext.hasChanges else { return }
                 try self.privateContext.save()
+                medtrum?.recordWork("batteryCoreDataSaves")
             } catch {
+                if medtrum != nil { self.medtrumValueGate.invalidate("battery") }
                 print("Failed to fetch or save battery: \(error.localizedDescription)")
             }
         }
         // TODO: - remove this after ensuring that NS still gets the same infos from Core Data
-        storage.save(status.pumpStatus, as: OpenAPS.Monitor.status)
+        let pumpStatus = status.pumpStatus
+        if let medtrum {
+            let value = [pumpStatus.bolusing, pumpStatus.suspended]
+            if medtrumValueGate.accept("pumpStatus", owner: medtrum, value: AnyHashable(value), maxAge: 300) {
+                storage.save(pumpStatus, as: OpenAPS.Monitor.status)
+                medtrum.recordWork("pumpStatusSaveCalls")
+            } else { medtrum.recordWork("pumpStatusSuppressed") }
+        } else {
+            storage.save(pumpStatus, as: OpenAPS.Monitor.status)
+        }
     }
 }
 

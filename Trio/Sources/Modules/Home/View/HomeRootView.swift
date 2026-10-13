@@ -17,6 +17,7 @@ extension Home {
 
         @Environment(\.managedObjectContext) var moc
         @Environment(\.colorScheme) var colorScheme
+        @Environment(\.scenePhase) private var scenePhase
         @Environment(AppState.self) var appState
 
         @State var state = StateModel()
@@ -89,17 +90,19 @@ extension Home {
         }
 
         var glucoseView: some View {
-            CurrentGlucoseView(
-                timerDate: state.timerDate,
-                units: state.units,
-                alarm: state.alarm,
-                lowGlucose: state.lowGlucose,
-                highGlucose: state.highGlucose,
-                cgmAvailable: state.cgmAvailable,
-                currentGlucoseTarget: state.currentGlucoseTarget,
-                glucoseColorScheme: state.glucoseColorScheme,
-                glucose: state.latestTwoGlucoseValues
-            ).scaleEffect(0.9)
+            PresentationClockView(state: state) { date in
+                CurrentGlucoseView(
+                    timerDate: date,
+                    units: state.units,
+                    alarm: state.alarm,
+                    lowGlucose: state.lowGlucose,
+                    highGlucose: state.highGlucose,
+                    cgmAvailable: state.cgmAvailable,
+                    currentGlucoseTarget: state.currentGlucoseTarget,
+                    glucoseColorScheme: state.glucoseColorScheme,
+                    glucose: state.latestTwoGlucoseValues
+                )
+            }.scaleEffect(0.9)
                 .onTapGesture {
                     state.openCGM()
                 }
@@ -111,16 +114,18 @@ extension Home {
         }
 
         var pumpView: some View {
-            PumpView(
-                reservoir: state.reservoir,
-                name: state.pumpName,
-                expiresAtDate: state.pumpExpiresAtDate,
-                activatedAtDate: state.pumpActivatedAtDate,
-                timerDate: state.timerDate,
-                timeZone: state.timeZone,
-                pumpStatusHighlightMessage: state.pumpStatusHighlightMessage,
-                battery: state.batteryFromPersistence
-            )
+            PresentationClockView(state: state) { date in
+                PumpView(
+                    reservoir: state.reservoir,
+                    name: state.pumpName,
+                    expiresAtDate: state.pumpExpiresAtDate,
+                    activatedAtDate: state.pumpActivatedAtDate,
+                    timerDate: date,
+                    timeZone: state.timeZone,
+                    pumpStatusHighlightMessage: state.pumpStatusHighlightMessage,
+                    battery: state.batteryFromPersistence
+                )
+            }
             .onTapGesture {
                 if state.pumpDisplayState == nil {
                     // shows user confirmation dialog with pump model choices, then proceeds to setup
@@ -323,21 +328,30 @@ extension Home {
 
         @ViewBuilder func mainChart(geo: GeometryProxy) -> some View {
             ZStack {
-                MainChartView(
-                    geo: geo,
-                    safeAreaSize: notificationsDisabled == true ? safeAreaSize : 0,
-                    units: state.units,
-                    hours: state.filteredHours,
-                    highGlucose: state.highGlucose,
-                    lowGlucose: state.lowGlucose,
-                    currentGlucoseTarget: state.currentGlucoseTarget,
-                    glucoseColorScheme: state.glucoseColorScheme,
-                    screenHours: state.hours,
-                    displayXgridLines: state.displayXgridLines,
-                    displayYgridLines: state.displayYgridLines,
-                    thresholdLines: state.thresholdLines,
-                    state: state
-                )
+                // Remove chart observation/layout while it cannot be seen. Its onAppear
+                // rebuilds prepared data and scrolls to the current time on return.
+                if scenePhase != .background, selectedTab == 0 {
+                    TimelineView(.periodic(from: .now, by: 60)) { context in
+                        MainChartView(
+                            geo: geo,
+                            safeAreaSize: notificationsDisabled == true ? safeAreaSize : 0,
+                            units: state.units,
+                            hours: state.filteredHours,
+                            highGlucose: state.highGlucose,
+                            lowGlucose: state.lowGlucose,
+                            currentGlucoseTarget: state.currentGlucoseTarget,
+                            glucoseColorScheme: state.glucoseColorScheme,
+                            screenHours: state.hours,
+                            displayXgridLines: state.displayXgridLines,
+                            displayYgridLines: state.displayYgridLines,
+                            thresholdLines: state.thresholdLines,
+                            state: state,
+                            now: context.date
+                        )
+                    }
+                } else {
+                    Color.clear
+                }
             }
             .padding(.bottom, UIDevice.adjustPadding(min: 0, max: nil))
         }
@@ -351,14 +365,16 @@ extension Home {
         @ViewBuilder func rightHeaderPanel(_: GeometryProxy) -> some View {
             VStack(alignment: .leading, spacing: 20) {
                 /// Loop view at bottomLeading
-                LoopView(
-                    closedLoop: state.closedLoop,
-                    timerDate: state.timerDate,
-                    isLooping: state.isLooping,
-                    lastLoopDate: state.lastLoopDate,
-                    manualTempBasal: state.manualTempBasal,
-                    determination: state.determinationsFromPersistence
-                )
+                PresentationClockView(state: state) { date in
+                    LoopView(
+                        closedLoop: state.closedLoop,
+                        timerDate: date,
+                        isLooping: state.isLooping,
+                        lastLoopDate: state.lastLoopDate,
+                        manualTempBasal: state.manualTempBasal,
+                        determination: state.determinationsFromPersistence
+                    )
+                }
                 .onTapGesture {
                     state.isLoopStatusPresented = true
                 }
@@ -1159,6 +1175,18 @@ extension Home {
                     CustomProgressView(text: "Uppdaterar IOB...")
                 }
             }
+            .onAppear {
+                state.setPresentationActive(scenePhase == .active && selectedTab == 0)
+            }
+            .onChange(of: scenePhase) {
+                state.setPresentationActive(scenePhase == .active && selectedTab == 0)
+            }
+            .onChange(of: selectedTab) {
+                state.setPresentationActive(scenePhase == .active && selectedTab == 0)
+            }
+            .onDisappear {
+                state.setPresentationActive(false)
+            }
         }
     }
 }
@@ -1250,5 +1278,16 @@ func formatTimeRange(start: String?, end: String?) -> String {
         } else {
             return ""
         }
+    }
+}
+
+/// Keeps the five-second clock dependency inside the small header views.
+/// RootView and its charts must not observe timerDate just to refresh a label.
+private struct PresentationClockView<Content: View>: View {
+    let state: Home.StateModel
+    @ViewBuilder let content: (Date) -> Content
+
+    var body: some View {
+        content(state.timerDate)
     }
 }

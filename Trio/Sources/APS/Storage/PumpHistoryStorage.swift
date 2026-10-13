@@ -12,12 +12,19 @@ protocol PumpHistoryObserver {
 protocol PumpHistoryStorage {
     var updatePublisher: AnyPublisher<Void, Never> { get }
     func storePumpEvents(_ events: [NewPumpEvent])
+    func storePumpEvents(_ events: [NewPumpEvent], diagnostics: ((String, Int) -> Void)?)
     func storeExternalInsulinEvent(amount: Decimal, timestamp: Date) async
     func recent() -> [PumpHistoryEvent]
     func getPumpHistoryNotYetUploadedToNightscout(using context: NSManagedObjectContext) async -> [NightscoutTreatment]
     func getPumpHistoryNotYetUploadedToHealth() async -> [PumpHistoryEvent]
     func getPumpHistoryNotYetUploadedToTidepool() async -> [PumpHistoryEvent]
     func deleteInsulin(at date: Date)
+}
+
+extension PumpHistoryStorage {
+    func storePumpEvents(_ events: [NewPumpEvent], diagnostics _: ((String, Int) -> Void)?) {
+        storePumpEvents(events)
+    }
 }
 
 final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
@@ -47,6 +54,12 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
     }
 
     func storePumpEvents(_ events: [NewPumpEvent]) {
+        storePumpEvents(events, diagnostics: nil)
+    }
+
+    func storePumpEvents(_ events: [NewPumpEvent], diagnostics: ((String, Int) -> Void)?) {
+        diagnostics?("historyBatches", 1)
+        diagnostics?("historyEvents", events.count)
         processQueue.async {
             self.context.perform {
                 for event in events {
@@ -72,6 +85,7 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
                         )
 
                         guard existingEvents.isEmpty else {
+                            diagnostics?("historyDuplicateCandidates", 1)
                             // Duplicate found, do not store the event
                             let typeDescription = event.type?.rawValue ?? "unknown"
                             print("🟡 Skipping duplicate pump event. Timestamp: \(event.date), Type: \(typeDescription)")
@@ -112,6 +126,7 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
                         guard let dose = event.dose else { continue }
 
                         guard existingEvents.isEmpty else {
+                            diagnostics?("historyDuplicateCandidates", 1)
                             // Duplicate found, do not store the event
                             let typeDescription = event.type?.rawValue ?? "unknown"
                             print("🟡 Skipping duplicate pump event. Timestamp: \(event.date), Type: \(typeDescription)")
@@ -142,6 +157,7 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
 
                     case .suspend:
                         guard existingEvents.isEmpty else {
+                            diagnostics?("historyDuplicateCandidates", 1)
                             // Duplicate found, do not store the event
                             let typeDescription = event.type?.rawValue ?? "unknown"
                             print("🟡 Skipping duplicate pump event. Timestamp: \(event.date), Type: \(typeDescription)")
@@ -157,6 +173,7 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
 
                     case .resume:
                         guard existingEvents.isEmpty else {
+                            diagnostics?("historyDuplicateCandidates", 1)
                             // Duplicate found, do not store the event
                             let typeDescription = event.type?.rawValue ?? "unknown"
                             print("🟡 Skipping duplicate pump event. Timestamp: \(event.date), Type: \(typeDescription)")
@@ -172,6 +189,7 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
 
                     case .rewind:
                         guard existingEvents.isEmpty else {
+                            diagnostics?("historyDuplicateCandidates", 1)
                             // Duplicate found, do not store the event
                             let typeDescription = event.type?.rawValue ?? "unknown"
                             print("🟡 Skipping duplicate pump event. Timestamp: \(event.date), Type: \(typeDescription)")
@@ -187,6 +205,7 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
 
                     case .prime:
                         guard existingEvents.isEmpty else {
+                            diagnostics?("historyDuplicateCandidates", 1)
                             // Duplicate found, do not store the event
                             let typeDescription = event.type?.rawValue ?? "unknown"
                             print("🟡 Skipping duplicate pump event. Timestamp: \(event.date), Type: \(typeDescription)")
@@ -202,6 +221,7 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
 
                     case .alarm:
                         guard existingEvents.isEmpty else {
+                            diagnostics?("historyDuplicateCandidates", 1)
                             // Duplicate found, do not store the event
                             let typeDescription = event.type?.rawValue ?? "unknown"
                             print("🟡 Skipping duplicate pump event. Timestamp: \(event.date), Type: \(typeDescription)")
@@ -222,8 +242,12 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
                 }
 
                 do {
-                    guard self.context.hasChanges else { return }
+                    guard self.context.hasChanges else {
+                        diagnostics?("historyUnchangedBatches", 1)
+                        return
+                    }
                     try self.context.save()
+                    diagnostics?("historyContextSaves", 1)
 
                     self.updateSubject.send(())
                     debugPrint("\(DebuggingIdentifiers.succeeded) stored pump events in Core Data")

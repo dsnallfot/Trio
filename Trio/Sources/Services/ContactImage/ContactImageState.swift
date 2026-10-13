@@ -1,6 +1,6 @@
 import Foundation
 
-struct ContactImageState: Codable {
+struct ContactImageState: Codable, Equatable {
     var glucose: String?
     var trend: String?
     var direction: BloodGlucose.Direction?

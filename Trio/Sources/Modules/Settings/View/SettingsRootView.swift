@@ -55,6 +55,7 @@ extension Settings {
         let resolver: Resolver
         @StateObject var state = StateModel()
         @AppStorage(DiagnosticLogging.enabledKey) private var logDiagnostics = DiagnosticLogging.defaultEnabled
+        @AppStorage(DiagnosticLogging.detailKey) private var detailedDiagnostics = false
 
         @State private var showShareSheet = false
         @State private var searchText: String = ""
@@ -286,6 +287,7 @@ extension Settings {
                             if state.debugOptions {
                                 Toggle("Logga diagnostik", isOn: $logDiagnostics)
                                 if logDiagnostics {
+                                    Toggle("Detaljerad diagnostik", isOn: $detailedDiagnostics)
                                     DiagnosticStatusView()
                                 }
                                 Button {

@@ -15,7 +15,11 @@ errors = source[start:source.index('        if glucoseManager?.glucoseSource == 
 start = source.index('            // Old backfill or display-only readings')
 recovery = source[start:source.index('            if values.isNotEmpty', start)]
 
-harness = r'''
+sensor_source = (root / 'G7SensorKit/G7SensorKit/G7CGMManager/G7Sensor.swift').read_text()
+g7_error = sensor_source[sensor_source.index('public enum G7SensorError:'):sensor_source.index('public enum G7SensorLifecycleState')]
+algorithm_state = (root / 'G7SensorKit/G7SensorKit/AlgorithmState.swift').read_text()
+
+harness = algorithm_state + g7_error + r'''
 import Foundation
 
 enum SensorReadingError: Error { case invalidG7GlucoseResponse }
@@ -101,6 +105,23 @@ final class Harness {
             _ = h.read(.error(AlgorithmError(token: token)))
             assert(h.banner != nil)
         }
+        // Decoded nonzero replies must reach the same banner/uploader path.
+        let decoded = Harness()
+        _ = decoded.read(.error(G7SensorError.glucoseUnavailable(status: 0x80, algorithmState: .known(.transmitterFailed))))
+        assert(decoded.banner == "⛔️ Dexcom G7: Kritiskt fel - sensorbyte krävs!")
+        _ = decoded.read(.error(G7SensorError.glucoseUnavailable(status: 0x80, algorithmState: .known(.transmitterFailed))))
+        _ = decoded.read(.noData)
+        _ = decoded.read(.newData([Reading(date: Date(timeIntervalSinceNow: -9715), isDisplayOnly: false)]))
+        await settle()
+        let failureNotes = await decoded.nightscoutManager!.notes
+        assert(failureNotes == [decoded.banner!])
+        _ = decoded.read(.error(G7SensorError.glucoseUnavailable(status: 0x81, algorithmState: .unknown(254))))
+        assert(decoded.banner?.contains("Inget aktuellt glukosvärde") == true)
+        assert(decoded.banner?.contains("sensorbyte") == false)
+        _ = decoded.read(.error(G7SensorError.glucoseUnavailable(status: 0x80, algorithmState: .known(.temporarySensorIssue))))
+        assert(decoded.banner == "⚠️ Dexcom G7: Tillfälligt sensorfel!")
+        _ = decoded.read(.newData([Reading(date: Date(), isDisplayOnly: false)]))
+        assert(decoded.banner == nil)
         let other = Harness()
         _ = other.read(.newData([Reading(date: Date(), isDisplayOnly: false)]))
         await settle()

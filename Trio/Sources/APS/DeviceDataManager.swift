@@ -54,6 +54,21 @@ private let staticPumpManagersByIdentifier: [String: PumpManagerUI.Type] = [
 private let accessLock = NSRecursiveLock(label: "BaseDeviceDataManager.accessLock")
 
 final class BaseDeviceDataManager: DeviceDataManager, Injectable {
+    private let medtrumValueGate = PumpReceiverValueGate()
+
+    private func publishMedtrumReservoir(_ pump: MedtrumPumpManager, units: Decimal) {
+        guard medtrumValueGate.accept("reservoir", owner: pump, value: units) else {
+            pump.recordWork("reservoirSuppressed")
+            return
+        }
+        storage.save(units, as: OpenAPS.Monitor.reservoir)
+        pump.recordWork("reservoirSaveCalls")
+        broadcaster.notify(PumpReservoirObserver.self, on: processQueue) {
+            $0.pumpReservoirDidChange(units)
+        }
+        pump.recordWork("reservoirBroadcasts")
+    }
+
     private let processQueue = DispatchQueue.markedQueue(label: "BaseDeviceDataManager.processQueue")
     private let heartbeatLogLock = NSLock()
     private var lastHeartbeatLogMessages: [String: [String: String]] = [:]
@@ -249,18 +264,24 @@ final class BaseDeviceDataManager: DeviceDataManager, Injectable {
     private func updateMedtrumPatchDates(_ pump: MedtrumPumpManager) {
         // Feed the same Nightscout Site Change upload path as Omnipod. This helper
         // also runs when restoring a pump, so an already active patch is included.
-        if let startTime = pump.state.patchActivatedAt {
+        if let startTime = pump.state.patchActivatedAt,
+           medtrumValueGate.accept("patchStart", owner: pump, value: startTime)
+        {
             storage.save(startTime, as: OpenAPS.Monitor.podAge)
+            pump.recordWork("patchDateSaveCalls")
         }
 
         // Display the patch lifespan without the grace period, matching Medtrum's UI and Omnipod.
         // patchExpiresAt includes grace; patchGracePeriodFrom marks the end of the normal lifespan.
-        pumpExpiresAtDate.send(pump.state.patchGracePeriodFrom)
-        switch pump.state.expiryMode {
-        case .default:
-            pumpActivatedAtDate.send(nil)
-        case .extended:
-            pumpActivatedAtDate.send(pump.state.patchActivatedAt)
+        let expiration = pump.state.patchGracePeriodFrom
+        if medtrumValueGate.accept("patchExpiration", owner: pump, value: AnyHashable(expiration)) {
+            pumpExpiresAtDate.send(expiration)
+            pump.recordWork("patchDatePublications")
+        }
+        let activation: Date? = pump.state.expiryMode == .extended ? pump.state.patchActivatedAt : nil
+        if medtrumValueGate.accept("patchActivationDisplay", owner: pump, value: AnyHashable(activation)) {
+            pumpActivatedAtDate.send(activation)
+            pump.recordWork("patchDatePublications")
         }
     }
 
@@ -470,10 +491,16 @@ extension BaseDeviceDataManager: PumpManagerDelegate {
 
     func pumpManagerDidUpdateState(_ pumpManager: PumpManager) {
         rawPumpManager = pumpManager.rawValue
+        (pumpManager as? MedtrumPumpManager)?.recordWork("rawStateSaveCalls")
         if self.pumpManager == nil, let newPumpManager = pumpManager as? PumpManagerUI {
             self.pumpManager = newPumpManager
         }
-        pumpName.send(pumpManager.localizedTitle)
+        if let medtrum = pumpManager as? MedtrumPumpManager {
+            if medtrumValueGate.accept("pumpName", owner: medtrum, value: pumpManager.localizedTitle) {
+                pumpName.send(pumpManager.localizedTitle)
+                medtrum.recordWork("pumpNamePublications")
+            }
+        } else { pumpName.send(pumpManager.localizedTitle) }
     }
 
     /// heartbeat with pump occurs some issues in the backgroundtask - so never used
@@ -491,6 +518,7 @@ extension BaseDeviceDataManager: PumpManagerDelegate {
 
     func pumpManager(_ pumpManager: PumpManager, didUpdate status: PumpManagerStatus, oldStatus: PumpManagerStatus) {
         dispatchPrecondition(condition: .onQueue(processQueue))
+        (pumpManager as? MedtrumPumpManager)?.recordWork("deviceStatusCallbacks")
         if status.bolusState != oldStatus.bolusState {
             debug(.deviceManager, "New pump status Bolus: \(status.bolusState)")
         }
@@ -508,8 +536,12 @@ extension BaseDeviceDataManager: PumpManagerDelegate {
             settingsManager.updateInsulinCurve(status.insulinType)
         }
 
-        broadcaster.notify(PumpTimeZoneObserver.self, on: processQueue) {
-            $0.pumpTimeZoneDidChange(status.timeZone)
+        let medtrum = pumpManager as? MedtrumPumpManager
+        if medtrum == nil || medtrumValueGate.accept("timeZone", owner: pumpManager, value: status.timeZone) {
+            broadcaster.notify(PumpTimeZoneObserver.self, on: processQueue) {
+                $0.pumpTimeZoneDidChange(status.timeZone)
+            }
+            medtrum?.recordWork("timeZoneBroadcasts")
         }
 
         if let omni = pumpManager as? OmniPumpManager {
@@ -546,11 +578,7 @@ extension BaseDeviceDataManager: PumpManagerDelegate {
         }
 
         if let medtrumPump = pumpManager as? MedtrumPumpManager {
-            let reservoir = Decimal(medtrumPump.state.reservoir)
-            storage.save(reservoir, as: OpenAPS.Monitor.reservoir)
-            broadcaster.notify(PumpReservoirObserver.self, on: processQueue) {
-                $0.pumpReservoirDidChange(reservoir)
-            }
+            publishMedtrumReservoir(medtrumPump, units: Decimal(medtrumPump.state.reservoir))
             updateMedtrumPatchDates(medtrumPump)
         }
 
@@ -578,7 +606,7 @@ extension BaseDeviceDataManager: PumpManagerDelegate {
     }
 
     func pumpManager(
-        _: PumpManager,
+        _ pumpManager: PumpManager,
         hasNewPumpEvents events: [NewPumpEvent],
         lastReconciliation _: Date?,
         replacePendingEvents _: Bool,
@@ -592,13 +620,16 @@ extension BaseDeviceDataManager: PumpManagerDelegate {
             guard let type = $0.type, type == .tempBasal else { return true }
             return $0.dose?.unitsPerHour ?? 0 <= Double(settingsManager.pumpSettings.maxBasal)
         }
-        pumpHistoryStorage.storePumpEvents(events)
+        let medtrum = pumpManager as? MedtrumPumpManager
+        pumpHistoryStorage.storePumpEvents(events, diagnostics: medtrum.map { manager in
+            { [weak manager] event, count in manager?.recordWork(event, count: count) }
+        })
         lastEventDate = events.last?.date
         completion(nil)
     }
 
     func pumpManager(
-        _: PumpManager,
+        _ pumpManager: PumpManager,
         didReadReservoirValue units: Double,
         at _: Date,
         completion: @escaping (Result<
@@ -608,9 +639,14 @@ extension BaseDeviceDataManager: PumpManagerDelegate {
     ) {
         dispatchPrecondition(condition: .onQueue(processQueue))
         // Daniel: Minska loggning // debug(.deviceManager, "Reservoir Value \(units), at: \(date)")
-        storage.save(Decimal(units), as: OpenAPS.Monitor.reservoir)
-        broadcaster.notify(PumpReservoirObserver.self, on: processQueue) {
-            $0.pumpReservoirDidChange(Decimal(units))
+        if let medtrum = pumpManager as? MedtrumPumpManager {
+            medtrum.recordWork("reservoirCallbacks")
+            publishMedtrumReservoir(medtrum, units: Decimal(units))
+        } else {
+            storage.save(Decimal(units), as: OpenAPS.Monitor.reservoir)
+            broadcaster.notify(PumpReservoirObserver.self, on: processQueue) {
+                $0.pumpReservoirDidChange(Decimal(units))
+            }
         }
 
         completion(.success((
@@ -792,4 +828,38 @@ protocol PumpTimeZoneObserver {
 
 protocol PumpDeactivatedObserver {
     func pumpDeactivatedDidChange()
+}
+
+/// Receiver-local cache: first value (including nil), new manager and freshness deadlines pass.
+/// Serializes access because pump restoration and callbacks can use different queues.
+final class PumpReceiverValueGate {
+    private struct Entry {
+        weak var owner: AnyObject?
+        let value: AnyHashable
+        let time: TimeInterval
+    }
+
+    private let lock = NSLock()
+    private var entries: [String: Entry] = [:]
+
+    func accept(
+        _ key: String,
+        owner: AnyObject,
+        value: AnyHashable,
+        maxAge: TimeInterval = .infinity,
+        now: TimeInterval = ProcessInfo.processInfo.systemUptime
+    ) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        if let entry = entries[key], entry.owner === owner, entry.value == value,
+           now >= entry.time, now - entry.time < maxAge { return false }
+        entries[key] = Entry(owner: owner, value: value, time: now)
+        return true
+    }
+
+    func invalidate(_ key: String) {
+        lock.lock()
+        defer { lock.unlock() }
+        entries.removeValue(forKey: key)
+    }
 }

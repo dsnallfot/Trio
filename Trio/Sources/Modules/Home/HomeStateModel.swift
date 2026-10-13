@@ -17,7 +17,8 @@ extension Home {
         @ObservationIgnored @Injected() var carbsStorage: CarbsStorage!
         @ObservationIgnored @Injected() var tempTargetStorage: TempTargetsStorage!
         @ObservationIgnored @Injected() var overrideStorage: OverrideStorage!
-        private let timer = DispatchTimer(timeInterval: 5)
+        @ObservationIgnored private let timer = DispatchTimer(timeInterval: 5)
+        @ObservationIgnored private var isPresentationActive = false
         private(set) var filteredHours = 24
         var startMarker = Date(timeIntervalSinceNow: TimeInterval(hours: -24))
         var endMarker = Date(timeIntervalSinceNow: TimeInterval(hours: 3))
@@ -279,6 +280,27 @@ extension Home {
             }.store(in: &subscriptions)
         }
 
+        /// Presentation only: never controls pump, CGM, alarms, or loop scheduling.
+        /// Called by the view on the main thread, including when switching tabs.
+        func setPresentationActive(_ active: Bool) {
+            dispatchPrecondition(condition: .onQueue(.main))
+            guard active != isPresentationActive else { return }
+            isPresentationActive = active
+            if active {
+                timerDate = Date()
+                timer.eventHandler = { [weak self] in
+                    DispatchQueue.main.async { [weak self] in
+                        // An already queued tick must not update a hidden view.
+                        guard let self, self.isPresentationActive else { return }
+                        self.timerDate = Date()
+                    }
+                }
+                timer.resume()
+            } else {
+                timer.suspend()
+            }
+        }
+
         private func registerObservers() {
             broadcaster.register(DeterminationObserver.self, observer: self)
             broadcaster.register(SettingsObserver.self, observer: self)
@@ -288,13 +310,6 @@ extension Home {
             broadcaster.register(BGTargetsObserver.self, observer: self)
             broadcaster.register(PumpReservoirObserver.self, observer: self)
             broadcaster.register(PumpDeactivatedObserver.self, observer: self)
-
-            timer.eventHandler = {
-                DispatchQueue.main.async { [weak self] in
-                    self?.timerDate = Date()
-                }
-            }
-            timer.resume()
 
             apsManager.isLooping
                 .receive(on: DispatchQueue.main)

@@ -424,12 +424,22 @@ final class BackgroundTaskDiagnostics: @unchecked Sendable {
     private let lock = NSLock()
     private var openTasks: [UIBackgroundTaskIdentifier: TimeInterval] = [:]
     private var sequence: UInt64 = 0
+    private var summaryStarted: TimeInterval
+    init(startTime: TimeInterval = ProcessInfo.processInfo.systemUptime) { summaryStarted = startTime }
+    private var summaryCounts: [String: Int] = [:]
+    private var summaryMaxDuration: TimeInterval = 0
+    private var summaryPeakOpen = 0
 
-    func record(_ event: Event, id: UIBackgroundTaskIdentifier, name: String, reason: String = "-") {
+    func record(
+        _ event: Event,
+        id: UIBackgroundTaskIdentifier,
+        name: String,
+        reason: String = "-",
+        now: TimeInterval = ProcessInfo.processInfo.systemUptime
+    ) {
         lock.lock()
         sequence += 1
         let serial = sequence
-        let now = ProcessInfo.processInfo.systemUptime
         let started = openTasks[id]
         let valid = id != .invalid
         let status: String
@@ -443,12 +453,34 @@ final class BackgroundTaskDiagnostics: @unchecked Sendable {
         case .expiration:
             status = !valid ? "invalid-id" : (started == nil ? "untracked-id" : "ok")
         }
-        let duration = started.map { String(format: "%.3f", now - $0) } ?? (event == .start && valid ? "0.000" : "unknown")
+        summaryCounts[name + "." + event.rawValue, default: 0] += 1
+        if status != "ok" { summaryCounts[status, default: 0] += 1 }
+        let durationSeconds = started.map { now - $0 }
+        if event == .end { summaryMaxDuration = max(summaryMaxDuration, durationSeconds ?? 0) }
         let openCount = openTasks.count
-        let oldest = openTasks.values.min().map { String(format: "%.3f", now - $0) } ?? "0.000"
+        summaryPeakOpen = max(summaryPeakOpen, openCount)
+        let summaryDue = now - summaryStarted >= 900
+        let detail = DiagnosticLogging.detailEnabled || status != "ok" || event == .expiration
+        var summary: String?
+        // Only scan open tasks / format strings when an actual line will be written.
+        let oldestSeconds = (summaryDue || detail) ? openTasks.values.min().map { now - $0 } ?? 0 : 0
+        if summaryDue {
+            let counts = summaryCounts.keys.sorted().map { "\($0)=\(summaryCounts[$0]!)" }.joined(separator: " ")
+            summary = "BGTaskSummary pid=\(ProcessInfo.processInfo.processIdentifier) windowSec=\(Int(now - summaryStarted)) " +
+                "trackedOpen=\(openCount) peakOpen=\(summaryPeakOpen) oldestOpenSec=\(Int(oldestSeconds)) " +
+                "maxCompletedMs=\(Int(summaryMaxDuration * 1000)) \(counts)"
+            summaryStarted = now
+            summaryCounts.removeAll(keepingCapacity: true)
+            summaryMaxDuration = 0
+            summaryPeakOpen = openCount
+        }
         lock.unlock()
 
         guard DiagnosticLogging.isEnabled else { return }
+        if let summary { debug(.deviceManager, summary) }
+        guard detail else { return }
+        let duration = durationSeconds.map { String(format: "%.3f", $0) } ?? (event == .start && valid ? "0.000" : "unknown")
+        let oldest = String(format: "%.3f", oldestSeconds)
         debug(
             .deviceManager,
             "BGTask pid=\(ProcessInfo.processInfo.processIdentifier) seq=\(serial) name=\(name) id=\(id.rawValue) " +

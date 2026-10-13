@@ -292,6 +292,19 @@ extension PluginSource: CGMManagerDelegate {
             let note: String?
             if let sensorError = err as? SensorReadingError, case .invalidG7GlucoseResponse = sensorError {
                 note = "⛔️ Dexcom G7: Kunde inte tolka sensorns glukossvar"
+            } else if let sensorError = err as? G7SensorError,
+                      case let .glucoseUnavailable(status, algorithmState) = sensorError
+            {
+                if algorithmState.sensorFailed {
+                    note = "⛔️ Dexcom G7: Kritiskt fel - sensorbyte krävs!"
+                } else if algorithmState.hasTemporaryError {
+                    note = "⚠️ Dexcom G7: Tillfälligt sensorfel!"
+                } else if algorithmState.isInWarmup {
+                    note = "⚠️ Dexcom G7: Sensor värms upp"
+                } else {
+                    // A nonzero status is not by itself proof of permanent failure.
+                    note = "⚠️ Dexcom G7: Inget aktuellt glukosvärde (status \(status), \(algorithmState))"
+                }
             } else if let token = stateToken {
                 switch token {
                 case "temporarySensorIssue":

@@ -16,9 +16,47 @@ struct ContactPicture: View {
         return formatter
     }()
 
+    // Keep the complete input state: a conservative miss is preferable to reusing
+    // an image after a meaningful change. Time-dependent pixels need their own key.
+    struct RenderKey: Equatable {
+        let contact: ContactImageEntry
+        let state: ContactImageState
+        let staleBG: Bool
+        let staleBobbleBG: Bool
+        let minutesAgo: String?
+        let loopAge: Int
+        let traits: UITraitCollection
+        let locale: String
+        let timeZone: String
+        let utcOffset: Int
+    }
+
+    static func renderKey(contact: ContactImageEntry, state: ContactImageState, now: Date) -> RenderKey {
+        // Storage creates a fresh UI identity on every fetch. It does not affect pixels.
+        var appearance = contact
+        appearance.id = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
+        appearance.managedObjectID = nil
+        return RenderKey(
+            contact: appearance,
+            state: state,
+            staleBG: state.forceStaleBG ||
+                (state.lastBGDate.map { now.timeIntervalSince($0) > Config.staleBGThreshold } ?? false),
+            staleBobbleBG: state.forceStaleBG ||
+                (state.glucoseDate.map { now.timeIntervalSince($0) > Config.staleBGThreshold } ?? false),
+            minutesAgo: contact.layout == .bobble && contact.bobbleShowMinutesAgo && state.glucose != nil
+                ? minutesAgoText(from: state.glucoseDate, now: now) : nil,
+            loopAge: loopAgeCategory(state: state, now: now),
+            traits: UITraitCollection.current,
+            locale: Locale.current.identifier,
+            timeZone: TimeZone.current.identifier,
+            utcOffset: TimeZone.current.secondsFromGMT(for: now)
+        )
+    }
+
     static func getImage(
         contact: ContactImageEntry,
-        state: ContactImageState
+        state: ContactImageState,
+        now: Date = Date()
     ) -> UIImage {
         let width = 1024.0
         let height = 1024.0
@@ -56,7 +94,7 @@ struct ContactPicture: View {
                 height: rect.height - height * ringWidth
             )
 
-            drawRing(ring: contact.ring, contact: contact, state: state, rect: ringRect, strokeWidth: width * ringWidth)
+            drawRing(ring: contact.ring, contact: contact, state: state, now: now, rect: ringRect, strokeWidth: width * ringWidth)
 
             rect = CGRect(
                 x: rect.minX + width * (ringWidth + ringGap),
@@ -139,6 +177,7 @@ struct ContactPicture: View {
                 value: contact.primary,
                 contact: contact,
                 state: state,
+                now: now,
                 rect: primaryRect,
                 fitHeigh: false,
                 fontSize: contact.fontSize.rawValue,
@@ -151,6 +190,7 @@ struct ContactPicture: View {
                     value: contact.top,
                     contact: contact,
                     state: state,
+                    now: now,
                     rect: topRect,
                     fitHeigh: true,
                     fontSize: secondaryFontSize.rawValue,
@@ -164,6 +204,7 @@ struct ContactPicture: View {
                     value: contact.bottom,
                     contact: contact,
                     state: state,
+                    now: now,
                     rect: bottomRect,
                     fitHeigh: true,
                     fontSize: secondaryFontSize.rawValue,
@@ -177,7 +218,7 @@ struct ContactPicture: View {
             // bobbleImage.size stays at the native point size regardless of scale, so size the
             // destination rect from bobbleSize/rect instead of the image itself.
             let bobbleSize = min(rect.width, rect.height)
-            let bobbleImage = makeGlucoseBobbleImage(contact: contact, state: state, pixelSize: bobbleSize)
+            let bobbleImage = makeGlucoseBobbleImage(contact: contact, state: state, now: now, pixelSize: bobbleSize)
             bobbleImage.draw(in: CGRect(
                 x: rect.midX - bobbleSize / 2,
                 y: rect.midY - bobbleSize / 2,
@@ -215,6 +256,7 @@ struct ContactPicture: View {
                 value: contact.top,
                 contact: contact,
                 state: state,
+                now: now,
                 rect: topRect,
                 fitHeigh: true,
                 fontSize: topFontSize.rawValue,
@@ -226,6 +268,7 @@ struct ContactPicture: View {
                 value: contact.bottom,
                 contact: contact,
                 state: state,
+                now: now,
                 rect: bottomRect,
                 fitHeigh: true,
                 fontSize: bottomFontSize.rawValue,
@@ -243,6 +286,7 @@ struct ContactPicture: View {
         value: ContactImageValue,
         contact: ContactImageEntry,
         state: ContactImageState,
+        now: Date,
         rect: CGRect,
         fitHeigh: Bool,
         fontSize: Int,
@@ -256,6 +300,7 @@ struct ContactPicture: View {
                 ring: .loop,
                 contact: contact,
                 state: state,
+                now: now,
                 rect: CGRect(
                     x: rect.minX + rect.width * 0.10,
                     y: rect.minY + rect.height * 0.10,
@@ -286,7 +331,7 @@ struct ContactPicture: View {
         let dynamicColor = dynamicGlucoseColor(for: state)
 
         let isStaleBG = state
-            .forceStaleBG || (state.lastBGDate.map { Date().timeIntervalSince($0) > Config.staleBGThreshold } ?? false)
+            .forceStaleBG || (state.lastBGDate.map { now.timeIntervalSince($0) > Config.staleBGThreshold } ?? false)
         let shouldStrikeThrough = isStaleBG && [
             ContactImageValue.glucose,
             ContactImageValue.delta,
@@ -358,20 +403,21 @@ struct ContactPicture: View {
     private static func makeGlucoseBobbleImage(
         contact: ContactImageEntry,
         state: ContactImageState,
+        now: Date,
         pixelSize: CGFloat
     ) -> UIImage {
         let hasReading = state.glucose != nil
         let view = GlucoseBobbleContactView(
             glucoseText: state.glucose ?? "– –",
             minutesAgoText: hasReading && contact.bobbleShowMinutesAgo
-                ? minutesAgoText(from: state.glucoseDate) : nil,
+                ? minutesAgoText(from: state.glucoseDate, now: now) : nil,
             deltaText: hasReading && contact.bobbleShowDelta ? state.delta : nil,
             glucoseColor: hasReading
                 ? (contact.colorMode == .color ? dynamicGlucoseColor(for: state) : .white)
                 : .loopGray,
             rotationDegrees: rotationDegrees(for: state.direction),
             isStale: state
-                .forceStaleBG || (state.glucoseDate.map { Date().timeIntervalSince($0) > Config.staleBGThreshold } ?? false)
+                .forceStaleBG || (state.glucoseDate.map { now.timeIntervalSince($0) > Config.staleBGThreshold } ?? false)
         )
 
         let renderer = ImageRenderer(content: view)
@@ -380,9 +426,9 @@ struct ContactPicture: View {
         return renderer.uiImage ?? UIImage()
     }
 
-    private static func minutesAgoText(from date: Date?) -> String? {
+    private static func minutesAgoText(from date: Date?, now: Date) -> String? {
         guard let date else { return nil }
-        let minutes = max(0, Date().timeIntervalSince(date) / 60)
+        let minutes = max(0, now.timeIntervalSince(date) / 60)
         let value = minutes <= 1 ? "< 1" : String(Int(minutes.rounded()))
         return value + " " + NSLocalizedString("min", comment: "Short form for minutes")
     }
@@ -447,8 +493,9 @@ struct ContactPicture: View {
 
     private static func drawRing(
         ring: ContactImageLargeRing,
-        contact: ContactImageEntry,
+        contact _: ContactImageEntry,
         state: ContactImageState,
+        now: Date,
         rect: CGRect,
         strokeWidth: Double
     ) {
@@ -457,7 +504,7 @@ struct ContactPicture: View {
         }
         switch ring {
         case .loop:
-            let color = ringColor(contact: contact, state: state)
+            let color = ringColor(state: state, now: now)
 
             let strokeWidth = strokeWidth
             let center = CGPoint(x: rect.midX, y: rect.midY)
@@ -674,21 +721,20 @@ struct ContactPicture: View {
         context.restoreGState()
     }
 
-    private static func ringColor(
-        contact _: ContactImageEntry,
-        state: ContactImageState
-    ) -> Color {
-        guard let lastLoopDate = state.lastLoopDate else {
-            return .loopGray
-        }
-        let delta = Date().timeIntervalSince(lastLoopDate) - Config.lag
+    private static func loopAgeCategory(state: ContactImageState, now: Date) -> Int {
+        guard let lastLoopDate = state.lastLoopDate else { return 0 }
+        let delta = now.timeIntervalSince(lastLoopDate) - Config.lag
+        if delta <= 5.minutes.timeInterval { return 1 }
+        if delta <= 10.minutes.timeInterval { return 2 }
+        return 3
+    }
 
-        if delta <= 5.minutes.timeInterval {
-            return .loopGreen
-        } else if delta <= 10.minutes.timeInterval {
-            return .loopYellow
-        } else {
-            return .loopRed
+    private static func ringColor(state: ContactImageState, now: Date) -> Color {
+        switch loopAgeCategory(state: state, now: now) {
+        case 1: return .loopGreen
+        case 2: return .loopYellow
+        case 3: return .loopRed
+        default: return .loopGray
         }
     }
 

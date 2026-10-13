@@ -6,6 +6,8 @@ import JavaScriptCore
 enum DiagnosticLogging {
     static let enabledKey = "Trio.LogDiagnostics"
     static let defaultEnabled = true
+    static let detailKey = "Trio.LogDiagnostics.Detail"
+    static var detailEnabled: Bool { isEnabled && UserDefaults.standard.bool(forKey: detailKey) }
 
     static var isEnabled: Bool {
         UserDefaults.standard.object(forKey: enabledKey) == nil ?
@@ -119,7 +121,7 @@ final class RuntimeDiagnostics {
     func sampleObjects(_ key: String, count: @autoclosure () -> Int) {
         lock.lock()
         let now = ProcessInfo.processInfo.systemUptime
-        guard now - lastObjectSamples[key, default: -.infinity] >= 60 else {
+        guard now - lastObjectSamples[key, default: -.infinity] >= (DiagnosticLogging.detailEnabled ? 60 : 900) else {
             lock.unlock()
             return
         }
@@ -163,7 +165,8 @@ final class RuntimeDiagnostics {
         guard DiagnosticLogging.isEnabled else { return }
         lock.lock()
         let now = ProcessInfo.processInfo.systemUptime
-        guard force || now - lastSample >= 60 else {
+        guard (DiagnosticLogging.detailEnabled && force) || now - lastSample >= (DiagnosticLogging.detailEnabled ? 60 : 900)
+        else {
             lock.unlock()
             return
         }
