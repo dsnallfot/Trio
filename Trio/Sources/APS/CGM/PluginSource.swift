@@ -48,22 +48,41 @@ final class PluginSource: GlucoseSource {
     }
 
     func fetchIfNeeded() -> AnyPublisher<[BloodGlucose], Never> {
-        Future<[BloodGlucose], Error> { [weak self] promise in
-            guard let self = self else { return }
-            self.processQueue.async {
-                guard let cgmManager = self.cgmManager else { return }
-                cgmManager.fetchNewDataIfNeeded { result in
-                    // G7 returns noData immediately after ensuring its BLE connection.
-                    // Actual readings/errors arrive separately through the delegate. A normal
-                    // poll completion must not force stale state or enter sensor error handling.
-                    if cgmManager is G7CGMManager, case .noData = result {
+        // Future is eager: constructing it on the caller's queue can race its
+        // subscription with a fast callback on the CGM queue. Create, subscribe,
+        // resolve and cancel the Future on the same serial queue.
+        Deferred { [weak self] in
+            Future<[BloodGlucose], Error> { promise in
+                guard let self = self else {
+                    promise(.success([]))
+                    return
+                }
+                self.processQueue.async {
+                    guard let cgmManager = self.cgmManager else {
                         promise(.success([]))
-                    } else {
-                        promise(self.readCGMResult(readingResult: result))
+                        return
+                    }
+                    cgmManager.fetchNewDataIfNeeded { result in
+                        // A manager may complete on any queue, including inline.
+                        // Enqueue even inline completions so subscription finishes first.
+                        self.processQueue.async {
+                            // Ignore a response from a manager replaced during this fetch.
+                            guard self.cgmManager === cgmManager else {
+                                promise(.success([]))
+                                return
+                            }
+                            // Actual G7 readings/errors arrive separately via the delegate.
+                            if cgmManager is G7CGMManager, case .noData = result {
+                                promise(.success([]))
+                            } else {
+                                promise(self.readCGMResult(readingResult: result))
+                            }
+                        }
                     }
                 }
             }
         }
+        .subscribe(on: processQueue)
         .replaceError(with: [])
         .replaceEmpty(with: [])
         .eraseToAnyPublisher()
