@@ -115,12 +115,12 @@ extension AlgorithmAdvancedSettings {
                         get: { selectedVerboseHint },
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = "Insulinets verkningstid"
+                            hintLabel = "Insulinets verkningstid (DIA)"
                         }
                     ),
                     units: state.units,
                     type: .decimal("dia"),
-                    label: "Insulinets verkningstid",
+                    label: "Insulinets verkningstid (DIA)",
 
                     miniHint: "Hur många timmar insulinet är aktivt i kroppen.",
 

@@ -32,13 +32,13 @@ struct NightscoutImportResultView: BaseView {
         NavigationStack {
             Form {
                 Section(
-                    header: Text("Imported Nightscout Data"),
+                    header: Text("Import av Nightscoutdata"),
                     content: {
                         Text(
-                            "Trio has successfully imported your default Nightscout profile and stored it as therapy settings. "
+                            "Trio har importerat din Nightscoutprofil och sparat den som dina behandlingsinställningar. "
                         ) +
-                            Text("This has replaced your previous therapy settings.").bold().foregroundColor(.accentColor)
-                        Text("Please review the following settings:").bold()
+                            Text("Detta ersätter dina tidigare behandlingsinställningar.").bold().foregroundColor(.accentColor)
+                        Text("Vänligen granska följande inställningar:").bold()
                     }
                 ).listRowBackground(Color.chart)
 
@@ -48,7 +48,7 @@ struct NightscoutImportResultView: BaseView {
                             .onDisappear { hasVisitedBasalProfileEditor = true }
                     ) {
                         HStack {
-                            Text("Basal Rates")
+                            Text("Basalprofil")
                             if hasVisitedBasalProfileEditor {
                                 Image(systemName: "checkmark.circle.fill")
                                     .imageScale(.large)
@@ -78,7 +78,7 @@ struct NightscoutImportResultView: BaseView {
                             .onDisappear { hasVisitedCREditor = true }
                     ) {
                         HStack {
-                            Text("Carb Ratios")
+                            Text("Insulinkvoter")
                             if hasVisitedCREditor {
                                 Image(systemName: "checkmark.circle.fill")
                                     .imageScale(.large)
@@ -93,7 +93,7 @@ struct NightscoutImportResultView: BaseView {
                             .onDisappear { hasVisitedPumpSettingsEditor = true }
                     ) {
                         HStack {
-                            Text("Duration of Insulin Action (DIA)")
+                            Text("Insulinets verkningstid")
                             if hasVisitedPumpSettingsEditor {
                                 Image(systemName: "checkmark.circle.fill")
                                     .imageScale(.large)
@@ -109,7 +109,7 @@ struct NightscoutImportResultView: BaseView {
                         Button {
                             state.isImportResultReviewPresented = false
                         } label: {
-                            Text("Finish").font(.title3)
+                            Text("Slutför").font(.title3)
                         }
                         .disabled(!allViewsVisited)
                         .frame(maxWidth: .infinity, alignment: .center)
@@ -117,7 +117,7 @@ struct NightscoutImportResultView: BaseView {
                     }
                 }.listRowBackground(allViewsVisited ? Color(.systemBlue) : Color(.systemGray4))
             }
-            .navigationTitle("Review Import")
+            .navigationTitle("Granska import")
             .navigationBarTitleDisplayMode(.large)
             .scrollContentBackground(.hidden)
             .background(appState.trioBackgroundColor(for: colorScheme))
