@@ -73,10 +73,10 @@ extension NightscoutConfig {
                                         + Text(
                                             "Detta skriver över följande behandlingsinställningar i Trio:\n"
                                         )
-                                        + Text("• Basalhastigheter\n")
+                                        + Text("• Basalprofil\n")
                                         + Text("• Insulinkänslighet\n")
-                                        + Text("• Kolhydratförhållanden\n")
-                                        + Text("• Glukosmål\n")
+                                        + Text("• Insulinkvoter\n")
+                                        + Text("• Målglukos\n")
                                         + Text("• Insulinets verkningstid"),
                                     primaryButton: .default(
                                         Text("Ja, importera!"),
