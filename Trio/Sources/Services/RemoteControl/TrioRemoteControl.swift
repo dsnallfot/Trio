@@ -110,8 +110,10 @@ class TrioRemoteControl: Injectable {
                 await handleBolusCommand(pushMessage)
             }
 
-            await handleMealCommand(pushMessage)
-            markPendingRemoteCommandMealHandled(for: pushMessage)
+            if pushMessage.carbs != nil || pushMessage.fat != nil || pushMessage.protein != nil {
+                await handleMealCommand(pushMessage)
+                markPendingRemoteCommandMealHandled(for: pushMessage)
+            }
 
             if pushMessage.glucose != nil {
                 await handleGlucoseCommand(pushMessage)
