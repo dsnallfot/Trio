@@ -2,8 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>NSAlarmKitUsageDescription</key>
-	<string>Trio använder systemlarm för att varna för lågt och högt glukos, även i tyst läge och Fokus.</string>
 	<key>AppGroupID</key>
 	<string>$(APP_GROUP_ID)</string>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
@@ -67,6 +65,8 @@
 	<true/>
 	<key>NFCReaderUsageDescription</key>
 	<string>NFC is used to scan Libre sensors.</string>
+	<key>NSAlarmKitUsageDescription</key>
+	<string>Trio använder systemlarm för att varna för lågt och högt glukos, även i tyst läge och Fokus.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
@@ -107,6 +107,7 @@
 	<true/>
 	<key>UIBackgroundModes</key>
 	<array>
+		<string>audio</string>
 		<string>bluetooth-central</string>
 		<string>bluetooth-peripheral</string>
 		<string>fetch</string>

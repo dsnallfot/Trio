@@ -503,6 +503,10 @@ final class BaseAPSManager: APSManager, Injectable {
 
         do {
             try await pump.enactBolus(units: roundedAmount, automatic: isSMB)
+            // Driver acknowledgement, not confirmation that the full dose was delivered.
+            if !isSMB {
+                await ManualBolusSound.shared.playIfEnabled()
+            }
             // Daniel: Minska loggning // debug(.apsManager, "Bolus lyckades")
             if !isSMB {
                 await determineBasalSync()

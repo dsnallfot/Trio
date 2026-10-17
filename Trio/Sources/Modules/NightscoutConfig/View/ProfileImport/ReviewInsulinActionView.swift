@@ -36,21 +36,21 @@ struct ReviewInsulinActionView: BaseView {
                 label: "Insulinets verkningstid",
                 miniHint: "Hur många timmar insulinet är aktivt i kroppen.",
                 verboseHint:
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Standard: 10 timmar").bold()
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Standard: 10 timmar").bold()
 
-                        Text(
-                            "Insulinets verkningstid (DIA) anger hur länge insulinet fortsätter att sänka glukosnivån efter att en dos har givits."
-                        )
+                    Text(
+                        "Insulinets verkningstid (DIA) anger hur länge insulinet fortsätter att sänka glukosnivån efter att en dos har givits."
+                    )
 
-                        Text(
-                            "Detta hjälper systemet att beräkna aktivt insulin (IOB) på ett korrekt sätt och minskar risken för över- eller underkorrigering genom att ta hänsyn till den sista delen av insulinets effekt."
-                        )
+                    Text(
+                        "Detta hjälper systemet att beräkna aktivt insulin (IOB) på ett korrekt sätt och minskar risken för över- eller underkorrigering genom att ta hänsyn till den sista delen av insulinets effekt."
+                    )
 
-                        Text(
-                            "Tips: Det är oftast bättre att använda en 'Anpassad topptid' än att ändra insulinets verkningstid (DIA)."
-                        )
-                    },
+                    Text(
+                        "Tips: Det är oftast bättre att använda en 'Anpassad topptid' än att ändra insulinets verkningstid (DIA)."
+                    )
+                },
                 headerText: "Granska importerad DIA"
             )
         }

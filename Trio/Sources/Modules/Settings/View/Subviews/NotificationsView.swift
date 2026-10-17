@@ -5,6 +5,9 @@ import SwiftUI
 import Swinject
 
 struct NotificationsView: BaseView {
+    @AppStorage("Trio.manualBolusSound.enabled") private var manualBolusSoundEnabled = false
+    @AppStorage("Trio.manualBolusSound.volume") private var manualBolusSoundVolume = 0.5
+
     let resolver: Resolver
 
     @ObservedObject var state: Settings.StateModel
@@ -32,6 +35,23 @@ struct NotificationsView: BaseView {
 
     var body: some View {
         List {
+            Section {
+                Toggle("Ljudbekräftelse vid manuell bolus", isOn: $manualBolusSoundEnabled)
+                if manualBolusSoundEnabled {
+                    HStack {
+                        Text("Pipvolym")
+                        Slider(value: $manualBolusSoundVolume, in: 0.1 ... 1, step: 0.05)
+                        Text(manualBolusSoundVolume, format: .percent.precision(.fractionLength(0)))
+                            .monospacedDigit()
+                    }
+                }
+            } footer: {
+                Text(
+                    "Ett kort pip när pumpen accepterat en manuell bolus, även via Shortcuts och remote. Hörs även i tyst läge. Medievolymen ändras tillfälligt och återställs efter pipet. Pipet bekräftar inte att hela dosen levererats."
+                )
+            }
+            .listRowBackground(Color.chart)
+
             Section(
                 header: Text("Hantera iOS-inställningar"),
                 content: {
