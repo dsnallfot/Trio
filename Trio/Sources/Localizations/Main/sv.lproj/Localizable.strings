@@ -1062,13 +1062,13 @@ Enact a temp Basal or a temp target */
 "Schedules were saved successfully!" = "Scheman har sparats!";
 
 /* */
-"High Glucose Alarm active" = "Högt blodsockerlarm aktivt";
+"High Glucose Alarm active" = "Högt glukoslarm aktivt";
 
 /* */
-"Low Glucose Alarm active" = "Lågt blodsockerlarm aktivt";
+"Low Glucose Alarm active" = "Lågt glukoslarm aktivt";
 
 /* */
-"No Glucose Alarm active" = "Inget blodsockerlarm aktivt";
+"No Glucose Alarm active" = "Inga aktiva pågående larm";
 
 /* */
 "snoozing until %@" = "Snoozar till %@";
@@ -2279,3 +2279,31 @@ Enact a temp Basal or a temp target */
 
 /* Cancel the current alert snooze */
 "Cancel Snooze" = "Avbryt snooze";
+
+/* */
+"Urgent High Glucose Alarm active" = "Akut högt glukoslarm aktivt";
+
+/* */
+"Urgent Low Glucose Alarm active" = "Akut lågt glukoslarm aktivt";
+
+/* */
+"Missed Reading Alarm active" = "Larm för saknade värden aktivt";
+
+/* */
+"Not Looping Alarm active" = "Larm för missad loop aktivt";
+
+/* Snooze overview */
+"Snoozed until %@" = "Snoozat till kl %@";
+"All alarms snoozed until %@" = "Alla larm snoozade till kl %@";
+"No shared snooze" = "Ingen gemensam snooze";
+"Snooze all alarms & notifications" = "Snooza alla larm & notiser";
+
+/* Compact labels in the snooze overview */
+"Active alarms" = "Aktiva larm";
+"High glucose" = "Högt glukos";
+"Low glucose" = "Lågt glukos";
+"Urgent high glucose" = "Akut högt glukos";
+"Urgent low glucose" = "Akut lågt glukos";
+"Missed loop" = "Missad loop";
+"Missing readings" = "Saknade värden";
+"Not snoozed" = "Inte snoozat";

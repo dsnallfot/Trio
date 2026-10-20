@@ -3,6 +3,11 @@ import Foundation
 /// Pure, persisted alarm decisions. No sensor, UI, notification or dosing dependencies.
 struct GlucoseAlarmState: Codable, Equatable {
     enum Kind: String, Codable { case low, high, urgentLow, urgentHigh }
+    struct Presentation: Equatable {
+        let kind: Kind
+        let snoozeUntil: Date
+    }
+
     struct Reading {
         let date: Date
         let mgdL: Decimal
@@ -28,6 +33,10 @@ struct GlucoseAlarmState: Codable, Equatable {
     var lastAlertAt: Date?
     var kind: Kind?
     var activeID: UUID?
+    var activeKind: Kind? {
+        activeID == nil ? nil : kind
+    }
+
     // Preserve an already-running shared pause from older builds until it expires.
     var snoozeUntil: Date = .distantPast
     var lowSnoozeUntil: Date?
@@ -35,6 +44,13 @@ struct GlucoseAlarmState: Codable, Equatable {
 
     var urgentLowSnoozeUntil: Date?
     var urgentHighSnoozeUntil: Date?
+
+    func presentation(now: Date, globalSnooze: Date, enabled: Bool) -> Presentation? {
+        guard enabled, let kind, let lastSeen,
+              lastSeen <= now, now.timeIntervalSince(lastSeen) <= Self.freshness
+        else { return nil }
+        return Presentation(kind: kind, snoozeUntil: max(snoozeDeadline(for: kind), globalSnooze))
+    }
 
     func snoozeDeadline(for kind: Kind?) -> Date {
         let specific: Date?
@@ -46,6 +62,22 @@ struct GlucoseAlarmState: Codable, Equatable {
         case nil: specific = nil
         }
         return max(snoozeUntil, specific ?? .distantPast)
+    }
+
+    mutating func cancelSnoozes(now: Date, globalSnooze: Date) {
+        let rearmCurrent = kind != nil && activeID == nil &&
+            max(snoozeDeadline(for: kind), globalSnooze) > now
+        snoozeUntil = .distantPast
+        lowSnoozeUntil = nil
+        highSnoozeUntil = nil
+        urgentLowSnoozeUntil = nil
+        urgentHighSnoozeUntil = nil
+        if rearmCurrent {
+            // Explicit cancellation permits one new alarm from the current fresh reading.
+            // Keep lastSeen so older/backfilled readings still cannot re-arm an alarm.
+            lastAlertReading = nil
+            lastAlertAt = nil
+        }
     }
 
     mutating func acknowledge(id: UUID, now: Date, snoozeMinutes: Int = 15) -> UUID? {
@@ -143,6 +175,15 @@ struct MissingDataAlarmState: Codable {
     var monitoringSince: Date?
     var slots: [Slot] = []
 
+    func hasActiveAlarm(in alertingIDs: Set<UUID>) -> Bool {
+        slots.contains { !$0.acknowledged && alertingIDs.contains($0.id) }
+    }
+
+    func hasCurrentAlarm(in alertingIDs: Set<UUID>, now: Date, snoozeUntil: Date) -> Bool {
+        hasActiveAlarm(in: alertingIDs) ||
+            (snoozeUntil > now && slots.contains { !$0.acknowledged && $0.scheduled && $0.date <= now })
+    }
+
     mutating func reconcile(latest candidate: Date?, config: MissingDataAlarmConfiguration, now: Date) -> [UUID] {
         if let candidate, candidate <= now, candidate > .distantPast,
            latest.map({ candidate > $0 }) ?? true { latest = candidate }
@@ -162,8 +203,23 @@ struct MissingDataAlarmState: Codable {
         return previous.filter { old in !slots.contains { $0.id == old.id } }.map(\.id)
     }
 
-    func supersededOverdue(_ slot: Slot, now: Date) -> Bool {
-        slot.date <= now && slots.contains { $0.date > slot.date && $0.date <= now }
+    func deliveryDate(for slot: Slot, snoozeUntil: Date) -> Date {
+        max(slot.date, snoozeUntil)
+    }
+
+    /// A changed shared pause replaces outstanding schedules, but never revives acknowledged slots.
+    mutating func rescheduleForSnooze() -> [UUID] {
+        var cancelled: [UUID] = []
+        for index in slots.indices where !slots[index].acknowledged {
+            if slots[index].scheduled { cancelled.append(slots[index].id) }
+            slots[index].scheduled = false
+        }
+        return cancelled
+    }
+
+    func supersededOverdue(_ slot: Slot, now: Date, snoozeUntil: Date = .distantPast) -> Bool {
+        let deadline = max(now, snoozeUntil)
+        return slot.date <= deadline && slots.contains { $0.date > slot.date && $0.date <= deadline }
     }
 
     mutating func acknowledge(_ id: UUID) -> Bool {

@@ -58,6 +58,8 @@ import UserNotifications
     }
 
     @Published private(set) var testAlarmID: UUID?
+    @Published private(set) var activeAlarmKind: GlucoseAlarmState.Kind?
+    private(set) var currentAlarmStatus: GlucoseAlarmState.Presentation?
     private var expirationTask: Task<Void, Never>?
     @Published private(set) var permissionText = ""
     @Published private(set) var deliveryError: String?
@@ -67,6 +69,7 @@ import UserNotifications
     private init() {
         state = UserDefaults.standard.data(forKey: Self.stateKey)
             .flatMap { try? JSONDecoder().decode(GlucoseAlarmState.self, from: $0) } ?? GlucoseAlarmState()
+        activeAlarmKind = state.activeKind
         systemIDs = Set((UserDefaults.standard.stringArray(forKey: Self.alarmIDsKey) ?? []).compactMap(UUID.init(uuidString:)))
         // Clean up previously replaced alarms, including a schedule interrupted by process termination.
         for id in systemIDs where id != state.activeID { cancel(id) }
@@ -209,6 +212,23 @@ import UserNotifications
                 urgentLowEnabled: urgentLowEnabled,
                 urgentHighEnabled: urgentHighEnabled
             )
+            let currentEnabled: Bool
+            switch state.kind {
+            case .low: currentEnabled = lowEnabled
+            case .high: currentEnabled = highEnabled
+            case .urgentLow: currentEnabled = urgentLowEnabled
+            case .urgentHigh: currentEnabled = urgentHighEnabled
+            case nil: currentEnabled = false
+            }
+            let validReading = reading.map {
+                $0.mgdL > 0 && $0.date == state.lastSeen &&
+                    settings.settings.lowGlucose < settings.settings.highGlucose
+            } ?? false
+            currentAlarmStatus = state.presentation(
+                now: now,
+                globalSnooze: snooze,
+                enabled: currentEnabled && validReading
+            )
             persist()
             if let id = decision.cancelled { cancel(id) }
             if let event = decision.issued { await deliver(event) }
@@ -301,6 +321,7 @@ import UserNotifications
     }
 
     private func persist() {
+        if activeAlarmKind != state.activeKind { activeAlarmKind = state.activeKind }
         let storedState = UserDefaults.standard.data(forKey: Self.stateKey)
             .flatMap { try? JSONDecoder().decode(GlucoseAlarmState.self, from: $0) }
         // Compare values, not JSON bytes (key ordering is not part of alarm state).
@@ -311,6 +332,18 @@ import UserNotifications
         if ids != UserDefaults.standard.stringArray(forKey: Self.alarmIDsKey) {
             UserDefaults.standard.set(ids, forKey: Self.alarmIDsKey)
         }
+    }
+
+    func cancelSnoozes() {
+        let now = Date()
+        state.cancelSnoozes(now: now, globalSnooze: globalSnooze)
+        observedSnooze = .distantPast
+        UserDefaults.standard.setValue(Date.distantPast, forKey: "UserNotificationsManager.snoozeUntilDate")
+        if let currentAlarmStatus {
+            self.currentAlarmStatus = .init(kind: currentAlarmStatus.kind, snoozeUntil: .distantPast)
+        }
+        persist()
+        evaluate()
     }
 
     func acknowledge(_ id: UUID) {

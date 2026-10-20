@@ -12,6 +12,7 @@ import SwiftUI
         var glucose = MissingDataAlarmState()
         var loop = MissingDataAlarmState()
         var retired: Set<UUID> = []
+        var snoozeUntil: Date?
     }
 
     private var saved: Saved
@@ -21,7 +22,33 @@ import SwiftUI
     private var subscriptions = Set<AnyCancellable>()
     private var running = false
     private var pending = false
+    private var observedSnooze = Date.distantPast
     @Published private(set) var errorText: String?
+
+    private var globalSnooze: Date {
+        UserDefaults.standard.getValue(Date.self, forKey: "UserNotificationsManager.snoozeUntilDate") ?? .distantPast
+    }
+
+    private func snoozeDidChange() {
+        let current = globalSnooze
+        guard current != observedSnooze else { return }
+        observedSnooze = current
+        refresh()
+    }
+
+    func activeAlarmStatus(for alertingIDs: Set<UUID>) -> (missedReadings: Bool, missedLoop: Bool) {
+        (
+            saved.glucose.hasActiveAlarm(in: alertingIDs),
+            saved.loop.hasActiveAlarm(in: alertingIDs)
+        )
+    }
+
+    func currentAlarmStatus(for alertingIDs: Set<UUID>, now: Date) -> (missedReadings: Bool, missedLoop: Bool) {
+        (
+            saved.glucose.hasCurrentAlarm(in: alertingIDs, now: now, snoozeUntil: globalSnooze),
+            saved.loop.hasCurrentAlarm(in: alertingIDs, now: now, snoozeUntil: globalSnooze)
+        )
+    }
 
     private init() {
         saved = UserDefaults.standard.data(forKey: Self.key)
@@ -34,6 +61,10 @@ import SwiftUI
             Foundation.NotificationCenter.default.publisher(for: name).receive(on: DispatchQueue.main)
                 .sink { [weak self] _ in self?.refresh() }.store(in: &subscriptions)
         }
+        observedSnooze = globalSnooze
+        Foundation.NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.snoozeDidChange() }.store(in: &subscriptions)
         Task { [weak self] in
             for await _ in AlarmManager.shared.authorizationUpdates { self?.refresh() }
         }
@@ -80,6 +111,12 @@ import SwiftUI
             }
         }
         saved.retired.formUnion(saved.loop.reconcile(latest: aps.lastLoopDate, config: preferences.missingLoop, now: now))
+        let snooze = globalSnooze
+        if (saved.snoozeUntil ?? .distantPast) != snooze {
+            saved.retired.formUnion(saved.glucose.rescheduleForSnooze())
+            saved.retired.formUnion(saved.loop.rescheduleForSnooze())
+            saved.snoozeUntil = snooze
+        }
         persist()
         for id in saved.retired { cancel(id) }
         guard AlarmManager.shared.authorizationState == .authorized else {
@@ -98,11 +135,13 @@ import SwiftUI
                     : preferences.missingLoopActivePeriod
 
                 for slot in slots where !slot.acknowledged {
+                    let snapshot = isGlucose ? saved.glucose : saved.loop
+                    let deliveryDate = snapshot.deliveryDate(for: slot, snoozeUntil: snooze)
                     // ------------------------------------------------------------
                     // Dag / natt
                     //
                     // Missing-data-larmen schemaläggs i förväg, så det är tiden
-                    // då larmet faktiskt ska gå (slot.date) som ska testas.
+                    // då larmet faktiskt ska gå, inklusive gemensam snooze, som ska testas.
                     //
                     // Exempel:
                     //
@@ -114,7 +153,7 @@ import SwiftUI
                     // ------------------------------------------------------------
                     let allowedAtAlarmTime = preferences.isAllowed(
                         during: activePeriod,
-                        at: slot.date
+                        at: deliveryDate
                     )
 
                     if !allowedAtAlarmTime {
@@ -142,19 +181,17 @@ import SwiftUI
                         continue
                     }
 
-                    // Expired/stopped alarms stay consumed after relaunch;
-                    // only missing future alarms are repaired.
+                    // Expired/stopped alarms stay consumed after relaunch.
+                    // An explicit snooze change resets outstanding schedules above.
                     guard !slot.scheduled ||
-                        (slot.date > Date() && !installed.contains(slot.id))
+                        (deliveryDate > Date() && !installed.contains(slot.id))
                     else {
                         continue
                     }
 
-                    let snapshot = isGlucose ? saved.glucose : saved.loop
-
-                    if snapshot.supersededOverdue(slot, now: Date()) {
-                        // Enabling/reconfiguring after both deadlines passed gives
-                        // one immediate warning, not two.
+                    if snapshot.supersededOverdue(slot, now: Date(), snoozeUntil: snooze) {
+                        // Deadlines crossed before delivery (including during snooze)
+                        // produce only the latest warning for this outage.
                         setScheduled(slot.id, true)
                         persist()
                         continue
@@ -190,7 +227,7 @@ import SwiftUI
                         AlarmManager.AlarmConfiguration<GlucoseAlarmMetadata>.alarm(
                             schedule: .fixed(
                                 max(
-                                    slot.date,
+                                    deliveryDate,
                                     Date().addingTimeInterval(2)
                                 )
                             ),
@@ -262,6 +299,7 @@ import SwiftUI
     private func cancel(_ id: UUID) {
         do {
             if try AlarmManager.shared.alarms.contains(where: { $0.id == id }) {
+                try? AlarmManager.shared.stop(id: id)
                 try AlarmManager.shared.cancel(id: id)
             }
             saved.retired.remove(id)

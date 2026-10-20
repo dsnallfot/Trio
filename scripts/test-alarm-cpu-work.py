@@ -16,6 +16,7 @@ def method(source, signature):
     return source[start:end].replace("private ", "")
 
 alarm = (ROOT / "Trio/Sources/Services/GlucoseAlarms/TrioAlertManager.swift").read_text()
+missing = (ROOT / "Trio/Sources/Services/GlucoseAlarms/MissingDataAlarmManager.swift").read_text()
 build = (ROOT / "Trio/Sources/Helpers/BuildDetails.swift").read_text()
 state_dir = ROOT / "Trio/Sources/Services/GlucoseAlarms"
 source = "\n".join((state_dir / f).read_text() for f in ["GlucoseAlarmState.swift", "GlucoseAlarmConfiguration.swift"])
@@ -36,6 +37,7 @@ final class AlarmHarness {
     let defaults = Defaults()
     let settings = Settings()
     var state = GlucoseAlarmState()
+    var activeAlarmKind: GlucoseAlarmState.Kind?
     var systemIDs: Set<UUID> = []
     var evaluations = 0
     func evaluate() { evaluations += 1 }
@@ -44,6 +46,16 @@ start = alarm.index("    private var observedSnooze")
 end = alarm.index("    @Published private(set) var testAlarmID")
 source += alarm[start:end].replace("private ", "").replace("UserDefaults.standard", "defaults")
 source += method(alarm, "    private func persist()") .replace("UserDefaults.standard", "defaults")
+source += "\n}\n"
+source += r'''
+final class MissingAlarmHarness {
+    let defaults = Defaults()
+    var observedSnooze = Date.distantPast
+    var refreshes = 0
+    func refresh() { refreshes += 1 }
+'''
+source += method(missing, "    private var globalSnooze: Date").replace("UserDefaults.standard", "defaults") + "\n"
+source += method(missing, "    private func snoozeDidChange()")
 source += "\n}\n"
 source += r'''
 final class ExpirationHarness {
@@ -58,6 +70,17 @@ final class ExpirationHarness {
 source += method(build, "    func calculateExpirationDate()") + "\n}\n"
 source += r'''
 let alarm = AlarmHarness()
+let missing = MissingAlarmHarness()
+for _ in 0..<10000 { missing.snoozeDidChange() }
+precondition(missing.refreshes == 0, "Unrelated defaults must not refresh missing-data alarms")
+missing.defaults.set(Date(timeIntervalSince1970: 1000), forKey: "UserNotificationsManager.snoozeUntilDate")
+missing.snoozeDidChange()
+precondition(missing.refreshes == 1)
+for _ in 0..<10000 { missing.snoozeDidChange() }
+precondition(missing.refreshes == 1)
+missing.defaults.values.removeValue(forKey: "UserNotificationsManager.snoozeUntilDate")
+missing.snoozeDidChange()
+precondition(missing.refreshes == 2, "Cancelling shared snooze must refresh missing-data alarms")
 alarm.observedSnooze = alarm.globalSnooze
 alarm.observedSettings = alarm.evaluationSettings
 for _ in 0..<10000 { alarm.snoozeDidChange(); alarm.alarmSettingsDidChange() }
