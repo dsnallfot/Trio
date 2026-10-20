@@ -34,5 +34,6 @@ extension Home.StateModel {
     @MainActor private func updateGlucoseArray(with objects: [GlucoseStored]) {
         glucoseFromPersistence = objects
         latestTwoGlucoseValues = Array(objects.suffix(2))
+        alarm = provider.glucoseStorage.alarm
     }
 }

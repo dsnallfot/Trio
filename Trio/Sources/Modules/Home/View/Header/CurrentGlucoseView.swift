@@ -136,6 +136,9 @@ struct CurrentGlucoseView: View {
                     }.frame(alignment: .top)
                 }
             }
+            .overlay(alignment: .bottom) {
+                GlucoseAlarmIndicator(alarm: alarm, timerDate: timerDate)
+            }
             .onChange(of: glucose.last?.directionEnum) {
                 withAnimation {
                     switch glucose.last?.directionEnum {
@@ -186,6 +189,52 @@ struct CurrentGlucoseView: View {
         let delta = lastGlucose - secondLastGlucose
         let deltaAsDecimal = units == .mmolL ? Decimal(delta).asMmolL : Decimal(delta)
         return deltaFormatter.string(from: deltaAsDecimal as NSNumber) ?? "--"
+    }
+}
+
+private struct GlucoseAlarmIndicator: View {
+    let alarm: GlucoseAlarm?
+    let timerDate: Date
+
+    @Persisted(key: "UserNotificationsManager.snoozeUntilDate") private var storedSnoozeUntilDate: Date = .distantPast
+    @State private var snoozeUntilDate: Date = .distantPast
+
+    private var isSnoozed: Bool {
+        snoozeUntilDate > timerDate
+    }
+
+    private var alarmLabel: Text {
+        switch alarm {
+        case .high:
+            return Text("High Glucose Alarm active")
+        case .low:
+            return Text("Low Glucose Alarm active")
+        case .none:
+            return Text("No Glucose Alarm active")
+        }
+    }
+
+    var body: some View {
+        Group {
+            if isSnoozed || alarm != nil {
+                Image(systemName: isSnoozed ? "moon.zzz.fill" : "alarm.waves.left.and.right")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(isSnoozed ? Color.secondary : Color.primary)
+                    .padding(.bottom, 7)
+                    .accessibilityLabel(alarmLabel)
+                    .accessibilityValue(isSnoozed ? Text("Snoozed") : Text("not snoozing"))
+                    .allowsHitTesting(false)
+            }
+        }
+        .onAppear {
+            snoozeUntilDate = storedSnoozeUntilDate
+        }
+        .onReceive(
+            Foundation.NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)
+                .receive(on: DispatchQueue.main)
+        ) { _ in
+            snoozeUntilDate = storedSnoozeUntilDate
+        }
     }
 }
 

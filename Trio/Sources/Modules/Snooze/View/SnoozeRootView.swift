@@ -10,39 +10,18 @@ extension Snooze {
         @Environment(\.colorScheme) var colorScheme
         @Environment(AppState.self) var appState
 
-        @State private var selectedInterval = 0
-        @State private var snoozeDescription = "nothing to see here"
+        @State private var selectedInterval = 1
 
         private var pickerTimes: [TimeInterval] {
-            var arr: [TimeInterval] = []
-
-            let mins10 = 0.166_67
-            let mins20 = mins10 * 2
-            let mins30 = mins10 * 3
-            // let mins40 = mins10 * 4
-
-            for hr in 0 ..< 2 {
-                for min in [0.0, mins20, mins20 * 2] {
-                    arr.append(TimeInterval(hours: Double(hr) + min))
-                }
-            }
-            for hr in 2 ..< 4 {
-                for min in [0.0, mins30] {
-                    arr.append(TimeInterval(hours: Double(hr) + min))
-                }
-            }
-
-            for hr in 4 ... 8 {
-                arr.append(TimeInterval(hours: Double(hr)))
-            }
-
-            return arr
+            [0] + stride(from: 15, through: 180, by: 15).map { TimeInterval(minutes: Double($0)) } +
+                (4 ... 8).map { TimeInterval(hours: Double($0)) }
         }
 
         private var formatter: DateComponentsFormatter {
             let formatter = DateComponentsFormatter()
             formatter.allowsFractionalUnits = false
-            formatter.unitsStyle = .full
+            formatter.allowedUnits = [.hour, .minute]
+            formatter.unitsStyle = .short
             return formatter
         }
 
@@ -56,54 +35,65 @@ extension Snooze {
             formatter.string(from: interval)!
         }
 
-        func getSnoozeDescription() -> String {
-            var snoozeDescription = ""
-            var celltext = ""
-
+        private var alarmDescription: String {
             switch state.alarm {
             case .high:
-                celltext = NSLocalizedString("High Glucose Alarm active", comment: "High Glucose Alarm active")
+                return NSLocalizedString("High Glucose Alarm active", comment: "High Glucose Alarm active")
             case .low:
-                celltext = NSLocalizedString("Low Glucose Alarm active", comment: "Low Glucose Alarm active")
+                return NSLocalizedString("Low Glucose Alarm active", comment: "Low Glucose Alarm active")
             case .none:
-                celltext = NSLocalizedString("No Glucose Alarm active", comment: "No Glucose Alarm active")
+                return NSLocalizedString("No Glucose Alarm active", comment: "No Glucose Alarm active")
             }
+        }
 
+        private var snoozeDescription: String {
             if state.snoozeUntilDate > Date() {
-                snoozeDescription = String(
+                return String(
                     format: NSLocalizedString("snoozing until %@", comment: "snoozing until %@"),
                     dateFormatter.string(from: state.snoozeUntilDate)
                 )
-            } else {
-                snoozeDescription = NSLocalizedString("not snoozing", comment: "not snoozing")
             }
-
-            return [celltext, snoozeDescription].joined(separator: ", ")
+            return NSLocalizedString("not snoozing", comment: "not snoozing")
         }
 
         private var snoozeButton: some View {
-            VStack(alignment: .leading) {
-                Button {
-                    let interval = pickerTimes[selectedInterval]
-                    let snoozeFor = formatter.string(from: interval)!
-                    let untilDate = Date() + interval
-                    state.snoozeUntilDate = untilDate < Date() ? .distantPast : untilDate
-                    debug(.default, "will snooze for \(snoozeFor) until \(dateFormatter.string(from: untilDate))")
-                    snoozeDescription = getSnoozeDescription()
+            Button {
+                let interval = pickerTimes[selectedInterval]
+                let snoozeFor = formatInterval(interval)
+                let untilDate = Date() + interval
+                state.snoozeUntilDate = interval > 0 ? untilDate : .distantPast
+                debug(.default, "will snooze for \(snoozeFor) until \(dateFormatter.string(from: untilDate))")
+                if interval > 0 {
                     BaseUserNotificationsManager.stopSound()
-                    state.hideModal()
-                } label: {
-                    Text("Click to Snooze Alerts")
-                        .padding()
                 }
+                state.hideModal()
+            } label: {
+                Text(selectedInterval == 0 ? "Cancel Snooze" : "Click to Snooze Alerts")
+                    .font(.headline)
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+                    .frame(maxWidth: .infinity, minHeight: 52)
+                    .background(Color(.systemBlue), in: Capsule())
             }
+            .buttonStyle(.plain)
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
+            .listRowSeparator(.hidden)
         }
 
         private var snoozePicker: some View {
             VStack {
-                Picker(selection: $selectedInterval, label: Text("Strength")) {
+                Picker(selection: $selectedInterval, label: Text("Snooze duration")) {
                     ForEach(0 ..< pickerTimes.count) {
-                        Text(formatInterval(self.pickerTimes[$0]))
+                        if $0 == 0 {
+                            Text("Cancel Snooze")
+                                .tag($0)
+                        } else {
+                            Text(formatInterval(self.pickerTimes[$0]))
+                                .tag($0)
+                        }
                     }
                 }
                 .pickerStyle(.wheel)
@@ -113,8 +103,23 @@ extension Snooze {
         var body: some View {
             Form {
                 Section {
-                    Text(snoozeDescription).lineLimit(nil)
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(alignment: .firstTextBaseline, spacing: 8) {
+                            if state.alarm != nil {
+                                Image(systemName: "alarm.waves.left.and.right")
+                                    .accessibilityHidden(true)
+                            }
+                            Text(alarmDescription)
+                        }
+                        Text(snoozeDescription)
+                            .foregroundStyle(.secondary)
+                    }
+                    .lineLimit(nil)
                     snoozePicker
+                }
+                .listRowBackground(Color.chart)
+
+                Section {
                     snoozeButton
                 }
             }
@@ -124,7 +129,6 @@ extension Snooze {
             .navigationBarItems(trailing: Button("Close", action: state.hideModal))
             .onAppear {
                 configureView()
-                snoozeDescription = getSnoozeDescription()
             }
         }
     }

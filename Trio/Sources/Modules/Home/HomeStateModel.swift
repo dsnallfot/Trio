@@ -606,6 +606,7 @@ extension Home.StateModel:
     }
 
     func settingsDidChange(_ settings: TrioSettings) {
+        alarm = provider.glucoseStorage.alarm
         allowManualTemp = !settings.closedLoop
         closedLoop = settingsManager.settings.closedLoop
         isErrorUploadEnabled = settingsManager.settings.isErrorUploadEnabled

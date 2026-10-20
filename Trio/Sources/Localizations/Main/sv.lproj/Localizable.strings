@@ -903,7 +903,7 @@ Enact a temp Basal or a temp target */
 "Libre Bluetooth" = "Libre bluetooth";
 
 /* */
-"Snooze Alerts" = "Snooza larm";
+"Snooze Alerts" = "Snooza larm & notiser";
 
 /* */
 "Last measurement" = "Senaste mätning";
@@ -1071,10 +1071,10 @@ Enact a temp Basal or a temp target */
 "No Glucose Alarm active" = "Inget blodsockerlarm aktivt";
 
 /* */
-"snoozing until %@" = "snoozar till %@";
+"snoozing until %@" = "Snoozar till %@";
 
 /* */
-"not snoozing" = "snoozar inte";
+"not snoozing" = "Snoozar inte";
 
 /* */
 "nothing to see here" = "inget att se här";
@@ -1086,7 +1086,7 @@ Enact a temp Basal or a temp target */
 "will snooze for %@ until %@" = "kommer att snooza i %@ tills %@";
 
 /* */
-"Click to Snooze Alerts" = "Klicka för att snooza varningar";
+"Click to Snooze Alerts" = "Snooza alla larm & notiser";
 
 /* */
 "Strength" = "Styrka";
@@ -2270,3 +2270,12 @@ Enact a temp Basal or a temp target */
 /* Medtrum pump selection */
 "Medtrum Nano" = "Medtrum Nano";
 "• Medtrum Nano (200u/300u)" = "• Medtrum Nano (200u/300u)";
+
+/* Snooze duration picker accessibility label */
+"Snooze duration" = "Snoozetid";
+
+/* Glucose alarm accessibility status */
+"Snoozed" = "Snoozat";
+
+/* Cancel the current alert snooze */
+"Cancel Snooze" = "Avbryt snooze";

@@ -104,12 +104,20 @@ extension Home {
                 )
             }.scaleEffect(0.9)
                 .onTapGesture {
-                    state.openCGM()
+                    if state.alarm != nil {
+                        state.showModal(for: .snooze)
+                    } else {
+                        state.openCGM()
+                    }
                 }
                 .onLongPressGesture {
                     let impactHeavy = UIImpactFeedbackGenerator(style: .heavy)
                     impactHeavy.impactOccurred()
-                    state.showModal(for: .snooze)
+                    if state.alarm != nil {
+                        state.openCGM()
+                    } else {
+                        state.showModal(for: .snooze)
+                    }
                 }
         }
 
