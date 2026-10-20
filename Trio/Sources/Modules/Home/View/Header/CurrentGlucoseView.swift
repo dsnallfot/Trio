@@ -218,8 +218,8 @@ private struct GlucoseAlarmIndicator: View {
         Group {
             if isSnoozed || alarm != nil {
                 Image(systemName: isSnoozed ? "moon.zzz.fill" : "alarm.waves.left.and.right")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(isSnoozed ? Color.secondary : Color.primary)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(isSnoozed ? Color.primary : Color.primary)
                     .padding(.bottom, 7)
                     .accessibilityLabel(alarmLabel)
                     .accessibilityValue(isSnoozed ? Text("Snoozed") : Text("not snoozing"))
