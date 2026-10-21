@@ -195,6 +195,19 @@ import Foundation
         }
     }
 
+    /// Enabled by settings and schedule, independently of thresholds, snooze and current alert delivery.
+    func activeAlarmCodes(at date: Date = Date()) -> String {
+        let alarms: [(String, Bool, AlarmActivePeriod)] = [
+            ("AL", urgentLowEnabled, urgentLowActivePeriod),
+            ("L", lowEnabled, lowActivePeriod),
+            ("H", highEnabled, highActivePeriod),
+            ("AH", urgentHighEnabled, urgentHighActivePeriod)
+        ]
+        return alarms.compactMap { code, enabled, period in
+            enabled && isAllowed(during: period, at: date) ? code : nil
+        }.joined(separator: ", ")
+    }
+
     func activePeriod(for kind: GlucoseAlarmState.Kind) -> AlarmActivePeriod {
         switch kind {
         case .urgentLow:

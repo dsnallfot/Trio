@@ -77,12 +77,20 @@ final class BackgroundTaskDiagnostics {
 tests = r'''
 @main struct Tests {
     @MainActor static func main() async {
-        let fixture = #"{"device":"test", "openaps":{"version":"test", "suggested":{"reason":"test","deliverAt":100,"timestamp":100}, "enacted":{"reason":"test","deliverAt":100,"timestamp":101,"received":false}}, "pump":{"clock":100,"reservoir":100}, "uploader":{"battery":75}, "additional":{"memoryUsageLatest":100,"memoryUsageMax":150}}"#
+        let fixture = #"{"device":"test", "openaps":{"version":"test", "suggested":{"reason":"test","deliverAt":100,"timestamp":100}, "enacted":{"reason":"test","deliverAt":100,"timestamp":101,"received":false}}, "pump":{"clock":100,"reservoir":100}, "uploader":{"battery":75}, "additional":{"memoryUsageLatest":100,"memoryUsageMax":150,"snoozedUntil":1800000000,"activeAlarms":"AL, L"}}"#
         func key(_ json: String, destination: String = "site-a") -> Data {
             let status = try! JSONDecoder().decode(NightscoutStatus.self, from: Data(json.utf8))
             return try! status.uploadComparisonKey(destination: destination)
         }
+        let decodedStatus = try! JSONDecoder().decode(NightscoutStatus.self, from: Data(fixture.utf8))
+        let encoded = try! JSONSerialization.jsonObject(with: JSONEncoder().encode(decodedStatus)) as! [String: Any]
+        let additional = encoded["additional"] as! [String: Any]
+        precondition(additional["snoozedUntil"] as? Double == 1800000000)
+        precondition(additional["activeAlarms"] as? String == "AL, L")
+        precondition(additional["memoryUsageLatest"] as? Double == 100)
         let base = key(fixture)
+        precondition(base != key(fixture.replacingOccurrences(of: "1800000000", with: "0")), "Snooze cancellation must upload")
+        precondition(base != key(fixture.replacingOccurrences(of: "AL, L", with: "H, AH")), "Schedule/activation changes must upload")
         precondition(base == key(fixture.replacingOccurrences(of: "memoryUsageLatest\":100", with: "memoryUsageLatest\":120")))
         precondition(base != key(fixture.replacingOccurrences(of: "timestamp\":101", with: "timestamp\":102")), "Enacted revision with unchanged deliverAt must upload")
         precondition(base != key(fixture.replacingOccurrences(of: "received\":false", with: "received\":true")), "Changed enacted result must upload")

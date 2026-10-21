@@ -886,30 +886,40 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             )
         }
 
-        var additionalInfo: [String: Decimal] = [
-            "maxSMBBasalMinutes": userPreferences?.maxSMBBasalMinutes ?? 30,
-            "maxUAMSMBBasalMinutes": userPreferences?.maxUAMSMBBasalMinutes ?? 30,
-            "autosensMax": userPreferences?.autosensMax ?? 1.2,
-            "autosensMin": userPreferences?.autosensMin ?? 0.7
+        var additionalInfo: [String: NightscoutStatus.AdditionalValue] = [
+            "maxSMBBasalMinutes": .number(userPreferences?.maxSMBBasalMinutes ?? 30),
+            "maxUAMSMBBasalMinutes": .number(userPreferences?.maxUAMSMBBasalMinutes ?? 30),
+            "autosensMax": .number(userPreferences?.autosensMax ?? 1.2),
+            "autosensMin": .number(userPreferences?.autosensMin ?? 0.7)
         ]
 
         // Senast uppmätta minnesanvändning i MiB.
         if let latestMemoryMiB = runtimeDiagnostics.latestMemoryMiB {
-            additionalInfo["memoryUsageLatest"] = Decimal(latestMemoryMiB)
+            additionalInfo["memoryUsageLatest"] = .number(Decimal(latestMemoryMiB))
         }
 
         // Högsta uppmätta minnesanvändning under nuvarande Trio-session i MiB.
         if let maxMemoryMiB = runtimeDiagnostics.maxMemoryMiB {
-            additionalInfo["memoryUsageMax"] = Decimal(maxMemoryMiB)
+            additionalInfo["memoryUsageMax"] = .number(Decimal(maxMemoryMiB))
         }
 
         // Tidpunkt då nuvarande Trio-session startades.
         // Skickas som Unix timestamp i sekunder.
         if let sessionStart = runtimeDiagnostics.sessionStart {
-            additionalInfo["latestRestart"] = Decimal(
-                sessionStart.timeIntervalSince1970
+            additionalInfo["latestRestart"] = .number(Decimal(sessionStart.timeIntervalSince1970))
+        }
+
+        let alarmStatus = await MainActor.run {
+            let now = Date()
+            let snoozedUntil = UserDefaults.standard.getValue(Date.self, forKey: "UserNotificationsManager.snoozeUntilDate")
+            return (
+                // Zero means no saved pause or explicitly cancelled. Preserve expired deadlines.
+                snoozedUntil: max(0, snoozedUntil?.timeIntervalSince1970 ?? 0),
+                activeAlarms: GlucoseAlarmPreferences.shared.activeAlarmCodes(at: now)
             )
         }
+        additionalInfo["snoozedUntil"] = .number(Decimal(alarmStatus.snoozedUntil))
+        additionalInfo["activeAlarms"] = .text(alarmStatus.activeAlarms)
 
         // Daniel: Minska loggning // debug(.nightscout, "Additional Info: \(additionalInfo)")
 

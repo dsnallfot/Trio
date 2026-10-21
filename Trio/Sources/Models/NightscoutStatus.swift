@@ -5,8 +5,31 @@ struct NightscoutStatus: JSON {
     let openaps: OpenAPSStatus
     let pump: NSPumpStatus
     let uploader: Uploader
-    var additional: [String: Decimal]?
+    var additional: [String: AdditionalValue]?
     let oref2: Oref2_variables?
+
+    // Encode as ordinary JSON numbers/strings, preserving existing numeric fields.
+    enum AdditionalValue: Codable, Equatable {
+        case number(Decimal)
+        case text(String)
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.singleValueContainer()
+            if let value = try? container.decode(Decimal.self) {
+                self = .number(value)
+            } else {
+                self = .text(try container.decode(String.self))
+            }
+        }
+
+        func encode(to encoder: Encoder) throws {
+            var container = encoder.singleValueContainer()
+            switch self {
+            case let .number(value): try container.encode(value)
+            case let .text(value): try container.encode(value)
+            }
+        }
+    }
 }
 
 struct OpenAPSStatus: JSON {
