@@ -321,6 +321,7 @@
 		ACB010000000000000000001 /* Trio/Sources/Services/ManualBolusSound.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACB010000000000000000002 /* Trio/Sources/Services/ManualBolusSound.swift */; };
 		ACB010000000000000000003 /* Trio/Resources/manual_bolus_ack.wav in Resources */ = {isa = PBXBuildFile; fileRef = ACB010000000000000000004 /* Trio/Resources/manual_bolus_ack.wav */; };
 		AD3D2CD42CD01B9EB8F26522 /* PumpConfigDataFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF65DA88F972B56090AD6AC3 /* PumpConfigDataFlow.swift */; };
+		AD92A36215F44C15B444634B /* TrioRemoteControl+snooze.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72CA71751A6147D7A6DEE80B /* TrioRemoteControl+snooze.swift */; };
 		B6E925142EB3932A0076D719 /* OmnipodKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = B6E925122EB3932A0076D719 /* OmnipodKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		B7C465E9472624D8A2BE2A6A /* (null) in Sources */ = {isa = PBXBuildFile; };
 		B958F1B72BA0711600484851 /* MKRingProgressView in Frameworks */ = {isa = PBXBuildFile; productRef = B958F1B62BA0711600484851 /* MKRingProgressView */; };
@@ -1077,6 +1078,7 @@
 		6FD3F53CC9BB4898B1DEE7F6 /* GlucoseAlarms/GlucoseAlarmState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlucoseAlarms/GlucoseAlarmState.swift; sourceTree = "<group>"; };
 		715120D12D3C2B84005D9FB6 /* GlucoseNotificationsOption.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlucoseNotificationsOption.swift; sourceTree = "<group>"; };
 		71D44AAA2CA5F5EA0036EE9E /* AlertPermissionsChecker.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AlertPermissionsChecker.swift; sourceTree = "<group>"; };
+		72CA71751A6147D7A6DEE80B /* TrioRemoteControl+snooze.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TrioRemoteControl+snooze.swift"; sourceTree = "<group>"; };
 		79BDA519C9B890FD9A5DFCF3 /* ISFEditorDataFlow.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ISFEditorDataFlow.swift; sourceTree = "<group>"; };
 		7E22146D3DF4853786C78132 /* CarbRatioEditorDataFlow.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CarbRatioEditorDataFlow.swift; sourceTree = "<group>"; };
 		8782B44544F38F2B2D82C38E /* NightscoutConfigRootView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NightscoutConfigRootView.swift; sourceTree = "<group>"; };
@@ -3088,6 +3090,7 @@
 			isa = PBXGroup;
 			children = (
 				6551A7F6304AE5D3002094F6 /* TrioRemoteControl+Glucose.swift */,
+				72CA71751A6147D7A6DEE80B /* TrioRemoteControl+snooze.swift */,
 				DD32CFA12CC824E1003686D6 /* TrioRemoteControl+Helpers.swift */,
 				DD32CF9F2CC824D3003686D6 /* TrioRemoteControl+APNS.swift */,
 				DD32CF9D2CC824C2003686D6 /* TrioRemoteControl+Override.swift */,
@@ -3899,6 +3902,7 @@
 				DDD163142C4C68D300CD525A /* AdjustmentsProvider.swift in Sources */,
 				3871F39C25ED892B0013ECB5 /* TempTarget.swift in Sources */,
 				6551A7F7304AE5DE002094F6 /* TrioRemoteControl+Glucose.swift in Sources */,
+				AD92A36215F44C15B444634B /* TrioRemoteControl+snooze.swift in Sources */,
 				191F62682AD6B05A004D7911 /* NightscoutSettings.swift in Sources */,
 				6551A7F3304AD52B002094F6 /* ManualGlucoseIntent.swift in Sources */,
 				3811DEAB25C9D88300A708ED /* HTTPResponseStatus.swift in Sources */,

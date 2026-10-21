@@ -5,7 +5,7 @@ struct PushMessage: Codable, Sendable {
     var commandType: TrioRemoteControl.CommandType
     var bolusAmount: Decimal?
     var target: Int?
-    var duration: Int?
+    var duration: Int? // Minutes, including the snooze command.
     var carbs: Int?
     var protein: Int?
     var fat: Int?
@@ -118,6 +118,9 @@ struct PushMessage: Codable, Sendable {
         }
 
         switch commandType {
+        case .snooze:
+            let durationDescription = duration.map { "\($0) minutes" } ?? "missing duration"
+            description += "Snooze all alarms and notifications: \(durationDescription)."
         case .bolus:
             if let amount = bolusAmount {
                 description += "Bolus Amount: \(amount) units."

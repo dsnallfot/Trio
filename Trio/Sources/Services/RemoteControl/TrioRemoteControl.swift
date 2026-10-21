@@ -45,6 +45,11 @@ class TrioRemoteControl: Injectable {
             return
         }
 
+        guard pushMessage.timestamp.isFinite else {
+            await logError("Kommandot avvisades: ogiltig tidsstämpel.", pushMessage: pushMessage)
+            return
+        }
+
         let currentTime = Date().timeIntervalSince1970
         let timeDifference = currentTime - pushMessage.timestamp
 
@@ -82,6 +87,8 @@ class TrioRemoteControl: Injectable {
         }
 
         switch pushMessage.commandType {
+        case .snooze:
+            await handleSnoozeCommand(pushMessage)
         case .bolus:
             await handleBolusCommand(pushMessage)
         case .tempTarget:
@@ -259,6 +266,7 @@ class TrioRemoteControl: Injectable {
 
 extension TrioRemoteControl {
     enum CommandType: String, Codable {
+        case snooze
         case bolus
         case tempTarget = "temp_target"
         case cancelTempTarget = "cancel_temp_target"
@@ -273,6 +281,8 @@ extension TrioRemoteControl {
 
         var description: String {
             switch self {
+            case .snooze:
+                return "Snooza alla larm och notiser"
             case .bolus:
                 return "Bolus"
             case .tempTarget:
