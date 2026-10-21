@@ -1068,7 +1068,7 @@ Enact a temp Basal or a temp target */
 "Low Glucose Alarm active" = "Lågt glukoslarm aktivt";
 
 /* */
-"No Glucose Alarm active" = "Inga aktiva pågående larm";
+"No Glucose Alarm active" = "Inga aktiva larm";
 
 /* */
 "snoozing until %@" = "Snoozar till %@";
@@ -2307,3 +2307,6 @@ Enact a temp Basal or a temp target */
 "Missed loop" = "Missad loop";
 "Missing readings" = "Saknade värden";
 "Not snoozed" = "Inte snoozat";
+
+/* Glucose bubble alarm status */
+"Alarm disabled in settings" = "Larmet är inaktiverat av inställningarna";

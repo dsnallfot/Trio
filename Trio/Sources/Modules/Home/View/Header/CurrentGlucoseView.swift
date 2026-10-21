@@ -137,7 +137,7 @@ struct CurrentGlucoseView: View {
                 }
             }
             .overlay(alignment: .bottom) {
-                GlucoseAlarmIndicator(alarm: alarm, timerDate: timerDate)
+                GlucoseAlarmIndicator(alarm: alarm, timerDate: timerDate, reading: alarmReading)
             }
             .onChange(of: glucose.last?.directionEnum) {
                 withAnimation {
@@ -179,6 +179,11 @@ struct CurrentGlucoseView: View {
         }
     }
 
+    private var alarmReading: GlucoseAlarmState.Reading? {
+        guard let latest = glucose.last, let date = latest.date else { return nil }
+        return .init(date: date, mgdL: Decimal(latest.glucose))
+    }
+
     private var delta: String {
         guard glucose.count >= 2 else {
             return "--"
@@ -195,12 +200,16 @@ struct CurrentGlucoseView: View {
 private struct GlucoseAlarmIndicator: View {
     let alarm: GlucoseAlarm?
     let timerDate: Date
+    let reading: GlucoseAlarmState.Reading?
+    @ObservedObject private var preferences = GlucoseAlarmPreferences.shared
 
     @Persisted(key: "UserNotificationsManager.snoozeUntilDate") private var storedSnoozeUntilDate: Date = .distantPast
     @State private var snoozeUntilDate: Date = .distantPast
 
-    private var isSnoozed: Bool {
-        snoozeUntilDate > timerDate
+    private var symbol: String? {
+        // Reading this state also refreshes the indicator when shared snooze changes.
+        if snoozeUntilDate > timerDate { return "moon.zzz.fill" }
+        return TrioAlertManager.shared.indicatorSymbol(for: reading, at: timerDate)
     }
 
     private var alarmLabel: Text {
@@ -216,13 +225,17 @@ private struct GlucoseAlarmIndicator: View {
 
     var body: some View {
         Group {
-            if isSnoozed || alarm != nil {
-                Image(systemName: isSnoozed ? "moon.zzz.fill" : "alarm.waves.left.and.right")
+            if let symbol {
+                let isSnoozed = symbol == "moon.zzz.fill"
+                Image(systemName: symbol)
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(isSnoozed ? Color.primary : Color.primary)
                     .padding(.bottom, 7)
                     .accessibilityLabel(alarmLabel)
-                    .accessibilityValue(isSnoozed ? Text("Snoozed") : Text("not snoozing"))
+                    .accessibilityValue(
+                        isSnoozed ? Text("Snoozed") :
+                            (symbol == "bell.slash.fill" ? Text("Alarm disabled in settings") : Text("not snoozing"))
+                    )
                     .allowsHitTesting(false)
             }
         }

@@ -95,6 +95,26 @@ struct GlucoseAlarmState: Codable, Equatable {
         return id
     }
 
+    static func thresholdKind(
+        value: Decimal, low: Decimal, high: Decimal,
+        urgentLow: Decimal, urgentHigh: Decimal,
+        urgentLowEnabled: Bool, urgentHighEnabled: Bool
+    ) -> Kind? {
+        if urgentLowEnabled, value <= GlucoseAlarmConfiguration.urgentLowThreshold(urgentLow, low: low) {
+            return .urgentLow
+        } else if urgentHighEnabled, value >= GlucoseAlarmConfiguration.urgentHighThreshold(urgentHigh, high: high) {
+            return .urgentHigh
+        } else {
+            return value <= low ? .low : (value >= high ? .high : nil)
+        }
+    }
+
+    static func indicatorSymbol(kind: Kind?, enabled: Bool, snoozeUntil: Date, now: Date) -> String? {
+        if snoozeUntil > now { return "moon.zzz.fill" }
+        guard kind != nil else { return nil }
+        return enabled ? "bell.fill" : "bell.slash.fill"
+    }
+
     mutating func evaluate(
         _ reading: Reading?, low: Decimal, high: Decimal,
         lowEnabled: Bool, highEnabled: Bool, now: Date, globalSnooze: Date,
@@ -118,14 +138,11 @@ struct GlucoseAlarmState: Codable, Equatable {
         }
         lastSeen = reading.date
         // Choose severity before snooze: a snoozed urgent alarm must not fall back to a normal alarm.
-        let nextKind: Kind?
-        if urgentLowEnabled && reading.mgdL <= GlucoseAlarmConfiguration.urgentLowThreshold(urgentLow, low: low) {
-            nextKind = .urgentLow
-        } else if urgentHighEnabled && reading.mgdL >= GlucoseAlarmConfiguration.urgentHighThreshold(urgentHigh, high: high) {
-            nextKind = .urgentHigh
-        } else {
-            nextKind = reading.mgdL <= low ? .low : (reading.mgdL >= high ? .high : nil)
-        }
+        let nextKind = Self.thresholdKind(
+            value: reading.mgdL, low: low, high: high,
+            urgentLow: urgentLow, urgentHigh: urgentHigh,
+            urgentLowEnabled: urgentLowEnabled, urgentHighEnabled: urgentHighEnabled
+        )
         let enabled: Bool
         switch nextKind {
         case .low: enabled = lowEnabled

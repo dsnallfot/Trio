@@ -107,6 +107,39 @@ import UserNotifications
         evaluate()
     }
 
+    func indicatorSymbol(for reading: GlucoseAlarmState.Reading?, at now: Date) -> String? {
+        let snooze = globalSnooze
+        guard let reading, reading.mgdL > 0, reading.date <= now,
+              now.timeIntervalSince(reading.date) <= GlucoseAlarmState.freshness,
+              settings.settings.lowGlucose < settings.settings.highGlucose
+        else {
+            return GlucoseAlarmState.indicatorSymbol(kind: nil, enabled: false, snoozeUntil: snooze, now: now)
+        }
+        let urgentLowEnabled = preferences.urgentLowEnabled && preferences.isAllowed(
+            during: preferences.urgentLowActivePeriod,
+            at: now
+        )
+        let urgentHighEnabled = preferences.urgentHighEnabled && preferences.isAllowed(
+            during: preferences.urgentHighActivePeriod,
+            at: now
+        )
+        let kind = GlucoseAlarmState.thresholdKind(
+            value: reading.mgdL, low: settings.settings.lowGlucose, high: settings.settings.highGlucose,
+            urgentLow: preferences.urgentLowThreshold, urgentHigh: preferences.urgentHighThreshold,
+            urgentLowEnabled: urgentLowEnabled, urgentHighEnabled: urgentHighEnabled
+        )
+        let enabled: Bool
+        switch kind {
+        case .low: enabled = preferences.lowEnabled && preferences.isAllowed(during: preferences.lowActivePeriod, at: now)
+        case .high: enabled = preferences.highEnabled && preferences.isAllowed(during: preferences.highActivePeriod, at: now)
+        case .urgentLow: enabled = urgentLowEnabled
+        case .urgentHigh: enabled = urgentHighEnabled
+        case nil: enabled = false
+        }
+        let deadline = enabled ? max(snooze, state.snoozeDeadline(for: kind)) : snooze
+        return GlucoseAlarmState.indicatorSymbol(kind: kind, enabled: enabled, snoozeUntil: deadline, now: now)
+    }
+
     func requestPermission() async {
         do { _ = try await AlarmManager.shared.requestAuthorization() }
         catch { deliveryError = "Kunde inte begära larmbehörighet: \(error.localizedDescription)" }

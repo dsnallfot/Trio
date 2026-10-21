@@ -56,7 +56,7 @@ extension Snooze {
                 NSLocalizedString("Not snoozed", comment: "Current alarm has no active snooze")
             let suffix = " – " + status
             return HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Image(systemName: isSnoozed ? "moon.zzz.fill" : "alarm.waves.left.and.right")
+                Image(systemName: isSnoozed ? "moon.zzz.fill" : "bell.fill")
                     .foregroundStyle(isSnoozed ? Color.secondary : Color.primary)
                     .accessibilityHidden(true)
                 Text("\(Text(description))\(Text(suffix).foregroundColor(.secondary))")
@@ -170,7 +170,20 @@ extension Snooze {
             .scrollContentBackground(.hidden).background(appState.trioBackgroundColor(for: colorScheme))
             .navigationBarTitle("Snooze Alerts")
             .navigationBarTitleDisplayMode(.automatic)
-            .navigationBarItems(trailing: Button("Close", action: state.hideModal))
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink {
+                        AlarmKitSettings(resolver: resolver)
+                    } label: {
+                        Image(systemName: "gear")
+                    }
+                    .accessibilityLabel(Text("Trio-alarm"))
+                }
+                ToolbarSpacer(.fixed, placement: .topBarTrailing)
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Close", action: state.hideModal)
+                }
+            }
             .onAppear {
                 configureView()
             }
