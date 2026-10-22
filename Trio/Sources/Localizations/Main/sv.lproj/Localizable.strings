@@ -2279,6 +2279,7 @@ Enact a temp Basal or a temp target */
 
 /* Cancel the current alert snooze */
 "Cancel Snooze" = "Avbryt snooze";
+"Snooze cancelled" = "Snooze avbruten";
 
 /* */
 "Urgent High Glucose Alarm active" = "Akut högt glukoslarm aktivt";

@@ -1,6 +1,7 @@
 import AudioToolbox
 import SwiftUI
 import Swinject
+import UIKit
 
 extension Snooze {
     struct RootView: BaseView {
@@ -8,9 +9,18 @@ extension Snooze {
         @State var state = StateModel()
 
         @Environment(\.colorScheme) var colorScheme
+        @Environment(\.scenePhase) private var scenePhase
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
         @Environment(AppState.self) var appState
 
         @State private var selectedInterval = 1
+        @State private var isVisible = false
+        @State private var confirmation: String?
+        @State private var confirmationID = 0
+
+        private var presentationActive: Bool {
+            isVisible && scenePhase == .active
+        }
 
         private var pickerTimes: [TimeInterval] {
             [0] + stride(from: 15, through: 180, by: 15).map { TimeInterval(minutes: Double($0)) } +
@@ -92,17 +102,46 @@ extension Snooze {
                 } else {
                     state.cancelSnoozes()
                 }
+                state.refreshPresentation()
+                let message = interval > 0 ? String(
+                    format: NSLocalizedString("All alarms snoozed until %@", comment: "Shared snooze deadline"),
+                    dateFormatter.string(from: untilDate)
+                ) : NSLocalizedString("Snooze cancelled", comment: "Confirmation after cancelling snoozes")
+                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
+                    confirmation = message
+                    confirmationID += 1
+                }
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+                UIAccessibility.post(notification: .announcement, argument: message)
             } label: {
-                Text(selectedInterval == 0 ? "Cancel Snooze" : "Click to Snooze Alerts")
-                    .font(.headline)
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 14)
-                    .frame(maxWidth: .infinity, minHeight: 52)
-                    .background(Color(.systemBlue), in: Capsule())
+                HStack(spacing: 8) {
+                    if let confirmation {
+                        Image(systemName: "checkmark.circle.fill")
+                            .accessibilityHidden(true)
+                        Text(confirmation)
+                    } else {
+                        Text(selectedInterval == 0 ? "Cancel Snooze" : "Click to Snooze Alerts")
+                    }
+                }
+                .id(confirmationID)
+                .transition(reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 0.96)))
+                .font(.headline)
+                .multilineTextAlignment(.center)
+                .foregroundStyle(.white)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+                .frame(maxWidth: .infinity, minHeight: 52)
+                .background(confirmation == nil ? Color(.systemBlue) : Color(.systemGreen), in: Capsule())
             }
             .buttonStyle(.plain)
+            .task(id: confirmationID) {
+                guard confirmation != nil else { return }
+                do { try await Task.sleep(for: .seconds(2.5)) }
+                catch { return }
+                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
+                    confirmation = nil
+                }
+            }
             .listRowBackground(Color.clear)
             .listRowInsets(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
             .listRowSeparator(.hidden)
@@ -186,11 +225,22 @@ extension Snooze {
             }
             .onAppear {
                 configureView()
+                isVisible = true
             }
-            .task {
+            .onDisappear {
+                isVisible = false
+                confirmation = nil
+            }
+            .onChange(of: selectedInterval) { confirmation = nil }
+            .onChange(of: scenePhase) {
+                if scenePhase != .active { confirmation = nil }
+            }
+            .task(id: presentationActive) {
+                guard presentationActive else { return }
                 await state.observePresentation()
             }
-            .task {
+            .task(id: presentationActive) {
+                guard presentationActive else { return }
                 await state.observeMissingAlarms()
             }
         }

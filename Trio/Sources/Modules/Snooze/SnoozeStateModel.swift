@@ -11,6 +11,7 @@ extension Snooze {
         var missedReadings = false
         var missedLoop = false
         @ObservationIgnored private var alertingIDs: Set<UUID> = []
+        @ObservationIgnored private var displayedSharedSnooze = Date.distantPast
 
         @MainActor func cancelSnoozes() {
             TrioAlertManager.shared.cancelSnoozes()
@@ -25,17 +26,30 @@ extension Snooze {
             }
         }
 
-        @MainActor private func refreshPresentation() {
-            now = Date()
+        @MainActor func refreshPresentation() {
+            let date = Date()
             let glucose = TrioAlertManager.shared.currentAlarmStatus
+            let deadline = glucose?.snoozeUntil ?? .distantPast
+            let sharedSnooze = snoozeUntilDate
+            let missing = MissingDataAlarmManager.shared.currentAlarmStatus(for: alertingIDs, now: date)
+            // The UI shows deadlines, not a seconds countdown. Only invalidate it
+            // when a displayed value changes or a snooze crosses its deadline.
+            guard alarm != glucose?.kind || alarmSnoozeUntil != deadline ||
+                displayedSharedSnooze != sharedSnooze ||
+                (alarmSnoozeUntil > now) != (deadline > date) ||
+                (displayedSharedSnooze > now) != (sharedSnooze > date) ||
+                missedReadings != missing.missedReadings || missedLoop != missing.missedLoop
+            else { return }
+            now = date
+            displayedSharedSnooze = sharedSnooze
             alarm = glucose?.kind
-            alarmSnoozeUntil = glucose?.snoozeUntil ?? .distantPast
-            let missing = MissingDataAlarmManager.shared.currentAlarmStatus(for: alertingIDs, now: now)
+            alarmSnoozeUntil = deadline
             missedReadings = missing.missedReadings
             missedLoop = missing.missedLoop
         }
 
         @MainActor func observeMissingAlarms() async {
+            guard !Task.isCancelled else { return }
             updateMissingAlarms((try? AlarmManager.shared.alarms) ?? [])
             for await alarms in AlarmManager.shared.alarmUpdates {
                 guard !Task.isCancelled else { return }
