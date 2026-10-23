@@ -299,12 +299,21 @@ import SwiftUI
     private func cancel(_ id: UUID) {
         do {
             if try AlarmManager.shared.alarms.contains(where: { $0.id == id }) {
-                try? AlarmManager.shared.stop(id: id)
+                // Remove the schedule directly. Stopping a one-shot alarm first
+                // can remove it before cancel runs, producing a spurious failure.
                 try AlarmManager.shared.cancel(id: id)
             }
             saved.retired.remove(id)
             persist()
         } catch {
+            // The user/system can remove the alarm between enumeration and cancel.
+            // Only forget ownership when a fresh read confirms it is absent;
+            // failed enumeration or a still-installed alarm must remain retryable.
+            if let alarms = try? AlarmManager.shared.alarms, !alarms.contains(where: { $0.id == id }) {
+                saved.retired.remove(id)
+                persist()
+                return
+            }
             errorText = "Kunde inte återkalla ett tidigare tidslarm."
             warning(.service, "Missing data alarm cancellation failed: \(id), \(error)")
         }

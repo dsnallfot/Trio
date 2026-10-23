@@ -6,6 +6,7 @@ import tempfile
 
 root = Path(__file__).resolve().parents[1]
 source = (root / 'Trio/Sources/APS/DeviceDataManager.swift').read_text()
+gate = source[source.index('final class PumpReceiverValueGate {'):]
 start = source.index('    private func updateMedtrumPatchDates(')
 opening = source.index('{', start)
 depth, end = 1, opening + 1
@@ -25,7 +26,7 @@ final class DatePublisher {
     var value: Date?
     func send(_ date: Date?) { value = date }
 }
-struct MedtrumPumpManager {
+final class MedtrumPumpManager {
     struct State {
         enum Mode { case `default`, extended }
         var patchActivatedAt: Date?
@@ -33,8 +34,11 @@ struct MedtrumPumpManager {
         var expiryMode: Mode
     }
     var state: State
+    init(state: State) { self.state = state }
+    func recordWork(_ event: String) {}
 }
 final class Bridge {
+    let medtrumValueGate = PumpReceiverValueGate()
     let storage: Store
     let pumpExpiresAtDate = DatePublisher()
     let pumpActivatedAtDate = DatePublisher()
@@ -74,5 +78,5 @@ print("Medtrum Site Change date bridge passed: activation, restoration, extended
 '''.replace('METHOD', method)
 with tempfile.TemporaryDirectory(prefix='medtrum-site-change-') as directory:
     swift = Path(directory) / 'main.swift'
-    swift.write_text(fixture)
+    swift.write_text(fixture + '\n' + gate)
     subprocess.run(['swift', '-module-cache-path', directory + '/module-cache', str(swift)], check=True)
