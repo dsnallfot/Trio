@@ -1,0 +1,337 @@
+{
+  "repository": "nightscout/Trio",
+  "ref": "2062173891762a538650e1695a13afa3f4f285f4",
+  "note": "Source inventory, not a compile or semantic parity result. No source imported into app.",
+  "core": {
+    "Trio/Sources/APS/OpenAPSSwift/Autosens/AutosensError.swift": {
+      "sha256": "b6fc26d2f6e8ce4b0624d38baa246e8e5dd9412412eec73f4ab2be0fd1b869ca",
+      "declaredTypes": [
+        "AutosensError"
+      ]
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Autosens/AutosensGenerator.swift": {
+      "sha256": "bacd2f97965bc5b6ea22492eded0b24325ab085cb0357ddcf3993664e6f64bc4",
+      "declaredTypes": [
+        "AutosensGenerator",
+        "BucketedGlucose",
+        "SimulationState",
+        "StateType"
+      ]
+    },
+    "Trio/Sources/APS/OpenAPSSwift/DetermineBasal/DeterminationError.swift": {
+      "sha256": "bbf574b2b6c9ea4e9625ec7aaa6507e81a103cce23e21cbd997249048671c297",
+      "declaredTypes": [
+        "DeterminationError"
+      ]
+    },
+    "Trio/Sources/APS/OpenAPSSwift/DetermineBasal/DetermineBasal+Helpers.swift": {
+      "sha256": "4b70b8a6bb29dbc7d851c57b6c246d88c18be2db4d43144da308e24c3b975c27",
+      "declaredTypes": [
+        "GlucoseReading",
+        "for"
+      ]
+    },
+    "Trio/Sources/APS/OpenAPSSwift/DetermineBasal/DetermineBasalGenerator.swift": {
+      "sha256": "be4f5cb373989863e3af18017fb57444b1f4e78b399c979a8b18693069b16357",
+      "declaredTypes": [
+        "DeterminationGenerator",
+        "OverrideHandler"
+      ]
+    },
+    "Trio/Sources/APS/OpenAPSSwift/DetermineBasal/DosingEngine.swift": {
+      "sha256": "41f463410b68341a0cf52c83e6a97740bc3d0e6fffecbe0c241b19845029ee7b",
+      "declaredTypes": [
+        "DosingEngine",
+        "DosingInputs",
+        "SMBDecision",
+        "to"
+      ]
+    },
+    "Trio/Sources/APS/OpenAPSSwift/DetermineBasal/DynamicISF.swift": {
+      "sha256": "5adcad8ba28f354c4d76e879d94e3f4ecf5a9e6d6b9d5d08d4992aad4642caaa",
+      "declaredTypes": [
+        "DynamicISF",
+        "DynamicISFResult",
+        "DynamicIsfState",
+        "on"
+      ]
+    },
+    "Trio/Sources/APS/OpenAPSSwift/DetermineBasal/TempBasalFunctions.swift": {
+      "sha256": "4139a2b8bcf54453d9c1d3c855670489f63dd250dda134221bf78fa120e7755b",
+      "declaredTypes": [
+        "TempBasalFunctionError",
+        "TempBasalFunctions"
+      ]
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Extensions/ComputedBGTargets+Getter.swift": {
+      "sha256": "74351ff4e240484d71a1ef9132b585ed0d2861bf84ecff7937d5395e19be1477",
+      "declaredTypes": []
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Extensions/ComputedInsulinSensitivities+Getter.swift": {
+      "sha256": "2287641ccc1b55fc4db087b348ab50e775a010c6bed10d7dbde41953da575825",
+      "declaredTypes": []
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Extensions/Date+MinutesFromMidnight.swift": {
+      "sha256": "697bd9c83eb54756fd1e35b496f4527689ddf8c545b479485afdb63a83f43909",
+      "declaredTypes": [
+        "CalendarError"
+      ]
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Extensions/Decimal+rounding.swift": {
+      "sha256": "4663117ff5a1d0a629c644d1045781063ba92c5296ab80e872b3097169846163",
+      "declaredTypes": []
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Extensions/DoubleApproximateMatching.swift": {
+      "sha256": "3b8b42510a84522e1d73cc030afe69910200d4670cea6e5285cc43a2ad8a4cfe",
+      "declaredTypes": []
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Extensions/InsulinSensitivities+Convert.swift": {
+      "sha256": "d1f9a92f470e4225265934bf631df39adad58f3e37002af5a30dfb3f0895f657",
+      "declaredTypes": []
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Extensions/Profile+Autosens.swift": {
+      "sha256": "2a847bac62a2f7019b70a9e45fae967194992679e0a858db45e9d30b7189a0c7",
+      "declaredTypes": []
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Extensions/Profile+TherapySettingGetter.swift": {
+      "sha256": "5601f74c5dda481d39f76b03f4de5283adcf254619b51fbbfaa89af9ab46a371",
+      "declaredTypes": []
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Extensions/PumpHistory+copy.swift": {
+      "sha256": "6bf36b72d7bc7f028e3bb7ab48cba0a3b91d0f92e06a5f11549b1e904e9e3ef4",
+      "declaredTypes": []
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Extensions/PumpHistoryEvent+Duplicates.swift": {
+      "sha256": "8a82c461f111fd7b7ece0288e9cc8dee2b39a75f6b535c2897258a0593502314",
+      "declaredTypes": []
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Extensions/TimeExtensions.swift": {
+      "sha256": "a665223c44cabdf9868b2860779ea30e192a1a190f205bb77ed725a72a84a7a6",
+      "declaredTypes": []
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Forecasts/CarbImpactParams.swift": {
+      "sha256": "c5ae2ecb644f85e98b79d4554812b0004042b9947e68688cf6b356087af5ca93",
+      "declaredTypes": [
+        "CarbImpactParams"
+      ]
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Forecasts/ForecastGenerator+Forecasts.swift": {
+      "sha256": "10acaef89dd6f22e3e4a89f140a1029583fd59018b39777a14378f9b2769e54a",
+      "declaredTypes": []
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Forecasts/ForecastGenerator.swift": {
+      "sha256": "9130f345ba50a0a3dd97e7893c53cebb7221bd44634a231679c5eb278168cd4e",
+      "declaredTypes": [
+        "ForecastGenerator"
+      ]
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Forecasts/ForecastResults.swift": {
+      "sha256": "55a2e814de8cc27bba541767e0a1fe853f289b16d2dccc7c33a6790ed4e0ab79",
+      "declaredTypes": [
+        "AllForecasts",
+        "COBForecast",
+        "IOBForecast",
+        "IndividualForecast",
+        "UAMForecast",
+        "ZTForecast"
+      ]
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Iob/IobCalculation.swift": {
+      "sha256": "b108b26f53af6c082c841d209b47870d6aba517992d472a27ef8996267ad2218",
+      "declaredTypes": [
+        "IobCalculation",
+        "IobCalculationResult",
+        "IobTotal"
+      ]
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Iob/IobError.swift": {
+      "sha256": "28acc5b5e239a9b3399ff4b6e73ea0a940c76d881302a43854ac448014197045",
+      "declaredTypes": [
+        "IobError"
+      ]
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Iob/IobGenerator.swift": {
+      "sha256": "4e9936053648f428e9130d118615118ee0ac75bb42e1cecc913c256cd419e88b",
+      "declaredTypes": [
+        "IobGenerator"
+      ]
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Iob/IobHistory.swift": {
+      "sha256": "89e34fd19aa606030fecbdac728b72d3cd684616e37e6bec324c0ee91dcaf7b0",
+      "declaredTypes": [
+        "IobHistory",
+        "PumpSuspended"
+      ]
+    },
+    "Trio/Sources/APS/OpenAPSSwift/JSONBridge.swift": {
+      "sha256": "2ad177327d1b8710886e7fe9bccd7a63629fdea37312197597ce763ef4a59f98",
+      "declaredTypes": [
+        "JSONBridge",
+        "JSONError"
+      ]
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Meal/MealCob.swift": {
+      "sha256": "b0caff6bdc281e07911481f6c985281f0bbd4d1fd20cae7882c0517a84e94a1e",
+      "declaredTypes": [
+        "BucketedGlucose",
+        "CobError",
+        "CobResult",
+        "MealCob"
+      ]
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Meal/MealGenerator.swift": {
+      "sha256": "9213d7e569bdeff956746a8527f3fb2a9cbfbdf1be06332831c77864ca097291",
+      "declaredTypes": [
+        "MealGenerator"
+      ]
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Meal/MealHistory.swift": {
+      "sha256": "8b63c3f152171c81ffbe7e3fd48ddc62237a140a0ab70c0ac6dd02e37e3494c3",
+      "declaredTypes": [
+        "InputType",
+        "MealHistory",
+        "MealInput",
+        "MealInputKey"
+      ]
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Meal/MealTotal.swift": {
+      "sha256": "f6006e2ba878cf121bf5f89f4be30d4ed8fad9d69f6112bc45ef947818f63fa0",
+      "declaredTypes": [
+        "COBInputs",
+        "CodingKeys",
+        "ComputedCarbs",
+        "IOBInput",
+        "MealTotal",
+        "containing"
+      ]
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Models/AdjustedGlucoseTargets.swift": {
+      "sha256": "f36324a14b91abecbf51699bb72e86391b60f89230ac68b1e4482203f6cd6054",
+      "declaredTypes": [
+        "AdjustedGlucoseTargets"
+      ]
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Models/ComputedBGTargets.swift": {
+      "sha256": "cf65a9f4f1a00b4f94bcdbb5c9f97314d1c6d6fa96493e142cac92fc706144a5",
+      "declaredTypes": [
+        "CodingKeys",
+        "ComputedBGTargetEntry",
+        "ComputedBGTargets"
+      ]
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Models/ComputedInsulinSensitivities.swift": {
+      "sha256": "5dcbedb1b878df7352d445d88ac050d4e0af525a11eaa02e7b41bbd490f0bbcb",
+      "declaredTypes": [
+        "CodingKeys",
+        "ComputedInsulinSensitivities",
+        "ComputedInsulinSensitivityEntry"
+      ]
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Models/ComputedPumpHistoryEvent.swift": {
+      "sha256": "ffbbaf4ebf134fd2dd4ad4461f27036ec423f0dcc480ee33276230c42fe72d37",
+      "declaredTypes": [
+        "CodingKeys",
+        "ComputedPumpHistoryEvent"
+      ]
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Models/ForecastResult.swift": {
+      "sha256": "ca18d98affed227aef8e9b7717672105cc18f098c718acf8ecad544a663ef56c",
+      "declaredTypes": [
+        "ForecastBlendingResult",
+        "ForecastResult",
+        "ForecastSelectionResult"
+      ]
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Models/GlucoseStatus.swift": {
+      "sha256": "a86aa4f51a301183bb0cfd289956ad7f0d2a907b3e97d4a863d2550d353d9d18",
+      "declaredTypes": [
+        "GlucoseStatus"
+      ]
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Models/IobResult.swift": {
+      "sha256": "4e4149e4c6da378995f0c3f4db287d43b28fc8376210c5b855e344767acd42cd",
+      "declaredTypes": [
+        "IobResult",
+        "IobWithZeroTemp",
+        "LastTemp"
+      ]
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Models/Profile.swift": {
+      "sha256": "4eef1a296422bbc0cfc6af88de21b96ca39d1f3ed5f0808c72f57a745dbea542",
+      "declaredTypes": [
+        "CodingKeys",
+        "Profile"
+      ]
+    },
+    "Trio/Sources/APS/OpenAPSSwift/OpenAPSSwift.swift": {
+      "sha256": "6c311d926f4f05e4a45f5d2440e4bf3c4dd2ef81e8fc5ef88ef8ca9791fcf334",
+      "declaredTypes": [
+        "OpenAPSSwift"
+      ]
+    },
+    "Trio/Sources/APS/OpenAPSSwift/OrefFunctionResult.swift": {
+      "sha256": "88c34a80e35420e58b86bf49f7ac9f71f2f993ca5ae49ba26e19d3f7c4c48efc",
+      "declaredTypes": [
+        "OrefFunctionResult"
+      ]
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Profile/Basal.swift": {
+      "sha256": "081d2c3749b5706f38d3bc655fd8f0d228335b61c0b0444ce6b2ef1a245f464e",
+      "declaredTypes": [
+        "Basal"
+      ]
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Profile/Carbs.swift": {
+      "sha256": "742134fc3e1240d46de275ad8bee16404c07358544cd5be66777f445bcc92ee7",
+      "declaredTypes": [
+        "Carbs"
+      ]
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Profile/Isf.swift": {
+      "sha256": "c6fada3448f7295c4a5654ab388530d63376739f566b4c14de64dbb588ac0dd5",
+      "declaredTypes": [
+        "Isf"
+      ]
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Profile/ProfileError.swift": {
+      "sha256": "a69ed2d269504733c7e39fb6510c103e02d17e47e67e18fa01f264e7397cc59e",
+      "declaredTypes": [
+        "ProfileError"
+      ]
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Profile/ProfileGenerator.swift": {
+      "sha256": "7fe6d00b8484fb084616397e32846c811d81d3407634f99d09bfc23bc9d0e2c7",
+      "declaredTypes": [
+        "ProfileGenerator"
+      ]
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Profile/Targets.swift": {
+      "sha256": "16581671e0944426e9c8bb1c71419225fa17233e735d660b4bb931d2324556af",
+      "declaredTypes": [
+        "Targets"
+      ]
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Utils/JavascriptOptional.swift": {
+      "sha256": "d8cd3bb9ed05302d3caf53dc92e28b0b919e7bd4f7a4f458862e7c13e3b0cefe",
+      "declaredTypes": [
+        "JavascriptOptional"
+      ]
+    }
+  },
+  "reviewedModels": {
+    "Trio/Sources/Models/Autosens.swift": "9663090970ba43e632dc8860c084cb3c87ed2e4250414ca705053771f78c8648",
+    "Trio/Sources/Models/BloodGlucose.swift": "5c6e408406502b6cc682e3a63204048dff53471e98b8cc88028db4b0aa678a32",
+    "Trio/Sources/Models/PumpHistoryEvent.swift": "870dd1aa8b504de9ef67a09c437dc328ca6ffb33babfffd44a6c64584934ffbe",
+    "Trio/Sources/Models/Preferences.swift": "2c5abcf305ca7ad8260c18cc258b9ba9a94d0754bf5a70db7678d360e5997ca8",
+    "Trio/Sources/Models/Determination.swift": "5c84caefe02072ac72c5b927340691077a3d0dac82dd3ca07d5b72121b7d28b8",
+    "Trio/Sources/Models/CarbsEntry.swift": "1370f7bfc09f9ecb8e4322cab4abb667a4bf876908f1678ab2880cda7fa8529f",
+    "Trio/Sources/Models/BGTargets.swift": "0363d3f80e63b3437492087545e3d756147ef2c7d4d72ca9544cf0de72cefafb",
+    "Trio/Sources/Models/InsulinSensitivities.swift": "b4e5bc2c0841dcf0b3be4c9748ef6c812d04f09ea7f97e01d66f196996bfcdf9",
+    "Trio/Sources/Models/BasalProfileEntry.swift": "4805268c3aa4e363ac8aad6ddf8d143de694c161e11d85f8ac2d5edf994d252d",
+    "Trio/Sources/Models/CarbRatios.swift": "347dfc22726bf01aa657f401155e53d75d6a304e794ce284343a508da91a805f",
+    "Trio/Sources/Models/TempTarget.swift": "322c79a38c951afe72a25c1b1e06d3605cbb6ecaeba37eba1aa4ce49ba6130db",
+    "Trio/Sources/Models/TempBasal.swift": "0ff478369503179101d285468ef4324aefa790b486137500ef7715f119ea9d00",
+    "Trio/Sources/Models/PumpSettings.swift": "122afc1df002c3132769e18137888e7e849145c8d61cde6d05a021c12e02b539",
+    "Trio/Sources/Models/TrioCustomOrefVariables.swift": "b954624b4f35c0ca6d26a97f896cf25efd098896212a1de8678cb3819fa83c1c"
+  }
+}

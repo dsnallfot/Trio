@@ -1,0 +1,417 @@
+{
+  "repository": "nightscout/Trio",
+  "pullRequest": 1141,
+  "ref": "2062173891762a538650e1695a13afa3f4f285f4",
+  "laterFixesImported": false,
+  "files": {
+    "Trio/Sources/APS/OpenAPSSwift/Autosens/AutosensError.swift": {
+      "upstreamSha256": "b6fc26d2f6e8ce4b0624d38baa246e8e5dd9412412eec73f4ab2be0fd1b869ca",
+      "importedSha256": "b6fc26d2f6e8ce4b0624d38baa246e8e5dd9412412eec73f4ab2be0fd1b869ca",
+      "adapted": false
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Autosens/AutosensGenerator.swift": {
+      "upstreamSha256": "bacd2f97965bc5b6ea22492eded0b24325ab085cb0357ddcf3993664e6f64bc4",
+      "importedSha256": "53d22af689f472cae638dae37f92828f41ffbaee45ccec28cde0af90458e8073",
+      "adapted": true
+    },
+    "Trio/Sources/APS/OpenAPSSwift/DetermineBasal/DeterminationError.swift": {
+      "upstreamSha256": "bbf574b2b6c9ea4e9625ec7aaa6507e81a103cce23e21cbd997249048671c297",
+      "importedSha256": "bbf574b2b6c9ea4e9625ec7aaa6507e81a103cce23e21cbd997249048671c297",
+      "adapted": false
+    },
+    "Trio/Sources/APS/OpenAPSSwift/DetermineBasal/DetermineBasal+Helpers.swift": {
+      "upstreamSha256": "4b70b8a6bb29dbc7d851c57b6c246d88c18be2db4d43144da308e24c3b975c27",
+      "importedSha256": "5f4e76de792f1fdb778caa07e5a9c5186243419d6754a3a9d46e7d58658ab2ac",
+      "adapted": true
+    },
+    "Trio/Sources/APS/OpenAPSSwift/DetermineBasal/DetermineBasalGenerator.swift": {
+      "upstreamSha256": "be4f5cb373989863e3af18017fb57444b1f4e78b399c979a8b18693069b16357",
+      "importedSha256": "7945de280fa3d938e1406b7a67fd5d145353f6a1d3f9ba943316c8435b0e0780",
+      "adapted": true
+    },
+    "Trio/Sources/APS/OpenAPSSwift/DetermineBasal/DosingEngine.swift": {
+      "upstreamSha256": "41f463410b68341a0cf52c83e6a97740bc3d0e6fffecbe0c241b19845029ee7b",
+      "importedSha256": "41f463410b68341a0cf52c83e6a97740bc3d0e6fffecbe0c241b19845029ee7b",
+      "adapted": false
+    },
+    "Trio/Sources/APS/OpenAPSSwift/DetermineBasal/DynamicISF.swift": {
+      "upstreamSha256": "5adcad8ba28f354c4d76e879d94e3f4ecf5a9e6d6b9d5d08d4992aad4642caaa",
+      "importedSha256": "5adcad8ba28f354c4d76e879d94e3f4ecf5a9e6d6b9d5d08d4992aad4642caaa",
+      "adapted": false
+    },
+    "Trio/Sources/APS/OpenAPSSwift/DetermineBasal/TempBasalFunctions.swift": {
+      "upstreamSha256": "4139a2b8bcf54453d9c1d3c855670489f63dd250dda134221bf78fa120e7755b",
+      "importedSha256": "4139a2b8bcf54453d9c1d3c855670489f63dd250dda134221bf78fa120e7755b",
+      "adapted": false
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Extensions/ComputedBGTargets+Getter.swift": {
+      "upstreamSha256": "74351ff4e240484d71a1ef9132b585ed0d2861bf84ecff7937d5395e19be1477",
+      "importedSha256": "74351ff4e240484d71a1ef9132b585ed0d2861bf84ecff7937d5395e19be1477",
+      "adapted": false
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Extensions/ComputedInsulinSensitivities+Getter.swift": {
+      "upstreamSha256": "2287641ccc1b55fc4db087b348ab50e775a010c6bed10d7dbde41953da575825",
+      "importedSha256": "2287641ccc1b55fc4db087b348ab50e775a010c6bed10d7dbde41953da575825",
+      "adapted": false
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Extensions/Date+MinutesFromMidnight.swift": {
+      "upstreamSha256": "697bd9c83eb54756fd1e35b496f4527689ddf8c545b479485afdb63a83f43909",
+      "importedSha256": "697bd9c83eb54756fd1e35b496f4527689ddf8c545b479485afdb63a83f43909",
+      "adapted": false
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Extensions/Decimal+rounding.swift": {
+      "upstreamSha256": "4663117ff5a1d0a629c644d1045781063ba92c5296ab80e872b3097169846163",
+      "importedSha256": "4663117ff5a1d0a629c644d1045781063ba92c5296ab80e872b3097169846163",
+      "adapted": false
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Extensions/DoubleApproximateMatching.swift": {
+      "upstreamSha256": "3b8b42510a84522e1d73cc030afe69910200d4670cea6e5285cc43a2ad8a4cfe",
+      "importedSha256": "3b8b42510a84522e1d73cc030afe69910200d4670cea6e5285cc43a2ad8a4cfe",
+      "adapted": false
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Extensions/InsulinSensitivities+Convert.swift": {
+      "upstreamSha256": "d1f9a92f470e4225265934bf631df39adad58f3e37002af5a30dfb3f0895f657",
+      "importedSha256": "d1f9a92f470e4225265934bf631df39adad58f3e37002af5a30dfb3f0895f657",
+      "adapted": false
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Extensions/Profile+Autosens.swift": {
+      "upstreamSha256": "2a847bac62a2f7019b70a9e45fae967194992679e0a858db45e9d30b7189a0c7",
+      "importedSha256": "951585b187eb498ab10f1efaeb50f68471fe0800f6b83c607a9114fe734d5a25",
+      "adapted": true
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Extensions/Profile+TherapySettingGetter.swift": {
+      "upstreamSha256": "5601f74c5dda481d39f76b03f4de5283adcf254619b51fbbfaa89af9ab46a371",
+      "importedSha256": "5601f74c5dda481d39f76b03f4de5283adcf254619b51fbbfaa89af9ab46a371",
+      "adapted": false
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Extensions/PumpHistory+copy.swift": {
+      "upstreamSha256": "6bf36b72d7bc7f028e3bb7ab48cba0a3b91d0f92e06a5f11549b1e904e9e3ef4",
+      "importedSha256": "6bf36b72d7bc7f028e3bb7ab48cba0a3b91d0f92e06a5f11549b1e904e9e3ef4",
+      "adapted": false
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Extensions/PumpHistoryEvent+Duplicates.swift": {
+      "upstreamSha256": "8a82c461f111fd7b7ece0288e9cc8dee2b39a75f6b535c2897258a0593502314",
+      "importedSha256": "8a82c461f111fd7b7ece0288e9cc8dee2b39a75f6b535c2897258a0593502314",
+      "adapted": false
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Extensions/TimeExtensions.swift": {
+      "upstreamSha256": "a665223c44cabdf9868b2860779ea30e192a1a190f205bb77ed725a72a84a7a6",
+      "importedSha256": "a665223c44cabdf9868b2860779ea30e192a1a190f205bb77ed725a72a84a7a6",
+      "adapted": false
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Forecasts/CarbImpactParams.swift": {
+      "upstreamSha256": "c5ae2ecb644f85e98b79d4554812b0004042b9947e68688cf6b356087af5ca93",
+      "importedSha256": "c5ae2ecb644f85e98b79d4554812b0004042b9947e68688cf6b356087af5ca93",
+      "adapted": false
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Forecasts/ForecastGenerator+Forecasts.swift": {
+      "upstreamSha256": "10acaef89dd6f22e3e4a89f140a1029583fd59018b39777a14378f9b2769e54a",
+      "importedSha256": "10acaef89dd6f22e3e4a89f140a1029583fd59018b39777a14378f9b2769e54a",
+      "adapted": false
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Forecasts/ForecastGenerator.swift": {
+      "upstreamSha256": "9130f345ba50a0a3dd97e7893c53cebb7221bd44634a231679c5eb278168cd4e",
+      "importedSha256": "9130f345ba50a0a3dd97e7893c53cebb7221bd44634a231679c5eb278168cd4e",
+      "adapted": false
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Forecasts/ForecastResults.swift": {
+      "upstreamSha256": "55a2e814de8cc27bba541767e0a1fe853f289b16d2dccc7c33a6790ed4e0ab79",
+      "importedSha256": "55a2e814de8cc27bba541767e0a1fe853f289b16d2dccc7c33a6790ed4e0ab79",
+      "adapted": false
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Iob/IobCalculation.swift": {
+      "upstreamSha256": "b108b26f53af6c082c841d209b47870d6aba517992d472a27ef8996267ad2218",
+      "importedSha256": "b108b26f53af6c082c841d209b47870d6aba517992d472a27ef8996267ad2218",
+      "adapted": false
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Iob/IobError.swift": {
+      "upstreamSha256": "28acc5b5e239a9b3399ff4b6e73ea0a940c76d881302a43854ac448014197045",
+      "importedSha256": "28acc5b5e239a9b3399ff4b6e73ea0a940c76d881302a43854ac448014197045",
+      "adapted": false
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Iob/IobGenerator.swift": {
+      "upstreamSha256": "4e9936053648f428e9130d118615118ee0ac75bb42e1cecc913c256cd419e88b",
+      "importedSha256": "8e89d5bd0d88ddd4dfdae266d8140541d674735ef0a763f188d1de6a640e15ed",
+      "adapted": true
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Iob/IobHistory.swift": {
+      "upstreamSha256": "89e34fd19aa606030fecbdac728b72d3cd684616e37e6bec324c0ee91dcaf7b0",
+      "importedSha256": "45994e64168e2342dfeeaddd7eff31172725761f0f98c1fa76fa92d8f85084ba",
+      "adapted": true
+    },
+    "Trio/Sources/APS/OpenAPSSwift/JSONBridge.swift": {
+      "upstreamSha256": "2ad177327d1b8710886e7fe9bccd7a63629fdea37312197597ce763ef4a59f98",
+      "importedSha256": "740573e8b29be6eb12b6af0235b389bf198db1a017772b97dab4ddc4b8fa3c84",
+      "adapted": true
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Meal/MealCob.swift": {
+      "upstreamSha256": "b0caff6bdc281e07911481f6c985281f0bbd4d1fd20cae7882c0517a84e94a1e",
+      "importedSha256": "b0caff6bdc281e07911481f6c985281f0bbd4d1fd20cae7882c0517a84e94a1e",
+      "adapted": false
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Meal/MealGenerator.swift": {
+      "upstreamSha256": "9213d7e569bdeff956746a8527f3fb2a9cbfbdf1be06332831c77864ca097291",
+      "importedSha256": "9213d7e569bdeff956746a8527f3fb2a9cbfbdf1be06332831c77864ca097291",
+      "adapted": false
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Meal/MealHistory.swift": {
+      "upstreamSha256": "8b63c3f152171c81ffbe7e3fd48ddc62237a140a0ab70c0ac6dd02e37e3494c3",
+      "importedSha256": "8b63c3f152171c81ffbe7e3fd48ddc62237a140a0ab70c0ac6dd02e37e3494c3",
+      "adapted": false
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Meal/MealTotal.swift": {
+      "upstreamSha256": "f6006e2ba878cf121bf5f89f4be30d4ed8fad9d69f6112bc45ef947818f63fa0",
+      "importedSha256": "f6006e2ba878cf121bf5f89f4be30d4ed8fad9d69f6112bc45ef947818f63fa0",
+      "adapted": false
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Models/AdjustedGlucoseTargets.swift": {
+      "upstreamSha256": "f36324a14b91abecbf51699bb72e86391b60f89230ac68b1e4482203f6cd6054",
+      "importedSha256": "f36324a14b91abecbf51699bb72e86391b60f89230ac68b1e4482203f6cd6054",
+      "adapted": false
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Models/ComputedBGTargets.swift": {
+      "upstreamSha256": "cf65a9f4f1a00b4f94bcdbb5c9f97314d1c6d6fa96493e142cac92fc706144a5",
+      "importedSha256": "cf65a9f4f1a00b4f94bcdbb5c9f97314d1c6d6fa96493e142cac92fc706144a5",
+      "adapted": false
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Models/ComputedInsulinSensitivities.swift": {
+      "upstreamSha256": "5dcbedb1b878df7352d445d88ac050d4e0af525a11eaa02e7b41bbd490f0bbcb",
+      "importedSha256": "5dcbedb1b878df7352d445d88ac050d4e0af525a11eaa02e7b41bbd490f0bbcb",
+      "adapted": false
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Models/ComputedPumpHistoryEvent.swift": {
+      "upstreamSha256": "ffbbaf4ebf134fd2dd4ad4461f27036ec423f0dcc480ee33276230c42fe72d37",
+      "importedSha256": "ffbbaf4ebf134fd2dd4ad4461f27036ec423f0dcc480ee33276230c42fe72d37",
+      "adapted": false
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Models/ForecastResult.swift": {
+      "upstreamSha256": "ca18d98affed227aef8e9b7717672105cc18f098c718acf8ecad544a663ef56c",
+      "importedSha256": "ca18d98affed227aef8e9b7717672105cc18f098c718acf8ecad544a663ef56c",
+      "adapted": false
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Models/GlucoseStatus.swift": {
+      "upstreamSha256": "a86aa4f51a301183bb0cfd289956ad7f0d2a907b3e97d4a863d2550d353d9d18",
+      "importedSha256": "a86aa4f51a301183bb0cfd289956ad7f0d2a907b3e97d4a863d2550d353d9d18",
+      "adapted": false
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Models/IobResult.swift": {
+      "upstreamSha256": "4e4149e4c6da378995f0c3f4db287d43b28fc8376210c5b855e344767acd42cd",
+      "importedSha256": "4e4149e4c6da378995f0c3f4db287d43b28fc8376210c5b855e344767acd42cd",
+      "adapted": false
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Models/Profile.swift": {
+      "upstreamSha256": "4eef1a296422bbc0cfc6af88de21b96ca39d1f3ed5f0808c72f57a745dbea542",
+      "importedSha256": "4eef1a296422bbc0cfc6af88de21b96ca39d1f3ed5f0808c72f57a745dbea542",
+      "adapted": false
+    },
+    "Trio/Sources/APS/OpenAPSSwift/OpenAPSSwift.swift": {
+      "upstreamSha256": "6c311d926f4f05e4a45f5d2440e4bf3c4dd2ef81e8fc5ef88ef8ca9791fcf334",
+      "importedSha256": "6c311d926f4f05e4a45f5d2440e4bf3c4dd2ef81e8fc5ef88ef8ca9791fcf334",
+      "adapted": false
+    },
+    "Trio/Sources/APS/OpenAPSSwift/OrefFunctionResult.swift": {
+      "upstreamSha256": "88c34a80e35420e58b86bf49f7ac9f71f2f993ca5ae49ba26e19d3f7c4c48efc",
+      "importedSha256": "88c34a80e35420e58b86bf49f7ac9f71f2f993ca5ae49ba26e19d3f7c4c48efc",
+      "adapted": false
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Profile/Basal.swift": {
+      "upstreamSha256": "081d2c3749b5706f38d3bc655fd8f0d228335b61c0b0444ce6b2ef1a245f464e",
+      "importedSha256": "081d2c3749b5706f38d3bc655fd8f0d228335b61c0b0444ce6b2ef1a245f464e",
+      "adapted": false
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Profile/Carbs.swift": {
+      "upstreamSha256": "742134fc3e1240d46de275ad8bee16404c07358544cd5be66777f445bcc92ee7",
+      "importedSha256": "742134fc3e1240d46de275ad8bee16404c07358544cd5be66777f445bcc92ee7",
+      "adapted": false
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Profile/Isf.swift": {
+      "upstreamSha256": "c6fada3448f7295c4a5654ab388530d63376739f566b4c14de64dbb588ac0dd5",
+      "importedSha256": "c6fada3448f7295c4a5654ab388530d63376739f566b4c14de64dbb588ac0dd5",
+      "adapted": false
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Profile/ProfileError.swift": {
+      "upstreamSha256": "a69ed2d269504733c7e39fb6510c103e02d17e47e67e18fa01f264e7397cc59e",
+      "importedSha256": "a69ed2d269504733c7e39fb6510c103e02d17e47e67e18fa01f264e7397cc59e",
+      "adapted": false
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Profile/ProfileGenerator.swift": {
+      "upstreamSha256": "7fe6d00b8484fb084616397e32846c811d81d3407634f99d09bfc23bc9d0e2c7",
+      "importedSha256": "7fe6d00b8484fb084616397e32846c811d81d3407634f99d09bfc23bc9d0e2c7",
+      "adapted": false
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Profile/Targets.swift": {
+      "upstreamSha256": "16581671e0944426e9c8bb1c71419225fa17233e735d660b4bb931d2324556af",
+      "importedSha256": "16581671e0944426e9c8bb1c71419225fa17233e735d660b4bb931d2324556af",
+      "adapted": false
+    },
+    "Trio/Sources/APS/OpenAPSSwift/Utils/JavascriptOptional.swift": {
+      "upstreamSha256": "d8cd3bb9ed05302d3caf53dc92e28b0b919e7bd4f7a4f458862e7c13e3b0cefe",
+      "importedSha256": "d8cd3bb9ed05302d3caf53dc92e28b0b919e7bd4f7a4f458862e7c13e3b0cefe",
+      "adapted": false
+    },
+    "TrioTests/OpenAPSSwiftTests/AutosensTests.swift": {
+      "upstreamSha256": "527c5f82e3c8888747d2fa9a3b7beb2d4d1b71e4c3fe1575bbbd0ff9e4a46bfb",
+      "importedSha256": "527c5f82e3c8888747d2fa9a3b7beb2d4d1b71e4c3fe1575bbbd0ff9e4a46bfb",
+      "adapted": false
+    },
+    "TrioTests/OpenAPSSwiftTests/DetermineBasalAggressiveDosingTests.swift": {
+      "upstreamSha256": "b99c1647e0d51abf7cd46a30efcb83e95ef2a209c1f5bffbd6e7f2956d0320ad",
+      "importedSha256": "d8ad616d7ad3d7e3acf226ba5c6b6fbc6b965d55e63f1ab3a9472a60de678be5",
+      "adapted": true
+    },
+    "TrioTests/OpenAPSSwiftTests/DetermineBasalDeltaCalculationTests.swift": {
+      "upstreamSha256": "dfea42eed2576f00d796241461956f5687ea59f6b99963989cf57fe236bf62f4",
+      "importedSha256": "dfea42eed2576f00d796241461956f5687ea59f6b99963989cf57fe236bf62f4",
+      "adapted": false
+    },
+    "TrioTests/OpenAPSSwiftTests/DetermineBasalEarlyExitTests.swift": {
+      "upstreamSha256": "f85e3418f9d2573740f38b9383f223b76464ec4d28341233a0d2143cd9663f23",
+      "importedSha256": "54c9be6d20205fde497c8989d30016b8344a19f5b32cd921423575b4a009e4ef",
+      "adapted": true
+    },
+    "TrioTests/OpenAPSSwiftTests/DetermineBasalEnableSmbTests.swift": {
+      "upstreamSha256": "ea86a2410482fda34d89242bf286742d9a8244274d26b2dc53ab4fbcf55e7815",
+      "importedSha256": "ea86a2410482fda34d89242bf286742d9a8244274d26b2dc53ab4fbcf55e7815",
+      "adapted": false
+    },
+    "TrioTests/OpenAPSSwiftTests/DetermineBasalEventualOrForecastGlucoseLessThanMaxTests.swift": {
+      "upstreamSha256": "95792054504c64e0fdea9e9c0937e960582f8d87f55f2cb48f8854b91ac31693",
+      "importedSha256": "85aec7ad99c249a5fda23bc1ba0195c743f6f5f5902c66a7af7c15772c4b9606",
+      "adapted": true
+    },
+    "TrioTests/OpenAPSSwiftTests/DetermineBasalGlucoseFallingFasterThanExpectedTests.swift": {
+      "upstreamSha256": "eff58237cc09db89b9af613d2e1aa3f1102e53c652ff3923e6aa63c53f977b58",
+      "importedSha256": "2303d3805eb61e34f59b9174f20b546c10f775e95a54fa755d7bec86469d64cc",
+      "adapted": true
+    },
+    "TrioTests/OpenAPSSwiftTests/DetermineBasalIobGreaterThanMaxTests.swift": {
+      "upstreamSha256": "53b61eb7677966dd15d80a234eceb526b72f4f2195c3ea61079e56be680c2c21",
+      "importedSha256": "aa86b72da8d973180b2d135a141306b5537f9b215710952d0dd89471af52ee32",
+      "adapted": true
+    },
+    "TrioTests/OpenAPSSwiftTests/DetermineBasalLowEventualGlucoseTests.swift": {
+      "upstreamSha256": "802e871755f276c96ce72a5c7f8ed53dedcce13a872d1fdba6b5048e9de1582f",
+      "importedSha256": "cefd460bc3994a98cd3858d6953505330a8315acc71cd9df25291f1b4726708a",
+      "adapted": true
+    },
+    "TrioTests/OpenAPSSwiftTests/DetermineBasalSmbMicroBolusTests.swift": {
+      "upstreamSha256": "de44315bb90966c9256c87aa5c338f85cebc377657dd8ffbea5272e30aefff17",
+      "importedSha256": "f6d657b9d7f1edba79af78397dafa8970950250d2415e5311e68d22615c4121c",
+      "adapted": true
+    },
+    "TrioTests/OpenAPSSwiftTests/DynamicISFTests.swift": {
+      "upstreamSha256": "1737aad6770f131a9daa3ddf31aa95c8298a5cb00da4018d0fa5e98208e9ce25",
+      "importedSha256": "21c3a16750c73399717f93b50a5a515e00c387f25482cf4b06cdbf584e050d18",
+      "adapted": true
+    },
+    "TrioTests/OpenAPSSwiftTests/IobCalculateTests.swift": {
+      "upstreamSha256": "64cb506eadd658719600082730b98cc626900aceef4be7b11896e44b65561bf5",
+      "importedSha256": "64cb506eadd658719600082730b98cc626900aceef4be7b11896e44b65561bf5",
+      "adapted": false
+    },
+    "TrioTests/OpenAPSSwiftTests/IobConsecutiveEventsTests.swift": {
+      "upstreamSha256": "91e180235ff27115bc98948fd49c692b19b104b1e5c9a0c8f964fac5ce9cfaf5",
+      "importedSha256": "91e180235ff27115bc98948fd49c692b19b104b1e5c9a0c8f964fac5ce9cfaf5",
+      "adapted": false
+    },
+    "TrioTests/OpenAPSSwiftTests/IobGenerateTests.swift": {
+      "upstreamSha256": "5a609ce0c0d58c2e67815408f867c6f16d57946b6442d30eee603cfb4189a3c9",
+      "importedSha256": "5a609ce0c0d58c2e67815408f867c6f16d57946b6442d30eee603cfb4189a3c9",
+      "adapted": false
+    },
+    "TrioTests/OpenAPSSwiftTests/IobHistoryTests.swift": {
+      "upstreamSha256": "bdb3fac3543547cc4cfa94f145117bf4022201ffca862dac534d4e6bb3329713",
+      "importedSha256": "878b63e11070b4d808824ec206ed3692ff339a4efbf211cb1d3a40da8fb3cce8",
+      "adapted": true
+    },
+    "TrioTests/OpenAPSSwiftTests/IobSuspendTests.swift": {
+      "upstreamSha256": "fc042b97144e22d05f92764c8443258a7a37988ca8c8339b2a78feb2b8f521af",
+      "importedSha256": "fc042b97144e22d05f92764c8443258a7a37988ca8c8339b2a78feb2b8f521af",
+      "adapted": false
+    },
+    "TrioTests/OpenAPSSwiftTests/IobTotalTests.swift": {
+      "upstreamSha256": "f8b622e4cdc07d24a93a50d7b0b1b6cddedd231984ba1ebc35a0e0ceef29c57b",
+      "importedSha256": "f8b622e4cdc07d24a93a50d7b0b1b6cddedd231984ba1ebc35a0e0ceef29c57b",
+      "adapted": false
+    },
+    "TrioTests/OpenAPSSwiftTests/MealCobBucketingTests.swift": {
+      "upstreamSha256": "78a48b2717ef48771399240b9c50e4ef3dba5a7cca6d822c89a7981947134cdd",
+      "importedSha256": "78a48b2717ef48771399240b9c50e4ef3dba5a7cca6d822c89a7981947134cdd",
+      "adapted": false
+    },
+    "TrioTests/OpenAPSSwiftTests/MealCobTests.swift": {
+      "upstreamSha256": "af618691e34608b6c96ea30bfebf4a630d56bce5082ca540c71e4de0735f24fa",
+      "importedSha256": "af618691e34608b6c96ea30bfebf4a630d56bce5082ca540c71e4de0735f24fa",
+      "adapted": false
+    },
+    "TrioTests/OpenAPSSwiftTests/MealHistoryTests.swift": {
+      "upstreamSha256": "a8e7c2185724b6f5f425549c3cf70700a296d011346fe49f3f68480ee51fe81b",
+      "importedSha256": "a8e7c2185724b6f5f425549c3cf70700a296d011346fe49f3f68480ee51fe81b",
+      "adapted": false
+    },
+    "TrioTests/OpenAPSSwiftTests/MealTotalTests.swift": {
+      "upstreamSha256": "f42af54dc04b099738db53591a55527e8e404b04243ac92d09b45eae0e7b4216",
+      "importedSha256": "f42af54dc04b099738db53591a55527e8e404b04243ac92d09b45eae0e7b4216",
+      "adapted": false
+    },
+    "TrioTests/OpenAPSSwiftTests/ProfileBasalTests.swift": {
+      "upstreamSha256": "73429863310e89b38c679f24c552a1f45f17947b584fd2cb2d8ddd9a17da60b7",
+      "importedSha256": "73429863310e89b38c679f24c552a1f45f17947b584fd2cb2d8ddd9a17da60b7",
+      "adapted": false
+    },
+    "TrioTests/OpenAPSSwiftTests/ProfileCarbsTests.swift": {
+      "upstreamSha256": "d8fabf8c6c66ed2c0986f081a3e334010bcba550ab55fee5f712ac44126a267c",
+      "importedSha256": "d8fabf8c6c66ed2c0986f081a3e334010bcba550ab55fee5f712ac44126a267c",
+      "adapted": false
+    },
+    "TrioTests/OpenAPSSwiftTests/ProfileIsfTests.swift": {
+      "upstreamSha256": "0206923596381b128365dc6ea4d67e1f2c1ef5b953d376109e872ba45fc2e870",
+      "importedSha256": "0206923596381b128365dc6ea4d67e1f2c1ef5b953d376109e872ba45fc2e870",
+      "adapted": false
+    },
+    "TrioTests/OpenAPSSwiftTests/ProfileJavascriptTests.swift": {
+      "upstreamSha256": "2d6d33a12b53fab9c3173fc9a2f944c81e159f3429ebd77274b7ec856dae7223",
+      "importedSha256": "2d6d33a12b53fab9c3173fc9a2f944c81e159f3429ebd77274b7ec856dae7223",
+      "adapted": false
+    },
+    "TrioTests/OpenAPSSwiftTests/ProfileTargetsTests.swift": {
+      "upstreamSha256": "994077641532efb4c7ff0fd4827406cc30f613c57cf5a5c294c9f1f6f1bf8fa3",
+      "importedSha256": "994077641532efb4c7ff0fd4827406cc30f613c57cf5a5c294c9f1f6f1bf8fa3",
+      "adapted": false
+    },
+    "TrioTests/OpenAPSSwiftTests/SetTempBasalTests.swift": {
+      "upstreamSha256": "a5bbf4aa7ab844272eb2a820bf5856f2266978d69c0085e508dec45ef270eb8e",
+      "importedSha256": "8109dcfb6886668bc85d36784b9655677e5bbe73fc4c2f0b7d07be41a6b00d44",
+      "adapted": true
+    },
+    "TrioTests/OpenAPSSwiftTests/json/iob-error-log.json": {
+      "upstreamSha256": "93d10b609847cdcc06a6d75acab01162164ec17afb58ff6378c19039c533d1b5",
+      "importedSha256": "93d10b609847cdcc06a6d75acab01162164ec17afb58ff6378c19039c533d1b5",
+      "adapted": false
+    },
+    "TrioTests/OpenAPSSwiftTests/utils/Extensions.swift": {
+      "upstreamSha256": "4ab1c582f47854786d42f4751e86eaca78141b954698cbb4653bd26adf32c36d",
+      "importedSha256": "4ab1c582f47854786d42f4751e86eaca78141b954698cbb4653bd26adf32c36d",
+      "adapted": false
+    }
+  },
+  "additionalFiles": [
+    "Trio/Sources/APS/OpenAPSSwift/Models/TrioCustomOrefVariables.swift",
+    "Trio/Sources/APS/OpenAPSSwift/Models/SwiftOrefAutosens.swift",
+    "Trio/Sources/APS/OpenAPSSwift/Extensions/Collection+Mean.swift",
+    "TrioTests/OpenAPSSwiftTests/LocalOrefModelCompatibilityTests.swift"
+  ],
+  "notes": [
+    "SwiftOrefAutosens isolates optional diagnostics from legacy Autosens.",
+    "Determination constructors include nil for local fields pending P3.",
+    "Unused tick log variable removed because rounded(toPlaces:) helper is absent.",
+    "DynamicISF test rounding calls use imported rounded(scale:) helper; expected numbers unchanged.",
+    "Project formatter may normalize layout."
+  ],
+  "additionalFileSha256": {
+    "Trio/Sources/APS/OpenAPSSwift/Models/TrioCustomOrefVariables.swift": "b954624b4f35c0ca6d26a97f896cf25efd098896212a1de8678cb3819fa83c1c",
+    "Trio/Sources/APS/OpenAPSSwift/Models/SwiftOrefAutosens.swift": "8fd8384073cc9abba659d611c2bbdd83bf7aa20576c50fa296d8261199412692",
+    "Trio/Sources/APS/OpenAPSSwift/Extensions/Collection+Mean.swift": "007ccdc69039d74c44184549a245a55b620bec6d519f598c826fdc5920310030",
+    "TrioTests/OpenAPSSwiftTests/LocalOrefModelCompatibilityTests.swift": "0206b0b0d454469f20da6d529bca4f78e847fe1cd1e1e2bcb5414e547e30ddd9"
+  }
+}

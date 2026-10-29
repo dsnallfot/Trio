@@ -1,0 +1,17 @@
+PASS dst-fall-after: profile/autosens/meal/iob/determineBasal
+PASS dst-fall-before: profile/autosens/meal/iob/determineBasal
+PASS dst-spring-after: profile/autosens/meal/iob/determineBasal
+PASS dst-spring-before: profile/autosens/meal/iob/determineBasal
+PASS dynamic-log: profile/autosens/meal/iob/determineBasal
+PASS dynamic-sigmoid: profile/autosens/meal/iob/determineBasal
+PASS falling-bg: profile/autosens/meal/iob/determineBasal
+PASS low-bg: profile/autosens/meal/iob/determineBasal
+PASS meal-smb: profile/autosens/meal/iob/determineBasal
+PASS midnight: profile/autosens/meal/iob/determineBasal
+PASS mmol-profile: profile/autosens/meal/iob/determineBasal
+PASS override-smb-off: profile/autosens/meal/iob/determineBasal
+PASS rising-bg: profile/autosens/meal/iob/determineBasal
+PASS sparse-glucose: profile/autosens/meal/iob/determineBasal
+PASS stale-glucose: profile/autosens/meal/iob/determineBasal
+PASS SMB regression: corrected 0.9 U/h; reverted copy 0.1 U/h (30m, SMB 0.1 U)
+PASS 15 scenarios, 150 algorithm invocations; exact JSON comparisons, frozen Date and timezone guards

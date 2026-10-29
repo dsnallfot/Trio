@@ -374,14 +374,7 @@ final class BaseAPSManager: APSManager, Injectable {
     }
 
     func autosense() async throws -> Bool {
-        guard let autosense = await storage.retrieveAsync(OpenAPS.Settings.autosense, as: Autosens.self),
-              (autosense.timestamp ?? .distantPast).addingTimeInterval(30.minutes.timeInterval) > Date()
-        else {
-            let result = try await openAPS.autosense()
-            return result != nil
-        }
-
-        return false
+        try await openAPS.autosense() != nil
     }
 
     func determineBasal() async -> Bool {
@@ -427,10 +420,8 @@ final class BaseAPSManager: APSManager, Injectable {
 
             // Parallelize the fetches using async let
             async let currentTemp = fetchCurrentTempBasal(date: now)
-            async let autosenseResult = autosense()
-
-            _ = try await autosenseResult
-            await openAPS.createProfiles()
+            // OpenAPS owns the profile/autosens/meal/IOB/determination transaction
+            // so toggles and concurrent shortcut/APNS requests cannot mix engines.
             let determination = try await openAPS.determineBasal(currentTemp: await currentTemp, clock: now)
 
             if let determination = determination {

@@ -1,14 +1,18 @@
 import Foundation
 
+struct DeterminationErrorResponse: JSON, Equatable {
+    let error: String
+}
+
 struct Determination: JSON, Equatable {
     let id: UUID?
     var reason: String
-    let units: Decimal?
-    let insulinReq: Decimal?
+    var units: Decimal?
+    var insulinReq: Decimal?
     var eventualBG: Int?
     let sensitivityRatio: Decimal?
-    let rate: Decimal?
-    let duration: Decimal?
+    var rate: Decimal?
+    var duration: Decimal?
     let iob: Decimal?
     let cob: Decimal?
     var predictions: Predictions?
@@ -16,14 +20,14 @@ struct Determination: JSON, Equatable {
     let carbsReq: Decimal?
     let temp: TempType?
     var bg: Decimal?
-    let reservoir: Decimal?
+    var reservoir: Decimal?
     var isf: Decimal?
     var timestamp: Date?
-    let tdd: Decimal?
-    let insulin: Insulin?
+    var tdd: Decimal?
+    var insulin: Insulin?
     var current_target: Decimal?
-    let insulinForManualBolus: Decimal?
-    let manualBolusErrorString: Decimal?
+    var insulinForManualBolus: Decimal?
+    var manualBolusErrorString: Decimal?
     var minDelta: Decimal?
     var expectedDelta: Decimal?
     var minGuardBG: Decimal?

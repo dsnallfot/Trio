@@ -1405,6 +1405,8 @@
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		BDFF7A9E2D25FA970016C40C /* Preview Content */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "Preview Content"; sourceTree = "<group>"; };
+		C0DE00000000000000000021 /* Trio/Sources/APS/OpenAPSSwift */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Trio/Sources/APS/OpenAPSSwift; sourceTree = SOURCE_ROOT; };
+		C0DE00000000000000000022 /* TrioTests/OpenAPSSwiftTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = TrioTests/OpenAPSSwiftTests; sourceTree = SOURCE_ROOT; };
 		DDCEBF412CC1B42500DF4C36 /* Views */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Views; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
@@ -2125,6 +2127,8 @@
 		388E594F25AD948C0019842D = {
 			isa = PBXGroup;
 			children = (
+				C0DE00000000000000000022 /* TrioTests/OpenAPSSwiftTests */,
+				C0DE00000000000000000021 /* Trio/Sources/APS/OpenAPSSwift */,
 				CE1F6DE62BAF1A180064EB8D /* BuildDetails.plist */,
 				6545DD652D70CFBB007B0D70 /* blacklisted-versions.json */,
 				38F3783A2613555C009DB701 /* Config.xcconfig */,
@@ -3363,6 +3367,9 @@
 				6B1A8D272B14D91700E76752 /* PBXTargetDependency */,
 				BDFF799E2D25AA890016C40C /* PBXTargetDependency */,
 			);
+			fileSystemSynchronizedGroups = (
+				C0DE00000000000000000021 /* Trio/Sources/APS/OpenAPSSwift */,
+			);
 			name = Trio;
 			packageProductDependencies = (
 				5E12FE112EBC0000000000A1 /* LoopAlgorithm */,
@@ -3389,6 +3396,9 @@
 			);
 			dependencies = (
 				38FCF3F325E9028E0078B0D1 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				C0DE00000000000000000022 /* TrioTests/OpenAPSSwiftTests */,
 			);
 			name = TrioTests;
 			productName = TrioTests;
@@ -4604,7 +4614,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = "";
 				INFOPLIST_FILE = TrioTests/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -4625,7 +4635,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = "";
 				INFOPLIST_FILE = TrioTests/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

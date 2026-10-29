@@ -5,6 +5,21 @@ import JavaScriptCore
 
 final class OpenAPS {
     private let jsWorker = JavaScriptWorker()
+    private let calculationGate = OrefCalculationGate()
+
+    // Called only while holding calculationGate. Missing marker also invalidates
+    // pre-migration caches, so a restart cannot silently mix engine generations.
+    private func selectEngine() -> OrefEngine {
+        let settings = storage.retrieve(Trio.settings, as: TrioSettings.self) ?? TrioSettings()
+        let engine: OrefEngine = settings.useSwiftOref ? .swift : .javascript
+        let cached = storage.retrieve(OrefEngine.cacheKey, as: OrefEngine.self)
+        if cached != engine {
+            [Settings.profile, Settings.pumpProfile, Settings.autosense, Monitor.iob].forEach(storage.remove)
+            storage.save(engine, as: OrefEngine.cacheKey)
+        }
+        return engine
+    }
+
     private let processQueue = DispatchQueue(label: "OpenAPS.processQueue", qos: .utility)
 
     private let storage: FileStorage
@@ -261,6 +276,18 @@ final class OpenAPS {
         iob: Decimal? = nil,
         simulation: Bool = false
     ) async throws -> Determination? {
+        await calculationGate.acquire()
+        defer { calculationGate.release() }
+        try Task.checkCancellation()
+        let engine = selectEngine()
+        let started = Date()
+        // All five stages share this engine snapshot, even if settings change
+        // while Core Data or JS awaits. Other profile/calculation calls queue.
+        try await createProfiles(engine: engine, clock: clock)
+        let cachedAutosens = storage.retrieve(Settings.autosense, as: Autosens.self)
+        if (cachedAutosens?.timestamp ?? .distantPast).addingTimeInterval(30 * 60) <= clock {
+            _ = try await autosense(engine: engine, clock: clock)
+        }
         let diagnosticKind = simulation ? "simulation" : "basal"
         let diagnosticID = RuntimeDiagnostics.shared.begin(diagnosticKind)
         defer { RuntimeDiagnostics.shared.end(diagnosticKind, id: diagnosticID) }
@@ -310,7 +337,8 @@ final class OpenAPS {
             basalProfile: basalProfile,
             clock: clock,
             carbs: carbsAsJSON,
-            glucose: glucoseAsJSON
+            glucose: glucoseAsJSON,
+            engine: engine
         )
 
         // IOB calculation
@@ -318,7 +346,8 @@ final class OpenAPS {
             pumphistory: pumpHistoryJSON,
             profile: profile,
             clock: clock,
-            autosens: autosens.isEmpty ? .null : autosens
+            autosens: autosens.isEmpty ? .null : autosens,
+            engine: engine
         )
 
         // TODO: refactor this to core data
@@ -339,7 +368,9 @@ final class OpenAPS {
             pumpHistory: pumpHistoryJSON,
             preferences: preferences,
             basalProfile: basalProfile,
-            oref2_variables: oref2_variables
+            oref2_variables: oref2_variables,
+            engine: engine,
+            clock: clock
         )
 
         // Daniel: Minska loggning // debug(.openAPS, "Determinated: \(orefDetermination)")
@@ -352,6 +383,11 @@ final class OpenAPS {
             if !simulation {
                 // save to core data asynchronously
                 await processDetermination(determination)
+                let run = OrefRunStatus(engine: engine, date: clock, duration: Date().timeIntervalSince(started))
+                storage.save(run, as: OrefRunStatus.storageKey)
+                var samples = storage.retrieve(OrefRunStatus.historyKey, as: [OrefRunStatus].self) ?? []
+                samples.append(run)
+                storage.save(Array(samples.suffix(576)), as: OrefRunStatus.historyKey)
             }
 
             return determination
@@ -426,6 +462,16 @@ final class OpenAPS {
     }
 
     func autosense() async throws -> Autosens? {
+        await calculationGate.acquire()
+        defer { calculationGate.release() }
+        try Task.checkCancellation()
+        let engine = selectEngine()
+        let clock = Date()
+        try await createProfiles(engine: engine, clock: clock)
+        return try await autosense(engine: engine, clock: clock)
+    }
+
+    private func autosense(engine: OrefEngine, clock: Date) async throws -> Autosens? {
         debug(.openAPS, "Start autosens")
 
         // Perform asynchronous calls in parallel
@@ -453,12 +499,14 @@ final class OpenAPS {
             basalprofile: basalProfile,
             profile: profile,
             carbs: carbsAsJSON,
-            temptargets: tempTargets
+            temptargets: tempTargets,
+            engine: engine,
+            clock: clock
         )
 
         debug(.openAPS, "AUTOSENS: \(autosenseResult)")
         if var autosens = Autosens(from: autosenseResult) {
-            autosens.timestamp = Date()
+            autosens.timestamp = clock
             await storage.saveAsync(autosens, as: Settings.autosense)
 
             return autosens
@@ -468,6 +516,17 @@ final class OpenAPS {
     }
 
     func createProfiles() async {
+        await calculationGate.acquire()
+        defer { calculationGate.release() }
+        do {
+            try Task.checkCancellation()
+            try await createProfiles(engine: selectEngine(), clock: Date())
+        } catch {
+            debug(.openAPS, "Failed to create profiles: \(error)")
+        }
+    }
+
+    private func createProfiles(engine: OrefEngine, clock: Date) async throws {
         debug(.openAPS, "Start creating pump profile and user profile")
 
         // Load required settings and profiles asynchronously
@@ -521,7 +580,9 @@ final class OpenAPS {
                 tempTargets: tempTargets,
                 model: model,
                 autotune: RawJSON.null,
-                trioData: trioSettings
+                trioData: trioSettings,
+                engine: engine,
+                clock: clock
             )
 
             let profile = try await makeProfile(
@@ -534,7 +595,9 @@ final class OpenAPS {
                 tempTargets: tempTargets,
                 model: model,
                 autotune: RawJSON.null,
-                trioData: trioSettings
+                trioData: trioSettings,
+                engine: engine,
+                clock: clock
             )
 
             // Save the profiles
@@ -545,11 +608,16 @@ final class OpenAPS {
                 .apsManager,
                 "\(DebuggingIdentifiers.failed) \(#file) \(#function) Failed to create pump profile and normal profile: \(error)"
             )
+            throw error
         }
     }
 
-    private func iob(pumphistory: JSON, profile: JSON, clock: JSON, autosens: JSON) async throws -> RawJSON {
-        await withCheckedContinuation { continuation in
+    private func iob(pumphistory: JSON, profile: JSON, clock: JSON, autosens: JSON, engine: OrefEngine) async throws -> RawJSON {
+        if engine == .swift {
+            return try OpenAPSSwift.iob(pumphistory: pumphistory, profile: profile, clock: clock, autosens: autosens)
+                .returnOrThrow()
+        }
+        return await withCheckedContinuation { continuation in
             jsWorker.inCommonContext { worker in
                 worker.evaluateBatch(scripts: [
                     Script(name: Prepare.log),
@@ -573,9 +641,20 @@ final class OpenAPS {
         basalProfile: JSON,
         clock: JSON,
         carbs: JSON,
-        glucose: JSON
+        glucose: JSON,
+        engine: OrefEngine
     ) async throws -> RawJSON {
-        try await withCheckedThrowingContinuation { continuation in
+        if engine == .swift {
+            return try OpenAPSSwift.meal(
+                pumphistory: pumphistory,
+                profile: profile,
+                basalProfile: basalProfile,
+                clock: clock,
+                carbs: carbs,
+                glucose: glucose
+            ).returnOrThrow()
+        }
+        return try await withCheckedThrowingContinuation { continuation in
             jsWorker.inCommonContext { worker in
                 worker.evaluateBatch(scripts: [
                     Script(name: Prepare.log),
@@ -601,9 +680,22 @@ final class OpenAPS {
         basalprofile: JSON,
         profile: JSON,
         carbs: JSON,
-        temptargets: JSON
+        temptargets: JSON,
+        engine: OrefEngine,
+        clock: Date
     ) async throws -> RawJSON {
-        try await withCheckedThrowingContinuation { continuation in
+        if engine == .swift {
+            return try OpenAPSSwift.autosense(
+                glucose: glucose,
+                pumpHistory: pumpHistory,
+                basalProfile: basalprofile,
+                profile: profile,
+                carbs: carbs,
+                tempTargets: temptargets,
+                clock: clock
+            ).returnOrThrow()
+        }
+        return try await withCheckedThrowingContinuation { continuation in
             jsWorker.inCommonContext { worker in
                 worker.evaluateBatch(scripts: [
                     Script(name: Prepare.log),
@@ -635,9 +727,28 @@ final class OpenAPS {
         pumpHistory: JSON,
         preferences: JSON,
         basalProfile: JSON,
-        oref2_variables: JSON
+        oref2_variables: JSON,
+        engine: OrefEngine,
+        clock: Date
     ) async throws -> RawJSON {
-        try await withCheckedThrowingContinuation { continuation in
+        if engine == .swift {
+            return try OpenAPSSwift.determineBasal(
+                glucose: glucose,
+                currentTemp: currentTemp,
+                iob: iob,
+                profile: profile,
+                autosens: autosens,
+                meal: meal,
+                microBolusAllowed: microBolusAllowed,
+                reservoir: reservoir,
+                pumpHistory: pumpHistory,
+                preferences: preferences,
+                basalProfile: basalProfile,
+                trioCustomOrefVariables: oref2_variables,
+                clock: clock
+            ).returnOrThrow()
+        }
+        return try await withCheckedThrowingContinuation { continuation in
             jsWorker.inCommonContext { worker in
                 worker.evaluateBatch(scripts: [
                     Script(name: Prepare.log),
@@ -695,9 +806,25 @@ final class OpenAPS {
         tempTargets: JSON,
         model: JSON,
         autotune: JSON,
-        trioData: JSON
+        trioData: JSON,
+        engine: OrefEngine,
+        clock: Date
     ) async throws -> RawJSON {
-        try await withCheckedThrowingContinuation { continuation in
+        if engine == .swift {
+            return try OpenAPSSwift.makeProfile(
+                preferences: preferences,
+                pumpSettings: pumpSettings,
+                bgTargets: bgTargets,
+                basalProfile: basalProfile,
+                isf: isf,
+                carbRatio: carbRatio,
+                tempTargets: tempTargets,
+                model: model,
+                trioSettings: trioData,
+                clock: clock
+            ).returnOrThrow()
+        }
+        return try await withCheckedThrowingContinuation { continuation in
             jsWorker.inCommonContext { worker in
                 worker.evaluateBatch(scripts: [
                     Script(name: Prepare.log),

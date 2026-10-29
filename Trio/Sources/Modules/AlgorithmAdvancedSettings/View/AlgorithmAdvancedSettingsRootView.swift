@@ -18,6 +18,20 @@ extension AlgorithmAdvancedSettings {
 
         var body: some View {
             List {
+                Section {
+                    Toggle("Använd Swift-algoritmen", isOn: $state.useSwiftOref)
+                    Text("Senaste beräkning: \(state.lastOrefRun)")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                } header: {
+                    Text("Algoritmmotor")
+                } footer: {
+                    Text(
+                        "JavaScript är standard. Byte gäller nästa beräkning och bygger om algoritmens cache. Swift-versionen är avsedd för testtelefon tills jämförelserna är klara."
+                    )
+                }
+                .listRowBackground(Color.tabBar)
+
                 Section(
                     header: Text("ANSVARSFRISKRIVNING"),
                     content: {

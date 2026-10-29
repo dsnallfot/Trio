@@ -5,8 +5,12 @@ import SwiftUI
 extension AlgorithmAdvancedSettings {
     final class StateModel: BaseStateModel<Provider> {
         @Injected() var settings: SettingsManager!
+        @Injected() var broadcaster: Broadcaster!
         @Injected() var storage: FileStorage!
         @Injected() var nightscout: NightscoutManager!
+
+        @Published var useSwiftOref = false
+        @Published var lastOrefRun = "Ingen körning registrerad"
 
         var units: GlucoseUnits = .mgdL
 
@@ -29,6 +33,9 @@ extension AlgorithmAdvancedSettings {
 
         override func subscribe() {
             units = settingsManager.settings.units
+            subscribeSetting(\.useSwiftOref, on: $useSwiftOref) { useSwiftOref = $0 }
+            broadcaster.register(DeterminationObserver.self, observer: self)
+            updateOrefStatus()
 
             subscribePreferencesSetting(\.maxDailySafetyMultiplier, on: $maxDailySafetyMultiplier) {
                 maxDailySafetyMultiplier = $0 }
@@ -46,6 +53,13 @@ extension AlgorithmAdvancedSettings {
                 noisyCGMTargetMultiplier = $0 }
 
             insulinActionCurve = pumpSettings.insulinActionCurve
+        }
+
+        func updateOrefStatus() {
+            if let run = storage.retrieve(OrefRunStatus.storageKey, as: OrefRunStatus.self) {
+                lastOrefRun =
+                    "\(run.engine.title) · \(run.date.formatted(date: .omitted, time: .shortened)) · \(Int(run.duration * 1000)) ms"
+            }
         }
 
         var isPumpSettingUnchanged: Bool {
@@ -82,5 +96,11 @@ extension AlgorithmAdvancedSettings {
 extension AlgorithmAdvancedSettings.StateModel: SettingsObserver {
     func settingsDidChange(_: TrioSettings) {
         units = settingsManager.settings.units
+    }
+}
+
+extension AlgorithmAdvancedSettings.StateModel: DeterminationObserver {
+    func determinationDidUpdate(_: Determination) {
+        DispatchQueue.main.async { self.updateOrefStatus() }
     }
 }

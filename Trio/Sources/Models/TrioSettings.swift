@@ -17,6 +17,7 @@ enum BolusShortcutLimit: String, JSON, CaseIterable, Identifiable {
 
 struct TrioSettings: JSON, Equatable {
     var units: GlucoseUnits = .mgdL
+    var useSwiftOref: Bool = false
     var closedLoop: Bool = false
     var isUploadEnabled: Bool = false
     var isErrorUploadEnabled: Bool = false
@@ -82,6 +83,7 @@ extension TrioSettings: Decodable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         var settings = TrioSettings()
+        settings.useSwiftOref = (try? container.decode(Bool.self, forKey: .useSwiftOref)) ?? false
 
         if let units = try? container.decode(GlucoseUnits.self, forKey: .units) {
             settings.units = units

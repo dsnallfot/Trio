@@ -47,6 +47,6 @@ enum ProgressText: String {
     case updatingIOB = "Uppdaterar IOB ..."
     case updatingCOB = "Uppdaterar COB ..."
     case updatingHistory = "Uppdaterar Historik ..."
-    case updatingTreatments = "Uppdaterar Behnadlingar ..."
+    case updatingTreatments = "Uppdaterar Behandlingar ..."
     case updatingIOBandCOB = "Uppdaterar IOB och COB ..."
 }

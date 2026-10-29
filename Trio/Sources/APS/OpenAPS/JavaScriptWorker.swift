@@ -36,17 +36,18 @@ extension String {
 }
 
 final class JavaScriptWorker {
-    private let virtualMachine: JSVirtualMachine
+    // Created only for a JavaScript transaction; Swift-only runs leave this nil.
+    // All access is protected by contextCreationLock.
+    private var virtualMachine: JSVirtualMachine?
     private let contextCreationLock = NSLock()
-
-    init() {
-        virtualMachine = JSVirtualMachine()!
-    }
 
     private func createContext() -> JSContext {
         contextCreationLock.lock()
         defer { contextCreationLock.unlock() }
-        let context = JSContext(virtualMachine: virtualMachine)!
+        if virtualMachine == nil {
+            virtualMachine = JSVirtualMachine()!
+        }
+        let context = JSContext(virtualMachine: virtualMachine!)!
         context.exceptionHandler = { _, exception in
             if let error = exception?.toString() {
                 warning(.openAPS, "JavaScript Error: \(error)")

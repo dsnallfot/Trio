@@ -1,0 +1,67 @@
+[
+  {
+    "case": "override-isf-cr",
+    "differences": [],
+    "errors": []
+  },
+  {
+    "case": "override-isf",
+    "differences": [],
+    "errors": []
+  },
+  {
+    "case": "override-cr",
+    "differences": [],
+    "errors": []
+  },
+  {
+    "case": "override-target",
+    "differences": [],
+    "errors": []
+  },
+  {
+    "case": "override-smb-limits",
+    "differences": [],
+    "errors": []
+  },
+  {
+    "case": "smb-day-off",
+    "differences": [],
+    "errors": []
+  },
+  {
+    "case": "smb-night-on",
+    "differences": [],
+    "errors": []
+  },
+  {
+    "case": "smb-all-off",
+    "differences": [],
+    "errors": []
+  },
+  {
+    "case": "dynamic-high-target",
+    "differences": [],
+    "errors": []
+  },
+  {
+    "case": "dynamic-short-history",
+    "differences": [],
+    "errors": []
+  },
+  {
+    "case": "dynamic-no-history",
+    "differences": [],
+    "errors": []
+  },
+  {
+    "case": "exercise-target",
+    "differences": [],
+    "errors": []
+  },
+  {
+    "case": "low-target",
+    "differences": [],
+    "errors": []
+  }
+]
