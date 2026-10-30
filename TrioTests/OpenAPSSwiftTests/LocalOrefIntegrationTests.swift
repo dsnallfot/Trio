@@ -15,10 +15,11 @@ import Testing
         }
     #endif
 
-    @Test("Nightscout SMB marker starts conclusion only when SMB is disabled", arguments: [
-        true,
-        false
-    ]) func smbReasonMarker(smbIsEnabled: Bool) {
+    @Test(
+        "Nightscout TDD precedes AF/SMB ratio and SMB marker starts conclusion",
+        arguments: [true, false],
+        [", TDD: 20 E, 40% Bolus 60% Basal", ", TDD: Otillräcklig pumpdata (<21h)"]
+    ) func smbReasonMarker(smbIsEnabled: Bool, summary: String) {
         let meal = ComputedCarbs(
             carbs: 0, mealCOB: 0, currentDeviation: 0, maxDeviation: 0, minDeviation: 0,
             slopeFromMaxDeviation: 0, slopeFromMinDeviation: 0, allDeviations: [], lastCarbTime: 0
@@ -31,14 +32,15 @@ import Testing
         let inputs = DosingEngine.prepareDosingInputs(
             profile: Profile(), mealData: meal, forecast: forecast, naiveEventualGlucose: 120,
             threshold: 65, glucoseImpact: 0, deviation: 0, currentBasal: 1, overrideFactor: 1,
-            adjustedSensitivity: 50, isfReason: "ISF", tddReason: ", TDD: 20", targetLog: "100",
+            adjustedSensitivity: 50, isfReason: "ISF", tddReason: ", AF: 0.5, SMB Ratio: 0.5", tddSummary: summary,
+            targetLog: "100",
             smbIsEnabled: smbIsEnabled
         )
         if smbIsEnabled {
-            #expect(inputs.reason.hasSuffix(", TDD: 20; "))
+            #expect(inputs.reason.hasSuffix("\(summary), AF: 0.5, SMB Ratio: 0.5; "))
             #expect(!inputs.reason.contains("SMB INAKTIVERADE!"))
         } else {
-            #expect(inputs.reason.hasSuffix(", TDD: 20; SMB INAKTIVERADE!, "))
+            #expect(inputs.reason.hasSuffix("\(summary), AF: 0.5, SMB Ratio: 0.5; SMB INAKTIVERADE!, "))
         }
     }
 

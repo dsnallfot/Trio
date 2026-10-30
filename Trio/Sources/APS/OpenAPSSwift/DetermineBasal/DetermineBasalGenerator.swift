@@ -24,7 +24,8 @@ enum DeterminationGenerator {
         microBolusAllowed: Bool,
         trioCustomOrefVariables: TrioCustomOrefVariables,
         currentTime: Date,
-        localCompatibility: Bool = false
+        localCompatibility: Bool = false,
+        tddSummary: String = ""
     ) throws -> Determination? {
         let glucoseStatus = try Self.getGlucoseStatus(glucoseReadings: glucose)
         guard let glucoseStatus = glucoseStatus else { throw DeterminationError.missingInputs }
@@ -40,7 +41,8 @@ enum DeterminationGenerator {
             microBolusAllowed: microBolusAllowed,
             trioCustomOrefVariables: trioCustomOrefVariables,
             currentTime: currentTime,
-            localCompatibility: localCompatibility
+            localCompatibility: localCompatibility,
+            tddSummary: tddSummary
         )
     }
 
@@ -59,7 +61,8 @@ enum DeterminationGenerator {
         microBolusAllowed: Bool,
         trioCustomOrefVariables: TrioCustomOrefVariables,
         currentTime: Date,
-        localCompatibility: Bool = false
+        localCompatibility: Bool = false,
+        tddSummary: String = ""
     ) throws -> Determination? {
         var autosensData = autosensData
 
@@ -318,10 +321,10 @@ enum DeterminationGenerator {
                 tddReason += ", Basal Ratio: \(dynamicIsfResult.tddRatio)"
             }
         }
-        // SMB Ratio is added if not default (0.5)
-        if profile.smbDeliveryRatio != 0.5 {
-            tddReason += ", SMB Ratio: \(min(profile.smbDeliveryRatio, 1))"
-        }
+        // SMB Ratio is added if not default (0.5) - Changed to always added
+        // if profile.smbDeliveryRatio != 0.5 {
+        tddReason += ", SMB Ratio: \(min(profile.smbDeliveryRatio, 1))"
+        // }
 
         let smbDecision = try DosingEngine.makeSMBDosingDecision(
             profile: profile,
@@ -350,6 +353,7 @@ enum DeterminationGenerator {
             adjustedSensitivity: adjustedSensitivity,
             isfReason: isfReason,
             tddReason: tddReason,
+            tddSummary: tddSummary,
             targetLog: targetLog,
             smbIsEnabled: smbIsEnabled
         )

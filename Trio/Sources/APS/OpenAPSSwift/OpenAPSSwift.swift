@@ -104,6 +104,18 @@ struct OpenAPSSwift {
             ) {
                 return .success(early)
             }
+            let summary: String
+            if history.hours > 21, history.total > 0 {
+                let bolusPercent = ((history.insulin.bolus ?? 0) / history.total * 100).jsRounded()
+                let basalPercent = (
+                    ((history.insulin.temp_basal ?? 0) + (history.insulin.scheduled_basal ?? 0)) / history
+                        .total * 100
+                ).jsRounded()
+                summary = ", TDD: \(history.total.jsRounded(scale: 2)) E, \(bolusPercent)% Bolus \(basalPercent)% Basal"
+            } else {
+                summary = ", TDD: Otillräcklig pumpdata (<21h)"
+            }
+
             var rawDetermination = try DeterminationGenerator.generate(
                 profile: profile,
                 preferences: preferences,
@@ -116,29 +128,14 @@ struct OpenAPSSwift {
                 microBolusAllowed: microBolusAllowed && glucose.first?.glucose != 400 && glucose.first?.sgv != 400,
                 trioCustomOrefVariables: variables,
                 currentTime: clock,
-                localCompatibility: true
+                localCompatibility: true,
+                tddSummary: summary
             )
 
             // Early error/cancel returns deliberately keep these fields absent.
             if rawDetermination?.bg != nil {
                 rawDetermination?.tdd = history.total.jsRounded(scale: 2)
                 rawDetermination?.insulin = history.insulin
-                if var reason = rawDetermination?.reason {
-                    let summary: String
-                    if history.hours > 21, history.total > 0 {
-                        let bolusPercent = ((history.insulin.bolus ?? 0) / history.total * 100).jsRounded()
-                        let basalPercent = (
-                            ((history.insulin.temp_basal ?? 0) + (history.insulin.scheduled_basal ?? 0)) / history
-                                .total * 100
-                        ).jsRounded()
-                        summary = ", TDD: \(history.total.jsRounded(scale: 2)) E, \(bolusPercent)% Bolus \(basalPercent)% Basal"
-                    } else {
-                        summary = ", TDD: Otillräcklig pumpdata (< 21h)"
-                    }
-                    let insertion = reason.range(of: "; ")?.lowerBound ?? reason.endIndex
-                    reason.insert(contentsOf: summary, at: insertion)
-                    rawDetermination?.reason = reason
-                }
                 rawDetermination?.reservoir = reservoir
                 if let threshold = rawDetermination?.threshold {
                     rawDetermination?.threshold = DosingEngine.convertGlucose(profile: profile, glucose: threshold)

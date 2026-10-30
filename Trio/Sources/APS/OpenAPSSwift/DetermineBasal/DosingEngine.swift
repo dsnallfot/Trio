@@ -135,7 +135,7 @@ enum DosingEngine {
         let maxDeltaGlucoseThreshold = min(profile.maxDeltaBgThreshold, 0.4)
         if glucoseStatus.maxDelta > maxDeltaGlucoseThreshold * currentGlucose {
             reason =
-                "maxDelta \(convertGlucose(profile: profile, glucose: glucoseStatus.maxDelta)) > \(100 * maxDeltaGlucoseThreshold)% av BG \(convertGlucose(profile: profile, glucose: currentGlucose)) - SMB INAKTIVERADE!, "
+                "maxDelta \(convertGlucose(profile: profile, glucose: glucoseStatus.maxDelta)) > \(100 * maxDeltaGlucoseThreshold)% of BG \(convertGlucose(profile: profile, glucose: currentGlucose)), "
             smbIsEnabled = false
         }
 
@@ -159,6 +159,7 @@ enum DosingEngine {
         adjustedSensitivity: Decimal,
         isfReason: String,
         tddReason: String,
+        tddSummary: String = "",
         targetLog: String, // This is a pre-formatted string from the JS
         smbIsEnabled: Bool
     ) -> DosingInputs {
@@ -175,6 +176,7 @@ enum DosingEngine {
         if let lastUAM = lastUAMpredBG {
             reason += ", UAMpredBG \(lastUAM)"
         }
+        reason += tddSummary
         reason += tddReason
         reason += "; " // Start of conclusion
         if !smbIsEnabled {
@@ -409,7 +411,7 @@ enum DosingEngine {
         //      means no carbs required)
         if minDelta > expectedDelta, minDelta > 0, carbsRequired == 0 {
             if naiveEventualGlucose < 40 {
-                newDetermination.reason += ", enkel Prognos BG < 2.2. "
+                newDetermination.reason += "; Enkel Prognos BG < 2.2. "
                 let finalDetermination = try TempBasalFunctions.setTempBasal(
                     rate: 0,
                     duration: 30,
@@ -435,10 +437,10 @@ enum DosingEngine {
             let roundedCurrentRate = TempBasalFunctions.roundBasal(profile: profile, basalRate: currentTemp.rate)
 
             if currentTemp.duration > 15, roundedBasal == roundedCurrentRate {
-                newDetermination.reason += ", temp \(currentTemp.rate) ~ behov \(basal)E/h. "
+                newDetermination.reason += "; Temp \(currentTemp.rate) ~ behov \(basal)E/h. "
                 return (shouldSetTempBasal: true, determination: newDetermination)
             } else {
-                newDetermination.reason += "; ställer in nuvarande basal \(basal) som temp. "
+                newDetermination.reason += "; Ställer in nuvarande basal \(basal) som temp. "
                 let finalDetermination = try TempBasalFunctions.setTempBasal(
                     rate: basal,
                     duration: 30,
@@ -470,7 +472,7 @@ enum DosingEngine {
         if insulinScheduled < minInsulinRequired - basal * 0.3 {
             let rateFormatted = String(format: "%.2f", Double(truncating: currentTemp.rate.jsRounded(scale: 2) as NSNumber))
             newDetermination
-                .reason += ", \(currentTemp.duration)m@\(rateFormatted) 'är mkt lägre än behov'. "
+                .reason += "; \(currentTemp.duration)m@\(rateFormatted) 'är mkt lägre än behov'. "
             let finalDetermination = try TempBasalFunctions.setTempBasal(
                 rate: rate,
                 duration: 30,
@@ -482,7 +484,7 @@ enum DosingEngine {
         }
 
         if currentTemp.duration > 5, rate >= currentTemp.rate * 0.8 {
-            newDetermination.reason += ", temp \(currentTemp.rate) ~< behov \(rate)E/h. "
+            newDetermination.reason += "; Temp \(currentTemp.rate) ~< behov \(rate)E/h. "
             return (shouldSetTempBasal: true, determination: newDetermination)
         } else {
             if rate <= 0 {
@@ -501,7 +503,7 @@ enum DosingEngine {
                 }
 
                 if durationRequired > 0 {
-                    newDetermination.reason += ", ställer in \(durationRequired)m 0-temp. "
+                    newDetermination.reason += "; Ställer in \(durationRequired)m 0-temp. "
                     let finalDetermination = try TempBasalFunctions.setTempBasal(
                         rate: rate,
                         duration: durationRequired,
@@ -512,7 +514,7 @@ enum DosingEngine {
                     return (shouldSetTempBasal: true, determination: finalDetermination)
                 }
             } else {
-                newDetermination.reason += ", ställer in \(rate)E/h. "
+                newDetermination.reason += "; Ställer in \(rate)E/h. "
             }
 
             let finalDetermination = try TempBasalFunctions.setTempBasal(
@@ -568,7 +570,7 @@ enum DosingEngine {
                 newDetermination.reason += ", temp \(currentTemp.rate) ~ behov \(basal)E/h. "
                 return (shouldSetTempBasal: true, determination: newDetermination)
             } else {
-                newDetermination.reason += "; ställer in nuvarande basal \(basal) som temp. "
+                newDetermination.reason += "; Ställer in nuvarande basal \(basal) som temp. "
                 let finalDetermination = try TempBasalFunctions.setTempBasal(
                     rate: basal,
                     duration: 30,
@@ -617,7 +619,7 @@ enum DosingEngine {
                 newDetermination.reason += ", temp \(currentTemp.rate) ~ req \(basal)E/h. "
                 return (shouldSetTempBasal: true, determination: newDetermination)
             } else {
-                newDetermination.reason += "; ställer in nuvarande basal \(basal) som temp. "
+                newDetermination.reason += "; Ställer in nuvarande basal \(basal) som temp. "
                 let finalDetermination = try TempBasalFunctions.setTempBasal(
                     rate: basal,
                     duration: 30,
@@ -659,7 +661,7 @@ enum DosingEngine {
             newDetermination.reason += ", temp \(currentTemp.rate) ~ req \(basal)E/h. "
             return (shouldSetTempBasal: true, determination: newDetermination)
         } else {
-            newDetermination.reason += "; ställer in nuvarande basal \(basal) som temp. "
+            newDetermination.reason += "; Ställer in nuvarande basal \(basal) som temp. "
             let finalDetermination = try TempBasalFunctions.setTempBasal(
                 rate: basal,
                 duration: 30,
@@ -819,7 +821,7 @@ enum DosingEngine {
             newDetermination.reason += "; Max bolus \(maxBolus)"
         }
         if durationRequired > 0 {
-            newDetermination.reason += "; ställer in \(durationRequired)m låg temp \(smbLowTempRequired)E/h"
+            newDetermination.reason += "; Ställer in \(durationRequired)m låg temp \(smbLowTempRequired)E/h"
         }
         newDetermination.reason += ". "
 
@@ -884,7 +886,7 @@ enum DosingEngine {
         let maxSafeBasal = try TempBasalFunctions.getMaxSafeBasalRate(profile: profile)
 
         if rate > maxSafeBasal {
-            newDetermination.reason += "justerar behov: \(rate) till maxSafeBasal: \(maxSafeBasal.jsRounded(scale: 2)), "
+            newDetermination.reason += "Justerar behov: \(rate) till maxSafeBasal: \(maxSafeBasal.jsRounded(scale: 2)), "
             rate = TempBasalFunctions.roundBasal(profile: profile, basalRate: maxSafeBasal)
         }
 
@@ -892,7 +894,7 @@ enum DosingEngine {
         if insulinScheduled >= insulinRequired * 2 {
             let rateFormatted = String(format: "%.2f", Double(truncating: currentTemp.rate.jsRounded(scale: 2) as NSNumber))
             newDetermination.reason +=
-                "\(currentTemp.duration)m@\(rateFormatted) > 2 * insulinbehov. Ställer in temp basal \(rate)E/h. "
+                ", \(currentTemp.duration)m@\(rateFormatted) > 2 * insulinbehov: Ställer in temp basal \(rate)E/h. "
             let finalDetermination = try TempBasalFunctions.setTempBasal(
                 rate: rate,
                 duration: 30,
@@ -904,7 +906,7 @@ enum DosingEngine {
         }
 
         if currentTemp.duration == 0 {
-            newDetermination.reason += "ingen temp, ställer in \(rate)E/h. "
+            newDetermination.reason += "ingen temp: Ställer in \(rate)E/h. "
             let finalDetermination = try TempBasalFunctions.setTempBasal(
                 rate: rate,
                 duration: 30,

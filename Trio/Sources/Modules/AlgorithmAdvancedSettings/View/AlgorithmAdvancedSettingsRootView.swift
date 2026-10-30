@@ -30,7 +30,7 @@ extension AlgorithmAdvancedSettings {
                         "JavaScript är standard. Byte gäller nästa beräkning och bygger om algoritmens cache. Swift-versionen är avsedd för testtelefon tills jämförelserna är klara."
                     )
                 }
-                .listRowBackground(Color.tabBar)
+                .listRowBackground(Color.chart)
 
                 Section(
                     header: Text("ANSVARSFRISKRIVNING"),

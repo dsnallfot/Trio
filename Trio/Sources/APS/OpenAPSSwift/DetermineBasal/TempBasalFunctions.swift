@@ -89,14 +89,14 @@ enum TempBasalFunctions {
                 if currentTemp.duration > 0 {
                     determination
                         .reason = determination.reason +
-                        ". Föreslagen basal är samma som profilbasal, en temp är aktiv, avbryter nuvarande temp"
+                        ". Föreslagen basal är samma som profilbasal: en temp är aktiv: avbryter nuvarande temp"
                     determination.duration = 0
                     determination.rate = 0
                     return determination
                 } else {
                     determination
                         .reason = determination.reason +
-                        ". Föreslagen basal är samma som profilbasal, ingen temp är aktiv, ingen åtgärd"
+                        ". Föreslagen basal är samma som profilbasal: ingen temp är aktiv: ingen åtgärd"
                     return determination
                 }
             } else {
