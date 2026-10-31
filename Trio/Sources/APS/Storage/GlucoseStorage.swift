@@ -341,18 +341,14 @@ final class BaseGlucoseStorage: GlucoseStorage, Injectable {
     // Fetch glucose that is not uploaded to Nightscout yet
     /// - Returns: Array of BloodGlucose to ensure the correct format for the NS Upload
     func getGlucoseNotYetUploadedToNightscout() async -> [BloodGlucose] {
-        let results = await CoreDataStack.shared.fetchEntitiesAsync(
+        await CoreDataStack.shared.fetchAndMapEntitiesAsync(
             ofType: GlucoseStored.self,
             onContext: coredataContext,
             predicate: NSPredicate.glucoseNotYetUploadedToNightscout,
             key: "date",
             ascending: false
-        )
-
-        return await coredataContext.perform {
-            guard let fetchedResults = results as? [GlucoseStored] else { return [] }
-
-            return fetchedResults.map { result in
+        ) { fetchedResults in
+            fetchedResults.map { result in
                 BloodGlucose(
                     _id: result.id?.uuidString ?? UUID().uuidString,
                     sgv: Int(result.glucose),
@@ -373,18 +369,14 @@ final class BaseGlucoseStorage: GlucoseStorage, Injectable {
     // Fetch manual glucose that is not uploaded to Nightscout yet
     /// - Returns: Array of NightscoutTreatment to ensure the correct format for the NS Upload
     func getManualGlucoseNotYetUploadedToNightscout() async -> [NightscoutTreatment] {
-        let results = await CoreDataStack.shared.fetchEntitiesAsync(
+        await CoreDataStack.shared.fetchAndMapEntitiesAsync(
             ofType: GlucoseStored.self,
             onContext: coredataContext,
             predicate: NSPredicate.manualGlucoseNotYetUploadedToNightscout,
             key: "date",
             ascending: false
-        )
-
-        guard let fetchedResults = results as? [GlucoseStored] else { return [] }
-
-        return await coredataContext.perform {
-            return fetchedResults.map { result in
+        ) { fetchedResults in
+            fetchedResults.map { result in
                 NightscoutTreatment(
                     duration: nil,
                     rawDuration: nil,
@@ -427,18 +419,14 @@ final class BaseGlucoseStorage: GlucoseStorage, Injectable {
     // Fetch glucose that is not uploaded to Nightscout yet
     /// - Returns: Array of BloodGlucose to ensure the correct format for the NS Upload
     func getGlucoseNotYetUploadedToHealth() async -> [BloodGlucose] {
-        let results = await CoreDataStack.shared.fetchEntitiesAsync(
+        await CoreDataStack.shared.fetchAndMapEntitiesAsync(
             ofType: GlucoseStored.self,
             onContext: coredataContext,
             predicate: NSPredicate.glucoseNotYetUploadedToHealth,
             key: "date",
             ascending: false
-        )
-
-        guard let fetchedResults = results as? [GlucoseStored] else { return [] }
-
-        return await coredataContext.perform {
-            return fetchedResults.map { result in
+        ) { fetchedResults in
+            fetchedResults.map { result in
                 BloodGlucose(
                     _id: result.id?.uuidString ?? UUID().uuidString,
                     sgv: Int(result.glucose),
@@ -457,18 +445,14 @@ final class BaseGlucoseStorage: GlucoseStorage, Injectable {
     // Fetch manual glucose that is not uploaded to Nightscout yet
     /// - Returns: Array of NightscoutTreatment to ensure the correct format for the NS Upload
     func getManualGlucoseNotYetUploadedToHealth() async -> [BloodGlucose] {
-        let results = await CoreDataStack.shared.fetchEntitiesAsync(
+        await CoreDataStack.shared.fetchAndMapEntitiesAsync(
             ofType: GlucoseStored.self,
             onContext: coredataContext,
             predicate: NSPredicate.manualGlucoseNotYetUploadedToHealth,
             key: "date",
             ascending: false
-        )
-
-        guard let fetchedResults = results as? [GlucoseStored] else { return [] }
-
-        return await coredataContext.perform {
-            return fetchedResults.map { result in
+        ) { fetchedResults in
+            fetchedResults.map { result in
                 BloodGlucose(
                     _id: result.id?.uuidString ?? UUID().uuidString,
                     sgv: Int(result.glucose),
@@ -487,18 +471,14 @@ final class BaseGlucoseStorage: GlucoseStorage, Injectable {
     // Fetch glucose that is not uploaded to Tidepool yet
     /// - Returns: Array of StoredGlucoseSample to ensure the correct format for Tidepool upload
     func getGlucoseNotYetUploadedToTidepool() async -> [StoredGlucoseSample] {
-        let results = await CoreDataStack.shared.fetchEntitiesAsync(
+        await CoreDataStack.shared.fetchAndMapEntitiesAsync(
             ofType: GlucoseStored.self,
             onContext: coredataContext,
             predicate: NSPredicate.glucoseNotYetUploadedToTidepool,
             key: "date",
             ascending: false
-        )
-
-        guard let fetchedResults = results as? [GlucoseStored] else { return [] }
-
-        return await coredataContext.perform {
-            return fetchedResults.map { result in
+        ) { fetchedResults in
+            fetchedResults.map { result in
                 BloodGlucose(
                     _id: result.id?.uuidString ?? UUID().uuidString,
                     sgv: Int(result.glucose),
@@ -518,18 +498,14 @@ final class BaseGlucoseStorage: GlucoseStorage, Injectable {
     // Fetch manual glucose that is not uploaded to Tidepool yet
     /// - Returns: Array of StoredGlucoseSample to ensure the correct format for the Tidepool upload
     func getManualGlucoseNotYetUploadedToTidepool() async -> [StoredGlucoseSample] {
-        let results = await CoreDataStack.shared.fetchEntitiesAsync(
+        await CoreDataStack.shared.fetchAndMapEntitiesAsync(
             ofType: GlucoseStored.self,
             onContext: coredataContext,
             predicate: NSPredicate.manualGlucoseNotYetUploadedToTidepool,
             key: "date",
             ascending: false
-        )
-
-        guard let fetchedResults = results as? [GlucoseStored] else { return [] }
-
-        return await coredataContext.perform {
-            return fetchedResults.map { result in
+        ) { fetchedResults in
+            fetchedResults.map { result in
                 BloodGlucose(
                     _id: result.id?.uuidString ?? UUID().uuidString,
                     sgv: Int(result.glucose),

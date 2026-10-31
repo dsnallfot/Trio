@@ -1,0 +1,86 @@
+warning: 'trio-perf1377-final': found 70 file(s) which are unhandled; explicitly declare them as resources or exclude from the target
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/autosens-resistance/autosens.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/autosens-resistance/determination.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/autosens-resistance/iob.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/autosens-resistance/meal.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/autosens-resistance/profile.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/autosens-sensitivity/autosens.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/autosens-sensitivity/determination.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/autosens-sensitivity/iob.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/autosens-sensitivity/meal.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/autosens-sensitivity/profile.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/dense-pump-history-24h/autosens.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/dense-pump-history-24h/determination.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/dense-pump-history-24h/iob.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/dense-pump-history-24h/meal.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/dense-pump-history-24h/profile.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/dynamic-isf-logarithmic/autosens.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/dynamic-isf-logarithmic/determination.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/dynamic-isf-logarithmic/iob.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/dynamic-isf-logarithmic/meal.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/dynamic-isf-logarithmic/profile.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/dynamic-isf-sigmoid/autosens.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/dynamic-isf-sigmoid/determination.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/dynamic-isf-sigmoid/iob.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/dynamic-isf-sigmoid/meal.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/dynamic-isf-sigmoid/profile.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/high-bg-rising-smb/autosens.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/high-bg-rising-smb/determination.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/high-bg-rising-smb/iob.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/high-bg-rising-smb/meal.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/high-bg-rising-smb/profile.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/low-bg-falling/autosens.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/low-bg-falling/determination.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/low-bg-falling/iob.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/low-bg-falling/meal.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/low-bg-falling/profile.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/override-active/autosens.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/override-active/determination.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/override-active/iob.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/override-active/meal.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/override-active/profile.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/post-meal-cob-active/autosens.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/post-meal-cob-active/determination.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/post-meal-cob-active/iob.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/post-meal-cob-active/meal.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/post-meal-cob-active/profile.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/smb-disabled-temp-only/autosens.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/smb-disabled-temp-only/determination.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/smb-disabled-temp-only/iob.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/smb-disabled-temp-only/meal.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/smb-disabled-temp-only/profile.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/stale-bg-error/autosens.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/stale-bg-error/determination.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/stale-bg-error/iob.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/stale-bg-error/meal.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/stale-bg-error/profile.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/suspend-resume/autosens.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/suspend-resume/determination.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/suspend-resume/iob.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/suspend-resume/meal.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/suspend-resume/profile.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/temp-target-active/autosens.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/temp-target-active/determination.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/temp-target-active/iob.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/temp-target-active/meal.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/temp-target-active/profile.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/winter-standard-time/autosens.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/winter-standard-time/determination.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/winter-standard-time/iob.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/winter-standard-time/meal.json
+    /private/tmp/trio-perf1377-final/Tests/TrioTests/Parity/goldens/winter-standard-time/profile.json
+Building for production...
+[1 / 4]
+Build complete! (0,27 s)
+􀟈  Test run started.
+􀄵  Testing Library Version: 2084
+􀄵  Target Platform: arm64e-apple-macos14.0
+􀟈  Suite "OpenAPSSwift performance" started.
+􀟈  Test "generator timings on dense 24h history" started.
+[perf] IobGenerator.generate min 2.11 ms / median 2.12 ms (n=10)
+[perf] AutosensGenerator.generate(288) min 3.50 ms / median 3.61 ms (n=10)
+[perf] MealGenerator.generate min 3.64 ms / median 3.74 ms (n=10)
+[perf] full pipeline min 18.71 ms / median 18.79 ms (n=10)
+􁁛  Test "generator timings on dense 24h history" passed after 0.316 seconds.
+􁁛  Suite "OpenAPSSwift performance" passed after 0.316 seconds.
+􁁛  Test run with 1 test in 1 suite passed after 0.316 seconds.

@@ -116,7 +116,7 @@ struct DecimalPickerSettings {
     var adjustmentFactor = PickerSetting(value: 0.8, step: 0.01, min: 0.3, max: 3.0, type: PickerSetting.PickerSettingType.factor)
     var adjustmentFactorSigmoid = PickerSetting(
         value: 0.5,
-        step: 0.05,
+        step: 0.01,
         min: 0.01,
         max: 2,
         type: PickerSetting.PickerSettingType.factor

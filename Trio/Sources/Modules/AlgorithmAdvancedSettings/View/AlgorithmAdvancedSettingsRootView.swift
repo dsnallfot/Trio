@@ -27,7 +27,7 @@ extension AlgorithmAdvancedSettings {
                     Text("Algoritmmotor")
                 } footer: {
                     Text(
-                        "JavaScript är standard. Byte gäller nästa beräkning och bygger om algoritmens cache. Swift-versionen är avsedd för testtelefon tills jämförelserna är klara."
+                        "JavaScript är inställt som standard. Byte mellan motorer gäller nästa beräkning och bygger om algoritmens cache."
                     )
                 }
                 .listRowBackground(Color.chart)

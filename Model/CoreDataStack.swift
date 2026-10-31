@@ -319,6 +319,8 @@ extension CoreDataStack {
 // MARK: - Fetch Requests
 
 extension CoreDataStack {
+    // Fetches must not rename the context or replace its transaction author. Those
+    // belong to its owner, and changing them here adds side effects to every read.
     // Fetch in background thread
     /// - Tag: backgroundFetch
     func fetchEntities<T: NSManagedObject>(
@@ -349,9 +351,6 @@ extension CoreDataStack {
             request.resultType = .managedObjectResultType
         }
 
-        context.name = "fetchContext"
-        context.transactionAuthor = "fetchEntities"
-
         /// we need to ensure that the fetch immediately returns a value as long as the whole app does not use the async await pattern, otherwise we could perform this asynchronously with backgroundContext.perform and not block the thread
         return context.performAndWait {
             do {
@@ -370,7 +369,8 @@ extension CoreDataStack {
         }
     }
 
-    // Fetch Async
+    // Legacy object-returning API: callers must access results only on the context queue.
+    // Prefer fetchAndMapEntitiesAsync when returning values to asynchronous callers.
     func fetchEntitiesAsync<T: NSManagedObject>(
         ofType type: T.Type,
         onContext context: NSManagedObjectContext,
@@ -399,9 +399,6 @@ extension CoreDataStack {
             request.resultType = .managedObjectResultType
         }
 
-        context.name = "fetchContext"
-        context.transactionAuthor = "fetchEntities"
-
         return await context.perform {
             do {
                 if propertiesToFetch != nil {
@@ -412,6 +409,35 @@ extension CoreDataStack {
             } catch let error as NSError {
                 debugPrint(
                     "Fetching \(T.self) in \(callingFunction) from \(callingClass): \(DebuggingIdentifiers.failed) \(error) on Thread: \(Thread.current)"
+                )
+                return []
+            }
+        }
+    }
+
+    /// Fetch and convert on the context queue in one operation. The transform must return
+    /// detached values only; managed objects must not escape the context's queue.
+    func fetchAndMapEntitiesAsync<T: NSManagedObject, Value>(
+        ofType type: T.Type,
+        onContext context: NSManagedObjectContext,
+        predicate: NSPredicate,
+        key: String,
+        ascending: Bool,
+        callingFunction: String = #function,
+        callingClass: String = #fileID,
+        transform: @escaping ([T]) -> [Value]
+    ) async -> [Value] {
+        await context.perform {
+            let request = NSFetchRequest<T>(entityName: String(describing: type))
+            request.sortDescriptors = [NSSortDescriptor(key: key, ascending: ascending)]
+            request.predicate = predicate
+
+            do {
+                // Keep the fetched objects, their property access and their release on this queue.
+                return transform(try context.fetch(request))
+            } catch {
+                debugPrint(
+                    "Fetching \(T.self) in \(callingFunction) from \(callingClass): \(DebuggingIdentifiers.failed) \(error)"
                 )
                 return []
             }

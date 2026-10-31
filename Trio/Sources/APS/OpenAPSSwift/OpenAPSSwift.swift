@@ -240,6 +240,15 @@ struct OpenAPSSwift {
             let tempTargets = try JSONBridge.tempTargets(from: tempTargets)
             let clock = try JSONBridge.clock(from: clock)
 
+            // The two autosens windows share the same normalized pump history.
+            let precomputedTreatments = glucose.count >= 72 ? try IobHistory.calcTempTreatments(
+                history: pumpHistory.map { $0.computedEvent() },
+                profile: profile,
+                clock: clock,
+                autosens: nil,
+                zeroTempDuration: nil
+            ) : nil
+
             // this logic is from prepare/autosens.js
             let ratio8h = try AutosensGenerator.generate(
                 glucose: glucose,
@@ -250,7 +259,8 @@ struct OpenAPSSwift {
                 tempTargets: tempTargets,
                 maxDeviations: 96,
                 clock: clock,
-                includeDeviationsForTesting: includeDeviationsForTesting
+                includeDeviationsForTesting: includeDeviationsForTesting,
+                precomputedTreatments: precomputedTreatments
             )
 
             let ratio24h = try AutosensGenerator.generate(
@@ -262,7 +272,8 @@ struct OpenAPSSwift {
                 tempTargets: tempTargets,
                 maxDeviations: 288,
                 clock: clock,
-                includeDeviationsForTesting: includeDeviationsForTesting
+                includeDeviationsForTesting: includeDeviationsForTesting,
+                precomputedTreatments: precomputedTreatments
             )
 
             let lowestRatio = ratio8h.ratio < ratio24h.ratio ? ratio8h : ratio24h

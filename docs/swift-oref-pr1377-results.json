@@ -1,0 +1,43 @@
+{
+  "referenceHead": "badad7a10",
+  "upstreamPR": "https://github.com/nightscout/Trio/pull/1377",
+  "upstreamHead": "222e02b04c6a6b0a795ce616d44aa03ee9c4e4ed",
+  "main": {
+    "comparisons": 151,
+    "failures": [],
+    "passed": true
+  },
+  "extended": {
+    "comparisons": 66,
+    "failures": [],
+    "passed": true
+  },
+  "goldenScenarios": 14,
+  "goldenOutputs": 70,
+  "unitTests": 216,
+  "preexistingIssuesBefore": 31,
+  "issuesAfter": 31,
+  "performance": {
+    "platform": "macOS native Swift core, release, enable-testing",
+    "iterations": 10,
+    "timezone": "Europe/Berlin",
+    "medianMs": {
+      "iob": {
+        "before": 6.03,
+        "after": 2.12
+      },
+      "autosens288": {
+        "before": 10.29,
+        "after": 3.61
+      },
+      "meal": {
+        "before": 5.69,
+        "after": 3.74
+      },
+      "pipeline": {
+        "before": 37.66,
+        "after": 18.79
+      }
+    }
+  }
+}

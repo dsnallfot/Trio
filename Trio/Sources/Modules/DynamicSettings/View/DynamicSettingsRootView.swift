@@ -80,38 +80,38 @@ extension DynamicSettings {
                 )
 
                 if state.useNewFormula {
-                    SettingInputSection(
-                        decimalValue: $decimalPlaceholder,
-                        booleanValue: $state.enableDynamicCR,
-                        shouldDisplayHint: $shouldDisplayHint,
-                        selectedVerboseHint: Binding(
-                            get: { selectedVerboseHint },
-                            set: {
-                                selectedVerboseHint = $0.map { AnyView($0) }
-                                hintLabel = "Aktivera Dynamisk CR (Insulinkvot)"
-                            }
-                        ),
-                        units: state.units,
-                        type: .boolean,
-                        label: "Aktivera dynamisk CR",
-                        miniHint: "Dynamisk justering av din insulinkvot (CR).",
-                        verboseHint:
+                    /* SettingInputSection(
+                         decimalValue: $decimalPlaceholder,
+                         booleanValue: $state.enableDynamicCR,
+                         shouldDisplayHint: $shouldDisplayHint,
+                         selectedVerboseHint: Binding(
+                             get: { selectedVerboseHint },
+                             set: {
+                                 selectedVerboseHint = $0.map { AnyView($0) }
+                                 hintLabel = "Aktivera Dynamisk CR (Insulinkvot)"
+                             }
+                         ),
+                         units: state.units,
+                         type: .boolean,
+                         label: "Aktivera dynamisk CR",
+                         miniHint: "Dynamisk justering av din insulinkvot (CR).",
+                         verboseHint:
 
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text("Standard: AV").bold()
-                            Text(
-                                "Dynamisk CR justerar ditt kolhydratförhållande utifrån det dynamiska förhållandet och anpassar det automatiskt efter förändringar i din insulinkänslighet."
-                            )
+                         VStack(alignment: .leading, spacing: 10) {
+                             Text("Standard: AV").bold()
+                             Text(
+                                 "Dynamisk CR justerar ditt kolhydratförhållande utifrån det dynamiska förhållandet och anpassar det automatiskt efter förändringar i din insulinkänslighet."
+                             )
 
-                            Text(
-                                "När det dynamiska förhållandet ökar, vilket innebär att du behöver mer insulin, minskas kolhydratförhållandet så att insulindoseringen blir mer effektiv."
-                            )
+                             Text(
+                                 "När det dynamiska förhållandet ökar, vilket innebär att du behöver mer insulin, minskas kolhydratförhållandet så att insulindoseringen blir mer effektiv."
+                             )
 
-                            Text(
-                                "När det dynamiska förhållandet minskar, vilket innebär att du behöver mindre insulin, ökas kolhydratförhållandet för att undvika att för mycket insulin ges."
-                            )
-                        }
-                    )
+                             Text(
+                                 "När det dynamiska förhållandet minskar, vilket innebär att du behöver mindre insulin, ökas kolhydratförhållandet för att undvika att för mycket insulin ges."
+                             )
+                         }
+                     ) */
 
                     SettingInputSection(
                         decimalValue: $decimalPlaceholder,
