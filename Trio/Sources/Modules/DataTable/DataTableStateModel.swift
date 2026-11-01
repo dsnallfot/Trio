@@ -1,3 +1,4 @@
+import Combine
 import CoreData
 import HealthKit
 import Observation
@@ -18,10 +19,18 @@ extension DataTable {
 
         var mode: Mode = .treatments
         var treatments: [Treatment] = []
+        var historyPumpAvailable = false
         var historyBasalProfile: [BasalProfileEntry] = []
 
-        func loadHistoryBasalProfile() async {
-            historyBasalProfile = await storage.retrieveAsync(OpenAPS.Settings.basalProfile, as: [BasalProfileEntry].self) ?? []
+        @MainActor func loadHistoryBasalProfile() async {
+            repeat {
+                let profile = await storage.retrieveAsync(OpenAPS.Settings.basalProfile, as: [BasalProfileEntry].self)
+                guard !Task.isCancelled else { return }
+                historyBasalProfile = profile ?? []
+                if !historyBasalProfile.isEmpty || !historyPumpAvailable { return }
+                // The pump can be restored before the profile file becomes available.
+                try? await Task.sleep(for: .seconds(60))
+            } while !Task.isCancelled
         }
 
         var manualGlucose: Decimal = 0
@@ -36,6 +45,12 @@ extension DataTable {
         var showCarbEntryEditor = false
 
         override func subscribe() {
+            apsManager.pumpDisplayState
+                .map { $0 != nil }
+                .removeDuplicates()
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] available in self?.historyPumpAvailable = available }
+                .store(in: &lifetime)
             units = settingsManager.settings.units
             broadcaster.register(DeterminationObserver.self, observer: self)
             broadcaster.register(SettingsObserver.self, observer: self)

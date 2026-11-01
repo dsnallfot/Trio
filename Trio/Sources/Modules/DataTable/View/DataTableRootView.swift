@@ -96,6 +96,9 @@ extension DataTable {
                                     try? PumpHistoryWindow
                                         .precedingEvents(in: context, since: Date.oneDayAgo)
                                 ) ?? []
+                            }
+                            .task(id: state.historyPumpAvailable) {
+                                configureView()
                                 await state.loadHistoryBasalProfile()
                             }
                         } else {
@@ -240,7 +243,7 @@ extension DataTable {
             var rows = events.filter {
                 $0.tempBasal?.isScheduledBasal != true && (showFutureEntries || ($0.timestamp ?? now) <= now)
             }.map(TreatmentRow.pump)
-            if state.apsManager?.pumpManager != nil, !state.historyBasalProfile.isEmpty {
+            if state.historyPumpAvailable, !state.historyBasalProfile.isEmpty {
                 let timeline = (precedingPumpEvents + events).compactMap(BasalDeliveryTimeline.event(from:))
                 rows += BasalDeliveryTimeline.segments(events: timeline, profile: state.historyBasalProfile, now: now)
                     .filter { $0.scheduled && $0.end.timeIntervalSince($0.start) >= 60 }

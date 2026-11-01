@@ -121,7 +121,7 @@ extension View {
 enum HomeDosingStatus {
     static func symbol(for mode: DosingMode) -> String? {
         switch mode {
-        case .closed: return nil
+        case .closed: return "circle"
         case .open: return "pause.circle"
         case .lowGlucoseSuspend: return "hand.raised.circle"
         case .basalTesting: return "waveform.circle"
@@ -130,7 +130,7 @@ enum HomeDosingStatus {
 
     static func detail(for mode: DosingMode) -> String {
         switch mode {
-        case .closed: return "100 %"
+        case .closed: return "Normal profil: 100 %"
         case .open: return "Visar dosförslag utan automatisk dosering."
         case .lowGlucoseSuspend: return "Kan sänka eller pausa basalen. Korrigerar inte höga värden."
         case .basalTesting: return "Följer basalprofilen. Kan pausa vid lågt eller förväntat lågt glukos."

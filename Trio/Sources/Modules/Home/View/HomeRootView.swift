@@ -56,15 +56,15 @@ extension Home {
 
         private var profileStatusTitle: String {
             switch state.dosingMode {
-            case .closed: return "Normal profil"
+            case .closed: return "Sluten loop"
             case .open: return "Öppen loop"
-            case .lowGlucoseSuspend: return "Låg glukos-suspendering"
+            case .lowGlucoseSuspend: return "Låg glukos suspendering"
             case .basalTesting: return "Basaltest"
             }
         }
 
         var adjustmentTint: Color? {
-            if state.dosingMode != .closed { return .orange }
+            if state.dosingMode != .closed { return Color.loopYellow }
             if overrideString != nil { return Color.purple }
             if tempTargetString != nil { return Color.loopGreen }
             return nil
@@ -1075,7 +1075,7 @@ extension Home {
                         .tabItem {
                             Label(
                                 "",
-                                systemImage: "slider.horizontal.2.gobackward"
+                                systemImage: "arrow.up.arrow.down.circle"
                             )
                         }.tag(2)
                         .accessibilityLabel(Text("Adjustments"))
