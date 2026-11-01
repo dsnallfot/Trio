@@ -446,6 +446,12 @@ enum DeterminationGenerator {
             return determination
         }
 
+        if profile.suspendOnly {
+            determination.insulinForManualBolus = manualBolus
+            determination.reason += "Basaltest; ingen justering. "
+            return determination
+        }
+
         let (shouldSetTempBasalForSkipNeutralTemp, skipNeutralTempDetermination) = try DosingEngine.skipNeutralTempBasal(
             smbIsEnabled: smbIsEnabled,
             profile: profile,

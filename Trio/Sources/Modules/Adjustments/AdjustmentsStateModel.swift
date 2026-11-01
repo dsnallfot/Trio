@@ -15,6 +15,13 @@ extension Adjustments {
 
         // MARK: - Override and Temp Target Properties
 
+        var adjustmentBlocked = false
+        func mayActivateAdjustment() -> Bool {
+            let allowed = AdjustmentActivationPolicy.shared.allowsActivation
+            if !allowed { adjustmentBlocked = true }
+            return allowed
+        }
+
         var overridePercentage: Double = 100
         var isOverrideEnabled = false
         var indefinite = true

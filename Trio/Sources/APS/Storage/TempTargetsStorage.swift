@@ -110,6 +110,8 @@ final class BaseTempTargetsStorage: TempTargetsStorage, Injectable {
     }
 
     func storeTempTarget(tempTarget: TempTarget) async {
+        guard tempTarget.enabled != true || AdjustmentActivationPolicy.shared.allowsActivation else { return }
+        let activationToken = AdjustmentActivationPolicy.shared.token
         var presetCount = -1
         if tempTarget.isPreset == true {
             let presets = await fetchForTempTargetPresets()
@@ -117,6 +119,7 @@ final class BaseTempTargetsStorage: TempTargetsStorage, Injectable {
         }
 
         await backgroundContext.perform {
+            guard tempTarget.enabled != true || AdjustmentActivationPolicy.shared.accepts(activationToken) else { return }
             let newTempTarget = TempTargetStored(context: self.backgroundContext)
             newTempTarget.date = tempTarget.createdAt
             newTempTarget.id = UUID()
@@ -152,7 +155,10 @@ final class BaseTempTargetsStorage: TempTargetsStorage, Injectable {
     }
 
     func saveTempTargetsToStorage(_ targets: [TempTarget]) {
+        let activationToken = AdjustmentActivationPolicy.shared.token
         processQueue.async {
+            let targets = targets.filter { $0.duration == 0 || AdjustmentActivationPolicy.shared.accepts(activationToken) }
+            guard !targets.isEmpty else { return }
             let file = OpenAPS.Settings.tempTargets
             var uniqEvents: [TempTarget] = []
             self.storage.transaction { storage in

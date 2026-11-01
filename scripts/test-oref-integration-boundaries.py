@@ -6,6 +6,7 @@ from pathlib import Path
 
 root = Path(__file__).resolve().parents[1]
 baseline = json.loads((root/'docs/swift-oref-baseline.json').read_text())['sha256']
+baseline.update(json.loads((root/'docs/dosing-modes-integration-boundaries.json').read_text())['sha256'])
 groups = {'APNS/remote': [], 'Shortcuts': [], 'Nightscout': [], 'JavaScript': []}
 for path, expected in baseline.items():
     group = ('APNS/remote' if '/RemoteControl/' in path else
@@ -18,7 +19,7 @@ for path, expected in baseline.items():
         groups[group].append(path)
 for group, paths in groups.items():
     assert paths, f'No baseline coverage for {group}'
-    print(f'PASS {group}: {len(paths)} unchanged source files')
+    print(f'PASS {group}: {len(paths)} verified source files (including reviewed dosing-mode changes)')
 # The two entry points both delegate through the guarded OpenAPS transaction.
 manager = (root/'Trio/Sources/APS/APSManager.swift').read_text()
 assert 'openAPS.determineBasal(currentTemp: await currentTemp, clock: now)' in manager

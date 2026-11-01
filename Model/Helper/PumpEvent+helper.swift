@@ -80,17 +80,29 @@ extension NSPredicate {
 
     static var pumpEventsNotYetUploadedToNightscout: NSPredicate {
         let date = Date.oneDayAgo
-        return NSPredicate(format: "timestamp >= %@ AND isUploadedToNS == %@", date as NSDate, false as NSNumber)
+        return NSPredicate(
+            format: "type != 'PumpAttached' AND type != 'PumpDetached' AND (tempBasal == nil OR tempBasal.isScheduledBasal == NO) AND timestamp >= %@ AND isUploadedToNS == %@",
+            date as NSDate,
+            false as NSNumber
+        )
     }
 
     static var pumpEventsNotYetUploadedToHealth: NSPredicate {
         let date = Date.oneDayAgo
-        return NSPredicate(format: "timestamp >= %@ AND isUploadedToHealth == %@", date as NSDate, false as NSNumber)
+        return NSPredicate(
+            format: "type != 'PumpAttached' AND type != 'PumpDetached' AND (tempBasal == nil OR tempBasal.isScheduledBasal == NO) AND timestamp >= %@ AND (doseFinalized == YES OR syncIdentifier == nil) AND isUploadedToHealth == %@",
+            date as NSDate,
+            false as NSNumber
+        )
     }
 
     static var pumpEventsNotYetUploadedToTidepool: NSPredicate {
         let date = Date.oneDayAgo
-        return NSPredicate(format: "timestamp >= %@ AND isUploadedToTidepool == %@", date as NSDate, false as NSNumber)
+        return NSPredicate(
+            format: "type != 'PumpAttached' AND type != 'PumpDetached' AND (tempBasal == nil OR tempBasal.isScheduledBasal == NO) AND timestamp >= %@ AND (doseFinalized == YES OR syncIdentifier == nil) AND isUploadedToTidepool == %@",
+            date as NSDate,
+            false as NSNumber
+        )
     }
 }
 
@@ -110,6 +122,8 @@ struct TempBasalDTO: Codable {
     var timestamp: String
     var temp: String
     var rate: Double
+    var endDate: Date? = nil
+    var deliveredUnits: Decimal? = nil
     var _type: String = "TempBasal"
 }
 
@@ -129,12 +143,21 @@ struct TempBasalDurationDTO: Codable {
 
 // Mask distinct DTO subtypes with a common enum that conforms to Encodable
 enum PumpEventDTO: Encodable {
+    case marker(PumpHistoryEvent)
     case bolus(BolusDTO)
     case tempBasal(TempBasalDTO)
     case tempBasalDuration(TempBasalDurationDTO)
 
+    static func json(_ entries: [PumpEventDTO]) throws -> String {
+        let encoder = JSONCoding.encoder
+        encoder.outputFormatting = [.withoutEscapingSlashes]
+        return try String(decoding: encoder.encode(entries), as: UTF8.self)
+    }
+
     func encode(to encoder: Encoder) throws {
         switch self {
+        case let .marker(event):
+            try event.encode(to: encoder)
         case let .bolus(bolus):
             try bolus.encode(to: encoder)
         case let .tempBasal(tempBasal):
@@ -178,7 +201,9 @@ extension PumpEventStored {
             id: "_\(id)",
             timestamp: PumpEventStored.dateFormatter.string(from: timestamp),
             temp: tempBasal.tempType ?? "unknown",
-            rate: rate.doubleValue
+            rate: rate.doubleValue,
+            endDate: tempBasal.endDate,
+            deliveredUnits: tempBasal.deliveredUnits as Decimal?
         )
         return .tempBasal(tempBasalDTO)
     }

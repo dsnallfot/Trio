@@ -112,6 +112,7 @@ extension Adjustments.StateModel {
 
     /// Saves a Temp Target based on whether it is scheduled or custom.
     func invokeSaveOfCustomTempTargets() async {
+        guard mayActivateAdjustment() else { return }
         if date > Date() {
             await saveScheduledTempTarget()
         } else {
@@ -121,6 +122,8 @@ extension Adjustments.StateModel {
 
     /// Saves a scheduled Temp Target and activates it at the specified date.
     func saveScheduledTempTarget() async {
+        guard mayActivateAdjustment() else { return }
+        let activationToken = AdjustmentActivationPolicy.shared.token
         let date = self.date
         guard date > Date() else { return }
 
@@ -141,6 +144,7 @@ extension Adjustments.StateModel {
 
         Task {
             await waitUntilDate(date)
+            guard AdjustmentActivationPolicy.shared.accepts(activationToken) else { return }
             await disableAllActiveTempTargets(createTempTargetRunEntry: true)
             await enableScheduledTempTarget(for: date)
             tempTargetStorage.saveTempTargetsToStorage([tempTarget])
@@ -149,6 +153,7 @@ extension Adjustments.StateModel {
 
     /// Enables a scheduled Temp Target for a specific date.
     func enableScheduledTempTarget(for date: Date) async {
+        guard mayActivateAdjustment() else { return }
         let ids = await tempTargetStorage.fetchScheduledTempTarget(for: date)
         guard let firstID = ids.first else {
             debugPrint("No Temp Target found for the specified date.")
@@ -159,6 +164,7 @@ extension Adjustments.StateModel {
         await MainActor.run {
             do {
                 if let tempTarget = try viewContext.existingObject(with: firstID) as? TempTargetStored {
+                    guard AdjustmentActivationPolicy.shared.allowsActivation else { return }
                     tempTarget.enabled = true
                     try viewContext.save()
                     isTempTargetEnabled = true
@@ -181,6 +187,8 @@ extension Adjustments.StateModel {
 
     /// Saves a custom Temp Target and disables existing ones.
     func saveCustomTempTarget() async {
+        let activationToken = AdjustmentActivationPolicy.shared.token
+        guard mayActivateAdjustment() else { return }
         await disableAllActiveTempTargets(createTempTargetRunEntry: true)
         let tempTarget = TempTarget(
             name: tempTargetName,
@@ -195,6 +203,8 @@ extension Adjustments.StateModel {
             enabled: true,
             halfBasalTarget: halfBasalTarget
         )
+        guard AdjustmentActivationPolicy.shared.accepts(activationToken) else { adjustmentBlocked = true
+            return }
         await tempTargetStorage.storeTempTarget(tempTarget: tempTarget)
         tempTargetStorage.saveTempTargetsToStorage([tempTarget])
         await resetTempTargetState()
@@ -223,12 +233,16 @@ extension Adjustments.StateModel {
 
     /// Enacts a Temp Target preset by enabling it.
     @MainActor func enactTempTargetPreset(withID id: NSManagedObjectID) async {
+        let activationToken = AdjustmentActivationPolicy.shared.token
+        guard mayActivateAdjustment() else { return }
         do {
             guard let tempTargetToEnact = try viewContext.existingObject(with: id) as? TempTargetStored else { return }
             /// Wait for currently active temp target to be disabled before storing the new temp target
             await disableAllActiveTempTargets(createTempTargetRunEntry: true)
             await resetTempTargetState()
 
+            guard AdjustmentActivationPolicy.shared.accepts(activationToken) else { adjustmentBlocked = true
+                return }
             tempTargetToEnact.enabled = true
             tempTargetToEnact.date = Date()
             tempTargetToEnact.isUploadedToNS = false

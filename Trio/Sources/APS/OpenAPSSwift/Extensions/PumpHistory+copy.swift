@@ -12,7 +12,7 @@ extension PumpHistoryEvent {
             type: type,
             timestamp: timestamp,
             amount: amount,
-            duration: duration.map { Decimal($0) },
+            duration: endDate.map { Decimal(max(0, $0.timeIntervalSince(timestamp)) / 60) } ?? duration.map { Decimal($0) },
             durationMin: durationMin,
             rate: rate,
             temp: temp,

@@ -62,7 +62,7 @@ final class ToggleClosedLoopIntentRequest: BaseIntentsRequest {}
         }
 
         // Update the setting.
-        request.settingsManager.settings.closedLoop = newValue
+        try await request.apsManager.changeDosingMode(newValue ? .closed : .open)
 
         // Return the result.
         return .result(value: ToggleResult(status: newValue))

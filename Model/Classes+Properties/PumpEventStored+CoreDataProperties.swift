@@ -6,6 +6,9 @@ public extension PumpEventStored {
         NSFetchRequest<PumpEventStored>(entityName: "PumpEventStored")
     }
 
+    @NSManaged var uploadRevision: String?
+    @NSManaged var syncIdentifier: String?
+    @NSManaged var doseFinalized: Bool
     @NSManaged var id: String?
     @NSManaged var isUploadedToNS: Bool
     @NSManaged var isUploadedToHealth: Bool

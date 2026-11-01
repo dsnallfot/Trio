@@ -11,7 +11,10 @@ struct LoopStatusView: View {
     @State var isHelpSheetPresented: Bool = false
     @State var helpSheetDetent = PresentationDetent.fraction(0.9)
 
-    @State private var statusTitle: String = ""
+    // Ordered by deliverAt, including calculations that issued no pump command.
+    private var latestCalculation: OrefDetermination? {
+        state.enactedAndNonEnactedDeterminations.first
+    }
 
     var body: some View {
         ScrollView {
@@ -28,6 +31,15 @@ struct LoopStatusView: View {
                             .foregroundColor(statusBadgeTextColor)
                             .background(statusBadgeColor)
                             .clipShape(Capsule())
+
+                        if let mode = recordedMode, let symbol = HomeDosingStatus.symbol(for: mode) {
+                            Label(mode.title, systemImage: symbol)
+                                .font(.subheadline.bold())
+                            Text(HomeDosingStatus.detail(for: mode))
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
                     }
 
                     Spacer()
@@ -60,7 +72,7 @@ struct LoopStatusView: View {
                     }.foregroundColor(.loopRed)
                 }
 
-                if let determination = state.determinationsFromPersistence.first {
+                if let determination = latestCalculation {
                     if determination.glucose == 400 {
                         Text("Ogiltigt CGM-värde (HÖG).")
                             .bold()
@@ -129,11 +141,13 @@ struct LoopStatusView: View {
                         .preference(key: ContentSizeKey.self, value: geo.size)
                 }
             }
-            .onAppear {
-                setStatusTitle()
-            }
             .sheet(isPresented: $isHelpSheetPresented) {
-                LoopStatusHelpView(state: state, helpSheetDetent: $helpSheetDetent, isHelpSheetPresented: $isHelpSheetPresented)
+                LoopStatusHelpView(
+                    state: state,
+                    recordedMode: recordedMode,
+                    helpSheetDetent: $helpSheetDetent,
+                    isHelpSheetPresented: $isHelpSheetPresented
+                )
             }
         }
         .presentationDetents([sheetContentHeight > 0 ? .height(sheetContentHeight) : .fraction(0.9), .large])
@@ -145,19 +159,15 @@ struct LoopStatusView: View {
         .scrollContentBackground(.hidden)
     }
 
-    private var statusBadgeColor: Color {
-        guard let determination = state.determinationsFromPersistence.first, determination.timestamp != nil
-        else {
-            // previously the .timestamp property was used here because this only gets updated when the reportenacted function in the aps manager gets called
-            return .secondary
-        }
+    private var recordedMode: DosingMode? {
+        latestCalculation?.dosingModeRaw.flatMap(DosingMode.init(rawValue:))
+    }
 
-        let delta = state.timerDate.timeIntervalSince(state.lastLoopDate) - 30
+    private var statusBadgeColor: Color {
+        guard let date = latestCalculation?.deliverAt, recordedMode != .open else { return .secondary }
+        let delta = state.timerDate.timeIntervalSince(date) - 30
 
         if delta <= 5.minutes.timeInterval {
-            guard determination.timestamp != nil else {
-                return .loopYellow
-            }
             return .loopGreen
         } else if delta <= 10.minutes.timeInterval {
             return .loopYellow
@@ -168,19 +178,15 @@ struct LoopStatusView: View {
 
     private var statusBadgeTextColor: Color {
         if statusBadgeColor == .secondary {
-            .black
+            colorScheme == .dark ? .white : .black
         } else {
             colorScheme == .dark ? Color(red: 25.0 / 255.0, green: 39.0 / 255.0, blue: 53.0 / 255.0, opacity: 1.0) : .white
         }
     }
 
-    private func setStatusTitle() {
-        if let determination = state.determinationsFromPersistence.first {
-            statusTitle =
-                "Utförd \(Formatter.dateFormatter.string(from: determination.deliverAt ?? Date()))"
-        } else {
-            statusTitle = "Ej utförd."
-        }
+    private var statusTitle: String {
+        guard let date = latestCalculation?.deliverAt else { return "Ingen beräkning" }
+        return "Beräknad " + Formatter.dateFormatter.string(from: date)
     }
 
     // TODO: Consolidate all mmol parsing methods (in TagCloudView, NightscoutManager and HomeRootView) to one central func

@@ -63,7 +63,8 @@ import Testing
         let result = try LocalInsulinHistory.calculate(history: history, basal: basal, increment: 0.1, clock: clock)
         #expect(result.insulin.temp_basal == Decimal(string: "0.2"))
         #expect(result.insulin.bolus == 2)
-        #expect(result.insulin.TDD == Decimal(string: "2.2"))
+        #expect(result.insulin.scheduled_basal == Decimal(string: "0.7")) // 45 min at 1 E/h, rounded to the 0.1 E increment
+        #expect(result.insulin.TDD == Decimal(string: "2.9"))
         #expect(!result.allowsDynamicISF)
         let empty = try LocalInsulinHistory.calculate(history: [], basal: basal, increment: 0.05, clock: clock)
         #expect(empty.total == 0)

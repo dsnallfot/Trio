@@ -78,7 +78,7 @@ final class TrioSettingsAdapter: Injectable {
         return StoredSettings(
             date: Date(),
             controllerTimeZone: TimeZone.current,
-            dosingEnabled: settingsManager.settings.closedLoop,
+            dosingEnabled: settingsManager.settings.dosingMode.allowsAutomation,
             glucoseTargetRangeSchedule: glucoseTargetRangeSchedule,
             preMealTargetRange: nil, // Trio doesn't have a separate pre-meal target
             workoutTargetRange: nil, // Trio doesn't have a separate workout target
@@ -105,7 +105,7 @@ final class TrioSettingsAdapter: Injectable {
                 bgTargets: bgTargets,
                 pumpSettings: pumpSettings,
                 preferences: preferences,
-                dosingEnabled: settingsManager.settings.closedLoop,
+                dosingEnabled: settingsManager.settings.dosingMode.allowsAutomation,
                 scheduleOverride: scheduleOverride
             )
         )

@@ -5,6 +5,7 @@ struct LoopStatusHelpView: View {
     @Environment(\.colorScheme) var colorScheme
 
     var state: Home.StateModel
+    var recordedMode: DosingMode?
     var helpSheetDetent: Binding<PresentationDetent>
     var isHelpSheetPresented: Binding<Bool>
 
@@ -17,6 +18,12 @@ struct LoopStatusHelpView: View {
                 .font(.subheadline)
                 .foregroundColor(.secondary)
                 .padding(.top, 60)
+
+                if recordedMode == .basalTesting {
+                    Label("Dynamisk ISF var avstängd under basaltestet.", systemImage: "waveform.circle")
+                        .font(.subheadline)
+                        .padding(.top, 8)
+                }
 
                 List {
                     DefinitionRow(
@@ -132,9 +139,9 @@ struct LoopStatusHelpView: View {
                     ).listRowBackground(Color.gray.opacity(0.1))
 
                     DefinitionRow(
-                        term: "Dynamisk ISF/CR",
+                        term: "Dynamisk ISF",
                         definition: Text(
-                            "\"På/På\" betyder att både Dynamisk ISF och Dynamisk CR är aktiverade. \"På/Av\" betyder att endast Dynamisk ISF är aktiverad. Dynamisk CR kan inte aktiveras om Dynamisk ISF är avstängd."
+                            "\"På\" betyder att Dynamisk ISF är aktiverad."
                         ),
                         color: .zt
                     ).listRowBackground(Color.gray.opacity(0.1))

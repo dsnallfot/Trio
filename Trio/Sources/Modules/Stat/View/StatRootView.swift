@@ -29,7 +29,9 @@ extension Stat {
                         highLimit: state.highLimit,
                         lowLimit: state.lowLimit,
                         units: state.units,
-                        hbA1cDisplayUnit: state.hbA1cDisplayUnit
+                        hbA1cDisplayUnit: state.hbA1cDisplayUnit,
+                        showInsulin: true,
+                        insulin: state.insulinToday
                     )
                 case .Day:
                     StatsView(
@@ -37,7 +39,9 @@ extension Stat {
                         highLimit: state.highLimit,
                         lowLimit: state.lowLimit,
                         units: state.units,
-                        hbA1cDisplayUnit: state.hbA1cDisplayUnit
+                        hbA1cDisplayUnit: state.hbA1cDisplayUnit,
+                        showInsulin: true,
+                        insulin: state.insulinDay
                     )
                 case .Week:
                     StatsView(
@@ -121,7 +125,10 @@ extension Stat {
                 .pickerStyle(.segmented).background(.cyan.opacity(0.2))
                 stats()
             }.background(appState.trioBackgroundColor(for: colorScheme))
-                .onAppear(perform: configureView)
+                .task(id: state.selectedDuration) {
+                    configureView()
+                    await state.loadInsulinStatistics()
+                }
                 .navigationBarTitle("Statistics")
                 .navigationBarTitleDisplayMode(.automatic)
                 .toolbar {

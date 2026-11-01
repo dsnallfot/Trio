@@ -58,7 +58,8 @@ extension Adjustments {
                     List {
                         switch state.selectedTab {
                         case .overrides: overrides()
-                        case .tempTargets: tempTargets() }
+                        case .tempTargets: tempTargets()
+                        }
                     }
                     .scrollContentBackground(.hidden)
                     .background(appState.trioBackgroundColor(for: colorScheme))
@@ -80,6 +81,11 @@ extension Adjustments {
                 }
                 .scrollContentBackground(.hidden)
                 .background(appState.trioBackgroundColor(for: colorScheme))
+                .alert("Aktivering blockerad", isPresented: $state.adjustmentBlocked) {
+                    Button("OK", role: .cancel) {}
+                } message: {
+                    Text(AdjustmentActivationPolicy.blockedMessage)
+                }
                 .onAppear(perform: configureView)
                 .navigationBarTitle("Adjustments")
                 .navigationBarTitleDisplayMode(.large)

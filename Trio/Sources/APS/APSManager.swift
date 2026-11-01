@@ -8,6 +8,7 @@ import SwiftDate
 import Swinject
 
 protocol APSManager {
+    func changeDosingMode(_ mode: DosingMode) async throws
     func heartbeat(date: Date)
     func enactBolus(amount: Double, isSMB: Bool, callback: ((Bool, String) -> Void)?) async
     var pumpManager: PumpManagerUI? { get set }
@@ -224,7 +225,21 @@ final class BaseAPSManager: APSManager, Injectable {
         }
     }
 
+    private let dosingModeGate = OrefCalculationGate()
+    private var reconciledDosingMode = false
+
     private func runLoopIfPossible() async {
+        await dosingModeGate.acquire()
+        defer { dosingModeGate.release() }
+        if !reconciledDosingMode {
+            do {
+                if !settingsManager.settings.dosingMode.allowsAdjustments { try await endAdjustmentsForDosingMode() }
+                reconciledDosingMode = true
+            } catch {
+                processError(error)
+                return
+            }
+        }
         let loopStartDate = Date()
         let startResult = await loopGate.tryStart(
             lastLoopDate: lastLoopDate,
@@ -294,7 +309,7 @@ final class BaseAPSManager: APSManager, Injectable {
             }
 
             // Open loop completed
-            guard settings.closedLoop else {
+            guard settings.dosingMode.allowsAutomation else {
                 loopStatRecord.end = Date()
                 loopStatRecord.duration = roundDouble((loopStatRecord.end! - loopStatRecord.start).timeInterval / 60, 2)
                 loopStatRecord.loopStatus = "Success"
@@ -344,7 +359,7 @@ final class BaseAPSManager: APSManager, Injectable {
 
         loopStats(loopStatRecord: loopStatRecord)
 
-        if settings.closedLoop {
+        if settings.dosingMode.allowsAutomation {
             await reportEnacted(wasEnacted: error == nil)
         }
 
@@ -577,7 +592,7 @@ final class BaseAPSManager: APSManager, Injectable {
 
         let fetchedTempBasal = await privateContext.perform {
             guard let fetchedResults = results as? [PumpEventStored],
-                  let tempBasalEvent = fetchedResults.first,
+                  let tempBasalEvent = fetchedResults.first(where: { $0.tempBasal?.isScheduledBasal != true }),
                   let tempBasal = tempBasalEvent.tempBasal,
                   let eventTimestamp = tempBasalEvent.timestamp
             else {
@@ -605,6 +620,9 @@ final class BaseAPSManager: APSManager, Injectable {
     }
 
     private func enactDetermination() async throws {
+        let mode = settingsManager.settings.dosingMode
+        guard mode.allowsAutomation else { return }
+        guard !mode.requiresSwift || settingsManager.settings.useSwiftOref else { throw DosingModeError.swiftRequired }
         guard let determinationID = await determinationStorage
             .fetchLastDeterminationObjectID(predicate: NSPredicate.predicateFor30MinAgoForDetermination).first
         else {
@@ -622,12 +640,18 @@ final class BaseAPSManager: APSManager, Injectable {
 
         let (rateDecimal, durationInSeconds, smbToDeliver) = try await setValues(determinationID: determinationID)
 
+        if mode.requiresSwift, let rate = rateDecimal, rate.doubleValue > 0 {
+            let schedule = storage.retrieve(OpenAPS.Settings.basalProfile, as: [BasalProfileEntry].self) ?? []
+            let minutes = Date().minutesSinceMidnight ?? 0
+            guard let basal = schedule.sorted(by: { $0.minutes < $1.minutes }).last(where: { $0.minutes <= minutes })?.rate,
+                  rate.decimalValue <= basal else { throw DosingModeError.staleCalculation }
+        }
         if let rate = rateDecimal, let duration = durationInSeconds {
             try await performBasal(pump: pump, rate: rate, duration: duration)
         }
 
         // only perform a bolus if smbToDeliver is > 0
-        if let smb = smbToDeliver, smb.compare(NSDecimalNumber(value: 0)) == .orderedDescending {
+        if mode == .closed, let smb = smbToDeliver, smb.compare(NSDecimalNumber(value: 0)) == .orderedDescending {
             try await performBolus(pump: pump, smbToDeliver: smb)
         }
     }
@@ -730,19 +754,19 @@ final class BaseAPSManager: APSManager, Injectable {
 
     private func tir(_ glucose: [GlucoseStored]) -> (TIR: Double, hypos: Double, hypers: Double, normal_: Double) {
         privateContext.perform {
-            let justGlucoseArray = glucose.compactMap({ each in Int(each.glucose as Int16) })
+            let justGlucoseArray = glucose.compactMap { each in Int(each.glucose as Int16) }
             let totalReadings = justGlucoseArray.count
             let highLimit = settingsManager.settings.high
             let lowLimit = settingsManager.settings.low
-            let hyperArray = glucose.filter({ $0.glucose >= Int(highLimit) })
-            let hyperReadings = hyperArray.compactMap({ each in each.glucose as Int16 }).count
+            let hyperArray = glucose.filter { $0.glucose >= Int(highLimit) }
+            let hyperReadings = hyperArray.compactMap { each in each.glucose as Int16 }.count
             let hyperPercentage = Double(hyperReadings) / Double(totalReadings) * 100
-            let hypoArray = glucose.filter({ $0.glucose <= Int(lowLimit) })
-            let hypoReadings = hypoArray.compactMap({ each in each.glucose as Int16 }).count
+            let hypoArray = glucose.filter { $0.glucose <= Int(lowLimit) }
+            let hypoReadings = hypoArray.compactMap { each in each.glucose as Int16 }.count
             let hypoPercentage = Double(hypoReadings) / Double(totalReadings) * 100
             // Euglyccemic range
-            let normalArray = glucose.filter({ $0.glucose >= 70 && $0.glucose <= 140 })
-            let normalReadings = normalArray.compactMap({ each in each.glucose as Int16 }).count
+            let normalArray = glucose.filter { $0.glucose >= 70 && $0.glucose <= 140 }
+            let normalReadings = normalArray.compactMap { each in each.glucose as Int16 }.count
             let normalPercentage = Double(normalReadings) / Double(totalReadings) * 100
             // TIR
             let tir = 100 - (hypoPercentage + hyperPercentage)
@@ -766,7 +790,7 @@ final class BaseAPSManager: APSManager, Injectable {
         // Total time in days
         let numberOfDays = (first - last).timeInterval / 8.64E4
         let denominator = numberOfDays < 1 ? 1 : numberOfDays
-        let justGlucoseArray = glucose.compactMap({ each in Int(each.glucose as Int16) })
+        let justGlucoseArray = glucose.compactMap { each in Int(each.glucose as Int16) }
         let sumReadings = justGlucoseArray.reduce(0, +)
         let countReadings = justGlucoseArray.count
         let glucoseAverage = Double(sumReadings) / Double(countReadings)
@@ -813,18 +837,18 @@ final class BaseAPSManager: APSManager, Injectable {
         // Total time in days
         let totalTime = (current - previous).timeInterval / 8.64E4
         //
-        let durationArray = loops.compactMap({ each in each.duration })
+        let durationArray = loops.compactMap { each in each.duration }
         let durationArrayCount = durationArray.count
         let durationAverage = durationArray.reduce(0, +) / Double(durationArrayCount) * 60
         let medianDuration = medianCalculationDouble(array: durationArray) * 60
         let max_duration = (durationArray.max() ?? 0) * 60
         let min_duration = (durationArray.min() ?? 0) * 60
-        let successsNR = loops.compactMap({ each in each.loopStatus }).filter({ each in each!.contains("Success") }).count
+        let successsNR = loops.compactMap { each in each.loopStatus }.filter { each in each!.contains("Success") }.count
         let errorNR = durationArrayCount - successsNR
         let total = Double(successsNR + errorNR) == 0 ? 1 : Double(successsNR + errorNR)
         let successRate: Double? = (Double(successsNR) / total) * 100
         let loopNr = totalTime <= 1 ? total : round(total / (totalTime != 0 ? totalTime : 1))
-        let intervalArray = loops.compactMap({ each in each.interval as Double })
+        let intervalArray = loops.compactMap { each in each.interval as Double }
         let count = intervalArray.count != 0 ? intervalArray.count : 1
         let median_interval = medianCalculationDouble(array: intervalArray)
         let intervalAverage = intervalArray.reduce(0, +) / Double(count)
@@ -1465,5 +1489,85 @@ extension PumpManagerStatus {
         let suspended = basalDeliveryState?.isSuspended ?? true
         let type = suspended ? StatusType.suspended : (bolusing ? .bolusing : .normal)
         return PumpStatus(status: type, bolusing: bolusing, suspended: suspended, timestamp: Date())
+    }
+}
+
+extension BaseAPSManager {
+    func changeDosingMode(_ mode: DosingMode) async throws {
+        await dosingModeGate.acquire()
+        defer { dosingModeGate.release() }
+        try Task.checkCancellation()
+        guard mode != settingsManager.settings.dosingMode else { return }
+        guard !mode.requiresSwift || settingsManager.settings.useSwiftOref else { throw DosingModeError.swiftRequired }
+        if mode == .basalTesting, isManualTempBasal {
+            throw APSError.manualBasalTemp(message: "Avsluta den manuella tempbasalen innan du startar basaltest.")
+        }
+        AdjustmentActivationPolicy.shared.beginTransition()
+        defer { AdjustmentActivationPolicy.shared.endTransition() }
+
+        if !mode.allowsAdjustments {
+            try await endAdjustmentsForDosingMode()
+            // Keep a protective low temp in LGS. Open loop and basal testing start from the pump's schedule.
+            if let pump = pumpManager, !isManualTempBasal,
+               case let .tempBasal(dose) = pump.status.basalDeliveryState, dose.automatic ?? true
+            {
+                let schedule = storage.retrieve(OpenAPS.Settings.basalProfile, as: [BasalProfileEntry].self) ?? []
+                let minutes = Date().minutesSinceMidnight ?? 0
+                let scheduled = schedule.sorted { $0.minutes < $1.minutes }.last { $0.minutes <= minutes }?.rate
+                if mode != .lowGlucoseSuspend || scheduled == nil || dose.unitsPerHour > Double(scheduled ?? 0) {
+                    try await pump.enactTempBasal(unitsPerHour: 0, for: 0)
+                }
+            }
+        }
+        var settings = settingsManager.settings
+        settings.dosingMode = mode
+        settingsManager.settings = settings
+        reconciledDosingMode = true
+        // Cached derived data is mode-specific; OpenAPS also invalidates on its next transaction.
+        [OpenAPS.Settings.autosense, OpenAPS.Monitor.iob].forEach(storage.remove)
+        Foundation.NotificationCenter.default.post(name: .willUpdateOverrideConfiguration, object: nil)
+        Foundation.NotificationCenter.default.post(name: .willUpdateTempTargetConfiguration, object: nil)
+    }
+
+    /// End runs for reporting and retain presets. Future scheduled targets must not reactivate later.
+    private func endAdjustmentsForDosingMode() async throws {
+        let context = CoreDataStack.shared.newTaskContext()
+        try await context.perform {
+            let now = Date()
+            let overrides = OverrideStored.fetchRequest()
+            overrides.predicate = NSPredicate(format: "enabled == YES")
+            for item in try context.fetch(overrides) {
+                let run = OverrideRunStored(context: context)
+                run.id = UUID()
+                run.name = item.name
+                run.enteredBy = item.enteredBy
+                run.startDate = item.date ?? now
+                run.endDate = now
+                run.target = item.target
+                run.override = item
+                run.isUploadedToNS = false
+                item.enabled = false
+            }
+            let targets = TempTargetStored.fetchRequest()
+            targets.predicate = NSPredicate(format: "enabled == YES OR (isPreset == NO AND date > %@)", now as NSDate)
+            for item in try context.fetch(targets) {
+                if let date = item.date, date > now, !item.isPreset {
+                    context.delete(item)
+                    continue
+                }
+                let run = TempTargetRunStored(context: context)
+                run.id = UUID()
+                run.name = item.name
+                run.startDate = item.date ?? now
+                run.endDate = now
+                run.target = item.target
+                run.tempTarget = item
+                run.isUploadedToNS = false
+                item.enabled = false
+            }
+            if context.hasChanges { try context.save() }
+        }
+        // Clear file-backed current/future targets as well. Historical Core Data runs remain intact.
+        storage.save([TempTarget.cancel(at: Date())], as: OpenAPS.Settings.tempTargets)
     }
 }

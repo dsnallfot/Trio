@@ -752,6 +752,11 @@ final class BaseWatchManager: NSObject, WCSessionDelegate, Injectable, WatchMana
     }
 
     private func handleActivateOverride(_ presetName: String) {
+        guard AdjustmentActivationPolicy.shared.allowsActivation else {
+            sendAcknowledgment(toWatch: false, message: AdjustmentActivationPolicy.blockedMessage)
+            return
+        }
+        let activationToken = AdjustmentActivationPolicy.shared.token
         Task {
             let context = CoreDataStack.shared.newTaskContext()
 
@@ -777,6 +782,10 @@ final class BaseWatchManager: NSObject, WCSessionDelegate, Injectable, WatchMana
             // Activate the selected preset
             await context.perform {
                 if let presetToActivate = presets.first(where: { $0.name == presetName }) {
+                    guard AdjustmentActivationPolicy.shared.accepts(activationToken) else {
+                        self.sendAcknowledgment(toWatch: false, message: AdjustmentActivationPolicy.blockedMessage)
+                        return
+                    }
                     presetToActivate.enabled = true
                     presetToActivate.date = Date()
 
@@ -804,6 +813,11 @@ final class BaseWatchManager: NSObject, WCSessionDelegate, Injectable, WatchMana
     }
 
     private func handleActivateTempTarget(_ presetName: String) {
+        guard AdjustmentActivationPolicy.shared.allowsActivation else {
+            sendAcknowledgment(toWatch: false, message: AdjustmentActivationPolicy.blockedMessage)
+            return
+        }
+        let activationToken = AdjustmentActivationPolicy.shared.token
         Task {
             let context = CoreDataStack.shared.newTaskContext()
 
@@ -829,6 +843,10 @@ final class BaseWatchManager: NSObject, WCSessionDelegate, Injectable, WatchMana
             // Activate the selected preset
             await context.perform {
                 if let presetToActivate = presets.first(where: { $0.name == presetName }) {
+                    guard AdjustmentActivationPolicy.shared.accepts(activationToken) else {
+                        self.sendAcknowledgment(toWatch: false, message: AdjustmentActivationPolicy.blockedMessage)
+                        return
+                    }
                     presetToActivate.enabled = true
                     presetToActivate.date = Date()
 

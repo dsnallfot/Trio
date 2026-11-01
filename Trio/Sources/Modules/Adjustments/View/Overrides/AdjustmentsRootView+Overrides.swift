@@ -74,6 +74,7 @@ extension Adjustments.RootView {
     }
 
     func enactOverridePreset(_ preset: OverrideStored) {
+        guard state.mayActivateAdjustment() else { return }
         Task {
             let objectID = preset.objectID
             await state.enactOverridePreset(withID: objectID)

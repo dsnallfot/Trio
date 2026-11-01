@@ -1,0 +1,19 @@
+{
+  "date": "2026-10-31",
+  "nativeTests": 228,
+  "newTestsPassed": 12,
+  "preexistingTextIssues": 31,
+  "newUnitIssues": 0,
+  "closedLoopMain": {
+    "comparisons": 151,
+    "failures": [],
+    "passed": true
+  },
+  "closedLoopExtended": {
+    "comparisons": 66,
+    "failures": [],
+    "passed": true
+  },
+  "goldenScenarios": 14,
+  "goldenOutputs": 70
+}

@@ -95,7 +95,7 @@ struct IobHistory {
                 throw IobError.tempBasalDurationMissingDuration(timestamp: duration.timestamp)
             }
 
-            return tempBasal.copyWith(duration: Decimal(duration))
+            return tempBasal.copyWith(duration: tempBasal.duration ?? Decimal(duration))
         } + [zeroTempBasal]
 
         // if any of our temp basals overlap, truncate

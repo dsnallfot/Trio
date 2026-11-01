@@ -29,6 +29,10 @@ extension MainChartView {
                 calculateBasals()
                 calculateTempBasalsInBackground()
             }
+            .onChange(of: state.suspensions) { calculateTempBasalsInBackground() }
+            .onChange(of: state.enactedAndNonEnactedDeterminations.first?.deliverAt) { calculateTempBasalsInBackground() }
+            .onChange(of: state.basalProfile) { calculateBasals()
+                calculateTempBasalsInBackground() }
             .onChange(of: state.maxBasal) {
                 calculateBasals()
             }
@@ -101,8 +105,8 @@ extension MainChartView {
                 .foregroundStyle(
                     .linearGradient(
                         colors: [
-                            Color.insulin.opacity(0.5),
-                            Color.insulin.opacity(0.5)
+                            Color.insulin.opacity(basal.scheduled ? 0.22 : 0.5),
+                            Color.insulin.opacity(basal.scheduled ? 0.22 : 0.5)
                         ],
                         startPoint: .bottom,
                         endPoint: .top
@@ -116,7 +120,7 @@ extension MainChartView {
                     series: .value("Temp Basal", seriesID)
                 )
                 .lineStyle(.init(lineWidth: 1.5))
-                .foregroundStyle(Color.insulin)
+                .foregroundStyle(Color.insulin.opacity(basal.scheduled ? 0.5 : 1))
 
                 LineMark(
                     x: .value("Start Date", basal.start),
@@ -124,7 +128,7 @@ extension MainChartView {
                     series: .value("Temp Basal", seriesID)
                 )
                 .lineStyle(.init(lineWidth: 1.5))
-                .foregroundStyle(Color.insulin)
+                .foregroundStyle(Color.insulin.opacity(basal.scheduled ? 0.5 : 1))
 
                 LineMark(
                     x: .value("End Date", basal.end),
@@ -132,7 +136,7 @@ extension MainChartView {
                     series: .value("Temp Basal", seriesID)
                 )
                 .lineStyle(.init(lineWidth: 1.5))
-                .foregroundStyle(Color.insulin)
+                .foregroundStyle(Color.insulin.opacity(basal.scheduled ? 0.5 : 1))
 
                 LineMark(
                     x: .value("End Date", basal.end),
@@ -140,7 +144,7 @@ extension MainChartView {
                     series: .value("Temp Basal", seriesID)
                 )
                 .lineStyle(.init(lineWidth: 1.5))
-                .foregroundStyle(Color.insulin)
+                .foregroundStyle(Color.insulin.opacity(basal.scheduled ? 0.5 : 1))
             }
         }
     }
@@ -204,24 +208,14 @@ extension MainChartView {
         }
     }
 
-    func prepareTempBasals() async -> [(start: Date, end: Date, rate: Double)] {
+    @MainActor func prepareTempBasals() async -> [(start: Date, end: Date, rate: Double, scheduled: Bool)] {
         let now = Date()
-        let tempBasals = state.tempBasals
-
-        return tempBasals.compactMap { temp -> (start: Date, end: Date, rate: Double)? in
-            let duration = temp.tempBasal?.duration ?? 0
-            let timestamp = temp.timestamp ?? Date()
-            let end = timestamp + duration.minutes
-            let isInsulinSuspended = state.suspensions.contains { $0.timestamp ?? now >= timestamp && $0.timestamp ?? now <= end }
-
-            let rate = Double(truncating: temp.tempBasal?.rate ?? Decimal.zero as NSDecimalNumber) * (isInsulinSuspended ? 0 : 1)
-
-            // Check if there's a subsequent temp basal to determine the end time
-            guard let nextTemp = state.tempBasals.first(where: { $0.timestamp ?? .distantPast > timestamp }) else {
-                return (timestamp, end, rate)
+        let events = state.insulinFromPersistence.compactMap(BasalDeliveryTimeline.event(from:))
+        return BasalDeliveryTimeline.segments(events: events, profile: state.basalProfile, now: now, includeRemainingTemp: true)
+            .filter { !$0.scheduled || $0.end.timeIntervalSince($0.start) >= 60 }
+            .map {
+                ($0.start, $0.end, Double(truncating: $0.rate as NSNumber), $0.scheduled)
             }
-            return (timestamp, nextTemp.timestamp ?? Date(), rate)
-        }
     }
 
     func findRegularBasalPoints(

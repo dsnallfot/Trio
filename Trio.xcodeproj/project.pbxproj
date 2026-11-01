@@ -1175,6 +1175,8 @@
 		BDFF7A922D25F97D0016C40C /* TrioWatchAppExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrioWatchAppExtension.swift; sourceTree = "<group>"; };
 		BE5125212A7648F091844060 /* Trio/Resources/GlucoseAlarmSounds/chime.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = Trio/Resources/GlucoseAlarmSounds/chime.caf; sourceTree = SOURCE_ROOT; };
 		BF8BCB0C37DEB5EC377B9612 /* BasalProfileEditorRootView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BasalProfileEditorRootView.swift; sourceTree = "<group>"; };
+		C0DE13000000000000000001 /* TrioCoreDataPersistentContainerPumpHistory.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = TrioCoreDataPersistentContainerPumpHistory.xcdatamodel; sourceTree = "<group>"; };
+		C0DE15070000000000000001 /* TrioCoreDataPersistentContainerLoopMode.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = TrioCoreDataPersistentContainerLoopMode.xcdatamodel; sourceTree = "<group>"; };
 		C19984D62EFC0035A9E9644D /* TreatmentsProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TreatmentsProvider.swift; sourceTree = "<group>"; };
 		C2A0A42E2CE0312C003B98E8 /* ConstantValues.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConstantValues.swift; sourceTree = "<group>"; };
 		C377490C77661D75E8C50649 /* ManualTempBasalRootView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ManualTempBasalRootView.swift; sourceTree = "<group>"; };
@@ -5084,8 +5086,10 @@
 				F247A7398DD24497B5F508C1 /* TrioCoreDataPersistentContainerLegacy.xcdatamodel */,
 				DDD1631E2C4C6F6900CD525A /* TrioCoreDataPersistentContainer.xcdatamodel */,
 				A2491DFF88F04B18B37F4193 /* TrioCoreDataPersistentContainerBackfill.xcdatamodel */,
+				C0DE13000000000000000001 /* TrioCoreDataPersistentContainerPumpHistory.xcdatamodel */,
+				C0DE15070000000000000001 /* TrioCoreDataPersistentContainerLoopMode.xcdatamodel */,
 			);
-			currentVersion = A2491DFF88F04B18B37F4193 /* TrioCoreDataPersistentContainerBackfill.xcdatamodel */;
+			currentVersion = C0DE15070000000000000001 /* TrioCoreDataPersistentContainerLoopMode.xcdatamodel */;
 			path = TrioCoreDataPersistentContainer.xcdatamodeld;
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;

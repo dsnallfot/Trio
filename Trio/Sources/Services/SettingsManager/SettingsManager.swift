@@ -50,6 +50,7 @@ final class BaseSettingsManager: SettingsManager, Injectable {
     @SyncAccess var settings: TrioSettings {
         didSet {
             if oldValue != settings {
+                AdjustmentActivationPolicy.shared.update(settings.dosingMode)
                 saveSettings()
                 DispatchQueue.main.async {
                     self.broadcaster.notify(SettingsObserver.self, on: .main) {
@@ -169,6 +170,7 @@ final class BaseSettingsManager: SettingsManager, Injectable {
                 ?? Preferences()
 
         injectServices(resolver)
+        AdjustmentActivationPolicy.shared.update(settings.dosingMode)
     }
 
     var pumpSettings: PumpSettings {

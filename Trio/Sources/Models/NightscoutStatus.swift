@@ -37,6 +37,7 @@ struct OpenAPSStatus: JSON {
     let suggested: Determination?
     let enacted: Determination?
     let version: String
+    var dosingMode: String? = nil
 }
 
 struct NSPumpStatus: JSON {

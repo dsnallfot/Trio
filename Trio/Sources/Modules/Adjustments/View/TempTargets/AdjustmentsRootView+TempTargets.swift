@@ -64,6 +64,7 @@ extension Adjustments.RootView {
     }
 
     private func enactTempTargetPreset(_ preset: TempTargetStored) {
+        guard state.mayActivateAdjustment() else { return }
         Task {
             let objectID = preset.objectID
             await state.enactTempTargetPreset(withID: objectID)

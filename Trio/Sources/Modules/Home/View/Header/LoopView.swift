@@ -10,6 +10,7 @@ struct LoopView: View {
         static let lag: TimeInterval = 30
     }
 
+    var dosingMode: DosingMode = .closed
     let closedLoop: Bool
     let timerDate: Date
     let isLooping: Bool
@@ -33,14 +34,15 @@ struct LoopView: View {
     private var loopStatusWithMinutes: some View {
         HStack(alignment: .center) {
             ZStack {
-                // Outer circle (or circle with horizontal line)
-                Image(systemName: (!closedLoop || manualTempBasal) ? "circle.and.line.horizontal" : "circle")
-                // .font(.subheadline)
-
-                // Inner circle overlay (scaled down slightly)
-                Image(systemName: (!closedLoop || manualTempBasal) ? "" : "circle")
-                    // .font(.subheadline)
-                    .scaleEffect(0.85) // scale down for a bolder outline effect
+                if let symbol = HomeDosingStatus.symbol(for: dosingMode) {
+                    Image(systemName: symbol)
+                        .accessibilityLabel(Text(dosingMode.title))
+                } else {
+                    let circle = (!closedLoop || manualTempBasal) ? "circle.dotted" : "circle"
+                    Image(systemName: circle)
+                    Image(systemName: circle)
+                        .scaleEffect(0.85)
+                }
 
                 if isLooping {
                     ProgressView()
@@ -81,7 +83,7 @@ struct LoopView: View {
         guard manualTempBasal == false else {
             return .loopManualTemp
         }
-        guard closedLoop == true else {
+        guard dosingMode.allowsAutomation else {
             return .secondary
         }
 
@@ -112,6 +114,26 @@ extension View {
             withAnimation(repeated) {
                 action()
             }
+        }
+    }
+}
+
+enum HomeDosingStatus {
+    static func symbol(for mode: DosingMode) -> String? {
+        switch mode {
+        case .closed: return nil
+        case .open: return "pause.circle"
+        case .lowGlucoseSuspend: return "hand.raised.circle"
+        case .basalTesting: return "waveform.circle"
+        }
+    }
+
+    static func detail(for mode: DosingMode) -> String {
+        switch mode {
+        case .closed: return "100 %"
+        case .open: return "Visar dosförslag utan automatisk dosering."
+        case .lowGlucoseSuspend: return "Kan sänka eller pausa basalen. Korrigerar inte höga värden."
+        case .basalTesting: return "Följer basalprofilen. Kan pausa vid lågt eller förväntat lågt glukos."
         }
     }
 }

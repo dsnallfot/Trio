@@ -244,7 +244,7 @@ extension DynamicSettings {
                         VStack(alignment: .leading, spacing: 10) {
                             Text("Standard: 35%").bold()
                             Text(
-                                "Denna inställning justerar hur stor vikt som ges åt din senaste totala dygnsdos insulin (TDD) vid beräkningen av Dynamisk ISF och Dynamisk CR."
+                                "Denna inställning justerar hur stor vikt som ges åt din senaste totala dygnsdos insulin (TDD) vid beräkningen av Dynamisk ISF."
                             )
 
                             Text(

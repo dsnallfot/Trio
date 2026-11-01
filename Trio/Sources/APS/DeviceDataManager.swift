@@ -465,7 +465,7 @@ final class BaseDeviceDataManager: DeviceDataManager, Injectable {
 
 extension BaseDeviceDataManager: PumpManagerDelegate {
     var automaticDosingEnabled: Bool {
-        settingsManager.settings.closedLoop // Take if close or open loop
+        settingsManager.settings.dosingMode.allowsAutomation // Take if close or open loop
     }
 
     func pumpManager(
@@ -623,9 +623,11 @@ extension BaseDeviceDataManager: PumpManagerDelegate {
         let medtrum = pumpManager as? MedtrumPumpManager
         pumpHistoryStorage.storePumpEvents(events, diagnostics: medtrum.map { manager in
             { [weak manager] event, count in manager?.recordWork(event, count: count) }
+        }, completion: { error in
+            // Only acknowledge once Core Data has committed: drivers may discard finalized doses after this callback.
+            self.processQueue.async { completion(error) }
         })
         lastEventDate = events.last?.date
-        completion(nil)
     }
 
     func pumpManager(

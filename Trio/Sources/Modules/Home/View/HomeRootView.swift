@@ -54,7 +54,17 @@ extension Home {
             fetchLimit: 1
         )) var latestTempTarget: FetchedResults<TempTargetStored>
 
+        private var profileStatusTitle: String {
+            switch state.dosingMode {
+            case .closed: return "Normal profil"
+            case .open: return "Öppen loop"
+            case .lowGlucoseSuspend: return "Låg glukos-suspendering"
+            case .basalTesting: return "Basaltest"
+            }
+        }
+
         var adjustmentTint: Color? {
+            if state.dosingMode != .closed { return .orange }
             if overrideString != nil { return Color.purple }
             if tempTargetString != nil { return Color.loopGreen }
             return nil
@@ -145,21 +155,52 @@ extension Home {
             }
         }
 
-        var tempBasalString: String? {
-            guard let lastTempBasal = state.tempBasals.last?.tempBasal, let tempRate = lastTempBasal.rate else {
-                return nil
-            }
-            let rateString = Formatter.decimalFormatterWithTwoFractionDigits.string(from: tempRate as NSNumber) ?? "0"
-            var manualBasalString = ""
-
-            if let apsManager = state.apsManager, apsManager.isManualTempBasal {
-                manualBasalString = NSLocalizedString(
-                    " - Manual Basal ⚠️",
-                    comment: "Manual Temp basal"
+        private func basalString(at date: Date) -> String? {
+            guard !state.pumpName.isEmpty else { return nil }
+            let status: BasalDeliveryReadout.Status?
+            switch state.apsManager.pumpManager?.status.basalDeliveryState {
+            case .active: status = .active
+            case .suspended: status = .suspended
+            case let .tempBasal(dose):
+                status = .temp(
+                    start: dose.startDate,
+                    end: dose.endDate,
+                    rate: Decimal(dose.unitsPerHour),
+                    manual: state.apsManager.isManualTempBasal
                 )
+            case .cancelingTempBasal,
+                 .initiatingTempBasal,
+                 .resuming,
+                 .suspending: return "Uppdaterar basal…"
+            case nil: status = nil
             }
-
-            return rateString + " " + NSLocalizedString(" E/h", comment: "Unit per hour with space") + manualBasalString
+            let delivery = BasalDeliveryReadout.resolve(
+                status: status,
+                events: state.tempBasals.map { event in
+                    let start = event.timestamp ?? .distantPast
+                    return .init(
+                        start: start,
+                        end: start.addingTimeInterval(Double(event.tempBasal?.duration ?? 0) * 60),
+                        rate: event.tempBasal?.rate?.decimalValue ?? 0
+                    )
+                },
+                suspensions: state.suspensions.compactMap { event in
+                    event.timestamp.map { ($0, event.type == EventType.pumpSuspend.rawValue) }
+                },
+                profile: state.basalProfile, now: max(date, Date())
+            )
+            let rate: Decimal
+            let manual: Bool
+            switch delivery {
+            case .suspended: return "Pump pausad"
+            case let .temp(value, isManual): rate = value
+                manual = isManual
+            case let .scheduled(value): rate = value
+                manual = false
+            case nil: return nil
+            }
+            let value = Formatter.decimalFormatterWithTwoFractionDigits.string(from: rate as NSDecimalNumber) ?? "\(rate)"
+            return value + " E/h" + (manual ? " – Manuell basal ⚠️" : "")
         }
 
         var overrideString: String? {
@@ -240,7 +281,8 @@ extension Home {
             if target < 100, state.lowTTlowersSens { showPercentage = true }
             if showPercentage {
                 percentageString =
-                    " \(state.computeAdjustedPercentage(halfBasalTargetValue: halfBasalTarget, tempTargetValue: target))%" }
+                    " \(state.computeAdjustedPercentage(halfBasalTargetValue: halfBasalTarget, tempTargetValue: target))%"
+            }
             target = state.units == .mmolL ? target.asMmolL : target
             let targetString = target == 0 ? "" : (fetchedTargetFormatter.string(from: target as NSNumber) ?? "") + " " +
                 state.units.rawValue + percentageString
@@ -375,6 +417,7 @@ extension Home {
                 /// Loop view at bottomLeading
                 PresentationClockView(state: state) { date in
                     LoopView(
+                        dosingMode: state.dosingMode,
                         closedLoop: state.closedLoop,
                         timerDate: date,
                         isLooping: state.isLooping,
@@ -472,32 +515,13 @@ extension Home {
                         .foregroundStyle(Color.red)
                         .font(.callout)
                 } else {
-                    HStack {
-                        if state.pumpSuspended {
-                            Text("Pump suspended")
-                                .font(.subheadline).fontWeight(.bold).fontDesign(.rounded)
-                                .foregroundColor(.loopGray)
-                        } else if let tempBasalString = tempBasalString {
+                    PresentationClockView(state: state) { date in
+                        HStack {
                             Image(systemName: "drop.circle")
-                                .font(.callout)
                                 .foregroundColor(Color.insulin.opacity(0.8))
-                            if tempBasalString.count > 5 {
-                                Text(tempBasalString)
-                                    .font(.callout).fontWeight(.bold).fontDesign(.rounded)
-                                    .lineLimit(1)
-                                    .minimumScaleFactor(0.85)
-                                    .truncationMode(.tail)
-                                    .allowsTightening(true)
-                            } else {
-                                // Short strings can just display normally
-                                Text(tempBasalString).font(.callout).fontWeight(.bold).fontDesign(.rounded)
-                            }
-                        } else {
-                            Image(systemName: "drop.circle")
-                                .font(.callout)
-                                .foregroundColor(Color.insulin.opacity(0.8))
-                            Text("No Data")
+                            Text(basalString(at: date) ?? "Ingen data")
                                 .font(.callout).fontWeight(.bold).fontDesign(.rounded)
+                                .lineLimit(1).minimumScaleFactor(0.85)
                         }
                     }
                     /* if state.totalInsulinDisplayType == .totalDailyDose {
@@ -640,25 +664,28 @@ extension Home {
         }
 
         @ViewBuilder func noActiveAdjustmentsView() -> some View {
-            Group {
-                VStack {
-                    Text("Normal profil")
+            HStack(alignment: .center) {
+                if let symbol = HomeDosingStatus.symbol(for: state.dosingMode) {
+                    Image(systemName: symbol)
+                        .font(.system(size: 25))
+                        .accessibilityHidden(true)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(profileStatusTitle)
                         .font(.subheadline)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    Text("100 %")
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                    Text(HomeDosingStatus.detail(for: state.dosingMode))
                         .font(.caption)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }.padding(.leading, 10)
-
-                Spacer()
-
-                /// to ensure the same position....
-                Image(systemName: "xmark.app")
-                    .font(.title)
-                    // clear color for the icon
-                    .foregroundStyle(Color.clear)
-            }.onTapGesture {
-                selectedTab = 2
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.leading, state.dosingMode == .closed ? 10 : 0)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                selectedTab = state.dosingMode == .closed ? 2 : 3
             }
         }
 
@@ -667,7 +694,7 @@ extension Home {
 
             let tint = adjustmentTint
             // concurrent override + temp target: halved tint, one remaining bar per half
-            let isConcurrent = overrideString != nil && tempTargetString != nil
+            let isConcurrent = state.dosingMode == .closed && overrideString != nil && tempTargetString != nil
 
             ZStack {
                 if isConcurrent {
@@ -679,7 +706,9 @@ extension Home {
                     .clipShape(GlassChrome.panelShape)
                 }
                 HStack {
-                    if let overrideString = overrideString, let tempTargetString = tempTargetString {
+                    if state.dosingMode != .closed {
+                        noActiveAdjustmentsView()
+                    } else if let overrideString = overrideString, let tempTargetString = tempTargetString {
                         HStack {
                             adjustmentsOverrideView(overrideString)
 
@@ -693,7 +722,7 @@ extension Home {
 
                             Spacer()
 
-                            adjustmentsCancelView({
+                            adjustmentsCancelView {
                                 if !latestTempTarget.isEmpty, !latestOverride.isEmpty {
                                     showCancelConfirmDialog = true
                                 } else if !latestOverride.isEmpty {
@@ -701,7 +730,7 @@ extension Home {
                                 } else if !latestTempTarget.isEmpty {
                                     showCancelAlert = true
                                 }
-                            })
+                            }
                         }
                     } else if let overrideString = overrideString {
                         adjustmentsOverrideView(overrideString)
@@ -748,7 +777,7 @@ extension Home {
             .frame(height: HomeLayout.bottomPanelHeight)
             .glassPanel(
                 tint: isConcurrent ? nil : tint,
-                tintOpacity: 0.12,
+                tintOpacity: state.dosingMode == .closed ? 0.12 : 0.30,
                 strokeOpacity: isConcurrent ? 0 : (tint == nil ? 0.08 : 0.30)
             )
             .overlay(
@@ -1047,17 +1076,19 @@ extension Home {
                             Label(
                                 "",
                                 systemImage: "slider.horizontal.2.gobackward"
-                            ) }.tag(2)
+                            )
+                        }.tag(2)
                         .accessibilityLabel(Text("Adjustments"))
 
                     NavigationStack(path: self.$settingsPath) {
-                        Settings.RootView(resolver: resolver) }
-                        // .environment(settingsSearchHighlight)
-                        .tabItem { Label(
-                            "",
-                            systemImage: "gear"
-                        ) }.tag(3)
-                        .accessibilityLabel(Text("Settings"))
+                        Settings.RootView(resolver: resolver)
+                    }
+                    // .environment(settingsSearchHighlight)
+                    .tabItem { Label(
+                        "",
+                        systemImage: "gear"
+                    ) }.tag(3)
+                    .accessibilityLabel(Text("Settings"))
                 }
                 .tint(Color.tabBar)
 
@@ -1156,14 +1187,16 @@ extension Home {
                                 "Override",
                                 // systemImage: "slider.horizontal.2.gobackward"
                                 systemImage: "arrow.up.arrow.down.circle"
-                            ) }.tag(2)
+                            )
+                        }.tag(2)
 
                     NavigationStack(path: self.$settingsPath) {
-                        Settings.RootView(resolver: resolver) }
-                        .tabItem { Label(
-                            "Settings",
-                            systemImage: "gear"
-                        ) }.tag(3)
+                        Settings.RootView(resolver: resolver)
+                    }
+                    .tabItem { Label(
+                        "Settings",
+                        systemImage: "gear"
+                    ) }.tag(3)
                 }
                 .tint(Color.tabBar)
 

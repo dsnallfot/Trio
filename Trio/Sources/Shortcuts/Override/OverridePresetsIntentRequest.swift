@@ -81,6 +81,8 @@ import UIKit
     }
 
     @MainActor func enactOverride(_ preset: OverridePreset) async -> Bool {
+        let activationToken = AdjustmentActivationPolicy.shared.token
+        guard AdjustmentActivationPolicy.shared.allowsActivation else { return false }
         // Each invocation owns its task, including when async invocations overlap.
         var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
         backgroundTaskID = UIApplication.shared.beginBackgroundTask(withName: "Override Upload") {
@@ -115,6 +117,7 @@ import UIKit
             }
 
             // Enable Override
+            guard AdjustmentActivationPolicy.shared.accepts(activationToken) else { return false }
             overrideObject.enabled = true
             overrideObject.date = Date()
             overrideObject.isUploadedToNS = false

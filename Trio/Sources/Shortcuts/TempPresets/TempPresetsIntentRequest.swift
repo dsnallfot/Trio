@@ -85,6 +85,8 @@ final class TempPresetsIntentRequest: BaseIntentsRequest {
     }
 
     @MainActor func enactTempTarget(_ preset: TempPreset) async -> Bool {
+        let activationToken = AdjustmentActivationPolicy.shared.token
+        guard AdjustmentActivationPolicy.shared.allowsActivation else { return false }
         // Start background task
         var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
         backgroundTaskID = UIApplication.shared.beginBackgroundTask(withName: "TempTarget Upload") {
@@ -109,6 +111,7 @@ final class TempPresetsIntentRequest: BaseIntentsRequest {
             else { return false }
 
             // Enable TempTarget
+            guard AdjustmentActivationPolicy.shared.accepts(activationToken) else { return false }
             tempTargetObject.enabled = true
             tempTargetObject.date = Date()
             tempTargetObject.isUploadedToNS = false

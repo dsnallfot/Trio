@@ -12,6 +12,7 @@ public extension OrefDetermination {
     @NSManaged var cob: Int16
     @NSManaged var currentTarget: NSDecimalNumber?
     @NSManaged var deliverAt: Date?
+    @NSManaged var dosingModeRaw: String?
     @NSManaged var duration: NSDecimalNumber?
     @NSManaged var enacted: Bool
     @NSManaged var eventualBG: NSDecimalNumber?

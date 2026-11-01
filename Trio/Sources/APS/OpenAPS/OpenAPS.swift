@@ -6,12 +6,20 @@ import JavaScriptCore
 final class OpenAPS {
     private let jsWorker = JavaScriptWorker()
     private let calculationGate = OrefCalculationGate()
+    private var calculationMode: DosingMode = .closed
+    private static let modeCacheKey = "settings/oref-dosing-mode-cache.json"
 
     // Called only while holding calculationGate. Missing marker also invalidates
     // pre-migration caches, so a restart cannot silently mix engine generations.
     private func selectEngine() -> OrefEngine {
         let settings = storage.retrieve(Trio.settings, as: TrioSettings.self) ?? TrioSettings()
         let engine: OrefEngine = settings.useSwiftOref ? .swift : .javascript
+        calculationMode = settings.dosingMode
+        let cachedMode = storage.retrieve(Self.modeCacheKey, as: DosingMode.self)
+        if cachedMode != calculationMode {
+            [Settings.profile, Settings.pumpProfile, Settings.autosense, Monitor.iob].forEach(storage.remove)
+            storage.save(calculationMode, as: Self.modeCacheKey)
+        }
         let cached = storage.retrieve(OrefEngine.cacheKey, as: OrefEngine.self)
         if cached != engine {
             [Settings.profile, Settings.pumpProfile, Settings.autosense, Monitor.iob].forEach(storage.remove)
@@ -45,7 +53,7 @@ final class OpenAPS {
     }
 
     // Use the helper function for cleaner code
-    func processDetermination(_ determination: Determination) async {
+    func processDetermination(_ determination: Determination, mode: DosingMode) async {
         await context.perform {
             let newOrefDetermination = OrefDetermination(context: self.context)
             var createdObjects: [NSManagedObject] = [newOrefDetermination]
@@ -62,6 +70,7 @@ final class OpenAPS {
             newOrefDetermination.insulinReq = self.decimalToNSDecimalNumber(determination.insulinReq)
             newOrefDetermination.temp = determination.temp?.rawValue ?? "absolute"
             newOrefDetermination.rate = self.decimalToNSDecimalNumber(determination.rate)
+            newOrefDetermination.dosingModeRaw = mode.rawValue
             newOrefDetermination.reason = determination.reason
             newOrefDetermination.duration = self.decimalToNSDecimalNumber(determination.duration)
             newOrefDetermination.iob = self.decimalToNSDecimalNumber(determination.iob)
@@ -188,64 +197,65 @@ final class OpenAPS {
     }
 
     private func fetchPumpHistoryObjectIDs() async -> [NSManagedObjectID]? {
-        let results = await CoreDataStack.shared.fetchEntitiesAsync(
-            ofType: PumpEventStored.self,
-            onContext: context,
-            predicate: NSPredicate.pumpHistoryLast1440Minutes,
-            key: "timestamp",
-            ascending: false,
-            batchSize: 50
-        )
-
-        return await context.perform {
-            guard let pumpEventResults = results as? [PumpEventStored] else {
+        await context.perform {
+            do {
+                return try PumpHistoryWindow.fetch(in: self.context, since: Date().addingTimeInterval(-24 * 3600)).map(\.objectID)
+            } catch {
+                warning(.openAPS, "Could not read pump history", error: error)
                 return nil
             }
-
-            return pumpEventResults.map(\.objectID)
         }
     }
 
-    private func parsePumpHistory(_ pumpHistoryObjectIDs: [NSManagedObjectID], iob: Decimal? = nil) async -> String {
-        // Return an empty JSON object if the list of object IDs is empty
-        guard !pumpHistoryObjectIDs.isEmpty else { return "{}" }
-
-        // Execute all operations on the background context
+    private func parsePumpHistory(
+        _ ids: [NSManagedObjectID],
+        engine: OrefEngine,
+        clock: Date,
+        includeTDD: Bool = false,
+        iob: Decimal? = nil
+    ) async -> (commands: String, tdd: String) {
+        guard !ids.isEmpty else { return ("{}", "{}") }
         return await context.perform {
-            // Load and map pump events to DTOs
-            var dtos = self.loadAndMapPumpEvents(pumpHistoryObjectIDs)
-
-            // Optionally add the IOB as a DTO
+            let cutoff = clock.addingTimeInterval(-24 * 3600)
+            var commands: [PumpEventDTO] = []
+            var tdd: [PumpEventDTO] = []
+            let needsTimeline = includeTDD && engine == .swift
+            var hasExtraHistory = false
             if let iob = iob {
-                let iobDTO = self.createIOBDTO(iob: iob)
-                dtos.insert(iobDTO, at: 0)
+                let simulated = self.createIOBDTO(iob: iob)
+                commands.append(simulated)
+                if needsTimeline { tdd.append(simulated) }
             }
-
-            // Convert the DTOs to JSON
-            return self.jsonConverter.convertToJSON(dtos)
+            for id in ids {
+                guard let row = self.context.object(with: id) as? PumpEventStored, let date = row.timestamp else { continue }
+                let entries = self.historyEntries(for: row, timestamp: date)
+                if needsTimeline { tdd.append(contentsOf: entries) }
+                // A schedule marker or old boundary row must never act as a new temp command.
+                let isDose = row.bolus != nil || (row.tempBasal != nil && row.tempBasal?.isScheduledBasal == false)
+                let isPause = row.type == EventType.pumpSuspend.rawValue || row.type == EventType.pumpResume.rawValue
+                if date >= cutoff, isDose || (engine == .swift && isPause) {
+                    commands.append(contentsOf: entries)
+                } else if !entries.isEmpty {
+                    hasExtraHistory = true
+                }
+            }
+            do {
+                let json = try PumpEventDTO.json(commands)
+                return (json, needsTimeline && hasExtraHistory ? try PumpEventDTO.json(tdd) : json)
+            } catch {
+                warning(.openAPS, "Could not encode pump history", error: error)
+                return ("invalid pump history", "invalid pump history")
+            }
         }
     }
 
-    private func loadAndMapPumpEvents(_ pumpHistoryObjectIDs: [NSManagedObjectID]) -> [PumpEventDTO] {
-        // Load the pump events from the object IDs
-        let pumpHistory: [PumpEventStored] = pumpHistoryObjectIDs
-            .compactMap { self.context.object(with: $0) as? PumpEventStored }
-
-        // Create the DTOs
-        let dtos: [PumpEventDTO] = pumpHistory.flatMap { event -> [PumpEventDTO] in
-            var eventDTOs: [PumpEventDTO] = []
-            if let bolusDTO = event.toBolusDTOEnum() {
-                eventDTOs.append(bolusDTO)
-            }
-            if let tempBasalDurationDTO = event.toTempBasalDurationDTOEnum() {
-                eventDTOs.append(tempBasalDurationDTO)
-            }
-            if let tempBasalDTO = event.toTempBasalDTOEnum() {
-                eventDTOs.append(tempBasalDTO)
-            }
-            return eventDTOs
+    private func historyEntries(for event: PumpEventStored, timestamp: Date) -> [PumpEventDTO] {
+        let type: EventType? = event.tempBasal?.isScheduledBasal == true ? .scheduledBasal :
+            [.pumpSuspend, .pumpResume, .pumpDetached, .pumpAttached, .rewind, .prime].first { $0.rawValue == event.type }
+        if let type = type {
+            return [.marker(PumpHistoryEvent(id: event.id ?? "", type: type, timestamp: timestamp))]
         }
-        return dtos
+        return [event.toBolusDTOEnum(), event.toTempBasalDurationDTOEnum(), event.toTempBasalDTOEnum()].compactMap { $0 }
     }
 
     private func createIOBDTO(iob: Decimal) -> PumpEventDTO {
@@ -319,7 +329,7 @@ final class OpenAPS {
             reservoir,
             preferences
         ) = await (
-            parsePumpHistory(await pumpHistoryObjectIDs, iob: iob),
+            parsePumpHistory(await pumpHistoryObjectIDs, engine: engine, clock: clock, includeTDD: true, iob: iob),
             carbs,
             glucose,
             oref2,
@@ -332,7 +342,7 @@ final class OpenAPS {
 
         // Meal calculation
         let meal = try await self.meal(
-            pumphistory: pumpHistoryJSON,
+            pumphistory: pumpHistoryJSON.commands,
             profile: profile,
             basalProfile: basalProfile,
             clock: clock,
@@ -343,7 +353,7 @@ final class OpenAPS {
 
         // IOB calculation
         let iob = try await self.iob(
-            pumphistory: pumpHistoryJSON,
+            pumphistory: pumpHistoryJSON.commands,
             profile: profile,
             clock: clock,
             autosens: autosens.isEmpty ? .null : autosens,
@@ -363,10 +373,10 @@ final class OpenAPS {
             profile: profile,
             autosens: autosens.isEmpty ? .null : autosens,
             meal: meal,
-            microBolusAllowed: true,
+            microBolusAllowed: !calculationMode.requiresSwift,
             reservoir: reservoir,
-            pumpHistory: pumpHistoryJSON,
-            preferences: preferences,
+            pumpHistory: pumpHistoryJSON.tdd,
+            preferences: (Preferences(from: preferences.rawJSON) ?? Preferences()).clamped(for: calculationMode).rawJSON,
             basalProfile: basalProfile,
             oref2_variables: oref2_variables,
             engine: engine,
@@ -379,10 +389,13 @@ final class OpenAPS {
             // set both timestamp and deliverAt to the SAME date; this will be updated for timestamp once it is enacted
             // AAPS does it the same way! we'll follow their example!
             determination.timestamp = deliverAt
+            determination = try calculationMode.constrain(
+                determination, schedule: [BasalProfileEntry](from: basalProfile.rawJSON) ?? [], at: clock
+            )
 
             if !simulation {
                 // save to core data asynchronously
-                await processDetermination(determination)
+                await processDetermination(determination, mode: calculationMode)
                 let run = OrefRunStatus(engine: engine, date: clock, duration: Date().timeIntervalSince(started))
                 storage.save(run, as: OrefRunStatus.storageKey)
                 var samples = storage.retrieve(OrefRunStatus.historyKey, as: [OrefRunStatus].self) ?? []
@@ -410,7 +423,7 @@ final class OpenAPS {
             let historicalTDDData = self.fetchHistoricalTDDData(from: tenDaysAgo)
 
             // Fetch the last active Override
-            let activeOverrides = self.fetchActiveOverrides()
+            let activeOverrides = AdjustmentActivationPolicy.shared.allowsActivation ? self.fetchActiveOverrides() : []
             let isOverrideActive = activeOverrides.first?.enabled ?? false
             let overridePercentage = Decimal(activeOverrides.first?.percentage ?? 100)
             let isOverrideIndefinite = activeOverrides.first?.indefinite ?? true
@@ -484,7 +497,7 @@ final class OpenAPS {
 
         // Await the results of asynchronous tasks
         let (pumpHistoryJSON, carbsAsJSON, glucoseAsJSON, profile, basalProfile, tempTargets) = await (
-            parsePumpHistory(await pumpHistoryObjectIDs),
+            parsePumpHistory(await pumpHistoryObjectIDs, engine: engine, clock: clock),
             carbs,
             glucose,
             getProfile,
@@ -495,11 +508,11 @@ final class OpenAPS {
         // Autosense
         let autosenseResult = try await autosense(
             glucose: glucoseAsJSON,
-            pumpHistory: pumpHistoryJSON,
+            pumpHistory: pumpHistoryJSON.commands,
             basalprofile: basalProfile,
             profile: profile,
             carbs: carbsAsJSON,
-            temptargets: tempTargets,
+            temptargets: calculationMode.allowsAdjustments ? tempTargets : RawJSON("[]"),
             engine: engine,
             clock: clock
         )
@@ -559,7 +572,7 @@ final class OpenAPS {
         await context.perform {
             // Check if a Temp Target is active and if its HBT differs from user preferences
             if let activeTempTarget = self.fetchActiveTempTargets().first,
-               activeTempTarget.enabled,
+               activeTempTarget.enabled, self.calculationMode.allowsAdjustments,
                let activeHBT = activeTempTarget.halfBasalTarget?.decimalValue,
                activeHBT != defaultHalfBasalTarget
             {
@@ -569,6 +582,8 @@ final class OpenAPS {
             }
         }
 
+        adjustedPreferences = adjustedPreferences.clamped(for: calculationMode)
+
         do {
             let pumpProfile = try await makeProfile(
                 preferences: adjustedPreferences,
@@ -577,7 +592,7 @@ final class OpenAPS {
                 basalProfile: basalProfile,
                 isf: isf,
                 carbRatio: cr,
-                tempTargets: tempTargets,
+                tempTargets: calculationMode.allowsAdjustments ? tempTargets : RawJSON("[]"),
                 model: model,
                 autotune: RawJSON.null,
                 trioData: trioSettings,
@@ -592,7 +607,7 @@ final class OpenAPS {
                 basalProfile: basalProfile,
                 isf: isf,
                 carbRatio: cr,
-                tempTargets: tempTargets,
+                tempTargets: calculationMode.allowsAdjustments ? tempTargets : RawJSON("[]"),
                 model: model,
                 autotune: RawJSON.null,
                 trioData: trioSettings,
@@ -745,7 +760,8 @@ final class OpenAPS {
                 preferences: preferences,
                 basalProfile: basalProfile,
                 trioCustomOrefVariables: oref2_variables,
-                clock: clock
+                clock: clock,
+                dosingMode: calculationMode
             ).returnOrThrow()
         }
         return try await withCheckedThrowingContinuation { continuation in
@@ -818,7 +834,7 @@ final class OpenAPS {
                 basalProfile: basalProfile,
                 isf: isf,
                 carbRatio: carbRatio,
-                tempTargets: tempTargets,
+                tempTargets: calculationMode.allowsAdjustments ? tempTargets : RawJSON("[]"),
                 model: model,
                 trioSettings: trioData,
                 clock: clock

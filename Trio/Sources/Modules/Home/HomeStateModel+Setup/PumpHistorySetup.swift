@@ -11,21 +11,13 @@ extension Home.StateModel {
     }
 
     private func fetchInsulin() async -> [NSManagedObjectID] {
-        let results = await CoreDataStack.shared.fetchEntitiesAsync(
-            ofType: PumpEventStored.self,
-            onContext: pumpHistoryFetchContext,
-            predicate: NSPredicate.pumpHistoryLast24h,
-            key: "timestamp",
-            ascending: true,
-            batchSize: 30
-        )
-
-        return await pumpHistoryFetchContext.perform {
-            guard let pumpEvents = results as? [PumpEventStored] else {
+        await pumpHistoryFetchContext.perform {
+            do {
+                return try PumpHistoryWindow.fetch(in: self.pumpHistoryFetchContext, since: Date().addingTimeInterval(-24 * 3600))
+                    .reversed().map(\.objectID)
+            } catch {
                 return []
             }
-
-            return pumpEvents.map(\.objectID)
         }
     }
 
@@ -33,7 +25,7 @@ extension Home.StateModel {
         insulinFromPersistence = insulinObjects
 
         manualTempBasal = apsManager.isManualTempBasal
-        tempBasals = insulinFromPersistence.filter({ $0.tempBasal != nil })
+        tempBasals = insulinFromPersistence.filter({ $0.tempBasal != nil && $0.tempBasal?.isScheduledBasal != true })
 
         suspensions = insulinFromPersistence.filter {
             $0.type == EventType.pumpSuspend.rawValue || $0.type == EventType.pumpResume.rawValue

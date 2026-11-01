@@ -24,6 +24,7 @@ struct NightscoutTreatment: JSON, Hashable, Equatable {
     var units: String?
     var id: String?
     var fpuID: String?
+    var pumpHistoryRevision: String?
 
     static let local = "Trio"
 

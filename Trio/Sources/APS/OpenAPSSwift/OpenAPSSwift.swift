@@ -66,19 +66,21 @@ struct OpenAPSSwift {
         preferences: JSON,
         basalProfile: JSON,
         trioCustomOrefVariables: JSON,
-        clock: Date
+        clock: Date,
+        dosingMode: DosingMode = .closed
     ) -> (OrefFunctionResult) {
         do {
             let glucose = try JSONBridge.glucose(from: glucose)
             let currentTemp = try JSONBridge.currentTemp(from: currentTemp, clock: clock)
             let iob = try JSONBridge.iobResult(from: iob)
             var profile = try JSONBridge.profile(from: profile)
+            profile.suspendOnly = dosingMode == .basalTesting
             let autosens = try JSONBridge.autosens(from: autosens)
             let meal = try JSONBridge.computedCarbs(from: meal)
             let microBolusAllowed = microBolusAllowed
             let reservoir = Decimal(string: reservoir.rawJSON)
             let pumpHistory = try JSONBridge.pumpHistory(from: pumpHistory)
-            var preferences = try JSONBridge.preferences(from: preferences)
+            var preferences = try JSONBridge.preferences(from: preferences).clamped(for: dosingMode)
             let basalProfile = try JSONBridge.basalProfile(from: basalProfile)
             let history = try LocalInsulinHistory.calculate(
                 history: pumpHistory,
@@ -102,7 +104,8 @@ struct OpenAPSSwift {
                 variables: variables,
                 clock: clock
             ) {
-                return .success(early)
+                let value: Determination = try JSONBridge.from(string: early.rawJSON)
+                return try .success(JSONBridge.to(dosingMode.constrain(value, schedule: basalProfile, at: clock)))
             }
             let summary: String
             if history.hours > 21, history.total > 0 {
@@ -140,6 +143,9 @@ struct OpenAPSSwift {
                 if let threshold = rawDetermination?.threshold {
                     rawDetermination?.threshold = DosingEngine.convertGlucose(profile: profile, glucose: threshold)
                 }
+            }
+            if let determination = rawDetermination {
+                rawDetermination = try dosingMode.constrain(determination, schedule: basalProfile, at: clock)
             }
             return try .success(JSONBridge.to(rawDetermination))
 

@@ -11,7 +11,11 @@ extension Settings {
         @Injected() var fetchCgmManager: FetchGlucoseManager!
 
         @Published var units: GlucoseUnits = .mgdL
-        @Published var closedLoop = false
+        @Injected() private var apsManager: APSManager!
+        @Published var dosingMode: DosingMode = .open
+        @Published var changingDosingMode = false
+        @Published var dosingModeError: String?
+        @Published var useSwiftOref = false
         @Published var isErrorUploadEnabled = false
         @Published var debugOptions = false
         @Published var uploadPumpSettings = false
@@ -27,7 +31,8 @@ extension Settings {
             units = settingsManager.settings.units
 
             subscribeSetting(\.debugOptions, on: $debugOptions) { debugOptions = $0 }
-            subscribeSetting(\.closedLoop, on: $closedLoop) { closedLoop = $0 }
+            dosingMode = settingsManager.settings.dosingMode
+            useSwiftOref = settingsManager.settings.useSwiftOref
             subscribeSetting(\.uploadPumpSettings, on: $uploadPumpSettings) { uploadPumpSettings = $0 }
             subscribeSetting(\.isErrorUploadEnabled, on: $isErrorUploadEnabled) { isErrorUploadEnabled = $0 }
 
@@ -42,6 +47,19 @@ extension Settings {
             copyrightNotice = Bundle.main.infoDictionary?["NSHumanReadableCopyright"] as? String ?? ""
 
             serviceUIType = pluginManager.getServiceTypeByIdentifier("TidepoolService")
+        }
+
+        @MainActor func selectDosingMode(_ mode: DosingMode) async {
+            guard !changingDosingMode else { return }
+            changingDosingMode = true
+            dosingModeError = nil
+            defer { changingDosingMode = false }
+            do {
+                try await apsManager.changeDosingMode(mode)
+            } catch {
+                dosingModeError = error.localizedDescription
+            }
+            dosingMode = settingsManager.settings.dosingMode
         }
 
         func logItems() -> [URL] {
@@ -94,7 +112,8 @@ extension Settings {
 
 extension Settings.StateModel: SettingsObserver {
     func settingsDidChange(_ settings: TrioSettings) {
-        closedLoop = settings.closedLoop
+        dosingMode = settings.dosingMode
+        useSwiftOref = settings.useSwiftOref
         isErrorUploadEnabled = settings.isErrorUploadEnabled
         debugOptions = settings.debugOptions
     }

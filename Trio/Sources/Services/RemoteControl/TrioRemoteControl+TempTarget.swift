@@ -3,6 +3,11 @@ import Foundation
 
 extension TrioRemoteControl {
     @MainActor func handleTempTargetCommand(_ pushMessage: PushMessage) async {
+        guard AdjustmentActivationPolicy.shared.allowsActivation else {
+            await logError(AdjustmentActivationPolicy.blockedMessage, pushMessage: pushMessage)
+            return
+        }
+        let activationToken = AdjustmentActivationPolicy.shared.token
         guard let targetValue = pushMessage.target,
               let durationValue = pushMessage.duration
         else {
@@ -27,6 +32,10 @@ extension TrioRemoteControl {
         )
 
         await tempTargetsStorage.storeTempTarget(tempTarget: tempTarget)
+        guard AdjustmentActivationPolicy.shared.accepts(activationToken) else {
+            await logError(AdjustmentActivationPolicy.blockedMessage, pushMessage: pushMessage)
+            return
+        }
         tempTargetsStorage.saveTempTargetsToStorage([tempTarget])
 
         debug(

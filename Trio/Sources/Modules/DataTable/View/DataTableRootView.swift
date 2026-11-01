@@ -15,6 +15,7 @@ extension DataTable {
         @State private var alertCarbEntryToDelete: CarbEntryStored?
         @State private var alertGlucoseToDelete: GlucoseStored?
         @State private var showAlert = false
+        @State private var precedingPumpEvents: [PumpEventStored] = []
         @State private var showFutureEntries: Bool = false // default to hide future entries
         @State private var showManualGlucose: Bool = false
         @State private var manualGlucoseDate = Date()
@@ -85,15 +86,31 @@ extension DataTable {
                     .pickerStyle(SegmentedPickerStyle())
                     .padding(.horizontal)
 
-                    Form {
-                        switch state.mode {
-                        case .treatments: treatmentsList
-                        case .glucose: glucoseList
-                        case .meals: mealsList
-                        case .adjustments: adjustmentsList
+                    Group {
+                        if state.mode == .treatments {
+                            TimelineView(.periodic(from: .now, by: 60)) { tick in
+                                Form { treatmentsList(at: tick.date) }
+                            }
+                            .task {
+                                precedingPumpEvents = (
+                                    try? PumpHistoryWindow
+                                        .precedingEvents(in: context, since: Date.oneDayAgo)
+                                ) ?? []
+                                await state.loadHistoryBasalProfile()
+                            }
+                        } else {
+                            Form {
+                                switch state.mode {
+                                case .glucose: glucoseList
+                                case .meals: mealsList
+                                case .adjustments: adjustmentsList
+                                case .treatments: EmptyView()
+                                }
+                            }
                         }
-                    }.scrollContentBackground(.hidden)
-                        .background(appState.trioBackgroundColor(for: colorScheme))
+                    }
+                    .scrollContentBackground(.hidden)
+                    .background(appState.trioBackgroundColor(for: colorScheme))
                 }.blur(radius: state.waitForSuggestion ? 8 : 0)
 
                 // Show custom progress view
@@ -167,23 +184,69 @@ extension DataTable {
             ).buttonStyle(.borderless)
         }
 
-        private var treatmentsList: some View {
-            List {
+        private func treatmentsList(at date: Date) -> some View {
+            let rows = treatmentRows(at: date)
+            return Section {
                 HStack {
                     Text("Insulin").foregroundStyle(.secondary)
                     Spacer()
                     Text("Time").foregroundStyle(.secondary)
                 }
-                if !pumpEventStored.isEmpty {
-                    ForEach(pumpEventStored.filter({ !showFutureEntries ? $0.timestamp ?? Date() <= Date() : true })) { item in
-                        treatmentView(item)
-                    }
-                } else {
-                    HStack {
-                        Text("No data.")
+                if rows.isEmpty { Text("No data.") }
+                ForEach(rows, id: \.id) { row in
+                    switch row {
+                    case let .pump(item): treatmentView(item)
+                    case let .profile(segment):
+                        HStack {
+                            Image(systemName: "drop.circle").foregroundColor(Color.insulin)
+                            Text("Profilbasal")
+                            Text(
+                                "\(Formatter.decimalFormatterWithTwoFractionDigits.string(from: segment.rate as NSDecimalNumber) ?? "") E/h"
+                            )
+                            .foregroundStyle(.secondary)
+                            Text("\(Int(segment.end.timeIntervalSince(segment.start) / 60)) min")
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            Text(Formatter.dateFormatter.string(from: segment.start))
+                        }
+                        .accessibilityHint("Beräknad från pumpens basalprofil och händelsehistorik")
                     }
                 }
-            }.listRowBackground(Color.chart)
+            }
+            .listRowBackground(Color.chart)
+        }
+
+        private enum TreatmentRow {
+            case pump(PumpEventStored)
+            case profile(BasalDeliveryTimeline.Segment)
+
+            var date: Date {
+                switch self {
+                case let .pump(event): return event.timestamp ?? .distantPast
+                case let .profile(segment): return segment.start
+                }
+            }
+
+            var id: AnyHashable {
+                switch self {
+                case let .pump(event): return AnyHashable(event.objectID)
+                case let .profile(segment): return AnyHashable(segment.start)
+                }
+            }
+        }
+
+        private func treatmentRows(at now: Date) -> [TreatmentRow] {
+            let events = Array(pumpEventStored)
+            var rows = events.filter {
+                $0.tempBasal?.isScheduledBasal != true && (showFutureEntries || ($0.timestamp ?? now) <= now)
+            }.map(TreatmentRow.pump)
+            if state.apsManager?.pumpManager != nil, !state.historyBasalProfile.isEmpty {
+                let timeline = (precedingPumpEvents + events).compactMap(BasalDeliveryTimeline.event(from:))
+                rows += BasalDeliveryTimeline.segments(events: timeline, profile: state.historyBasalProfile, now: now)
+                    .filter { $0.scheduled && $0.end.timeIntervalSince($0.start) >= 60 }
+                    .map(TreatmentRow.profile)
+            }
+            return rows.sorted { $0.date > $1.date }
         }
 
         private var mealsList: some View {

@@ -64,7 +64,7 @@ import Testing
         }
     }
 
-    @Test("Offset cache follows timezone changes and nonchronological historical dates")  func timezoneAndHistoryOrder() {
+    @Test("Offset cache follows timezone changes and nonchronological historical dates") func timezoneAndHistoryOrder() {
         let zones = ["Europe/Stockholm", "America/New_York", "Asia/Kolkata", "Australia/Lord_Howe", "UTC"]
         let dates = [
             1_792_890_000.0,

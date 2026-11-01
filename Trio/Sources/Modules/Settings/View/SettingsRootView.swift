@@ -155,31 +155,28 @@ extension Settings {
                         }
                     ).listRowBackground(Color.chart)
 
-                    SettingInputSection(
-                        decimalValue: $decimalPlaceholder,
-                        booleanValue: $state.closedLoop,
-                        shouldDisplayHint: $shouldDisplayHint,
-                        selectedVerboseHint: Binding(
-                            get: { selectedVerboseHint },
-                            set: {
-                                selectedVerboseHint = $0.map { AnyView($0) }
-                                hintLabel = "Sluten Loop"
+                    Section(header: Text("Behandlingsläge")) {
+                        Picker("Behandlingsläge", selection: Binding(
+                            get: { state.dosingMode },
+                            set: { mode in Task { await state.selectDosingMode(mode) } }
+                        )) {
+                            ForEach(DosingMode.allCases.filter { !$0.requiresSwift || state.useSwiftOref }) { mode in
+                                Text(mode.title).tag(mode)
                             }
-                        ),
-                        units: state.units,
-                        type: .boolean,
-                        label: "Sluten Loop",
-                        miniHint: "Aktivera automatisk insulintillförsel.",
-                        verboseHint: VStack(alignment: .leading, spacing: 10) {
-                            Text(
-                                "Att använda Trio med sluten loop kräver an aktiv CGM-sensorsession och en ansluten pump. Detta möjliggör automatisk insulindosering."
-                            )
-                            Text(
-                                "Innan aktivering, se till att dina behandlingsinställningar är väl injusterade (Basal/ISF/CR)."
-                            )
-                        },
-                        headerText: "Automatisk insulintillförsel"
-                    )
+                        }
+                        .disabled(state.changingDosingMode)
+                        Text(state.dosingMode.explanation).font(.footnote).foregroundStyle(.secondary)
+                        Text(
+                            "När du lämnar sluten loop avslutas overrides och tillfälliga mål. De kan bara aktiveras i sluten loop."
+                        )
+                        .font(.footnote).foregroundStyle(.secondary)
+                        if !state.useSwiftOref {
+                            Text("Aktivera Swift-algoritmen för att använda LGS och basaltest.").font(.footnote)
+                        }
+                        if state.changingDosingMode { ProgressView("Byter läge – väntar på pågående loop/pump…") }
+                        if let error = state.dosingModeError { Text(error).foregroundStyle(.red) }
+                    }
+                    .listRowBackground(Color.chart)
 
                     Section(
                         header: Text("Trio Konfiguration"),

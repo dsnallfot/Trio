@@ -17,8 +17,19 @@ enum BolusShortcutLimit: String, JSON, CaseIterable, Identifiable {
 
 struct TrioSettings: JSON, Equatable {
     var units: GlucoseUnits = .mgdL
-    var useSwiftOref: Bool = false
-    var closedLoop: Bool = false
+    var useSwiftOref: Bool = false {
+        didSet { if dosingMode.requiresSwift { useSwiftOref = true } }
+    }
+
+    var dosingMode: DosingMode = .open {
+        didSet {
+            closedLoop = dosingMode == .closed
+            if dosingMode.requiresSwift { useSwiftOref = true }
+        }
+    }
+
+    // Preserve the legacy JSON key for consumers, but all changes go through dosingMode.
+    private(set) var closedLoop: Bool = false
     var isUploadEnabled: Bool = false
     var isErrorUploadEnabled: Bool = false
     var isDownloadEnabled: Bool = false
@@ -89,8 +100,12 @@ extension TrioSettings: Decodable {
             settings.units = units
         }
 
-        if let closedLoop = try? container.decode(Bool.self, forKey: .closedLoop) {
-            settings.closedLoop = closedLoop
+        enum LegacyKeys: String, CodingKey { case closedLoop }
+        if container.contains(.dosingMode) {
+            settings.dosingMode = (try? container.decode(DosingMode.self, forKey: .dosingMode)) ?? .open
+        } else {
+            let legacy = try decoder.container(keyedBy: LegacyKeys.self)
+            settings.dosingMode = (try? legacy.decode(Bool.self, forKey: .closedLoop)) == true ? .closed : .open
         }
 
         if let isUploadEnabled = try? container.decode(Bool.self, forKey: .isUploadEnabled) {

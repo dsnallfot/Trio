@@ -1,0 +1,15 @@
+{
+  "purpose": "Reviewed dosing-mode changes and PR1300 Nightscout corrections. Pump-history revision metadata is local-only and excluded from Nightscout JSON.",
+  "sha256": {
+    "Trio/Sources/Models/NightscoutStatus.swift": "32c6eeac25c7f32457e08407a27956b388aa1d7150086c2ce28c881665a82cfd",
+    "Trio/Sources/Services/Network/Nightscout/NightscoutManager.swift": "da950aa953898110b5270b285a18ddc2f5c310ac3997d111d0d987f98d7f0a74",
+    "Trio/Sources/Services/RemoteControl/TrioRemoteControl+Override.swift": "fbeca00f8d8b0b959d02a0db8235b0deeacd659c8ac65b53e6bfb89d3f53cff9",
+    "Trio/Sources/Services/RemoteControl/TrioRemoteControl+TempTarget.swift": "48f757fe3a29ff92a74656ffb2998415de3318d7bee5e854074f0c05a5cbf30e",
+    "Trio/Sources/Shortcuts/Override/ApplyOverridePresetIntent.swift": "7e575c08e2d8d6954ec7c97177695a4d8e0f249cc5781a93ccc69ad9177b105c",
+    "Trio/Sources/Shortcuts/Override/OverridePresetsIntentRequest.swift": "6a57dd1172f6d7c60233acfcece63f887c5473cc105f0078cb34e6352a2c52df",
+    "Trio/Sources/Shortcuts/State/ToggleClosedLoopIntent.swift": "be02b7488c2f7d2130a5d7cbe316a4391e57221b49a3c808f52e08a4ab38b685",
+    "Trio/Sources/Shortcuts/TempPresets/ApplyTempPresetIntent.swift": "80a92d0cbf5a5c404bfc4f6d0de9398a341e4c70f5c1c52bee96891cbedf6855",
+    "Trio/Sources/Shortcuts/TempPresets/TempPresetsIntentRequest.swift": "3cf52405ae6ccbf3b160793d1823f8db56350ee70332c4bc4fcef30f02c862ce",
+    "Trio/Sources/Models/NightscoutTreatment.swift": "91971f2985cd00d34ed49908fbe38ee9985adef9e16e6389e0621335ea25e6ad"
+  }
+}

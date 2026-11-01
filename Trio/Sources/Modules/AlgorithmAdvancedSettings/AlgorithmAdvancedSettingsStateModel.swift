@@ -9,6 +9,7 @@ extension AlgorithmAdvancedSettings {
         @Injected() var storage: FileStorage!
         @Injected() var nightscout: NightscoutManager!
 
+        @Published var swiftEngineRequired = true
         @Published var useSwiftOref = false
         @Published var lastOrefRun = "Ingen körning registrerad"
 
@@ -33,8 +34,10 @@ extension AlgorithmAdvancedSettings {
 
         override func subscribe() {
             units = settingsManager.settings.units
+            swiftEngineRequired = settingsManager.settings.dosingMode.requiresSwift
             subscribeSetting(\.useSwiftOref, on: $useSwiftOref) { useSwiftOref = $0 }
             broadcaster.register(DeterminationObserver.self, observer: self)
+            broadcaster.register(SettingsObserver.self, observer: self)
             updateOrefStatus()
 
             subscribePreferencesSetting(\.maxDailySafetyMultiplier, on: $maxDailySafetyMultiplier) {
@@ -94,8 +97,11 @@ extension AlgorithmAdvancedSettings {
 }
 
 extension AlgorithmAdvancedSettings.StateModel: SettingsObserver {
-    func settingsDidChange(_: TrioSettings) {
-        units = settingsManager.settings.units
+    func settingsDidChange(_ settings: TrioSettings) {
+        DispatchQueue.main.async {
+            self.units = settings.units
+            self.swiftEngineRequired = settings.dosingMode.requiresSwift
+        }
     }
 }
 

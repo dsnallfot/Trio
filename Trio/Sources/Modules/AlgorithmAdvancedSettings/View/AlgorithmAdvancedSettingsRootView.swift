@@ -20,6 +20,7 @@ extension AlgorithmAdvancedSettings {
             List {
                 Section {
                     Toggle("Använd Swift-algoritmen", isOn: $state.useSwiftOref)
+                        .disabled(state.swiftEngineRequired)
                     Text("Senaste beräkning: \(state.lastOrefRun)")
                         .font(.footnote)
                         .foregroundStyle(.secondary)

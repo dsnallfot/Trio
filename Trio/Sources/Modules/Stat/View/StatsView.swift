@@ -13,15 +13,22 @@ struct StatsView: View {
     var units: GlucoseUnits
     var hbA1cDisplayUnit: HbA1cDisplayUnit
 
+    var showInsulin: Bool
+    var insulin: Insulin?
+
     private let conversionFactor = 0.0555
 
     var body: some View {
         VStack(spacing: 10) {
-            loops
+            loops.padding(.horizontal, 20)
             Divider()
-            hba1c
+            hba1c.padding(.horizontal, 20)
             Divider()
-            bloodGlucose
+            if showInsulin {
+                insulinSummary.padding(.horizontal, 20)
+                Divider()
+            }
+            bloodGlucose.padding(.horizontal, 20)
         }
     }
 
@@ -30,7 +37,9 @@ struct StatsView: View {
         highLimit: Decimal,
         lowLimit: Decimal,
         units: GlucoseUnits,
-        hbA1cDisplayUnit: HbA1cDisplayUnit
+        hbA1cDisplayUnit: HbA1cDisplayUnit,
+        showInsulin: Bool = false,
+        insulin: Insulin? = nil
     ) {
         _fetchRequest = FetchRequest<LoopStatRecord>(
             sortDescriptors: [NSSortDescriptor(key: "start", ascending: false)],
@@ -42,10 +51,32 @@ struct StatsView: View {
             predicate: NSPredicate(format: "glucose > 0 AND date > %@", filter)
         )
 
+        self.showInsulin = showInsulin
+        self.insulin = insulin
         self.highLimit = highLimit
         self.lowLimit = lowLimit
         self.units = units
         self.hbA1cDisplayUnit = hbA1cDisplayUnit
+    }
+
+    private var insulinSummary: some View {
+        HStack(spacing: 8) {
+            insulinMetric("Total", value: insulin?.TDD)
+            insulinMetric("Bolus", value: insulin?.bolus)
+            insulinMetric("Basal", value: insulin.map { ($0.temp_basal ?? 0) + ($0.scheduled_basal ?? 0) })
+        }
+    }
+
+    private func insulinMetric(_ title: String, value: Decimal?) -> some View {
+        VStack(spacing: 5) {
+            Text(title).font(.subheadline).foregroundColor(headline)
+            if let value = value {
+                Text(value.formatted(.number.precision(.fractionLength(1))) + " E")
+            } else {
+                Text("–")
+            }
+        }
+        .frame(maxWidth: .infinity)
     }
 
     var loops: some View {
@@ -72,15 +103,17 @@ struct StatsView: View {
         // let maximumInterval = intervalArray.max()
         // let minimumInterval = intervalArray.min()
         return VStack(spacing: 10) {
-            HStack(spacing: 35) {
+            HStack(spacing: 8) {
                 VStack(spacing: 5) {
                     Text("Loops").font(.subheadline).foregroundColor(headline)
                     Text(loopNr.formatted())
                 }
+                .frame(maxWidth: .infinity)
                 VStack(spacing: 5) {
                     Text("Interval").font(.subheadline).foregroundColor(headline)
                     Text(intervalAverage.formatted(.number.grouping(.never).rounded().precision(.fractionLength(1))) + " min")
                 }
+                .frame(maxWidth: .infinity)
                 VStack(spacing: 5) {
                     Text("Tid").font(.subheadline).foregroundColor(headline)
                     Text(
@@ -88,6 +121,7 @@ struct StatsView: View {
                             .formatted(.number.grouping(.never).rounded().precision(.fractionLength(1))) + " s"
                     )
                 }
+                .frame(maxWidth: .infinity)
                 VStack(spacing: 5) {
                     Text("Success").font(.subheadline).foregroundColor(headline)
                     Text(
@@ -95,6 +129,7 @@ struct StatsView: View {
                             .formatted(.percent.grouping(.never).rounded().precision(.fractionLength(1)))
                     )
                 }
+                .frame(maxWidth: .infinity)
             }
         }
     }
@@ -126,7 +161,7 @@ struct StatsView: View {
     }
 
     var hba1c: some View {
-        HStack(spacing: 50) {
+        HStack(spacing: 8) {
             let useUnit: GlucoseUnits = {
                 if hbA1cDisplayUnit == .mmolMol { return .mmolL }
                 else { return .mgdL }
@@ -150,6 +185,7 @@ struct StatsView: View {
                 Text("HbA1c").font(.subheadline).foregroundColor(headline)
                 Text(hba1cString)
             }
+            .frame(maxWidth: .infinity)
             VStack(spacing: 5) {
                 Text("SD").font(.subheadline).foregroundColor(.secondary)
                 Text(
@@ -160,19 +196,22 @@ struct StatsView: View {
                         )
                 )
             }
+            .frame(maxWidth: .infinity)
             VStack(spacing: 5) {
                 Text("CV").font(.subheadline).foregroundColor(.secondary)
                 Text(hba1cs.cv.formatted(.number.grouping(.never).rounded().precision(.fractionLength(0))))
             }
+            .frame(maxWidth: .infinity)
             VStack(spacing: 5) {
                 Text("Days").font(.subheadline).foregroundColor(.secondary)
                 Text(numberOfDays.formatted(.number.grouping(.never).rounded().precision(.fractionLength(1))))
             }
+            .frame(maxWidth: .infinity)
         }
     }
 
     var bloodGlucose: some View {
-        HStack(spacing: 30) {
+        HStack(spacing: 8) {
             let bgs = glucoseStats()
 
             // First date
@@ -187,6 +226,7 @@ struct StatsView: View {
                     .foregroundColor(.secondary)
                 Text(bgs.readings.formatted(.number.grouping(.never).rounded().precision(.fractionLength(0))))
             }
+            .frame(maxWidth: .infinity)
             VStack(spacing: 5) {
                 Text("Average").font(.subheadline).foregroundColor(headline)
                 Text(
@@ -197,6 +237,7 @@ struct StatsView: View {
                         )
                 )
             }
+            .frame(maxWidth: .infinity)
             VStack(spacing: 5) {
                 Text("Median").font(.subheadline).foregroundColor(.secondary)
                 Text(
@@ -207,6 +248,7 @@ struct StatsView: View {
                         )
                 )
             }
+            .frame(maxWidth: .infinity)
         }
     }
 

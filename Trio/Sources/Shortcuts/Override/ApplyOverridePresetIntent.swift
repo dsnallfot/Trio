@@ -32,6 +32,7 @@ struct ApplyOverridePresetIntent: AppIntent {
     }
 
     @MainActor func perform() async throws -> some ProvidesDialog {
+        try AdjustmentActivationPolicy.shared.validateActivation()
         do {
             let presetToApply: OverridePreset
             if let preset = preset {

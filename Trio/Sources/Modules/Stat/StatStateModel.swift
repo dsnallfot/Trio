@@ -14,7 +14,50 @@ extension Stat {
         var units: GlucoseUnits = .mgdL
         var glucoseFromPersistence: [GlucoseStored] = []
 
+        @ObservationIgnored @Injected() var storage: FileStorage!
+        var insulinToday: Insulin?
+        var insulinDay: Insulin?
         var selectedDuration: Duration = .Today
+
+        @MainActor func loadInsulinStatistics() async {
+            let now = Date()
+            let today = Calendar.current.startOfDay(for: now)
+            let day = now.addingTimeInterval(-24 * 3600)
+            let profile = await storage.retrieveAsync(OpenAPS.Settings.basalProfile, as: [BasalProfileEntry].self) ?? []
+            let increment = settingsManager.preferences.bolusIncrement
+            do {
+                let totals = try await context.perform {
+                    let rows = try PumpHistoryWindow.fetch(in: self.context, since: min(today, day))
+                    let entries: [PumpEventDTO] = rows.flatMap { row -> [PumpEventDTO] in
+                        guard let date = row.timestamp else { return [] }
+                        let type: EventType? = row.tempBasal?.isScheduledBasal == true ? .scheduledBasal :
+                            [.pumpSuspend, .pumpResume, .pumpDetached, .pumpAttached, .rewind, .prime]
+                            .first { $0.rawValue == row.type }
+                        if let type = type {
+                            return [.marker(PumpHistoryEvent(id: row.id ?? "", type: type, timestamp: date))]
+                        }
+                        return [row.toBolusDTOEnum(), row.toTempBasalDurationDTOEnum(), row.toTempBasalDTOEnum()]
+                            .compactMap { $0 }
+                    }
+                    guard !entries.isEmpty else { return (nil as Insulin?, nil as Insulin?) }
+                    let json = try PumpEventDTO.json(entries)
+                    guard let history = [PumpHistoryEvent](from: json) else { throw JSONError.invalidString }
+                    let todayResult = try LocalInsulinHistory.calculate(
+                        history: history, basal: profile, increment: increment, clock: now, since: today
+                    )
+                    let dayResult = try LocalInsulinHistory.calculate(
+                        history: history, basal: profile, increment: increment, clock: now, since: day
+                    )
+                    return (todayResult.insulin as Insulin?, dayResult.insulin as Insulin?)
+                }
+                insulinToday = totals.0
+                insulinDay = totals.1
+            } catch {
+                insulinToday = nil
+                insulinDay = nil
+                warning(.default, "Could not calculate insulin statistics", error: error)
+            }
+        }
 
         private let context = CoreDataStack.shared.newTaskContext()
         private let viewContext = CoreDataStack.shared.persistentContainer.viewContext

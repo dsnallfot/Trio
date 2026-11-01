@@ -845,8 +845,9 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         let openapsStatus = OpenAPSStatus(
             iob: iob?.first,
             suggested: suggestedToUpload,
-            enacted: settingsManager.settings.closedLoop ? enactedToUpload : nil,
-            version: Bundle.main.releaseVersionNumber ?? "Unknown"
+            enacted: settingsManager.settings.dosingMode.allowsAutomation ? enactedToUpload : nil,
+            version: Bundle.main.releaseVersionNumber ?? "Unknown",
+            dosingMode: settingsManager.settings.dosingMode.rawValue
         )
 
         // Daniel: Minska loggning // debug(.nightscout, "To be uploaded openapsStatus: \(openapsStatus)")
@@ -1682,32 +1683,17 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
 
     private func updatePumpEventStoredsAsUploaded(_ treatments: [NightscoutTreatment]) async {
         await backgroundContext.perform {
-            let ids = treatments.compactMap(\.id)
-            debugPrint("🟡 Attempting to mark as uploaded. IDs: \(ids)")
-
-            let fetchRequest: NSFetchRequest<PumpEventStored> = PumpEventStored.fetchRequest()
-            fetchRequest.predicate = NSPredicate(format: "id IN %@", ids as NSArray)
-
             do {
-                let results = try self.backgroundContext.fetch(fetchRequest)
-                debugPrint("🔵 Found \(results.count) PumpEventStored entries matching IDs")
-                debugPrint("🔍 Fetched IDs: \(results.compactMap(\.id))")
-
-                for result in results {
-                    result.isUploadedToNS = true
+                for treatment in treatments {
+                    guard let id = treatment.id else { continue }
+                    try PumpHistoryUploadReceipt.acknowledge(
+                        id: id,
+                        revision: treatment.pumpHistoryRevision,
+                        in: self.backgroundContext
+                    )
                 }
-
-                guard self.backgroundContext.hasChanges else {
-                    debugPrint("⚠️ No changes to save in background context — nothing marked as uploaded.")
-                    return
-                }
-
-                try self.backgroundContext.save()
-                debugPrint("✅ Successfully saved isUploadedToNS updates for pump events.")
-            } catch let error as NSError {
-                debugPrint(
-                    "\(DebuggingIdentifiers.failed) \(#file) \(#function) Failed to update isUploadedToNS: \(error.userInfo)"
-                )
+            } catch {
+                debug(.nightscout, "Could not acknowledge pump history upload: \(error.localizedDescription)")
             }
         }
     }

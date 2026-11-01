@@ -31,6 +31,10 @@ extension TrioRemoteControl {
     }
 
     @MainActor internal func handleStartOverrideCommand(_ pushMessage: PushMessage) async {
+        guard AdjustmentActivationPolicy.shared.allowsActivation else {
+            await logError(AdjustmentActivationPolicy.blockedMessage, pushMessage: pushMessage)
+            return
+        }
         let diagnosticID = RuntimeDiagnostics.shared.begin("remoteOverride", force: true)
         defer { RuntimeDiagnostics.shared.end("remoteOverride", id: diagnosticID, force: true) }
         guard let overrideName = pushMessage.overrideName, !overrideName.isEmpty else {
@@ -72,6 +76,8 @@ extension TrioRemoteControl {
     }
 
     @MainActor private func enactOverridePreset(presetObjectID: NSManagedObjectID, pushMessage: PushMessage) async -> Bool {
+        let activationToken = AdjustmentActivationPolicy.shared.token
+        guard AdjustmentActivationPolicy.shared.allowsActivation else { return false }
         debug(.remoteControl, "🛑 Starting enactment of override for objectID: \(presetObjectID)")
 
         var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
@@ -111,6 +117,10 @@ extension TrioRemoteControl {
         debug(.remoteControl, "✅ Successfully fetched preset: \(overrideName)")
 
         // Step 3: Enable override.
+        guard AdjustmentActivationPolicy.shared.accepts(activationToken) else {
+            await logError(AdjustmentActivationPolicy.blockedMessage, pushMessage: pushMessage)
+            return false
+        }
         refreshedPreset.enabled = true
         refreshedPreset.date = Date()
         refreshedPreset.enteredBy = "Trio (\(pushMessage.user))"

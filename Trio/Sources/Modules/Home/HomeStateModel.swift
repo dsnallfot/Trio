@@ -32,6 +32,7 @@ extension Home {
         var targetProfiles: [TargetProfile] = []
         var timerDate = Date()
         var closedLoop = false
+        var dosingMode: DosingMode = .open
         var isErrorUploadEnabled = false
         var pumpSuspended = false
         var isLooping = false
@@ -385,6 +386,7 @@ extension Home {
             units = settingsManager.settings.units
             allowManualTemp = !settingsManager.settings.closedLoop
             closedLoop = settingsManager.settings.closedLoop
+            dosingMode = settingsManager.settings.dosingMode
             isErrorUploadEnabled = settingsManager.settings.isErrorUploadEnabled
             lastLoopDate = apsManager.lastLoopDate
             alarm = provider.glucoseStorage.alarm
@@ -609,6 +611,7 @@ extension Home.StateModel:
         alarm = provider.glucoseStorage.alarm
         allowManualTemp = !settings.closedLoop
         closedLoop = settingsManager.settings.closedLoop
+        dosingMode = settingsManager.settings.dosingMode
         isErrorUploadEnabled = settingsManager.settings.isErrorUploadEnabled
         units = settingsManager.settings.units
         manualTempBasal = apsManager.isManualTempBasal

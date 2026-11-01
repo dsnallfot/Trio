@@ -101,6 +101,8 @@ final class BaseOverrideStorage: @preconcurrency OverrideStorage, Injectable {
     }
 
     func storeOverride(override: Override) async {
+        guard !override.enabled || AdjustmentActivationPolicy.shared.allowsActivation else { return }
+        let activationToken = AdjustmentActivationPolicy.shared.token
         var presetCount = -1
         if override.isPreset {
             let presets = await fetchForOverridePresets()
@@ -108,6 +110,7 @@ final class BaseOverrideStorage: @preconcurrency OverrideStorage, Injectable {
         }
 
         await backgroundContext.perform {
+            guard !override.enabled || AdjustmentActivationPolicy.shared.accepts(activationToken) else { return }
             let newOverride = OverrideStored(context: self.backgroundContext)
 
             // Override key metadata

@@ -18,6 +18,12 @@ extension DataTable {
 
         var mode: Mode = .treatments
         var treatments: [Treatment] = []
+        var historyBasalProfile: [BasalProfileEntry] = []
+
+        func loadHistoryBasalProfile() async {
+            historyBasalProfile = await storage.retrieveAsync(OpenAPS.Settings.basalProfile, as: [BasalProfileEntry].self) ?? []
+        }
+
         var manualGlucose: Decimal = 0
         var waitForSuggestion: Bool = false
 

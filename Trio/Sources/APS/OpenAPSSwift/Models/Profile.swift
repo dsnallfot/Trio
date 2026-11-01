@@ -2,6 +2,7 @@ import Foundation
 
 struct Profile: Codable {
     // Kotlin-defined properties from AndroidAPS OapsProfile.kt
+    var suspendOnly = false // Runtime-only; omitted from CodingKeys.
     // with defaults pulled from profile.js
     var dia: Decimal?
     var min5mCarbImpact: Decimal = 8

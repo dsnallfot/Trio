@@ -39,6 +39,7 @@ struct ApplyTempPresetIntent: AppIntent {
     }
 
     @MainActor func perform() async throws -> some ProvidesDialog {
+        try AdjustmentActivationPolicy.shared.validateActivation()
         do {
             let intentRequest = TempPresetsIntentRequest()
             let presetToApply: TempPreset

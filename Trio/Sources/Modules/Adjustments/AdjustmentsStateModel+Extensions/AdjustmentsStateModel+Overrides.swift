@@ -7,12 +7,16 @@ extension Adjustments.StateModel {
 
     /// Enacts an Override Preset by enabling it and disabling others.
     @MainActor func enactOverridePreset(withID id: NSManagedObjectID) async {
+        let activationToken = AdjustmentActivationPolicy.shared.token
+        guard mayActivateAdjustment() else { return }
         do {
             guard let overrideToEnact = try viewContext.existingObject(with: id) as? OverrideStored else { return }
             /// Wait for currently active override to be disabled before storing the new one
             await disableAllActiveOverrides(createOverrideRunEntry: currentActiveOverride != nil)
             await resetStateVariables()
 
+            guard AdjustmentActivationPolicy.shared.accepts(activationToken) else { adjustmentBlocked = true
+                return }
             overrideToEnact.enabled = true
 
             overrideToEnact.date = Date()
@@ -83,6 +87,8 @@ extension Adjustments.StateModel {
 
     /// Saves a custom Override and activates it.
     func saveCustomOverride() async {
+        let activationToken = AdjustmentActivationPolicy.shared.token
+        guard mayActivateAdjustment() else { return }
         let override = Override(
             name: overrideName,
             enabled: true,
@@ -110,6 +116,8 @@ extension Adjustments.StateModel {
         await disableAllActiveOverrides(createOverrideRunEntry: true)
 
         // Then save and activate a new custom Override
+        guard AdjustmentActivationPolicy.shared.accepts(activationToken) else { adjustmentBlocked = true
+            return }
         await overrideStorage.storeOverride(override: override)
 
         // Reset State variables
