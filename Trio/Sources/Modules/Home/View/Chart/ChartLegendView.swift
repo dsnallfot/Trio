@@ -38,7 +38,7 @@ struct ChartLegendView: View {
                         legendConeOfUncertaintyView
                     }
                 }
-                .listRowBackground(Color.gray.opacity(0.1))
+                .listRowBackground(Color.chart)
 
                 VStack(alignment: .leading) {
                     Text("Övriga element och symboler")
@@ -193,9 +193,9 @@ struct ChartLegendView: View {
                         iconString: "line.diagonal"
                     )
                 }
-                .listRowBackground(Color.gray.opacity(0.1))
+                .listRowBackground(Color.chart)
             }
-            .padding(.top, 30)
+            .padding(.top, 80)
             .scrollContentBackground(.hidden)
             // .padding(.trailing, 10)
 
@@ -211,8 +211,8 @@ struct ChartLegendView: View {
                     LinearGradient(
                         colors: [
                             .clear,
-                            Color(.systemBackground).opacity(0.5),
-                            Color(.systemBackground).opacity(0.8)
+                            (colorScheme == .dark ? Color.bgDarkerDarkBlue : Color(.systemBackground)).opacity(0.5),
+                            (colorScheme == .dark ? Color.bgDarkerDarkBlue : Color(.systemBackground)).opacity(0.8)
                         ],
                         startPoint: .top,
                         endPoint: .bottom
@@ -258,6 +258,8 @@ struct ChartLegendView: View {
                 .ignoresSafeArea(edges: .bottom)
             }
             .navigationBarTitle("Förklaring av diagrammet", displayMode: .inline)
+            .background(appState.trioBackgroundColor(for: colorScheme))
+            .toolbarBackground(.hidden, for: .navigationBar)
             .listSectionSpacing(10)
             .ignoresSafeArea(edges: .top)
             .presentationDetents(
@@ -265,6 +267,7 @@ struct ChartLegendView: View {
                 selection: $legendSheetDetent
             )
         }
+        .presentationBackground(appState.trioBackgroundColor(for: colorScheme))
     }
 
     var legendLinesView: some View {
