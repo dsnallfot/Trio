@@ -1794,7 +1794,7 @@ Enact a temp Basal or a temp target */
 "Readings" = "Avläsningar";
 
 /* CGM readings in statView */
-"Readings / 24h" = "Avläsningar / 24h";
+"Readings / 24h" = "Avläsningar/24h";
 
 /* Days of saved readings*/
 "Days" = "Dagar";
