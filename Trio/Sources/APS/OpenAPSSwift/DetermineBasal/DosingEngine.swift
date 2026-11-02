@@ -148,7 +148,7 @@ enum DosingEngine {
         let maxDeltaGlucoseThreshold = min(profile.maxDeltaBgThreshold, 0.4)
         if glucoseStatus.maxDelta > maxDeltaGlucoseThreshold * currentGlucose {
             reason =
-                "maxDelta \(convertGlucose(profile: profile, glucose: glucoseStatus.maxDelta)) > \(100 * maxDeltaGlucoseThreshold)% of BG \(convertGlucose(profile: profile, glucose: currentGlucose)), inaktiverar SMB, "
+                "maxDelta \(convertGlucose(profile: profile, glucose: glucoseStatus.maxDelta)) > \(100 * maxDeltaGlucoseThreshold)% of BG \(convertGlucose(profile: profile, glucose: currentGlucose)) - inaktiverar SMB, "
             smbIsEnabled = false
         }
 
