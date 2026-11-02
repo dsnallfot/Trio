@@ -284,7 +284,7 @@ enum DeterminationGenerator {
         // Build isfReason: "Autosens ratio: X, ISF: Y→Z"
         let originalSensitivity = profile.profileSensitivity(at: currentTime, trioCustomOrefVaribales: trioCustomOrefVariables)
         let isfReason =
-            "Autosens Ratio: \(sensitivityRatio.jsRounded(scale: 2)), ISF: \(originalSensitivity.jsRounded())→\(adjustedSensitivity.jsRounded())"
+            "Autosens ratio: \(sensitivityRatio.jsRounded(scale: 2)), ISF: \(originalSensitivity.jsRounded())→\(adjustedSensitivity.jsRounded())"
 
         // Build targetLog: "X" or "X→Y" or "X→Y→Z" if target was adjusted
         let profileTarget = profile.profileTarget(trioCustomOrefVariables: trioCustomOrefVariables) ?? 100
@@ -302,7 +302,7 @@ enum DeterminationGenerator {
             targetLog = "\(adjustedGlucoseTargets.targetGlucose.jsRounded())"
         }
 
-        // Build tddReason: ", Dynamic ISF: On, Sigmoid function, AF: X, Basal ratio: Y, SMB Ratio: Z"
+        // Build tddReason: ", Dynamic ISF: On, Sigmoid function, Basal ratio: Y, AF: X, SMB Ratio: Z"
         var tddReason = ""
         if let dynamicIsfResult = dynamicIsfResult {
             tddReason = ", Dynamisk ISF: På"
@@ -313,18 +313,16 @@ enum DeterminationGenerator {
             }
             if let limitValue = dynamicIsfResult.limitValue {
                 tddReason +=
-                    ", Autosens/Dynamisk gräns: \(limitValue) (\(dynamicIsfResult.uncappedRatio.jsRounded(scale: 2)))"
+                    ", Autosens limit: \(limitValue) (\(dynamicIsfResult.uncappedRatio.jsRounded(scale: 2)))"
             }
             let af = preferences.sigmoid ? preferences.adjustmentFactorSigmoid : preferences.adjustmentFactor
-            tddReason += ", AF: \(af)"
             if profile.tddAdjBasal {
-                tddReason += ", Basal Ratio: \(dynamicIsfResult.tddRatio)"
+                tddReason += ", Basal ratio: \(dynamicIsfResult.tddRatio)"
             }
+            // Nightscout expects AF immediately before SMB Ratio and the conclusion delimiter.
+            tddReason += ", AF: \(DosingEngine.reasonDecimal(af))"
         }
-        // SMB Ratio is added if not default (0.5) - Changed to always added
-        // if profile.smbDeliveryRatio != 0.5 {
-        tddReason += ", SMB Ratio: \(min(profile.smbDeliveryRatio, 1))"
-        // }
+        tddReason += ", SMB Ratio: \(DosingEngine.reasonDecimal(min(profile.smbDeliveryRatio, 1)))"
 
         let smbDecision = try DosingEngine.makeSMBDosingDecision(
             profile: profile,
@@ -364,7 +362,7 @@ enum DeterminationGenerator {
         }
         // Add carbs message after smbReason to match JS order
         if let carbsReq = dosingInputs.carbsRequired {
-            reason += "\(carbsReq.carbs) g kh behövs inom \(carbsReq.minutes)m; "
+            reason += "\(carbsReq.carbs)g kh behövs inom \(carbsReq.minutes)m, "
         }
 
         var determination = Determination(
@@ -448,7 +446,7 @@ enum DeterminationGenerator {
 
         if profile.suspendOnly {
             determination.insulinForManualBolus = manualBolus
-            determination.reason += "Basaltest; ingen justering. "
+            determination.reason += "Basaltest – ingen justering"
             return determination
         }
 
@@ -668,7 +666,7 @@ enum DeterminationGenerator {
         // === ERROR CONDITIONS ===
         // xDrip code 38 = sensor error; BG <= 10 = ???/calibrating; noise >= 3 = high noise
         if glucose <= 10 || glucose == 38 || noise >= 3 {
-            reason = "CGM kalibrerar, i ??? status, eller hoppig"
+            reason = "CGM kalibrerar - i ??? status eller hoppig"
         }
         // minAgo (BG age) > 12 or < -5 = old/future BG - can overwrite calibration reason (matches JS)
         if minAgo > 12 || minAgo < -5 {
@@ -697,7 +695,7 @@ enum DeterminationGenerator {
         if currentTemp.rate >= basal { // high temp is running
             // Replace high temp with neutral temp at scheduled basal rate for 30min
             let reasonWithAction = reason +
-                ". Ersätter hög temp basal \(currentTemp.rate) med neutral temp \(basal)"
+                ", Ersätter hög temp basal \(currentTemp.rate) med neutral temp \(basal)"
             return Determination(
                 id: UUID(),
                 reason: reasonWithAction,
@@ -732,7 +730,7 @@ enum DeterminationGenerator {
             )
         } else if currentTemp.rate == 0, currentTemp.duration > 30 {
             // Shorten long zero temp to 30m
-            let reasonWithAction = reason + ". Förkortar \(currentTemp.duration)m lång 0-temp till 30m. "
+            let reasonWithAction = reason + ", Shortening \(currentTemp.duration)m long zero temp to 30m. "
             return Determination(
                 id: UUID(),
                 reason: reasonWithAction,
@@ -767,7 +765,7 @@ enum DeterminationGenerator {
             )
         } else {
             // Do nothing (temp already safe)
-            let reasonWithAction = reason + ". Temp \(currentTemp.rate) <= nuvarande basal \(basal)E/h; ingen åtgärd. "
+            let reasonWithAction = reason + ", Temp \(currentTemp.rate) <= Nuvarande basal \(basal)E/h - Ingen åtgärd. "
             return Determination(
                 id: UUID(),
                 reason: reasonWithAction,

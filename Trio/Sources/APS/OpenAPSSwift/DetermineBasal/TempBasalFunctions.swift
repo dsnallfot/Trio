@@ -79,28 +79,35 @@ enum TempBasalFunctions {
            suggestedRate >= currentTemp.rate * 0.8,
            duration > 0
         {
-            determination
-                .reason += " \(currentTemp.duration)m kvar och \(currentTemp.rate) ~ behov \(suggestedRate)E/h: ingen temp krävs"
+            DosingEngine.appendReasonRow(
+                "\(currentTemp.duration)m kvar och \(currentTemp.rate) ~ rek \(suggestedRate)E/h - ingen temp krävs",
+                to: &determination.reason
+            )
             return determination
         }
 
         if suggestedRate == profile.currentBasal {
             if profile.skipNeutralTemps {
                 if currentTemp.duration > 0 {
-                    determination
-                        .reason = determination.reason +
-                        ". Föreslagen basal är samma som profilbasal: en temp är aktiv: avbryter nuvarande temp"
+                    DosingEngine.appendReasonRow(
+                        "Föreslagen basal är samma som profilbasal – en temp basal är aktiv och avbryts",
+                        to: &determination.reason
+                    )
                     determination.duration = 0
                     determination.rate = 0
                     return determination
                 } else {
-                    determination
-                        .reason = determination.reason +
-                        ". Föreslagen basal är samma som profilbasal: ingen temp är aktiv: ingen åtgärd"
+                    DosingEngine.appendReasonRow(
+                        "Föreslagen basal är samma som profilbasal – ingen temp basal pågår och ingen åtgärd krävs",
+                        to: &determination.reason
+                    )
                     return determination
                 }
             } else {
-                determination.reason = determination.reason + ". Ställer in neutral temp basal \(profile.currentBasal ?? 0)E/h"
+                DosingEngine.appendReasonRow(
+                    "Ställer in neutral temp basal på \(profile.currentBasal ?? 0)E/h",
+                    to: &determination.reason
+                )
                 determination.duration = duration
                 determination.rate = suggestedRate
                 return determination
