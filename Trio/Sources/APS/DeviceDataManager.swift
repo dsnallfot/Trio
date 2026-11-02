@@ -747,7 +747,11 @@ extension BaseDeviceDataManager: DeviceManagerDelegate {
     ) {
         if type != .error {
             if !DiagnosticLogging.isEnabled,
-               ["[heartbeat]", "[heartbeat-diag]", "[delayedConnect]", "[lifecycle]"].contains(where: { message.contains($0) })
+               message == "[connectOnDemand] connect" || [
+                   "[heartbeat]", "[heartbeat-diag]", "[delayedConnect]", "[lifecycle]",
+                   "[scan] armed ", "[connectOnDemand] connected in ", "[foreground] connected ",
+                   "[connectOnDemand] command preempts heartbeat probe"
+               ].contains(where: { message.hasPrefix($0) })
             {
                 return
             }

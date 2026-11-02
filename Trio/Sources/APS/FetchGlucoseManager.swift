@@ -437,6 +437,7 @@ final class BackgroundTaskDiagnostics: @unchecked Sendable {
         reason: String = "-",
         now: TimeInterval = ProcessInfo.processInfo.systemUptime
     ) {
+        guard DiagnosticLogging.isEnabled else { return }
         lock.lock()
         sequence += 1
         let serial = sequence
@@ -476,7 +477,6 @@ final class BackgroundTaskDiagnostics: @unchecked Sendable {
         }
         lock.unlock()
 
-        guard DiagnosticLogging.isEnabled else { return }
         if let summary { debug(.deviceManager, summary) }
         guard detail else { return }
         let duration = durationSeconds.map { String(format: "%.3f", $0) } ?? (event == .start && valid ? "0.000" : "unknown")

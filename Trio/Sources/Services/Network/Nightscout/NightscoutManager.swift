@@ -946,7 +946,9 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             if uploadKey == lastStatusUploadKey, Date().timeIntervalSince(lastStatusUploadDate) < 60 {
                 return
             }
-            debug(.nightscout, "NS status start \(revision)")
+            if DiagnosticLogging.isEnabled {
+                debug(.nightscout, "NS status start \(revision)")
+            }
             try await nightscout.uploadDeviceStatus(status)
             // Do not acknowledge a cancelled attempt; the next trigger will fetch current status again.
             try Task.checkCancellation()
@@ -972,7 +974,9 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             }
             lastStatusUploadKey = uploadKey
             lastStatusUploadDate = Date()
-            debug(.nightscout, "NS status success \(revision) elapsedSec=\(Date().timeIntervalSince(started))")
+            if DiagnosticLogging.isEnabled {
+                debug(.nightscout, "NS status success \(revision) elapsedSec=\(Date().timeIntervalSince(started))")
+            }
         } catch {
             let nsError = error as NSError
             debug(

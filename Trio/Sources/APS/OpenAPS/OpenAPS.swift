@@ -398,9 +398,11 @@ final class OpenAPS {
                 await processDetermination(determination, mode: calculationMode)
                 let run = OrefRunStatus(engine: engine, date: clock, duration: Date().timeIntervalSince(started))
                 storage.save(run, as: OrefRunStatus.storageKey)
-                var samples = storage.retrieve(OrefRunStatus.historyKey, as: [OrefRunStatus].self) ?? []
-                samples.append(run)
-                storage.save(Array(samples.suffix(576)), as: OrefRunStatus.historyKey)
+                if DiagnosticLogging.isEnabled {
+                    var samples = storage.retrieve(OrefRunStatus.historyKey, as: [OrefRunStatus].self) ?? []
+                    samples.append(run)
+                    storage.save(Array(samples.suffix(576)), as: OrefRunStatus.historyKey)
+                }
             }
 
             return determination

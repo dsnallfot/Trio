@@ -4,15 +4,14 @@ import Foundation
 import JavaScriptCore
 
 enum DiagnosticLogging {
-    static let enabledKey = "Trio.LogDiagnostics"
-    static let defaultEnabled = true
+    // Explicit opt-in for this build, independent of the previous test setting.
+    static let enabledKey = "Trio.Diagnostics.Collect"
+    static let defaultEnabled = false
     static let detailKey = "Trio.LogDiagnostics.Detail"
     static var detailEnabled: Bool { isEnabled && UserDefaults.standard.bool(forKey: detailKey) }
 
-    static var isEnabled: Bool {
-        UserDefaults.standard.object(forKey: enabledKey) == nil ?
-            defaultEnabled : UserDefaults.standard.bool(forKey: enabledKey)
-    }
+    // Keep start/end accounting consistent for the lifetime of the process.
+    static let isEnabled = UserDefaults.standard.bool(forKey: enabledKey)
 }
 
 extension String {
@@ -120,6 +119,7 @@ final class RuntimeDiagnostics {
     private var lastObjectSamples: [String: TimeInterval] = [:]
 
     func sampleObjects(_ key: String, count: @autoclosure () -> Int) {
+        guard DiagnosticLogging.isEnabled else { return }
         lock.lock()
         let now = ProcessInfo.processInfo.systemUptime
         guard now - lastObjectSamples[key, default: -.infinity] >= (DiagnosticLogging.detailEnabled ? 60 : 900) else {
@@ -132,7 +132,7 @@ final class RuntimeDiagnostics {
         set(key, to: count())
     }
 
-    func set(_ key: String, to value: Int) {
+    private func set(_ key: String, to value: Int) {
         lock.lock()
         counters[key] = value
         peaks[key] = max(peaks[key, default: 0], value)
@@ -140,6 +140,7 @@ final class RuntimeDiagnostics {
     }
 
     func increment(_ key: String, by amount: Int = 1) {
+        guard DiagnosticLogging.isEnabled else { return }
         lock.lock()
         counters[key, default: 0] += amount
         peaks[key] = max(peaks[key, default: 0], counters[key, default: 0])
@@ -147,6 +148,7 @@ final class RuntimeDiagnostics {
     }
 
     func begin(_ kind: String, force: Bool = false) -> UInt64 {
+        guard DiagnosticLogging.isEnabled else { return 0 }
         lock.lock()
         nextID += 1
         let id = nextID
@@ -158,6 +160,7 @@ final class RuntimeDiagnostics {
     }
 
     func end(_ kind: String, id: UInt64, force: Bool = false) {
+        guard DiagnosticLogging.isEnabled else { return }
         increment(kind, by: -1)
         sample("end \(kind) id=\(id)", force: force)
     }

@@ -283,7 +283,11 @@ extension Settings {
                         content: {
                             if state.debugOptions {
                                 Toggle("Logga diagnostik", isOn: $logDiagnostics)
-                                if logDiagnostics {
+                                if logDiagnostics != DiagnosticLogging.isEnabled {
+                                    Text("Ändringen gäller nästa gång Trio startas.")
+                                        .font(.footnote)
+                                }
+                                if logDiagnostics && DiagnosticLogging.isEnabled {
                                     Toggle("Detaljerad diagnostik", isOn: $detailedDiagnostics)
                                     DiagnosticStatusView()
                                 }
