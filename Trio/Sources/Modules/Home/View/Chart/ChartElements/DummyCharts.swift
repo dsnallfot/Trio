@@ -56,7 +56,7 @@ extension MainChartView {
         }
         .id("DummyMainChart")
         .frame(
-            minHeight: geo.size.height * (0.28 - safeAreaSize)
+            minHeight: mainPlotMinimumHeight
         )
         .frame(width: screenSize.width)
         .chartXAxis { mainChartXAxis }

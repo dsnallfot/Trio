@@ -37,32 +37,69 @@ struct MainChartView: View {
         units == .mgdL ? 400 : 22.2
     }
 
-    private var selectedGlucose: GlucoseStored? {
-        guard let selection = selection else { return nil }
-        let range = selection.addingTimeInterval(-150) ... selection.addingTimeInterval(150)
-        return state.glucoseFromPersistence.first { $0.date.map(range.contains) ?? false }
+    private var selectionWindow: ClosedRange<Date>? {
+        guard let selection else { return nil }
+        return selection.addingTimeInterval(-6 * 60) ... selection
     }
 
-    private func findDetermination(in range: ClosedRange<Date>) -> OrefDetermination? {
-        state.enactedAndNonEnactedDeterminations.first {
-            $0.deliverAt ?? now >= range.lowerBound && $0.deliverAt ?? now <= range.upperBound
+    private var selectedGlucose: GlucoseStored? {
+        guard let window = selectionWindow else { return nil }
+        // Glucose readings are ordered oldest first.
+        return state.glucoseFromPersistence.last { $0.date.map(window.contains) ?? false }
+    }
+
+    // Determinations are ordered newest first.
+    private func previousDetermination(requiringIOB: Bool) -> OrefDetermination? {
+        guard let window = selectionWindow else { return nil }
+        return state.enactedAndNonEnactedDeterminations.first { entry in
+            guard let date = entry.deliverAt, window.contains(date) else { return false }
+            return !requiringIOB || entry.iob != nil
         }
     }
 
     var selectedCOBValue: OrefDetermination? {
-        guard let selection = selection else { return nil }
-        let range = selection.addingTimeInterval(-150) ... selection.addingTimeInterval(150)
-        return findDetermination(in: range)
+        previousDetermination(requiringIOB: false)
     }
 
     var selectedIOBValue: OrefDetermination? {
-        guard let selection = selection else { return nil }
-        let range = selection.addingTimeInterval(-150) ... selection.addingTimeInterval(150)
-        return findDetermination(in: range)
+        previousDetermination(requiringIOB: true)
+    }
+
+    private var selectionContent: SelectionPopoverView? {
+        guard let selection else { return nil }
+        return SelectionPopoverView(
+            selection: selection,
+            selectedGlucose: selectedGlucose,
+            selectedIOBValue: selectedIOBValue,
+            selectedCOBValue: selectedCOBValue,
+            units: units,
+            highGlucose: highGlucose,
+            lowGlucose: lowGlucose,
+            currentGlucoseTarget: currentGlucoseTarget,
+            glucoseColorScheme: glucoseColorScheme
+        )
+    }
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @ScaledMetric(relativeTo: .caption) private var selectionRowHeight: CGFloat = 30
+    private let selectionRowGap: CGFloat = 8
+
+    var mainPlotMinimumHeight: CGFloat {
+        let reserved = selection == nil ? 0 : selectionRowHeight + selectionRowGap
+        return max(0, geo.size.height * (0.28 - safeAreaSize) - reserved)
     }
 
     var body: some View {
-        VStack {
+        VStack(spacing: 0) {
+            if let selectionContent {
+                selectionContent.selectionPopover
+                    .frame(height: selectionRowHeight)
+                    .padding(.horizontal, 10)
+                    .padding(.bottom, selectionRowGap)
+                    .allowsHitTesting(false)
+                    .transition(.opacity)
+            }
+
             ZStack {
                 VStack(spacing: 5) {
                     dummyBasalChart
@@ -137,7 +174,29 @@ struct MainChartView: View {
                     }
                 }
             }
+            .overlayPreferenceValue(SelectionLineTop.self) { anchor in
+                GeometryReader { geometry in
+                    if let anchor {
+                        let end = geometry[anchor]
+                        Path { path in
+                            path.move(to: CGPoint(x: end.x, y: -selectionRowGap))
+                            path.addLine(to: end)
+                        }
+                        .stroke(Color.tabBar, lineWidth: 2)
+                    }
+                }
+                .allowsHitTesting(false)
+            }
         }
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: selection != nil)
+    }
+}
+
+private struct SelectionLineTop: PreferenceKey {
+    static let defaultValue: Anchor<CGPoint>? = nil
+
+    static func reduce(value: inout Anchor<CGPoint>?, nextValue: () -> Anchor<CGPoint>?) {
+        value = nextValue() ?? value
     }
 }
 
@@ -205,18 +264,8 @@ extension MainChartView {
                     lastDeterminationDate: state.determinationsFromPersistence.first?.deliverAt ?? .distantPast
                 )
 
-                /// show glucose value when hovering over it
-                if let selectedGlucose {
-                    SelectionPopoverView(
-                        selectedGlucose: selectedGlucose,
-                        selectedIOBValue: selectedIOBValue,
-                        selectedCOBValue: selectedCOBValue,
-                        units: units,
-                        highGlucose: highGlucose,
-                        lowGlucose: lowGlucose,
-                        currentGlucoseTarget: currentGlucoseTarget,
-                        glucoseColorScheme: glucoseColorScheme
-                    )
+                if let selectionContent {
+                    selectionContent
                 }
             }
             .id("MainChart")
@@ -224,13 +273,27 @@ extension MainChartView {
                 state.roundedTotalBolus = state.calculateTINS()
             }
             .frame(
-                minHeight: geo.size.height * (0.28 - safeAreaSize)
+                minHeight: mainPlotMinimumHeight
             )
             .frame(width: fullWidth(viewWidth: screenSize.width))
             .chartXScale(domain: state.startMarker ... state.endMarker)
             .chartXAxis { mainChartXAxis }
             .chartYAxis { mainChartYAxis }
             .chartYAxis(.hidden)
+            .chartOverlay { proxy in
+                GeometryReader { geometry in
+                    if let selection, let plot = proxy.plotFrame,
+                       let x = proxy.position(forX: selection)
+                    {
+                        let frame = geometry[plot]
+                        Color.clear.anchorPreference(
+                            key: SelectionLineTop.self,
+                            value: .point(CGPoint(x: frame.minX + x, y: frame.minY))
+                        ) { $0 }
+                    }
+                }
+                .allowsHitTesting(false)
+            }
             .chartXSelection(value: $selection)
             .chartYScale(
                 domain: units == .mgdL ? state.minYAxisValue ... state.maxYAxisValue : state.minYAxisValue

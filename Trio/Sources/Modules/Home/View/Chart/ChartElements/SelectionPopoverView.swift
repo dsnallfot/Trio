@@ -3,7 +3,8 @@ import Foundation
 import SwiftUI
 
 struct SelectionPopoverView: ChartContent {
-    let selectedGlucose: GlucoseStored
+    let selection: Date
+    let selectedGlucose: GlucoseStored?
     let selectedIOBValue: OrefDetermination?
     let selectedCOBValue: OrefDetermination?
     let units: GlucoseUnits
@@ -12,12 +13,14 @@ struct SelectionPopoverView: ChartContent {
     let currentGlucoseTarget: Decimal
     let glucoseColorScheme: GlucoseColorScheme
 
-    private var glucoseToDisplay: Decimal {
-        units == .mgdL ? Decimal(selectedGlucose.glucose) : Decimal(selectedGlucose.glucose).asMmolL
+    private var glucoseToDisplay: Decimal? {
+        guard let selectedGlucose else { return nil }
+        return units == .mgdL ? Decimal(selectedGlucose.glucose) : Decimal(selectedGlucose.glucose).asMmolL
     }
 
     /// Formats the glucose value so that if the units are mmol/L, it always shows one decimal place.
     private var formattedGlucose: String {
+        guard let glucoseToDisplay else { return "--" }
         if units == .mmolL {
             let formatter = NumberFormatter()
             formatter.numberStyle = .decimal
@@ -30,6 +33,7 @@ struct SelectionPopoverView: ChartContent {
     }
 
     private var pointMarkColor: Color {
+        guard let selectedGlucose else { return .secondary }
         let hardCodedLow = Decimal(55)
         let hardCodedHigh = Decimal(220)
         let isDynamicColorScheme = glucoseColorScheme == .dynamicColor
@@ -44,84 +48,58 @@ struct SelectionPopoverView: ChartContent {
     }
 
     var body: some ChartContent {
-        RuleMark(x: .value("Selection", selectedGlucose.date ?? Date.now, unit: .minute))
+        RuleMark(x: .value("Selection", selection))
             .foregroundStyle(Color.tabBar)
-            .offset(yStart: 70)
             .lineStyle(.init(lineWidth: 2))
-            .annotation(
-                position: .top,
-                alignment: .center,
-                overflowResolution: .init(x: .fit(to: .chart), y: .fit(to: .chart))
-            ) {
-                selectionPopover
-            }
 
-        PointMark(
-            x: .value("Time", selectedGlucose.date ?? Date.now, unit: .minute),
-            y: .value("Value", glucoseToDisplay)
-        )
-        .zIndex(-1)
-        .symbolSize(CGSize(width: 15, height: 15))
-        .foregroundStyle(pointMarkColor)
+        if let date = selectedGlucose?.date, let glucoseToDisplay {
+            PointMark(
+                x: .value("Time", date),
+                y: .value("Value", glucoseToDisplay)
+            )
+            .zIndex(-1)
+            .symbolSize(CGSize(width: 15, height: 15))
+            .foregroundStyle(pointMarkColor)
 
-        PointMark(
-            x: .value("Time", selectedGlucose.date ?? Date.now, unit: .minute),
-            y: .value("Value", glucoseToDisplay)
-        )
-        .zIndex(-1)
-        .symbolSize(CGSize(width: 6, height: 6))
-        .foregroundStyle(Color.primary)
+            PointMark(
+                x: .value("Time", date),
+                y: .value("Value", glucoseToDisplay)
+            )
+            .zIndex(-1)
+            .symbolSize(CGSize(width: 6, height: 6))
+            .foregroundStyle(Color.primary)
+        }
     }
 
-    @ViewBuilder var selectionPopover: some View {
-        VStack(alignment: .leading) {
-            HStack {
+    var selectionPopover: some View {
+        HStack(spacing: 4) {
+            HStack(spacing: 3) {
                 Image(systemName: "clock")
-                Text(selectedGlucose.date?.formatted(.dateTime.hour().minute(.twoDigits)) ?? "")
-                    .font(.body).bold()
+                Text(selection.formatted(.dateTime.hour().minute(.twoDigits)))
             }
-            .font(.body).padding(.bottom, 5)
+            .frame(maxWidth: .infinity)
 
-            HStack {
-                // Use the formattedGlucose string to ensure one decimal when units are mmol/L.
-                Text(formattedGlucose).bold() + Text(" \(units.rawValue)")
-            }
-            .foregroundStyle(pointMarkColor)
-            .font(.body)
+            Text("\(formattedGlucose) \(units.rawValue)")
+                .foregroundStyle(pointMarkColor)
+                .frame(maxWidth: .infinity)
 
-            if let selectedIOBValue, let iob = selectedIOBValue.iob {
-                HStack {
-                    // Image(systemName: "syringe.fill").frame(width: 15)
-                    Text("IOB")
-                        .bold()
-                    Text(Formatter.bolusFormatter.string(from: iob) ?? "")
-                        .bold()
-                        + Text(NSLocalizedString(" E", comment: "Insulin unit"))
-                }
-                .foregroundStyle(Color.insulin).font(.body)
-            }
+            let iob = selectedIOBValue?.iob.flatMap { Formatter.bolusFormatter.string(from: $0) } ?? "--"
+            (Text("IOB") + Text(verbatim: " " + iob + NSLocalizedString(" E", comment: "Insulin unit")))
+                .foregroundStyle(Color.insulin)
+                .frame(maxWidth: .infinity)
 
-            if let selectedCOBValue {
-                HStack {
-                    // Image(systemName: "fork.knife").frame(width: 15)
-                    Text("COB")
-                        .bold()
-                    Text(Formatter.integerFormatter.string(from: selectedCOBValue.cob as NSNumber) ?? "")
-                        .bold()
-                        + Text(NSLocalizedString(" g", comment: "gram of carbs"))
-                }
-                .foregroundStyle(Color.orange).font(.body)
-            }
+            let cob = selectedCOBValue.flatMap { Formatter.integerFormatter.string(from: $0.cob as NSNumber) } ?? "--"
+            (Text("COB") + Text(verbatim: " " + cob + NSLocalizedString(" g", comment: "gram of carbs")))
+                .foregroundStyle(Color.orange)
+                .frame(maxWidth: .infinity)
         }
-        .padding()
-        .background {
-            RoundedRectangle(cornerRadius: 4)
-                .fill(Color.chart.opacity(0.85))
-                .shadow(color: Color.secondary, radius: 2)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 4)
-                        .stroke(Color.secondary, lineWidth: 2)
-                )
-        }
+        .font(.caption.weight(.semibold))
+        .monospacedDigit()
+        .lineLimit(1)
+        .minimumScaleFactor(0.75)
+        .padding(.horizontal, 6)
+        .padding(.vertical, 6)
+        .glassPanel()
+        .accessibilityElement(children: .combine)
     }
 }
