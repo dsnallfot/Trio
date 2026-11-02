@@ -5,6 +5,7 @@ struct LoopStatusView: View {
     @Environment(AppState.self) var appState
 
     var state: Home.StateModel
+    let closedLoopAdjustment: String?
 
     @State private var sheetContentHeight = CGFloat.zero
     // Help Sheet
@@ -35,7 +36,7 @@ struct LoopStatusView: View {
                         if let mode = recordedMode, let symbol = HomeDosingStatus.symbol(for: mode) {
                             Label(mode.title, systemImage: symbol)
                                 .font(.subheadline.bold())
-                            Text(HomeDosingStatus.detail(for: mode))
+                            Text(HomeDosingStatus.detail(for: mode, closedLoopAdjustment: closedLoopAdjustment))
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)

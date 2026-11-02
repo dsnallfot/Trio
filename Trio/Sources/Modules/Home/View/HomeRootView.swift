@@ -203,13 +203,55 @@ extension Home {
             return value + " E/h" + (manual ? " – Manuell basal ⚠️" : "")
         }
 
+        private func remainingMinutes(date: Date?, duration: NSDecimalNumber?) -> Decimal {
+            let end = (date ?? Date()).addingTimeInterval(Int(truncating: duration ?? 0).minutes.timeInterval)
+            return max(Decimal(Date().distance(to: end).minutes), 0)
+        }
+
+        private func formattedOverridePercent(_ adjustment: OverrideStored) -> String {
+            "\(adjustment.percentage.formatted(.number)) %"
+        }
+
+        private func formattedTempTarget(_ latestTempTarget: TempTargetStored) -> String {
+            var percentageString = ""
+            var target = (latestTempTarget.target ?? 100) as Decimal
+            var halfBasalTarget: Decimal = 160
+            if latestTempTarget.halfBasalTarget != nil {
+                halfBasalTarget = latestTempTarget.halfBasalTarget! as Decimal
+            } else { halfBasalTarget = state.settingHalfBasalTarget }
+            var showPercentage = false
+            if target > 100, state.isExerciseModeActive || state.highTTraisesSens { showPercentage = true }
+            if target < 100, state.lowTTlowersSens { showPercentage = true }
+            if showPercentage {
+                percentageString =
+                    " \(state.computeAdjustedPercentage(halfBasalTargetValue: halfBasalTarget, tempTargetValue: target))%"
+            }
+            target = state.units == .mmolL ? target.asMmolL : target
+            return target == 0 ? "" : (fetchedTargetFormatter.string(from: target as NSNumber) ?? "") + " " +
+                state.units.rawValue + percentageString
+        }
+
+        private var closedLoopAdjustment: String? {
+            var details: [String] = []
+            if let adjustment = latestOverride.first,
+               adjustment.indefinite || remainingMinutes(date: adjustment.date, duration: adjustment.duration) > 0
+            {
+                details.append("Override: \(formattedOverridePercent(adjustment))")
+            }
+            if let target = latestTempTarget.first, remainingMinutes(date: target.date, duration: target.duration) > 0 {
+                let value = formattedTempTarget(target)
+                if !value.isEmpty { details.append("Tillfälligt mål: \(value)") }
+            }
+            return details.isEmpty ? nil : details.joined(separator: " • ")
+        }
+
         var overrideString: String? {
             guard let latestOverride = latestOverride.first else {
                 return nil
             }
 
             let percent = latestOverride.percentage
-            let percentString = percent == 100 ? "" : "\(percent.formatted(.number)) %"
+            let percentString = percent == 100 ? "" : formattedOverridePercent(latestOverride)
 
             let unit = state.units
             var target = (latestOverride.target ?? 100) as Decimal
@@ -221,13 +263,7 @@ extension Home {
                 targetString = ""
             }
 
-            let duration = latestOverride.duration ?? 0
-            let addedMinutes = Int(truncating: duration)
-            let date = latestOverride.date ?? Date()
-            let newDuration = max(
-                Decimal(Date().distance(to: date.addingTimeInterval(addedMinutes.minutes.timeInterval)).minutes),
-                0
-            )
+            let newDuration = remainingMinutes(date: latestOverride.date, duration: latestOverride.duration)
             let indefinite = latestOverride.indefinite
             var durationString = ""
 
@@ -262,30 +298,9 @@ extension Home {
             guard let latestTempTarget = latestTempTarget.first else {
                 return nil
             }
-            let duration = latestTempTarget.duration
-            let addedMinutes = Int(truncating: duration ?? 0)
-            let date = latestTempTarget.date ?? Date()
-            let newDuration = max(
-                Decimal(Date().distance(to: date.addingTimeInterval(addedMinutes.minutes.timeInterval)).minutes),
-                0
-            )
+            let newDuration = remainingMinutes(date: latestTempTarget.date, duration: latestTempTarget.duration)
             var durationString = ""
-            var percentageString = ""
-            var target = (latestTempTarget.target ?? 100) as Decimal
-            var halfBasalTarget: Decimal = 160
-            if latestTempTarget.halfBasalTarget != nil {
-                halfBasalTarget = latestTempTarget.halfBasalTarget! as Decimal
-            } else { halfBasalTarget = state.settingHalfBasalTarget }
-            var showPercentage = false
-            if target > 100, state.isExerciseModeActive || state.highTTraisesSens { showPercentage = true }
-            if target < 100, state.lowTTlowersSens { showPercentage = true }
-            if showPercentage {
-                percentageString =
-                    " \(state.computeAdjustedPercentage(halfBasalTargetValue: halfBasalTarget, tempTargetValue: target))%"
-            }
-            target = state.units == .mmolL ? target.asMmolL : target
-            let targetString = target == 0 ? "" : (fetchedTargetFormatter.string(from: target as NSNumber) ?? "") + " " +
-                state.units.rawValue + percentageString
+            let targetString = formattedTempTarget(latestTempTarget)
 
             if newDuration >= 1 {
                 durationString =
@@ -676,7 +691,7 @@ extension Home {
                         .font(.subheadline)
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
-                    Text(HomeDosingStatus.detail(for: state.dosingMode))
+                    Text(HomeDosingStatus.detail(for: state.dosingMode, closedLoopAdjustment: closedLoopAdjustment))
                         .font(.caption)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -1004,7 +1019,7 @@ extension Home {
             .ignoresSafeArea(.keyboard)
             .blur(radius: state.isLoopStatusPresented ? 1 : 0)
             .sheet(isPresented: $state.isLoopStatusPresented) {
-                LoopStatusView(state: state)
+                LoopStatusView(state: state, closedLoopAdjustment: closedLoopAdjustment)
             }
             .confirmationDialog("Pump Model", isPresented: $showPumpSelection) {
                 Button("Medtronic") { state.addPump(.minimed) }

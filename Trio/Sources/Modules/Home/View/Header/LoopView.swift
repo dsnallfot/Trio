@@ -128,9 +128,9 @@ enum HomeDosingStatus {
         }
     }
 
-    static func detail(for mode: DosingMode) -> String {
+    static func detail(for mode: DosingMode, closedLoopAdjustment: String?) -> String {
         switch mode {
-        case .closed: return "Normal profil: 100 %"
+        case .closed: return closedLoopAdjustment ?? "Normal profil: 100 %"
         case .open: return "Visar dosförslag utan automatisk dosering."
         case .lowGlucoseSuspend: return "Kan sänka eller pausa basalen. Korrigerar inte höga värden."
         case .basalTesting: return "Följer basalprofilen. Kan pausa vid lågt eller förväntat lågt glukos."
