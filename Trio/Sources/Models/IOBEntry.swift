@@ -23,10 +23,10 @@ struct IOBEntry: JSON {
     }
 
     struct LastTemp: JSON {
-        let rate: Decimal
-        let timestamp: Date
-        let started_at: Date
+        let rate: Decimal?
+        let timestamp: Date?
+        let started_at: Date?
         let date: UInt64
-        let duration: Decimal
+        let duration: Decimal?
     }
 }

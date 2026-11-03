@@ -39,15 +39,16 @@ final class BaseCalibrationService: CalibrationService, Injectable {
     @Injected() var notificationCenter: NotificationCenter!
     private var lifetime = Lifetime()
 
-    private(set) var calibrations: [Calibration] = [] {
-        didSet {
-            storage.save(calibrations, as: OpenAPS.Trio.calibrations)
-        }
+    private let lock = NSRecursiveLock(label: "BaseCalibrationService.lock")
+    private var storedCalibrations: [Calibration] = []
+
+    var calibrations: [Calibration] {
+        lock.perform { storedCalibrations }
     }
 
     init(resolver: Resolver) {
         injectServices(resolver)
-        calibrations = storage.retrieve(OpenAPS.Trio.calibrations, as: [Calibration].self) ?? []
+        storedCalibrations = storage.retrieve(OpenAPS.Trio.calibrations, as: [Calibration].self) ?? []
         subscribe()
     }
 
@@ -60,6 +61,9 @@ final class BaseCalibrationService: CalibrationService, Injectable {
     }
 
     var slope: Double {
+        lock.lock()
+        defer { lock.unlock() }
+        let calibrations = self.calibrations
         guard calibrations.count >= 2 else {
             return 1
         }
@@ -74,6 +78,9 @@ final class BaseCalibrationService: CalibrationService, Injectable {
     }
 
     var intercept: Double {
+        lock.lock()
+        defer { lock.unlock() }
+        let calibrations = self.calibrations
         guard calibrations.count >= 1 else {
             return 0
         }
@@ -90,19 +97,29 @@ final class BaseCalibrationService: CalibrationService, Injectable {
     }
 
     func addCalibration(_ calibration: Calibration) {
-        calibrations.append(calibration)
+        updateCalibrations { $0.append(calibration) }
     }
 
     func removeCalibration(_ calibration: Calibration) {
-        calibrations.removeAll { $0 == calibration }
+        updateCalibrations { $0.removeAll { $0 == calibration } }
     }
 
     func removeAllCalibrations() {
-        calibrations.removeAll()
+        updateCalibrations { $0.removeAll() }
     }
 
     func removeLast() {
-        calibrations.removeLast()
+        updateCalibrations { calibrations in
+            guard !calibrations.isEmpty else { return }
+            calibrations.removeLast()
+        }
+    }
+
+    private func updateCalibrations(_ update: (inout [Calibration]) -> Void) {
+        lock.perform {
+            update(&storedCalibrations)
+            storage.save(storedCalibrations, as: OpenAPS.Trio.calibrations)
+        }
     }
 
     private func average(_ input: [Double]) -> Double {
@@ -114,6 +131,6 @@ final class BaseCalibrationService: CalibrationService, Injectable {
     }
 
     private func linearRegression(_ x: Int) -> Double {
-        (intercept + slope * Double(x)).clamped(Config.minValue ... Config.maxValue)
+        lock.perform { (intercept + slope * Double(x)).clamped(Config.minValue ... Config.maxValue) }
     }
 }

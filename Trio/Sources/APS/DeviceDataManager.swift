@@ -464,6 +464,15 @@ final class BaseDeviceDataManager: DeviceDataManager, Injectable {
 // MARK: - PumpManagerDelegate
 
 extension BaseDeviceDataManager: PumpManagerDelegate {
+    /// Discard known Minimed history decoding errors while preserving other pumps' delivered doses.
+    static func storablePumpEvents(_ events: [NewPumpEvent], maxBasal: Decimal, isMinimed: Bool) -> [NewPumpEvent] {
+        guard isMinimed else { return events }
+        return events.filter {
+            guard let type = $0.type, type == .tempBasal else { return true }
+            return $0.dose?.unitsPerHour ?? 0 <= Double(maxBasal)
+        }
+    }
+
     var automaticDosingEnabled: Bool {
         settingsManager.settings.dosingMode.allowsAutomation // Take if close or open loop
     }
@@ -614,12 +623,11 @@ extension BaseDeviceDataManager: PumpManagerDelegate {
     ) {
         dispatchPrecondition(condition: .onQueue(processQueue))
 
-        // filter buggy TBRs > maxBasal from MDT
-        let events = events.filter {
-            // type is optional...
-            guard let type = $0.type, type == .tempBasal else { return true }
-            return $0.dose?.unitsPerHour ?? 0 <= Double(settingsManager.pumpSettings.maxBasal)
-        }
+        let events = Self.storablePumpEvents(
+            events,
+            maxBasal: settingsManager.pumpSettings.maxBasal,
+            isMinimed: pumpManager is MinimedPumpManager
+        )
         let medtrum = pumpManager as? MedtrumPumpManager
         pumpHistoryStorage.storePumpEvents(events, diagnostics: medtrum.map { manager in
             { [weak manager] event, count in manager?.recordWork(event, count: count) }
