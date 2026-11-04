@@ -87,6 +87,51 @@ precondition(pump.pumpDelegate.issuer.issued.count == 1)
 precondition(pump.pumpDelegate.issuer.retracted.count == 4)
 print("Medtrum reminder passed: 72-hour conversion, repeated saves, due/overdue triggers, remaining-time text")
 '''.replace('RESCHEDULE', reschedule)
+# Exercise the Trio notification adapter with an in-memory notification center.
+manager = (root / 'Trio/Sources/APS/DeviceDataManager.swift').read_text()
+adapter = manager.split('private enum MedtrumExpiryNotification {', 1)[1].split('\n}', 1)[0]
+checks += r'''
+enum NotificationAction: String { case pumpConfig; static let key = "action" }
+enum Sound { case `default` }
+class UNMutableNotificationContent {
+    var title = "", body = ""
+    var sound: Sound?
+    var userInfo: [String: Any] = [:]
+}
+struct UNTimeIntervalNotificationTrigger { let timeInterval: Double; let repeats: Bool }
+struct UNNotificationRequest {
+    let identifier: String; let content: UNMutableNotificationContent; let trigger: UNTimeIntervalNotificationTrigger?
+}
+class UNUserNotificationCenter {
+    static let center = UNUserNotificationCenter()
+    static func current() -> UNUserNotificationCenter { center }
+    var pending: [String: UNNotificationRequest] = [:]
+    func removePendingNotificationRequests(withIdentifiers ids: [String]) { for id in ids { pending[id] = nil } }
+    func removeDeliveredNotifications(withIdentifiers ids: [String]) {}
+    func add(_ req: UNNotificationRequest, withCompletionHandler completion: (Error?) -> Void) {
+        pending[req.identifier] = req; completion(nil)
+    }
+}
+enum Category { case service }
+func warning(_ category: Category, _ message: String, error: Error) {}
+enum MedtrumExpiryNotification {
+ADAPTER
+}
+let center = UNUserNotificationCenter.current()
+let key = MedtrumExpiryNotification.identifier
+precondition(MedtrumExpiryNotification.matches(initial.identifier))
+MedtrumExpiryNotification.schedule(initial, enabled: true)
+precondition(center.pending[key]?.trigger?.timeInterval == .hours(72))
+MedtrumExpiryNotification.schedule(later, enabled: true)
+precondition(center.pending.count == 1 && center.pending[key]?.trigger?.timeInterval == .hours(48))
+MedtrumExpiryNotification.cancel()
+precondition(center.pending.isEmpty)
+MedtrumExpiryNotification.schedule(overdue, enabled: true)
+precondition(center.pending[key] != nil && center.pending[key]?.trigger == nil)
+MedtrumExpiryNotification.schedule(initial, enabled: false)
+precondition(center.pending.isEmpty)
+print("Trio notification adapter passed: deferred, replaced, cancelled, overdue, disabled")
+'''.replace('ADAPTER', adapter)
 with tempfile.TemporaryDirectory(prefix='medtrum-reminder-') as directory:
     swift = Path(directory) / 'main.swift'
     swift.write_text(alert + '\n' + time + '\n' + source + '\n' + checks)

@@ -98,6 +98,9 @@ final class BaseDeviceDataManager: DeviceDataManager, Injectable {
 
     var pumpManager: PumpManagerUI? {
         didSet {
+            if oldValue is MedtrumPumpManager, !(pumpManager is MedtrumPumpManager) {
+                MedtrumExpiryNotification.cancel()
+            }
             pumpManager?.pumpManagerDelegate = self
             pumpManager?.delegateQueue = processQueue
             rawPumpManager = pumpManager?.rawValue
@@ -501,6 +504,13 @@ extension BaseDeviceDataManager: PumpManagerDelegate {
     }
 
     func pumpManagerDidUpdateState(_ pumpManager: PumpManager) {
+        if let medtrum = pumpManager as? MedtrumPumpManager,
+           self.pumpManager === medtrum,
+           medtrumValueGate.accept("patchSessionEnded", owner: medtrum, value: medtrum.state.patchSessionEnded),
+           medtrum.state.patchSessionEnded
+        {
+            MedtrumExpiryNotification.cancel()
+        }
         rawPumpManager = pumpManager.rawValue
         (pumpManager as? MedtrumPumpManager)?.recordWork("rawStateSaveCalls")
         if self.pumpManager == nil, let newPumpManager = pumpManager as? PumpManagerUI {
@@ -687,6 +697,9 @@ extension BaseDeviceDataManager: PumpManagerDelegate {
 
 extension BaseDeviceDataManager: DeviceManagerDelegate {
     func issueAlert(_ alert: Alert) {
+        if MedtrumExpiryNotification.matches(alert.identifier) {
+            MedtrumExpiryNotification.schedule(alert, enabled: settingsManager.settings.notificationsPump)
+        }
         alertHistoryStorage.storeAlert(
             AlertEntry(
                 alertIdentifier: alert.identifier.alertIdentifier,
@@ -702,6 +715,9 @@ extension BaseDeviceDataManager: DeviceManagerDelegate {
     }
 
     func retractAlert(identifier: Alert.Identifier) {
+        if MedtrumExpiryNotification.matches(identifier) {
+            MedtrumExpiryNotification.cancel()
+        }
         alertHistoryStorage.deleteAlert(identifier: identifier.alertIdentifier)
     }
 
@@ -812,6 +828,10 @@ extension BaseDeviceDataManager: AlertObserver {
                 }
             }
 
+            // This reminder was submitted to iOS with its original trigger at issue time.
+            guard !MedtrumExpiryNotification
+                .matches(.init(managerIdentifier: alert.managerIdentifier, alertIdentifier: alert.alertIdentifier))
+            else { return }
             self.broadcaster.notify(pumpNotificationObserver.self, on: self.processQueue) {
                 $0.pumpNotification(alert: alert)
             }
@@ -840,6 +860,44 @@ protocol PumpTimeZoneObserver {
 
 protocol PumpDeactivatedObserver {
     func pumpDeactivatedDidChange()
+}
+
+private enum MedtrumExpiryNotification {
+    static let identifier = "com.nightscout.medtrumkit.patch-expired"
+
+    static func matches(_ alert: Alert.Identifier) -> Bool {
+        alert.managerIdentifier == "Medtrum" && alert.alertIdentifier == identifier
+    }
+
+    static func cancel() {
+        let center = UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers: [identifier])
+        center.removeDeliveredNotifications(withIdentifiers: [identifier])
+    }
+
+    static func schedule(_ alert: Alert, enabled: Bool) {
+        guard enabled else {
+            cancel()
+            return
+        }
+        let trigger: UNTimeIntervalNotificationTrigger?
+        switch alert.trigger {
+        case .immediate: trigger = nil
+        case let .delayed(interval):
+            trigger = interval > 0 ? UNTimeIntervalNotificationTrigger(timeInterval: interval, repeats: false) : nil
+        case .repeating: return // Medtrum issues a one-time patch reminder.
+        }
+        let content = UNMutableNotificationContent()
+        content.title = alert.backgroundContent.title
+        content.body = alert.backgroundContent.body
+        content.sound = .default
+        content.userInfo[NotificationAction.key] = NotificationAction.pumpConfig.rawValue
+        let center = UNUserNotificationCenter.current()
+        center.removeDeliveredNotifications(withIdentifiers: [identifier])
+        center.add(UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)) { error in
+            if let error { warning(.service, "Could not schedule Medtrum patch reminder", error: error) }
+        }
+    }
 }
 
 /// Receiver-local cache: first value (including nil), new manager and freshness deadlines pass.
