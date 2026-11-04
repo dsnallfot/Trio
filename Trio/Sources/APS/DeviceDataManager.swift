@@ -610,11 +610,17 @@ extension BaseDeviceDataManager: PumpManagerDelegate {
         }
     }
 
-    func pumpManagerWillDeactivate(_: PumpManager) {
-        dispatchPrecondition(condition: .onQueue(processQueue))
-        pumpManager = nil
-        broadcaster.notify(PumpDeactivatedObserver.self, on: processQueue) {
-            $0.pumpDeactivatedDidChange()
+    func pumpManagerWantsDeletion(_ manager: PumpManager) async {
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            processQueue.async {
+                defer { continuation.resume() }
+                // A delayed callback from a previous manager must not remove its replacement.
+                guard self.pumpManager === manager else { return }
+                self.pumpManager = nil
+                self.broadcaster.notify(PumpDeactivatedObserver.self, on: self.processQueue) {
+                    $0.pumpDeactivatedDidChange()
+                }
+            }
         }
     }
 

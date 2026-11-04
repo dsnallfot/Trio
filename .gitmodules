@@ -9,7 +9,7 @@
 [submodule "dexcom-share-client-swift"]
 	path = dexcom-share-client-swift
 	url = https://github.com/loopandlearn/dexcom-share-client-swift.git
-	branch = trio-next-dev
+	branch = next-dev
 [submodule "RileyLinkKit"]
 	path = RileyLinkKit
 	url = https://github.com/loopandlearn/RileyLinkKit
