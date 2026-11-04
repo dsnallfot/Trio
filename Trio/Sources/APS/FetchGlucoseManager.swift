@@ -123,8 +123,8 @@ final class BaseFetchGlucoseManager: FetchGlucoseManager, Injectable {
     private func updateManagerUnits(_ manager: CGMManagerUI?) {
         let units = settingsManager.settings.units
         let managerName = cgmManager.map { "\(type(of: $0))" } ?? "nil"
-        let loopkitUnits: HKUnit = units == .mgdL ? .milligramsPerDeciliter : .millimolesPerLiter
-        print("manager: \(managerName) is changing units to: \(loopkitUnits.description) ")
+        let loopkitUnits: LoopUnit = units == .mgdL ? .milligramsPerDeciliter : .millimolesPerLiter
+        print("manager: \(managerName) is changing units to: \(loopkitUnits.unitString) ")
         manager?.unitDidChange(to: loopkitUnits)
     }
 

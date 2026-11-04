@@ -159,6 +159,7 @@ extension Home {
             guard !state.pumpName.isEmpty else { return nil }
             let status: BasalDeliveryReadout.Status?
             switch state.apsManager.pumpManager?.status.basalDeliveryState {
+            case .pumpInoperable: return "Pump otillgänglig"
             case .active: status = .active
             case .suspended: status = .suspended
             case let .tempBasal(dose):

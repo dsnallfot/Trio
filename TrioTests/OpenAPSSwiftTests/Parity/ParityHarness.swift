@@ -18,8 +18,13 @@ enum ParityHarness {
         ProcessInfo.processInfo.environment["TRIO_RECORD_GOLDENS"] == "1"
     }
 
+    private final class BundleMarker {}
+
     static var goldensDirectory: URL {
-        URL(fileURLWithPath: #filePath)
+        if !isRecording, let fixtures = Bundle(for: BundleMarker.self).url(forResource: "goldens", withExtension: nil) {
+            return fixtures
+        }
+        return URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
             .appendingPathComponent("goldens")
     }

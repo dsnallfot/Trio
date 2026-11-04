@@ -3,10 +3,6 @@
    <BuildAction parallelizeBuildables="NO" buildImplicitDependencies="YES">
       <BuildActionEntries>
          <BuildActionEntry buildForTesting="YES" buildForRunning="YES" buildForProfiling="YES" buildForArchiving="YES" buildForAnalyzing="YES">
-            <BuildableReference BuildableIdentifier="primary" BlueprintIdentifier="LoopAlgorithm" BuildableName="LoopAlgorithm" BlueprintName="LoopAlgorithm" ReferencedContainer="container:LoopAlgorithm">
-            </BuildableReference>
-         </BuildActionEntry>
-         <BuildActionEntry buildForTesting="YES" buildForRunning="YES" buildForProfiling="YES" buildForArchiving="YES" buildForAnalyzing="YES">
             <BuildableReference BuildableIdentifier="primary" BlueprintIdentifier="43D8FDCA1C728FDF0073BE78" BuildableName="LoopKit.framework" BlueprintName="LoopKit" ReferencedContainer="container:LoopKit/LoopKit.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>

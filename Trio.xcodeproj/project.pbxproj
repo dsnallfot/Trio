@@ -264,7 +264,6 @@
 		5A2325582BFCC168003518CA /* NightscoutConnectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A2325572BFCC168003518CA /* NightscoutConnectView.swift */; };
 		5AABDFB22D93FFDF003008DD /* DeleteCarbEntryIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AABDFB12D93FFDC003008DD /* DeleteCarbEntryIntent.swift */; };
 		5D16287A969E64D18CE40E44 /* PumpConfigStateModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F60E97100041040446F44E7 /* PumpConfigStateModel.swift */; };
-		5E12FE112EBC0000000000A2 /* LoopAlgorithm in Frameworks */ = {isa = PBXBuildFile; productRef = 5E12FE112EBC0000000000A1 /* LoopAlgorithm */; };
 		63E890B4D951EAA91C071D5C /* BasalProfileEditorStateModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAFF91130F2FCCC7EBBA11AD /* BasalProfileEditorStateModel.swift */; };
 		642F76A05A4FF530463A9FD0 /* NightscoutConfigRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8782B44544F38F2B2D82C38E /* NightscoutConfigRootView.swift */; };
 		65070A332BFDCB83006F213F /* TidepoolStartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65070A322BFDCB83006F213F /* TidepoolStartView.swift */; };
@@ -1408,7 +1407,7 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		BDFF7A9E2D25FA970016C40C /* Preview Content */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "Preview Content"; sourceTree = "<group>"; };
 		C0DE00000000000000000021 /* Trio/Sources/APS/OpenAPSSwift */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Trio/Sources/APS/OpenAPSSwift; sourceTree = SOURCE_ROOT; };
-		C0DE00000000000000000022 /* TrioTests/OpenAPSSwiftTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = TrioTests/OpenAPSSwiftTests; sourceTree = SOURCE_ROOT; };
+		C0DE00000000000000000022 /* TrioTests/OpenAPSSwiftTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = ("Parity/goldens",); path = TrioTests/OpenAPSSwiftTests; sourceTree = SOURCE_ROOT; };
 		DDCEBF412CC1B42500DF4C36 /* Views */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Views; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
@@ -1421,7 +1420,6 @@
 				38E87403274F78C000975559 /* libswiftCoreNFC.tbd in Frameworks */,
 				38E87401274F77E400975559 /* CoreNFC.framework in Frameworks */,
 				CE51DD1C2A01970900F163F7 /* ConnectIQ 2.xcframework in Frameworks */,
-				5E12FE112EBC0000000000A2 /* LoopAlgorithm in Frameworks */,
 				3811DE1025C9D37700A708ED /* Swinject in Frameworks */,
 				B958F1B72BA0711600484851 /* MKRingProgressView in Frameworks */,
 				3E54EF2C2E476DA40006F54D /* MedtrumKit.framework in Frameworks */,
@@ -3374,7 +3372,6 @@
 			);
 			name = Trio;
 			packageProductDependencies = (
-				5E12FE112EBC0000000000A1 /* LoopAlgorithm */,
 				3811DE0F25C9D37700A708ED /* Swinject */,
 				38B17B6525DD90E0005CAE3D /* SwiftDate */,
 				3833B46C26012030003021B3 /* Algorithms */,
@@ -3550,7 +3547,6 @@
 			);
 			mainGroup = 388E594F25AD948C0019842D;
 			packageReferences = (
-				5E12FE112EBC0000000000A0 /* XCLocalSwiftPackageReference "LoopAlgorithm" */,
 				3811DE0E25C9D37700A708ED /* XCRemoteSwiftPackageReference "Swinject" */,
 				38B17B6425DD90E0005CAE3D /* XCRemoteSwiftPackageReference "SwiftDate" */,
 				3833B46B26012030003021B3 /* XCRemoteSwiftPackageReference "swift-algorithms" */,
@@ -4984,10 +4980,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		5E12FE112EBC0000000000A0 /* XCLocalSwiftPackageReference "LoopAlgorithm" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = LoopAlgorithm;
-		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -5061,11 +5053,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 38DF1787276FC8C300B3528F /* XCRemoteSwiftPackageReference "SwiftMessages" */;
 			productName = SwiftMessages;
-		};
-		5E12FE112EBC0000000000A1 /* LoopAlgorithm */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 5E12FE112EBC0000000000A0 /* XCLocalSwiftPackageReference "LoopAlgorithm" */;
-			productName = LoopAlgorithm;
 		};
 		B958F1B62BA0711600484851 /* MKRingProgressView */ = {
 			isa = XCSwiftPackageProductDependency;

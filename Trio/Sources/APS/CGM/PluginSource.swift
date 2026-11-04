@@ -201,25 +201,20 @@ extension PluginSource: CGMManagerDelegate {
 
     func retractAlert(identifier _: LoopKit.Alert.Identifier) {}
 
-    func doesIssuedAlertExist(identifier _: LoopKit.Alert.Identifier, completion _: @escaping (Result<Bool, Error>) -> Void) {}
+    func doesIssuedAlertExist(identifier _: LoopKit.Alert.Identifier) async throws -> Bool { false }
 
-    func lookupAllUnretracted(
-        managerIdentifier _: String,
-        completion _: @escaping (Result<[LoopKit.PersistedAlert], Error>) -> Void
-    ) {}
+    func lookupAllUnretracted(managerIdentifier _: String) async throws -> [LoopKit.PersistedAlert] { [] }
 
-    func lookupAllUnacknowledgedUnretracted(
-        managerIdentifier _: String,
-        completion _: @escaping (Result<[LoopKit.PersistedAlert], Error>) -> Void
-    ) {}
+    func lookupAllUnacknowledgedUnretracted(managerIdentifier _: String) async throws -> [LoopKit.PersistedAlert] { [] }
 
-    func recordRetractedAlert(_: LoopKit.Alert, at _: Date) {}
+    func recordRetractedAlert(_: LoopKit.Alert, at _: Date) async throws {}
 
-    func cgmManagerWantsDeletion(_ manager: CGMManager) {
-        dispatchPrecondition(condition: .onQueue(processQueue))
+    func cgmManagerWantsDeletion(_ manager: CGMManager) async {
         debug(.deviceManager, " CGM Manager with identifier \(manager.pluginIdentifier) wants deletion")
-        // TODO:
-        glucoseManager?.cgmGlucoseSourceType = .none
+        await MainActor.run {
+            guard let source = glucoseManager, source.cgmManager === manager else { return }
+            source.deleteGlucoseSource()
+        }
     }
 
     func cgmManager(_: CGMManager, hasNew readingResult: CGMReadingResult) {

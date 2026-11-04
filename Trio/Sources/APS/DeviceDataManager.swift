@@ -44,11 +44,11 @@ private let staticPumpManagers: [PumpManagerUI.Type] = [
 ]
 
 private let staticPumpManagersByIdentifier: [String: PumpManagerUI.Type] = [
-    MinimedPumpManager.pluginIdentifier: MinimedPumpManager.self,
-    OmniPumpManager.pluginIdentifier: OmniPumpManager.self,
-    DanaKitPumpManager.pluginIdentifier: DanaKitPumpManager.self,
-    MedtrumPumpManager.pluginIdentifier: MedtrumPumpManager.self,
-    MockPumpManager.pluginIdentifier: MockPumpManager.self
+    "Minimed500": MinimedPumpManager.self,
+    "Omni": OmniPumpManager.self,
+    "Dana": DanaKitPumpManager.self,
+    "Medtrum": MedtrumPumpManager.self,
+    "MockPumpManager": MockPumpManager.self
 ]
 
 private let accessLock = NSRecursiveLock(label: "BaseDeviceDataManager.accessLock")
@@ -131,8 +131,8 @@ final class BaseDeviceDataManager: DeviceDataManager, Injectable {
                 // determines are within the user's configured maxBasal.
                 let pumpSettings = settingsManager.pumpSettings
                 let deliveryLimits = DeliveryLimits(
-                    maximumBasalRate: HKQuantity(unit: .internationalUnitsPerHour, doubleValue: Double(pumpSettings.maxBasal)),
-                    maximumBolus: HKQuantity(unit: .internationalUnit(), doubleValue: Double(pumpSettings.maxBolus))
+                    maximumBasalRate: LoopQuantity(unit: .internationalUnitsPerHour, doubleValue: Double(pumpSettings.maxBasal)),
+                    maximumBolus: LoopQuantity(unit: .internationalUnit, doubleValue: Double(pumpSettings.maxBolus))
                 )
 
                 processQueue.async {
@@ -464,6 +464,8 @@ final class BaseDeviceDataManager: DeviceDataManager, Injectable {
 // MARK: - PumpManagerDelegate
 
 extension BaseDeviceDataManager: PumpManagerDelegate {
+    var automatedTreatmentState: AutomatedTreatmentState? { nil }
+
     /// Discard known Minimed history decoding errors while preserving other pumps' delivered doses.
     static func storablePumpEvents(_ events: [NewPumpEvent], maxBasal: Decimal, isMinimed: Bool) -> [NewPumpEvent] {
         guard isMinimed else { return events }
@@ -703,20 +705,13 @@ extension BaseDeviceDataManager: DeviceManagerDelegate {
         alertHistoryStorage.deleteAlert(identifier: identifier.alertIdentifier)
     }
 
-    func doesIssuedAlertExist(identifier _: Alert.Identifier, completion _: @escaping (Result<Bool, Error>) -> Void) {
-        debug(.deviceManager, "doesIssueAlertExist")
-    }
+    func doesIssuedAlertExist(identifier _: Alert.Identifier) async throws -> Bool { false }
 
-    func lookupAllUnretracted(managerIdentifier _: String, completion _: @escaping (Result<[PersistedAlert], Error>) -> Void) {
-        debug(.deviceManager, "lookupAllUnretracted")
-    }
+    func lookupAllUnretracted(managerIdentifier _: String) async throws -> [PersistedAlert] { [] }
 
-    func lookupAllUnacknowledgedUnretracted(
-        managerIdentifier _: String,
-        completion _: @escaping (Result<[PersistedAlert], Error>) -> Void
-    ) {}
+    func lookupAllUnacknowledgedUnretracted(managerIdentifier _: String) async throws -> [PersistedAlert] { [] }
 
-    func recordRetractedAlert(_: Alert, at _: Date) {}
+    func recordRetractedAlert(_: Alert, at _: Date) async throws {}
 
     func removeNotificationRequests(for _: DeviceManager, identifiers: [String]) {
         DispatchQueue.main.async {
@@ -781,7 +776,7 @@ extension BaseDeviceDataManager: CGMManagerDelegate {
 
     func cgmManager(_: LoopKit.CGMManager, hasNew _: [LoopKit.PersistedCgmEvent]) {}
 
-    func cgmManagerWantsDeletion(_: CGMManager) {}
+    func cgmManagerWantsDeletion(_: CGMManager) async {}
 
     func cgmManagerDidUpdateState(_: CGMManager) {}
 
@@ -805,12 +800,15 @@ extension BaseDeviceDataManager: AlertObserver {
         let alertIssueDate = alert.issuedDate
 
         processQueue.async {
-            self.pumpManager?.acknowledgeAlert(alertIdentifier: alert.alertIdentifier) { error in
-                if let error = error {
-                    self.alertHistoryStorage.ackAlert(alertIssueDate, error.localizedDescription)
-                    debug(.deviceManager, "acknowledge not succeeded with error \(error.localizedDescription)")
-                } else {
-                    self.alertHistoryStorage.ackAlert(alertIssueDate, nil)
+            if let pump = self.pumpManager {
+                Task {
+                    do {
+                        try await pump.acknowledgeAlert(alertIdentifier: alert.alertIdentifier)
+                        self.alertHistoryStorage.ackAlert(alertIssueDate, nil)
+                    } catch {
+                        self.alertHistoryStorage.ackAlert(alertIssueDate, error.localizedDescription)
+                        debug(.deviceManager, "acknowledge not succeeded with error \(error.localizedDescription)")
+                    }
                 }
             }
 

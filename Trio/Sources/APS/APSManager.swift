@@ -608,7 +608,8 @@ final class BaseAPSManager: APSManager, Injectable {
         guard let state = pumpManager?.status.basalDeliveryState else { return fetchedTempBasal }
 
         switch state {
-        case .active:
+        case .active,
+             .pumpInoperable:
             return TempBasal(duration: 0, rate: 0, temp: .absolute, timestamp: date)
         case let .tempBasal(dose):
             let rate = Decimal(dose.unitsPerHour)
@@ -1343,8 +1344,11 @@ final class BaseAPSManager: APSManager, Injectable {
 
 private extension PumpManager {
     func enactTempBasal(unitsPerHour: Double, for duration: TimeInterval) async throws {
+        guard status.basalDeliveryState != .pumpInoperable else {
+            throw APSError.invalidPumpState(message: "Pump otillgänglig")
+        }
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            self.enactTempBasal(unitsPerHour: unitsPerHour, for: duration) { error in
+            self.enactTempBasal(decisionId: nil, unitsPerHour: unitsPerHour, for: duration) { error in
                 if let error = error {
                     debug(.apsManager, "Temp basal failed: \(unitsPerHour) for: \(duration)")
                     continuation.resume(throwing: error)
@@ -1357,10 +1361,13 @@ private extension PumpManager {
     }
 
     func enactBolus(units: Double, automatic: Bool) async throws {
+        guard status.basalDeliveryState != .pumpInoperable else {
+            throw APSError.invalidPumpState(message: "Pump otillgänglig")
+        }
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             let automaticValue = automatic ? BolusActivationType.automatic : BolusActivationType.manualRecommendationAccepted
 
-            self.enactBolus(units: units, activationType: automaticValue) { error in
+            self.enactBolus(decisionId: nil, units: units, activationType: automaticValue) { error in
                 if let error = error {
                     debug(.apsManager, "Bolus failed: \(units)")
                     continuation.resume(throwing: error)
@@ -1486,7 +1493,8 @@ extension BaseAPSManager: DoseProgressObserver {
 extension PumpManagerStatus {
     var pumpStatus: PumpStatus {
         let bolusing = bolusState != .noBolus
-        let suspended = basalDeliveryState?.isSuspended ?? true
+        // A halted patch or faulted pod reports .pumpInoperable; never loop against it.
+        let suspended = basalDeliveryState.map { $0.isSuspended || $0 == .pumpInoperable } ?? true
         let type = suspended ? StatusType.suspended : (bolusing ? .bolusing : .normal)
         return PumpStatus(status: type, bolusing: bolusing, suspended: suspended, timestamp: Date())
     }

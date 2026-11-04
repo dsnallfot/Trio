@@ -40,8 +40,10 @@ precondition(!expired.backgroundContent.body.contains("-"))
 final class Issuer {
     var issued: [Alert] = []
     var retracted: [Alert.Identifier] = []
-    func retractAlert(identifier: Alert.Identifier) { retracted.append(identifier) }
-    func issueAlert(_ alert: Alert) { issued.append(alert) }
+    let retraction = DispatchSemaphore(value: 0)
+    let issuance = DispatchSemaphore(value: 0)
+    func retractAlert(identifier: Alert.Identifier) async { retracted.append(identifier); retraction.signal() }
+    func issueAlert(_ alert: Alert) async { issued.append(alert); issuance.signal() }
 }
 final class Delegate {
     let issuer = Issuer()
@@ -63,19 +65,24 @@ func reschedule(_ pumpManager: Pump) {
 }
 let pump = Pump()
 reschedule(pump)
+precondition(pump.pumpDelegate.issuer.retraction.wait(timeout: .now() + 3) == .success)
 precondition(pump.pumpDelegate.issuer.retracted.count == 1)
+precondition(pump.pumpDelegate.issuer.issuance.wait(timeout: .now() + 3) == .success)
 let scheduled = pump.pumpDelegate.issuer.issued.last!
 if case let .delayed(interval) = scheduled.trigger {
     precondition(abs(interval - .hours(48)) < 5)
 } else { preconditionFailure("Expected delay until original activation + 72 hours") }
 pump.state.expiryMode = .extended
 reschedule(pump)
+precondition(pump.pumpDelegate.issuer.retraction.wait(timeout: .now() + 3) == .success)
 pump.state.expiryMode = .default
 pump.state.patchActivatedAt = nil
 reschedule(pump)
+precondition(pump.pumpDelegate.issuer.retraction.wait(timeout: .now() + 3) == .success)
 pump.state.patchActivatedAt = Date()
 pump.state.patchId = Data()
 reschedule(pump)
+precondition(pump.pumpDelegate.issuer.retraction.wait(timeout: .now() + 3) == .success)
 precondition(pump.pumpDelegate.issuer.issued.count == 1)
 precondition(pump.pumpDelegate.issuer.retracted.count == 4)
 print("Medtrum reminder passed: 72-hour conversion, repeated saves, due/overdue triggers, remaining-time text")

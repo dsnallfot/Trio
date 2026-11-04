@@ -219,7 +219,7 @@ extension BaseTidepoolManager: ServiceDelegate {
         startDate _: Date?
     ) async throws {}
 
-    func deliverRemoteBolus(amountInUnits _: Double) async throws {}
+    func deliverRemoteBolus(amountInUnits _: Double, decisionId _: UUID?) async throws {}
 }
 
 /// Carb Upload and Deletion Functionality
@@ -237,16 +237,14 @@ extension BaseTidepoolManager {
                 let syncCarb: [SyncCarbObject] = Array(chunk).map {
                     $0.convertSyncCarb()
                 }
-                tidepoolService.uploadCarbData(created: syncCarb, updated: [], deleted: []) { result in
-                    switch result {
-                    case let .failure(error):
-                        debug(.nightscout, "Error synchronizing carbs data with Tidepool: \(String(describing: error))")
-                    case .success:
+                Task {
+                    do {
+                        try await tidepoolService.uploadCarbData(created: syncCarb, updated: [], deleted: [])
                         debug(.nightscout, "Success synchronizing carbs data. Upload to Tidepool complete.")
                         // After successful upload, update the isUploadedToTidepool flag in Core Data
-                        Task {
-                            await self.updateCarbsAsUploaded(Array(chunk))
-                        }
+                        await self.updateCarbsAsUploaded(Array(chunk))
+                    } catch {
+                        debug(.nightscout, "Error synchronizing carbs data with Tidepool: \(String(describing: error))")
                     }
                 }
             }
@@ -297,12 +295,12 @@ extension BaseTidepoolManager {
                 supercededDate: nil
             )]
 
-            tidepoolService.uploadCarbData(created: [], updated: [], deleted: syncCarb) { result in
-                switch result {
-                case let .failure(error):
-                    debug(.nightscout, "Error synchronizing carbs data with Tidepool: \(String(describing: error))")
-                case .success:
+            Task {
+                do {
+                    try await tidepoolService.uploadCarbData(created: [], updated: [], deleted: syncCarb)
                     debug(.nightscout, "Success synchronizing carbs data. Upload to Tidepool complete.")
+                } catch {
+                    debug(.nightscout, "Error synchronizing carbs data with Tidepool: \(String(describing: error))")
                 }
             }
         }
@@ -349,6 +347,7 @@ extension BaseTidepoolManager {
                         endDate: event.timestamp,
                         value: Double(amount),
                         unit: .units,
+                        decisionId: nil,
                         deliveredUnits: nil,
                         syncIdentifier: event.id,
                         scheduledBasalRate: nil,
@@ -392,33 +391,26 @@ extension BaseTidepoolManager {
             }
 
             self.processQueue.async {
-                tidepoolService.uploadDoseData(created: insulinDoseEvents, deleted: []) { result in
-                    switch result {
-                    case let .failure(error):
-                        debug(.nightscout, "Error synchronizing dose data with Tidepool: \(String(describing: error))")
-                    case .success:
+                Task {
+                    do {
+                        try await tidepoolService.uploadDoseData(created: insulinDoseEvents, deleted: [])
                         debug(.nightscout, "Success synchronizing dose data. Upload to Tidepool complete.")
-                        Task {
-                            let insulinEvents = events.filter {
-                                $0.type == .tempBasal || $0.type == .tempBasalDuration || $0.type == .bolus
-                            }
-                            await self.updateInsulinAsUploaded(insulinEvents)
+                        let insulinEvents = events.filter {
+                            $0.type == .tempBasal || $0.type == .tempBasalDuration || $0.type == .bolus
                         }
+                        await self.updateInsulinAsUploaded(insulinEvents)
+                    } catch {
+                        debug(.nightscout, "Error synchronizing dose data with Tidepool: \(String(describing: error))")
                     }
                 }
 
-                tidepoolService.uploadPumpEventData(pumpEvents) { result in
-                    switch result {
-                    case let .failure(error):
-                        debug(.nightscout, "Error synchronizing pump events data: \(String(describing: error))")
-                    case .success:
+                Task {
+                    do {
+                        try await tidepoolService.uploadPumpEventData(pumpEvents)
                         // Daniel: Minska loggning // debug(.nightscout, "Success synchronizing pump events data. Upload to Tidepool complete.")
-                        Task {
-                            let pumpEventType = events.map { $0.type.mapEventTypeToPumpEventType() }
-                            let pumpEvents = events.filter { _ in pumpEventType.contains(pumpEventType) }
-
-                            await self.updateInsulinAsUploaded(pumpEvents)
-                        }
+                        await self.updateInsulinAsUploaded(events.filter { $0.type.mapEventTypeToPumpEventType() != nil })
+                    } catch {
+                        debug(.nightscout, "Error synchronizing pump events data: \(String(describing: error))")
                     }
                 }
             }
@@ -456,16 +448,17 @@ extension BaseTidepoolManager {
             startDate: at,
             value: Double(amount),
             unit: .units,
+            decisionId: nil,
             syncIdentifier: id
         )]
 
         processQueue.async {
-            tidepoolService.uploadDoseData(created: [], deleted: doseDataToDelete) { result in
-                switch result {
-                case let .failure(error):
-                    debug(.nightscout, "Error synchronizing Dose delete data: \(String(describing: error))")
-                case .success:
+            Task {
+                do {
+                    try await tidepoolService.uploadDoseData(created: [], deleted: doseDataToDelete)
                     debug(.nightscout, "Success synchronizing Dose delete data")
+                } catch {
+                    debug(.nightscout, "Error synchronizing Dose delete data: \(String(describing: error))")
                 }
             }
         }
@@ -518,6 +511,7 @@ extension BaseTidepoolManager {
                                 endDate: adjustedEndDate,
                                 value: adjustedDeliveredUnits,
                                 unit: .units,
+                                decisionId: nil,
                                 deliveredUnits: adjustedDeliveredUnits,
                                 syncIdentifier: predecessorEntrySyncIdentifier,
                                 insulinType: self.apsManager.pumpManager?.status.insulinType ?? nil,
@@ -539,9 +533,10 @@ extension BaseTidepoolManager {
                     endDate: currentEndDate,
                     value: Double(value),
                     unit: .units,
+                    decisionId: nil,
                     deliveredUnits: Double(value),
                     syncIdentifier: event.id,
-                    scheduledBasalRate: HKQuantity(
+                    scheduledBasalRate: LoopQuantity(
                         unit: .internationalUnitsPerHour,
                         doubleValue: Double(currentBasalRate.rate)
                     ),
@@ -626,16 +621,14 @@ extension BaseTidepoolManager {
 
         processQueue.async {
             for chunk in chunks {
-                tidepoolService.uploadGlucoseData(chunk) { result in
-                    switch result {
-                    case .success:
+                Task {
+                    do {
+                        try await tidepoolService.uploadGlucoseData(chunk)
                         // Daniel: Minska loggning // debug(.nightscout, "Success synchronizing glucose data")
 
                         // After successful upload, update the isUploadedToTidepool flag in Core Data
-                        Task {
-                            await self.updateGlucoseAsUploaded(glucose)
-                        }
-                    case let .failure(error):
+                        await self.updateGlucoseAsUploaded(chunk)
+                    } catch {
                         debug(.nightscout, "Error synchronizing glucose data: \(String(describing: error))")
                     }
                 }
@@ -703,17 +696,18 @@ extension BaseTidepoolManager {
         let cgmDevice = fetchGlucoseManager?.cgmManager?.cgmManagerStatus.device
 
         // Convert Trio settings to StoredSettings format using adapter
-        guard let settings = settingsAdapter.createStoredSettings(cgmDevice: cgmDevice) else {
+        guard let (settings, activeOverride) = settingsAdapter.createStoredSettings(cgmDevice: cgmDevice) else {
             return
         }
 
-        tidepoolService.uploadSettingsData([settings]) { result in
-            switch result {
-            case .success:
-                debug(.service, "Settings uploaded to Tidepool (syncId: \(settings.syncIdentifier))")
-            case let .failure(error):
-                debug(.service, "Failed to upload settings to Tidepool: \(error)")
+        do {
+            try await tidepoolService.uploadSettingsData([settings])
+            if let activeOverride {
+                try await tidepoolService.uploadTemporaryOverrideData(updated: [activeOverride], deleted: [])
             }
+            debug(.service, "Settings uploaded to Tidepool (syncId: \(settings.syncIdentifier))")
+        } catch {
+            debug(.service, "Failed to upload settings to Tidepool: \(error)")
         }
     }
 }

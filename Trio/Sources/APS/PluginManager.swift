@@ -81,7 +81,7 @@ class BasePluginManager: Injectable, PluginManager {
                 return nil
             }
 
-            return PumpManagerDescriptor(identifier: identifier, localizedTitle: title)
+            return PumpManagerDescriptor(identifier: identifier, localizedTitle: title, manufacturer: nil, image: nil)
         })
     }
 
@@ -120,7 +120,7 @@ class BasePluginManager: Injectable, PluginManager {
                 return nil
             }
 
-            return CGMManagerDescriptor(identifier: identifier, localizedTitle: title)
+            return CGMManagerDescriptor(identifier: identifier, localizedTitle: title, manufacturer: nil, image: nil)
         })
     }
 
@@ -158,7 +158,7 @@ class BasePluginManager: Injectable, PluginManager {
                 return nil
             }
 
-            return ServiceDescriptor(identifier: identifier, localizedTitle: title)
+            return ServiceDescriptor(identifier: identifier, localizedTitle: title, category: nil, image: nil)
         })
     }
 
@@ -226,7 +226,7 @@ class BasePluginManager: Injectable, PluginManager {
         })
     }
 
-    func getSupportUITypeByIdentifier(_ identifier: String) -> SupportUI.Type? {
+    @MainActor func getSupportUITypeByIdentifier(_ identifier: String) -> SupportUI.Type? {
         for bundle in pluginBundles {
             if let name = bundle.object(forInfoDictionaryKey: LoopPluginBundleKey.supportIdentifier.rawValue) as? String,
                name == identifier

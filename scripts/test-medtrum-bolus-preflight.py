@@ -107,7 +107,7 @@ precondition(outcome(noBolus) == "connection")
 print("PASS: disconnected / failed read / absent / truncated preserve pending dose; fresh active blocks; explicit completion permits; no-bolus path preserves communication error")
 '''
 # Check that both command paths use preflight and that reconnection cannot guess completion.
-for signature, packet in [('    func enactBolus(', 'SetBolusPacket'), ('    func enactTempBasal(\n        unitsPerHour: Double,\n        duration:', 'CancelTempBasalPacket')]:
+for signature, packet in [('    func enactBolus(', 'SetBolusPacket'), ('    func enactTempBasal(\n        decisionId: UUID?,\n        unitsPerHour: Double,\n        duration:', 'CancelTempBasalPacket')]:
     body = method(manager, signature)
     assert 'prepareForDeliveryCommand' in body and packet in body, body
 fallback = method(manager, '    func checkBolusDone()')

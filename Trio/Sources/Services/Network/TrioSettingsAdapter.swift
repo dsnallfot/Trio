@@ -22,7 +22,7 @@ final class TrioSettingsAdapter: Injectable {
 
     /// Creates a StoredSettings object from current Trio settings
     /// - Parameter cgmDevice: Optional CGM device info (pass from FetchGlucoseManager to avoid circular dependency)
-    func createStoredSettings(cgmDevice: HKDevice? = nil) -> StoredSettings? {
+    func createStoredSettings(cgmDevice: HKDevice? = nil) -> (StoredSettings, TemporaryScheduleOverride?)? {
         // Load all therapy settings from JSON files
         guard let basalProfile: [BasalProfileEntry] = storage
             .retrieve(OpenAPS.Settings.basalProfile, as: [BasalProfileEntry].self),
@@ -56,7 +56,7 @@ final class TrioSettingsAdapter: Injectable {
         // (TidepoolManager → TrioSettingsAdapter → FetchGlucoseManager → TidepoolManager)
 
         // Get blood glucose unit
-        let bgUnit: HKUnit = settingsManager.settings.units == .mmolL ? .millimolesPerLiter : .milligramsPerDeciliter
+        let bgUnit: LoopUnit = settingsManager.settings.units == .mmolL ? .millimolesPerLiter : .milligramsPerDeciliter
 
         // Get suspend threshold from preferences
         let mgdlToMmol = 18.0
@@ -75,16 +75,13 @@ final class TrioSettingsAdapter: Injectable {
             ?? convertActiveTempTarget(bgUnit: bgUnit)
 
         // Create StoredSettings
-        return StoredSettings(
+        let settings = StoredSettings(
             date: Date(),
             controllerTimeZone: TimeZone.current,
             dosingEnabled: settingsManager.settings.dosingMode.allowsAutomation,
             glucoseTargetRangeSchedule: glucoseTargetRangeSchedule,
             preMealTargetRange: nil, // Trio doesn't have a separate pre-meal target
-            workoutTargetRange: nil, // Trio doesn't have a separate workout target
-            overridePresets: overridePresets,
-            scheduleOverride: scheduleOverride,
-            preMealOverride: nil,
+            overridePresets: overridePresets ?? [],
             maximumBasalRatePerHour: Double(truncating: pumpSettings.maxBasal as NSDecimalNumber),
             maximumBolus: Double(truncating: pumpSettings.maxBolus as NSDecimalNumber),
             suspendThreshold: suspendThreshold,
@@ -109,6 +106,7 @@ final class TrioSettingsAdapter: Injectable {
                 scheduleOverride: scheduleOverride
             )
         )
+        return (settings, scheduleOverride)
     }
 
     // MARK: - Conversion Methods
@@ -130,11 +128,11 @@ final class TrioSettingsAdapter: Injectable {
             return RepeatingScheduleValue(startTime: startTime, value: Double(truncating: entry.ratio as NSDecimalNumber))
         }
 
-        return CarbRatioSchedule(unit: .gram(), dailyItems: items, timeZone: TimeZone.current)
+        return CarbRatioSchedule(unit: .gram, dailyItems: items, timeZone: TimeZone.current)
     }
 
     private func convertInsulinSensitivities(_ sensitivities: InsulinSensitivities) -> InsulinSensitivitySchedule? {
-        let unit: HKUnit = sensitivities.units == .mgdL ? .milligramsPerDeciliter : .millimolesPerLiter
+        let unit: LoopUnit = sensitivities.units == .mgdL ? .milligramsPerDeciliter : .millimolesPerLiter
 
         let items = sensitivities.sensitivities.map { entry in
             // offset is in minutes from midnight
@@ -146,7 +144,7 @@ final class TrioSettingsAdapter: Injectable {
     }
 
     private func convertBGTargets(_ bgTargets: BGTargets) -> GlucoseRangeSchedule? {
-        let unit: HKUnit = bgTargets.units == .mgdL ? .milligramsPerDeciliter : .millimolesPerLiter
+        let unit: LoopUnit = bgTargets.units == .mgdL ? .milligramsPerDeciliter : .millimolesPerLiter
 
         let items = bgTargets.targets.map { entry in
             // offset is in minutes from midnight
@@ -169,7 +167,7 @@ final class TrioSettingsAdapter: Injectable {
         let insulinNeedsScaleFactor: Double?
     }
 
-    private func convertOverridePresets() -> [TemporaryScheduleOverridePreset]? {
+    private func convertOverridePresets() -> [TemporaryPreset]? {
         var presetDataList: [PresetData] = []
 
         coreDataContext.performAndWait {
@@ -226,18 +224,18 @@ final class TrioSettingsAdapter: Injectable {
         }
 
         // Convert to LoopKit format (outside Core Data context, using extracted values)
-        let bgUnit: HKUnit = settingsManager.settings.units == .mmolL ? .millimolesPerLiter : .milligramsPerDeciliter
+        let bgUnit: LoopUnit = settingsManager.settings.units == .mmolL ? .millimolesPerLiter : .milligramsPerDeciliter
 
-        return presetDataList.map { presetData -> TemporaryScheduleOverridePreset in
+        return presetDataList.map { presetData -> TemporaryPreset in
             let mgdlToMmol = 18.018
 
-            let targetRange: ClosedRange<HKQuantity>? = presetData.target.map { targetMgdl in
+            let targetRange: ClosedRange<LoopQuantity>? = presetData.target.map { targetMgdl in
                 let v = (bgUnit == .milligramsPerDeciliter) ? targetMgdl : (targetMgdl / mgdlToMmol)
-                let q = HKQuantity(unit: bgUnit, doubleValue: v)
+                let q = LoopQuantity(unit: bgUnit, doubleValue: v)
                 return q ... q
             }
 
-            let settings = TemporaryScheduleOverrideSettings(
+            let settings = TemporaryPresetSettings(
                 targetRange: targetRange,
                 insulinNeedsScaleFactor: presetData.insulinNeedsScaleFactor
             )
@@ -246,9 +244,9 @@ final class TrioSettingsAdapter: Injectable {
                 ? .indefinite
                 : .finite(presetData.duration * 60)
 
-            return TemporaryScheduleOverridePreset(
-                id: deterministicPresetId(presetData),
-                symbol: String(presetData.name.prefix(1).uppercased()),
+            return TemporaryPreset(
+                id: deterministicPresetId(presetData).uuidString,
+                symbol: .emoji(presetData.name.prefix(1).uppercased()),
                 name: presetData.name,
                 settings: settings,
                 duration: duration
@@ -278,7 +276,7 @@ final class TrioSettingsAdapter: Injectable {
 
     /// Converts the currently active Profile Override to a TemporaryScheduleOverride
     /// Profile Overrides can affect ISF, CR, and have a percentage-based insulin needs scale factor
-    private func convertActiveProfileOverride(bgUnit: HKUnit) -> TemporaryScheduleOverride? {
+    private func convertActiveProfileOverride(bgUnit: LoopUnit) -> TemporaryScheduleOverride? {
         // Struct to hold extracted values from Core Data (thread-safe)
         struct OverrideData {
             let percentage: Double
@@ -329,9 +327,9 @@ final class TrioSettingsAdapter: Injectable {
 
         // Build target range if override has a target
         let mgdlToMmol = 18.018
-        let targetRange: ClosedRange<HKQuantity>? = data.target.map { targetMgdl in
+        let targetRange: ClosedRange<LoopQuantity>? = data.target.map { targetMgdl in
             let v = (bgUnit == .milligramsPerDeciliter) ? targetMgdl : (targetMgdl / mgdlToMmol)
-            let q = HKQuantity(unit: bgUnit, doubleValue: v)
+            let q = LoopQuantity(unit: bgUnit, doubleValue: v)
             return q ... q
         }
 
@@ -340,7 +338,7 @@ final class TrioSettingsAdapter: Injectable {
         // LoopKit: insulinNeedsScaleFactor of 1.15 means 115% insulin needs
         let insulinNeedsScaleFactor: Double? = data.percentage != 100 ? data.percentage / 100.0 : nil
 
-        let settings = TemporaryScheduleOverrideSettings(
+        let settings = TemporaryPresetSettings(
             targetRange: targetRange,
             insulinNeedsScaleFactor: insulinNeedsScaleFactor
         )
@@ -361,7 +359,7 @@ final class TrioSettingsAdapter: Injectable {
 
     /// Converts the currently active Temp Target to a TemporaryScheduleOverride
     /// Temp Targets only modify the glucose target, without affecting insulin delivery rates
-    private func convertActiveTempTarget(bgUnit: HKUnit) -> TemporaryScheduleOverride? {
+    private func convertActiveTempTarget(bgUnit: LoopUnit) -> TemporaryScheduleOverride? {
         // Struct to hold extracted values from Core Data (thread-safe)
         struct TempTargetData {
             let target: Double
@@ -404,10 +402,10 @@ final class TrioSettingsAdapter: Injectable {
 
         let mgdlToMmol = 18.018
         let v = (bgUnit == .milligramsPerDeciliter) ? data.target : (data.target / mgdlToMmol)
-        let targetQuantity = HKQuantity(unit: bgUnit, doubleValue: v)
+        let targetQuantity = LoopQuantity(unit: bgUnit, doubleValue: v)
         let targetRange = targetQuantity ... targetQuantity
 
-        let settings = TemporaryScheduleOverrideSettings(
+        let settings = TemporaryPresetSettings(
             targetRange: targetRange,
             insulinNeedsScaleFactor: nil // Temp targets don't affect insulin delivery rates
         )
