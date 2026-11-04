@@ -2,6 +2,8 @@ import Combine
 import CoreData
 import Foundation
 import LoopKitUI
+import MedtrumKit
+import OmnipodKit
 import Swinject
 import UIKit
 
@@ -1023,11 +1025,42 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         defer { isUploadingPodAge = false }
 
         guard shouldAttemptNightscoutRequest("Site Change treatments"),
-              let nightscout = nightscoutAPI, isUploadEnabled,
-              let podAge = storage.retrieve(OpenAPS.Monitor.podAge, as: Date.self) else { return }
+              let nightscout = nightscoutAPI, isUploadEnabled, let pump = deviceManager.pumpManager else { return }
+
+        // This disk format also decodes the existing date-only treatment receipts.
+        struct Receipt: JSON {
+            var created_at: Date
+            var eventType: String
+            var enteredBy: String?
+            var notes: String?
+            var patchKey: String?
+        }
+
+        let podAge: Date
+        let patchKey: String?
+        if let medtrum = pump as? MedtrumPumpManager {
+            let state = medtrum.state
+            guard !state.patchSessionEnded, !state.pumpSN.isEmpty, state.patchId.contains(where: { $0 != 0 }),
+                  let activation = state.patchActivatedAt else { return }
+            podAge = activation
+            patchKey = state.pumpSN.base64EncodedString() + ":" + state.patchId.base64EncodedString()
+        } else {
+            guard pump is OmniPumpManager,
+                  let activation = storage.retrieve(OpenAPS.Monitor.podAge, as: Date.self) else { return }
+            podAge = activation
+            patchKey = nil
+        }
+
         let file = OpenAPS.Nightscout.uploadedPodAge
-        let uploaded = storage.retrieve(file, as: [NightscoutTreatment].self) ?? []
-        guard !uploaded.contains(where: { $0.createdAt == podAge }) else { return }
+        var receipts = storage.retrieve(file, as: [Receipt].self) ?? []
+        if let patchKey, receipts.contains(where: { $0.patchKey == patchKey }) { return }
+        if let index = receipts.firstIndex(where: { $0.created_at == podAge && $0.patchKey == nil }) {
+            if let patchKey {
+                receipts[index].patchKey = patchKey
+                storage.save(receipts, as: file)
+            }
+            return
+        }
 
         let siteTreatment = NightscoutTreatment(
             duration: nil,
@@ -1040,7 +1073,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             enteredBy: NightscoutTreatment.local,
             bolus: nil,
             insulin: nil,
-            notes: deviceManager.pumpManager?.localizedTitle,
+            notes: pump.localizedTitle,
             carbs: nil,
             fat: nil,
             protein: nil,
@@ -1052,13 +1085,14 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             try await nightscout.uploadTreatments([siteTreatment])
             // Acknowledge the date actually sent, even if the active patch changed
             // while awaiting the server. Failed requests remain eligible for retry.
-            storage.transaction { storage in
-                var receipts = storage.retrieve(file, as: [NightscoutTreatment].self) ?? []
-                if !receipts.contains(where: { $0.createdAt == podAge }) {
-                    receipts.append(siteTreatment)
-                    storage.save(receipts, as: file)
-                }
-            }
+            receipts.append(Receipt(
+                created_at: podAge,
+                eventType: siteTreatment.eventType.rawValue,
+                enteredBy: siteTreatment.enteredBy,
+                notes: siteTreatment.notes,
+                patchKey: patchKey
+            ))
+            storage.save(receipts, as: file)
         } catch {
             debug(.nightscout, error.localizedDescription)
         }

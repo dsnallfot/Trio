@@ -52,8 +52,19 @@ final class DiskStore {
 }
 enum Category { case nightscout }
 func debug(_ category: Category, _ message: String) {}
-struct Pump { var localizedTitle = "Medtrum Nano" }
-struct Device { var pumpManager: Pump? = Pump() }
+protocol JSON: Codable {}
+class Pump { var localizedTitle = "Pump" }
+final class OmniPumpManager: Pump {}
+final class MedtrumPumpManager: Pump {
+    struct State {
+        var patchSessionEnded = false
+        var pumpSN = Data([1])
+        var patchId = Data([1])
+        var patchActivatedAt: Date?
+    }
+    var state = State()
+}
+struct Device { var pumpManager: Pump? = OmniPumpManager() }
 @MainActor class Manager {
     var isUploadingPodAge = false
     var isUploadEnabled = true
@@ -90,7 +101,7 @@ struct Device { var pumpManager: Pump? = Pump() }
         api.waiting!.resume()
         await pending.value
         precondition(receipts().map(\.createdAt) == [firstDate])
-        precondition(api.posts[0][0].notes == "Medtrum Nano")
+        precondition(api.posts[0][0].notes == "Pump")
         api.failOnCall = 2
         await manager.uploadPodAge()
         precondition(receipts().count == 1 && !manager.isUploadingPodAge)
@@ -115,6 +126,35 @@ struct Device { var pumpManager: Pump? = Pump() }
         await restarted.uploadPodAge()
         precondition(api.posts.count == 4 && receipts().count == 3)
         precondition(!restarted.isUploadingPodAge)
+        let medtrum = MedtrumPumpManager()
+        restarted.deviceManager.pumpManager = medtrum
+        medtrum.state.patchActivatedAt = firstDate
+        await restarted.uploadPodAge() // Migrate the legacy date receipt.
+        medtrum.state.patchActivatedAt = firstDate.addingTimeInterval(60)
+        await restarted.uploadPodAge()
+        precondition(api.posts.count == 4)
+        medtrum.state.patchId = Data([2])
+        api.pauseNext = true
+        api.waiting = nil
+        let inFlight = Task { await restarted.uploadPodAge() }
+        while api.waiting == nil { await Task.yield() }
+        medtrum.state.patchActivatedAt = firstDate.addingTimeInterval(120)
+        api.waiting?.resume()
+        await inFlight.value
+        let fresh = Manager(DiskStore(directory), api)
+        fresh.deviceManager.pumpManager = medtrum
+        await fresh.uploadPodAge()
+        precondition(api.posts.count == 5)
+        medtrum.state.patchId = Data()
+        await fresh.uploadPodAge()
+        medtrum.state.patchSessionEnded = true
+        medtrum.state.patchId = Data([3])
+        await fresh.uploadPodAge()
+        precondition(api.posts.count == 5)
+        medtrum.state.patchSessionEnded = false
+        await fresh.uploadPodAge()
+        precondition(api.posts.count == 6 && receipts().count == 5)
+        precondition(!String(decoding: try! JSONEncoder().encode(api.posts), as: UTF8.self).contains("patchKey"))
         print("Site Change uploads passed: success receipts, restart, concurrency, failures/retries, patch change during upload, disabled/offline")
     }
 }
