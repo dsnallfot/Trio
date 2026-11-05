@@ -284,7 +284,8 @@ final class OpenAPS {
         clock: Date = Date(),
         carbs: Decimal? = nil,
         iob: Decimal? = nil,
-        simulation: Bool = false
+        simulation: Bool = false,
+        reservoir: Decimal? = nil
     ) async throws -> Determination? {
         await calculationGate.acquire()
         defer { calculationGate.release() }
@@ -314,7 +315,6 @@ final class OpenAPS {
         async let profileAsync = loadFileFromStorageAsync(name: Settings.profile)
         async let basalAsync = loadFileFromStorageAsync(name: Settings.basalProfile)
         async let autosenseAsync = loadFileFromStorageAsync(name: Settings.autosense)
-        async let reservoirAsync = loadFileFromStorageAsync(name: Monitor.reservoir)
         async let preferencesAsync = loadFileFromStorageAsync(name: Settings.preferences)
 
         // Await the results of asynchronous tasks
@@ -326,7 +326,6 @@ final class OpenAPS {
             profile,
             basalProfile,
             autosens,
-            reservoir,
             preferences
         ) = await (
             parsePumpHistory(await pumpHistoryObjectIDs, engine: engine, clock: clock, includeTDD: true, iob: iob),
@@ -336,7 +335,6 @@ final class OpenAPS {
             profileAsync,
             basalAsync,
             autosenseAsync,
-            reservoirAsync,
             preferencesAsync
         )
 
@@ -374,7 +372,7 @@ final class OpenAPS {
             autosens: autosens.isEmpty ? .null : autosens,
             meal: meal,
             microBolusAllowed: !calculationMode.requiresSwift,
-            reservoir: reservoir,
+            reservoir: reservoir?.rawJSON ?? RawJSON.null,
             pumpHistory: pumpHistoryJSON.tdd,
             preferences: (Preferences(from: preferences.rawJSON) ?? Preferences()).clamped(for: calculationMode).rawJSON,
             basalProfile: basalProfile,

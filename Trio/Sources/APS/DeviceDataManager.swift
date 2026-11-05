@@ -56,13 +56,12 @@ private let accessLock = NSRecursiveLock(label: "BaseDeviceDataManager.accessLoc
 final class BaseDeviceDataManager: DeviceDataManager, Injectable {
     private let medtrumValueGate = PumpReceiverValueGate()
 
-    private func publishMedtrumReservoir(_ pump: MedtrumPumpManager, units: Decimal) {
-        guard medtrumValueGate.accept("reservoir", owner: pump, value: units) else {
+    private func publishMedtrumReservoir(_ pump: MedtrumPumpManager) {
+        let units = pump.currentReservoir
+        guard medtrumValueGate.accept("reservoir", owner: pump, value: AnyHashable(units)) else {
             pump.recordWork("reservoirSuppressed")
             return
         }
-        storage.save(units, as: OpenAPS.Monitor.reservoir)
-        pump.recordWork("reservoirSaveCalls")
         broadcaster.notify(PumpReservoirObserver.self, on: processQueue) {
             $0.pumpReservoirDidChange(units)
         }
@@ -159,7 +158,6 @@ final class BaseDeviceDataManager: DeviceDataManager, Injectable {
                 if let simulatorPump = pumpManager as? MockPumpManager {
                     pumpDisplayState.value = PumpDisplayState(name: simulatorPump.localizedTitle, image: simulatorPump.smallImage)
                     pumpName.send(simulatorPump.localizedTitle)
-                    storage.save(Decimal(simulatorPump.pumpReservoirCapacity), as: OpenAPS.Monitor.reservoir)
                     DispatchQueue.main.async {
                         self.broadcaster.notify(PumpReservoirObserver.self, on: .main) {
                             $0.pumpReservoirDidChange(Decimal(simulatorPump.state.reservoirUnitsRemaining))
@@ -248,6 +246,8 @@ final class BaseDeviceDataManager: DeviceDataManager, Injectable {
 
     init(resolver: Resolver) {
         injectServices(resolver)
+        // Migration: reservoir values now come exclusively from the active pump manager.
+        storage.remove("monitor/reservoir.json")
         setupPumpManager()
         UIDevice.current.isBatteryMonitoringEnabled = true
         broadcaster.register(AlertObserver.self, observer: self)
@@ -504,6 +504,15 @@ extension BaseDeviceDataManager: PumpManagerDelegate {
     }
 
     func pumpManagerDidUpdateState(_ pumpManager: PumpManager) {
+        if self.pumpManager === pumpManager {
+            if let medtrum = pumpManager as? MedtrumPumpManager {
+                publishMedtrumReservoir(medtrum)
+            } else {
+                broadcaster.notify(PumpReservoirObserver.self, on: processQueue) {
+                    $0.pumpReservoirDidChange(pumpManager.currentReservoir)
+                }
+            }
+        }
         if let medtrum = pumpManager as? MedtrumPumpManager,
            self.pumpManager === medtrum,
            medtrumValueGate.accept("patchSessionEnded", owner: medtrum, value: medtrum.state.patchSessionEnded),
@@ -566,13 +575,8 @@ extension BaseDeviceDataManager: PumpManagerDelegate {
         }
 
         if let omni = pumpManager as? OmniPumpManager {
-            let reservoirVal = omni.state.podState?.lastInsulinMeasurements?.reservoirLevel ?? 0xDEAD_BEEF
-            // TODO: find the value Pod.maximumReservoirReading
-            let reservoir = Decimal(reservoirVal) > 50.0 ? 0xDEAD_BEEF : reservoirVal
-
-            storage.save(Decimal(reservoir), as: OpenAPS.Monitor.reservoir)
             broadcaster.notify(PumpReservoirObserver.self, on: processQueue) {
-                $0.pumpReservoirDidChange(Decimal(reservoir))
+                $0.pumpReservoirDidChange(omni.currentReservoir)
             }
 
             // manual temp basal on
@@ -599,7 +603,7 @@ extension BaseDeviceDataManager: PumpManagerDelegate {
         }
 
         if let medtrumPump = pumpManager as? MedtrumPumpManager {
-            publishMedtrumReservoir(medtrumPump, units: Decimal(medtrumPump.state.reservoir))
+            publishMedtrumReservoir(medtrumPump)
             updateMedtrumPatchDates(medtrumPump)
         }
 
@@ -669,9 +673,8 @@ extension BaseDeviceDataManager: PumpManagerDelegate {
         // Daniel: Minska loggning // debug(.deviceManager, "Reservoir Value \(units), at: \(date)")
         if let medtrum = pumpManager as? MedtrumPumpManager {
             medtrum.recordWork("reservoirCallbacks")
-            publishMedtrumReservoir(medtrum, units: Decimal(units))
+            publishMedtrumReservoir(medtrum)
         } else {
-            storage.save(Decimal(units), as: OpenAPS.Monitor.reservoir)
             broadcaster.notify(PumpReservoirObserver.self, on: processQueue) {
                 $0.pumpReservoirDidChange(Decimal(units))
             }
@@ -852,8 +855,31 @@ extension BaseDeviceDataManager: AlertObserver {
 
 // MARK: Others
 
+extension PumpManager {
+    /// Current pump state, never a persisted reading from a previous patch or pod.
+    /// 0xDEADBEEF represents an Omnipod reading above 50 U.
+    var currentReservoir: Decimal? {
+        switch self {
+        case let medtrum as MedtrumPumpManager:
+            return medtrum.state.patchSessionEnded ? nil : Decimal(medtrum.state.reservoir)
+        case let omni as OmniPumpManager:
+            guard let pod = omni.state.podState, !omni.isInoperable else { return nil }
+            guard let level = pod.lastInsulinMeasurements?.reservoirLevel, level <= 50 else { return 0xDEAD_BEEF }
+            return Decimal(level)
+        case let dana as DanaKitPumpManager:
+            return dana.state.pumpTime == nil ? nil : Decimal(dana.state.reservoirLevel)
+        case let minimed as MinimedPumpManager:
+            return minimed.state.lastReservoirReading.map { Decimal($0.units) }
+        case let mock as MockPumpManager:
+            return Decimal(mock.state.reservoirUnitsRemaining)
+        default:
+            return nil
+        }
+    }
+}
+
 protocol PumpReservoirObserver {
-    func pumpReservoirDidChange(_ reservoir: Decimal)
+    func pumpReservoirDidChange(_ reservoir: Decimal?)
 }
 
 protocol PumpBatteryObserver {

@@ -663,12 +663,13 @@ extension Home.StateModel:
         }
     }
 
-    func pumpReservoirDidChange(_: Decimal) {
+    func pumpReservoirDidChange(_: Decimal?) {
         setupReservoir()
         displayPumpStatusHighlightMessage()
     }
 
     func pumpDeactivatedDidChange() {
+        setupReservoir()
         displayPumpStatusHighlightMessage(true)
         batteryFromPersistence = []
     }
