@@ -34,6 +34,7 @@ extension Home {
         @State var selectedTab: Int = 0
         static let treatmentTabTag = 4
         @State var showPumpSelection: Bool = false
+        @State private var pendingPumpSelection: PumpConfig.PumpType?
         @State var notificationsDisabled = false
         @State var timeButtons: [TimePicker] = [
             TimePicker(active: false, hours: 3),
@@ -1022,13 +1023,15 @@ extension Home {
             .sheet(isPresented: $state.isLoopStatusPresented) {
                 LoopStatusView(state: state, closedLoopAdjustment: closedLoopAdjustment)
             }
-            .confirmationDialog("Pump Model", isPresented: $showPumpSelection) {
-                Button("Medtronic") { state.addPump(.minimed) }
-                Button("All Omnipod Types") { state.addPump(.omni) }
-                Button("Dana(RS/-i)") { state.addPump(.dana) }
-                Button("Medtrum Nano") { state.addPump(.medtrum) }
-                Button("Pump Simulator") { state.addPump(.simulator) }
-            } message: { Text("Select Pump Model") }
+            .sheet(isPresented: $showPumpSelection, onDismiss: {
+                guard let selection = pendingPumpSelection else { return }
+                pendingPumpSelection = nil
+                state.addPump(selection)
+            }) {
+                DevicePickerView(title: "Välj insulinpump", entries: DeviceCatalog.pumps) { entry in
+                    pendingPumpSelection = entry.selection
+                }
+            }
             .sheet(isPresented: $state.setupPump) {
                 if let pumpManager = state.provider.apsManager.pumpManager {
                     PumpConfig.PumpSettingsView(

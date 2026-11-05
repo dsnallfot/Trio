@@ -8,6 +8,8 @@ extension CGM {
         let displayClose: Bool
         @StateObject var state = StateModel()
         @State private var setupCGM = false
+        @State private var showCGMSelection = false
+        @State private var pendingCGMSelection: cgmName?
 
         @AppStorage(OscillatingGenerator.UserDefaultsKeys.centerValue) private var simulatorCenterValue = OscillatingGenerator
             .Defaults.centerValue
@@ -61,14 +63,21 @@ extension CGM {
                         header: Text("CGM Integration för Trio"),
                         content: {
                             VStack {
-                                Picker("Typ", selection: $state.cgmCurrent) {
-                                    ForEach(state.listOfCGM) { type in
-                                        VStack(alignment: .leading) {
-                                            Text(type.displayName)
-                                            Text(type.subtitle).font(.caption).foregroundColor(.secondary)
-                                        }.tag(type)
+                                Button {
+                                    showCGMSelection = true
+                                } label: {
+                                    HStack {
+                                        Text("Typ")
+                                        Spacer()
+                                        Text(state.cgmCurrent.type == .none ? "Ingen" : state.cgmCurrent.displayName)
+                                            .foregroundStyle(.secondary)
+                                        Image(systemName: "chevron.right")
+                                            .foregroundStyle(.secondary)
                                     }
-                                }.padding(.top)
+                                    .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                                .padding(.top)
 
                                 HStack(alignment: .center) {
                                     Text(
@@ -83,9 +92,14 @@ extension CGM {
                                             hintLabel = "Tillgängliga CGM-modeller i Trio"
                                             selectedVerboseHint =
                                                 AnyView(
-                                                    Text(
-                                                        "• Dexcom G5 \n• Dexcom G6 / ONE \n• Dexcom G7 / ONE+ / Stelo \n• Dexcom Share \n• Freestyle Libre \n• Freestyle Libre Demo \n• Glukossimulator \n• Medtronic Enlite \n• Nightscout \n• xDrip4iOS"
-                                                    )
+                                                    VStack(alignment: .leading, spacing: 4) {
+                                                        ForEach(
+                                                            DeviceCatalog.cgms(state.listOfCGM)
+                                                                .filter { $0.selection.type != .none }
+                                                        ) { entry in
+                                                            Text("• \(entry.hintLine)")
+                                                        }
+                                                    }
                                                 )
                                             shouldDisplayHint.toggle()
                                         },
@@ -295,6 +309,15 @@ extension CGM {
                     self.setupCGM = setupCGM
                 }
                 .screenNavigation(self)
+            }
+            .sheet(isPresented: $showCGMSelection, onDismiss: {
+                guard let selection = pendingCGMSelection else { return }
+                pendingCGMSelection = nil
+                state.cgmCurrent = selection
+            }) {
+                DevicePickerView(title: "Välj glukoskälla", entries: DeviceCatalog.cgms(state.listOfCGM)) { entry in
+                    pendingCGMSelection = entry.selection
+                }
             }
             .sheet(isPresented: $setupCGM) {
                 if let cgmFetchManager = state.cgmManager,

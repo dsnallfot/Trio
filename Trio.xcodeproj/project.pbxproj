@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		DC1439000000000000000012 /* DevicePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC1439000000000000000002 /* DevicePickerView.swift */; };
+		DC1439000000000000000011 /* DeviceCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC1439000000000000000001 /* DeviceCatalog.swift */; };
 		041D1E995A6AE92E9289DC49 /* TreatmentsDataFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D1A7CA8C10C4403D4BBFA7 /* TreatmentsDataFlow.swift */; };
 		0437CE46C12535A56504EC19 /* SnoozeRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5822B15939E719628E9FF7C /* SnoozeRootView.swift */; };
 		0D9445A20C0341088DCC266A /* Trio/Resources/GlucoseAlarmSounds/spring.caf in Resources */ = {isa = PBXBuildFile; fileRef = AAB59DB7989341169F83BC92 /* Trio/Resources/GlucoseAlarmSounds/spring.caf */; };
@@ -721,6 +723,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		DC1439000000000000000002 /* DevicePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevicePickerView.swift; sourceTree = "<group>"; };
+		DC1439000000000000000001 /* DeviceCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceCatalog.swift; sourceTree = "<group>"; };
 		0FECC2DE78144C638A0AFBF1 /* Trio/Resources/GlucoseAlarmSounds/minimal.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = Trio/Resources/GlucoseAlarmSounds/minimal.caf; sourceTree = SOURCE_ROOT; };
 		105F108A693641CEB84C25B0 /* Trio/Resources/GlucoseAlarmSounds/bloop.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = Trio/Resources/GlucoseAlarmSounds/bloop.caf; sourceTree = SOURCE_ROOT; };
 		110AEDE02C5193D100615CC9 /* BolusIntent.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BolusIntent.swift; sourceTree = "<group>"; };
@@ -2112,6 +2116,8 @@
 			children = (
 				651B4F7A302232B900D10A64 /* BolusProgressBar.swift */,
 				3811DE5925C9D4D500A708ED /* ViewModifiers.swift */,
+				DC1439000000000000000002 /* DevicePickerView.swift */,
+				DC1439000000000000000001 /* DeviceCatalog.swift */,
 				3883581B25EE79BB00E024B2 /* TextFieldWithToolBar.swift */,
 				383420D825FFEB3F002D46C1 /* Popup.swift */,
 				389ECDFD2601061500D86C4F /* View+Snapshot.swift */,
@@ -3893,6 +3899,8 @@
 				38E98A2925F52C9300C0CED0 /* Error+Extensions.swift in Sources */,
 				38EA05DA261F6E7C0064E39B /* SimpleLogReporter.swift in Sources */,
 				3811DE6125C9D4D500A708ED /* ViewModifiers.swift in Sources */,
+				DC1439000000000000000012 /* DevicePickerView.swift in Sources */,
+				DC1439000000000000000011 /* DeviceCatalog.swift in Sources */,
 				3811DEAC25C9D88300A708ED /* NightscoutManager.swift in Sources */,
 				BD793CB22CE8033500D669AC /* TempTargetRunStored.swift in Sources */,
 				19A910302A24BF6300C8951B /* StatsView.swift in Sources */,

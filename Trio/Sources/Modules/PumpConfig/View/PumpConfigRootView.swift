@@ -14,6 +14,7 @@ extension PumpConfig {
         @State private var decimalPlaceholder: Decimal = 0.0
         @State private var booleanPlaceholder: Bool = false
         @State var showPumpSelection: Bool = false
+        @State private var pendingPumpSelection: PumpConfig.PumpType?
 
         @Environment(\.colorScheme) var colorScheme
         @Environment(AppState.self) var appState
@@ -111,11 +112,9 @@ extension PumpConfig {
                                     "Nuvarande Pumpmodeller som stöds:"
                                 )
                                 VStack(alignment: .leading) {
-                                    Text("• Medtronic")
-                                    Text("• Alla typer av Omnipod")
-                                    Text("• Dana (RS/-i)")
-                                    Text("• Medtrum Nano (200u/300u)")
-                                    Text("• Pumpsimulator")
+                                    ForEach(DeviceCatalog.pumps) { entry in
+                                        Text("• \(entry.hintLine)")
+                                    }
                                 }
                                 Text(
                                     "Notera: Pumpsimulatorn ska endast användas för test och utveckling."
@@ -125,13 +124,15 @@ extension PumpConfig {
                         sheetTitle: "Hjälp"
                     )
                 }
-                .confirmationDialog("Pumpmodell", isPresented: $showPumpSelection) {
-                    Button("Medtronic") { state.addPump(.minimed) }
-                    Button("Alla typer av Omnipod") { state.addPump(.omni) }
-                    Button("Dana(RS/-i)") { state.addPump(.dana) }
-                    Button("Medtrum Nano") { state.addPump(.medtrum) }
-                    Button("Pumpsimulator") { state.addPump(.simulator) }
-                } message: { Text("Välj Pumpmodell") }
+                .sheet(isPresented: $showPumpSelection, onDismiss: {
+                    guard let selection = pendingPumpSelection else { return }
+                    pendingPumpSelection = nil
+                    state.addPump(selection)
+                }) {
+                    DevicePickerView(title: "Välj insulinpump", entries: DeviceCatalog.pumps) { entry in
+                        pendingPumpSelection = entry.selection
+                    }
+                }
             }
         }
     }
