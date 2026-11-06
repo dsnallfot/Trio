@@ -39,7 +39,7 @@ struct PumpView: View {
                                 .imageScale(.large)
                         }
                         HStack {
-                            Text("Add pump")
+                            Text("Lägg till pump")
                                 .font(.caption)
                                 .bold()
                         }
