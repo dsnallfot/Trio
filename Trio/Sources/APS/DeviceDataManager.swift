@@ -100,8 +100,9 @@ final class BaseDeviceDataManager: DeviceDataManager, Injectable {
             if oldValue is MedtrumPumpManager, !(pumpManager is MedtrumPumpManager) {
                 MedtrumExpiryNotification.cancel()
             }
-            pumpManager?.pumpManagerDelegate = self
+            // Queue before delegate, so no delegate call lands on the default main queue
             pumpManager?.delegateQueue = processQueue
+            pumpManager?.pumpManagerDelegate = self
             rawPumpManager = pumpManager?.rawValue
             UserDefaults.standard.clearLegacyPumpManagerRawValue()
             pumpExpiresAtDate.send(nil)
