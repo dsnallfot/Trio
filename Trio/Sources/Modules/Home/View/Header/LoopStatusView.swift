@@ -7,7 +7,8 @@ struct LoopStatusView: View {
     var state: Home.StateModel
     let closedLoopAdjustment: String?
 
-    @State private var sheetContentHeight = CGFloat.zero
+    @State private var sheetDetent = PresentationDetent.fraction(0.9)
+    @ScaledMetric(relativeTo: .body) private var buttonClearance: CGFloat = 100
     // Help Sheet
     @State var isHelpSheetPresented: Bool = false
     @State var helpSheetDetent = PresentationDetent.fraction(0.9)
@@ -18,146 +19,155 @@ struct LoopStatusView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(alignment: .top) {
+        GeometryReader { geometry in
+            ZStack(alignment: .bottom) {
+                ScrollView {
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Senaste Loop").bold()
+                        HStack(alignment: .top) {
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text("Senaste Loop").bold()
 
-                        Text(statusTitle)
-                            .font(.headline)
-                            .bold()
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .foregroundColor(statusBadgeTextColor)
-                            .background(statusBadgeColor)
-                            .clipShape(Capsule())
+                                Text(statusTitle)
+                                    .font(.headline)
+                                    .bold()
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .foregroundColor(statusBadgeTextColor)
+                                    .background(statusBadgeColor)
+                                    .clipShape(Capsule())
 
-                        if let mode = recordedMode, let symbol = HomeDosingStatus.symbol(for: mode) {
-                            Label(mode.title, systemImage: symbol)
-                                .font(.subheadline.bold())
-                            Text(HomeDosingStatus.detail(for: mode, closedLoopAdjustment: closedLoopAdjustment))
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
+                                if let mode = recordedMode, let symbol = HomeDosingStatus.symbol(for: mode) {
+                                    Label(mode.title, systemImage: symbol)
+                                        .font(.subheadline.bold())
+                                    Text(HomeDosingStatus.detail(for: mode, closedLoopAdjustment: closedLoopAdjustment))
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                            }
+
+                            Spacer()
+
+                            Button(
+                                action: {
+                                    isHelpSheetPresented.toggle()
+                                },
+                                label: {
+                                    Image(systemName: "questionmark.circle")
+                                }
+                            )
+                        }.padding(.top, 20)
+                        if let errorMessage = state.errorMessage, let date = state.errorDate {
+                            Group {
+                                Text("Fel vid senaste loop \(Formatter.dateFormatter.string(from: date))").font(.headline)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                Text(errorMessage).font(.caption).fixedSize(horizontal: false, vertical: true)
+                            }.foregroundColor(.loopRed)
                         }
-                    }
 
-                    Spacer()
+                        if let determination = latestCalculation {
+                            if determination.glucose == 400 {
+                                Text("Ogiltigt CGM-värde (HÖG).")
+                                    .bold()
+                                    .padding(.top)
+                                    .foregroundStyle(Color.loopRed)
+                                    .fixedSize(horizontal: false, vertical: true)
 
-                    Button(
-                        action: {
-                            isHelpSheetPresented.toggle()
-                        },
-                        label: {
-                            Image(systemName: "questionmark.circle")
-                        }
-                    )
-                }.padding(.top, 20)
-//                Text("Current Loop Status").bold().padding(.top, 20)
-//
-//                Text(statusTitle)
-//                    .font(.headline)
-//                    .bold()
-//                    .padding(.horizontal, 12)
-//                    .padding(.vertical, 6)
-//                    .foregroundColor(statusBadgeTextColor)
-//                    .background(statusBadgeColor)
-//                    .clipShape(Capsule())
+                                Text("SMB och Temp basal inaktiverade.")
+                                    .font(.subheadline)
+                                    .fixedSize(horizontal: false, vertical: true)
 
-                if let errorMessage = state.errorMessage, let date = state.errorDate {
-                    Group {
-                        Text("Fel vid senaste loop \(Formatter.dateFormatter.string(from: date))").font(.headline)
-                            .fixedSize(horizontal: false, vertical: true)
-                        Text(errorMessage).font(.caption).fixedSize(horizontal: false, vertical: true)
-                    }.foregroundColor(.loopRed)
-                }
+                            } else {
+                                Text("Senaste beräkningar")
+                                    .bold()
+                                    .padding(.top)
 
-                if let determination = latestCalculation {
-                    if determination.glucose == 400 {
-                        Text("Ogiltigt CGM-värde (HÖG).")
-                            .bold()
-                            .padding(.top)
-                            .foregroundStyle(Color.loopRed)
-                            .fixedSize(horizontal: false, vertical: true)
-
-                        Text("SMB och Temp basal inaktiverade.")
-                            .font(.subheadline)
-                            .fixedSize(horizontal: false, vertical: true)
-
-                    } else {
-                        Text("Senaste beräkningar")
-                            .bold()
-                            .padding(.top)
-
-                        Text(
-                            "Trio använder dessa värden som beräknats av oref algoritmen:"
-                        )
-                        .font(.subheadline)
-                        .lineLimit(nil)
-                        .multilineTextAlignment(.leading)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                        let tags = !state.isSmoothingEnabled ? determination.reasonParts : determination
-                            .reasonParts + ["Smoothing: On"]
-                        TagCloudView(
-                            tags: tags,
-                            shouldParseToMmolL: state.units == .mmolL
-                        )
-
-                        Text("Algoritmens slutsats").bold().padding(.top)
-
-                        Text(
-                            self
-                                .parseReasonConclusion(
-                                    determination.reasonConclusion,
-                                    isMmolL: state.units == .mmolL
+                                Text(
+                                    "Trio använder dessa värden som beräknats av oref algoritmen:"
                                 )
-                        )
-                        .font(.subheadline)
-                        .lineLimit(nil)
-                        .multilineTextAlignment(.leading)
-                        .fixedSize(horizontal: false, vertical: true)
+                                .font(.subheadline)
+                                .lineLimit(nil)
+                                .multilineTextAlignment(.leading)
+                                .fixedSize(horizontal: false, vertical: true)
+
+                                let tags = !state.isSmoothingEnabled ? determination.reasonParts : determination
+                                    .reasonParts + ["Smoothing: On"]
+                                TagCloudView(
+                                    tags: tags,
+                                    shouldParseToMmolL: state.units == .mmolL
+                                )
+
+                                Text("Algoritmens slutsats").bold().padding(.top)
+
+                                Text(
+                                    self
+                                        .parseReasonConclusion(
+                                            determination.reasonConclusion,
+                                            isMmolL: state.units == .mmolL
+                                        )
+                                )
+                                .font(.subheadline)
+                                .lineLimit(nil)
+                                .multilineTextAlignment(.leading)
+                                .fixedSize(horizontal: false, vertical: true)
+                            }
+                        } else {
+                            Text("Ingen aktuell oref algoritm slutsats.")
+                        }
                     }
-                } else {
-                    Text("Ingen aktuell oref algoritm slutsats.")
+                    .padding(.vertical)
+                    .padding(.horizontal, 20)
                 }
+                .contentMargins(.bottom, buttonClearance, for: .scrollContent)
+                .frame(width: geometry.size.width, height: geometry.size.height)
 
-                Spacer()
-
-                Button {
-                    state.isLoopStatusPresented.toggle()
-                } label: {
-                    Text("Got it!").bold().frame(maxWidth: .infinity, minHeight: 30, alignment: .center)
-                }
-                .buttonStyle(.bordered)
-                .padding(.top)
+                dismissButton
+                    .padding(.horizontal)
+                    .padding(.bottom, 12)
             }
-            .padding(.vertical)
-            .padding(.horizontal, 20)
-            .ignoresSafeArea(edges: .top)
-            .background {
-                GeometryReader { geo in
-                    Color.clear
-                        .preference(key: ContentSizeKey.self, value: geo.size)
-                }
-            }
-            .sheet(isPresented: $isHelpSheetPresented) {
-                LoopStatusHelpView(
-                    state: state,
-                    recordedMode: recordedMode,
-                    helpSheetDetent: $helpSheetDetent,
-                    isHelpSheetPresented: $isHelpSheetPresented
-                )
-            }
+            .frame(width: geometry.size.width, height: geometry.size.height)
         }
-        .presentationDetents([sheetContentHeight > 0 ? .height(sheetContentHeight) : .fraction(0.9), .large])
+        .ignoresSafeArea(.container, edges: [.top, .bottom])
+        .presentationDetents([.fraction(0.9), .large], selection: $sheetDetent)
         .presentationDragIndicator(.visible)
-        .onPreferenceChange(ContentSizeKey.self) { newSize in
-            sheetContentHeight = newSize.height
-        }
         .background(appState.trioBackgroundColor(for: colorScheme))
-        .scrollContentBackground(.hidden)
+        .presentationBackground(appState.trioBackgroundColor(for: colorScheme))
+        .sheet(isPresented: $isHelpSheetPresented) {
+            LoopStatusHelpView(
+                state: state,
+                recordedMode: recordedMode,
+                helpSheetDetent: $helpSheetDetent,
+                isHelpSheetPresented: $isHelpSheetPresented
+            )
+        }
+    }
+
+    private var dismissButtonLabel: some View {
+        Text("Got it!")
+            .bold()
+            .frame(maxWidth: .infinity, minHeight: 40, alignment: .center)
+    }
+
+    @ViewBuilder private var dismissButton: some View {
+        if #available(iOS 26, *) {
+            Button {
+                state.isLoopStatusPresented = false
+            } label: {
+                dismissButtonLabel
+            }
+            .buttonStyle(.glass)
+            .buttonBorderShape(.capsule)
+        } else {
+            Button {
+                state.isLoopStatusPresented = false
+            } label: {
+                dismissButtonLabel
+                    .padding(.vertical, 8)
+                    .background(.regularMaterial, in: Capsule())
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.accentColor)
+        }
     }
 
     private var recordedMode: DosingMode? {

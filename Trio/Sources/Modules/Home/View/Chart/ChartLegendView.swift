@@ -8,266 +8,256 @@ struct ChartLegendView: View {
 
     @State var legendSheetDetent = PresentationDetent.large
 
+    @ScaledMetric(relativeTo: .body) private var buttonClearance: CGFloat = 100
+    @State private var titleHeight: CGFloat = 80
+
     var body: some View {
-        NavigationStack {
-            /* VStack(alignment: .leading, spacing: 0) {
-             Text(
-                 "The main chart in Trio is made up of various elements and shapes. Find their meanings below."
-             )
-             .font(.subheadline)
-             .foregroundColor(.secondary)
-             .padding(.top, 50)
-             .padding(.horizontal)
-             */
-            List {
-                VStack(alignment: .leading) {
-                    Text("Prognoser")
-                        .bold()
-                        .padding(.bottom, 5)
-                        .textCase(.uppercase)
+        GeometryReader { geometry in
+            ZStack(alignment: .bottom) {
+                List {
+                    VStack(alignment: .leading) {
+                        Text("Prognoser")
+                            .bold()
+                            .padding(.bottom, 5)
+                            .textCase(.uppercase)
 
-                    Text(
-                        "Oref-algoritmen beräknar insulindoseringen utifrån ett antal olika scenarier som uppskattas med hjälp av olika typer av prognoser."
-                    )
-                    .font(.subheadline)
-                    .foregroundColor(.primary)
+                        Text(
+                            "Oref-algoritmen beräknar insulindoseringen utifrån ett antal olika scenarier som uppskattas med hjälp av olika typer av prognoser."
+                        )
+                        .font(.subheadline)
+                        .foregroundColor(.primary)
 
-                    if state.forecastDisplayType == .lines {
-                        legendLinesView
-                    } else {
-                        legendConeOfUncertaintyView
-                    }
-                }
-                .listRowBackground(Color.chart)
-
-                VStack(alignment: .leading) {
-                    Text("Övriga element och symboler")
-                        .bold()
-                        .padding(.bottom, 5)
-                        .textCase(.uppercase)
-
-                    DefinitionRow(
-                        term: "Schemalagd basal",
-                        definition: VStack(alignment: .leading, spacing: 10) {
-                            Text(
-                                "Den prickade linjen visar din schemalagda basal timme för timme."
-                            )
-
-                            Text(
-                                "Du kan visa eller ändra dina schemalagda basal under Inställningar > Behandling > Basalprofil."
-                            )
-                        },
-                        color: Color.insulin,
-                        iconString: "ellipsis"
-                    )
-
-                    DefinitionRow(
-                        term: "Tillfällig basal (TBR)",
-                        definition: Text(
-                            "Visar aktuella eller tidigare tillfälliga basaler som antingen satts av oref-algoritmen eller manuellt."
-                        ),
-                        color: Color.insulin,
-                        iconString: "square"
-                    )
-
-                    DefinitionRow(
-                        term: "Pump pausad",
-                        definition: Text(
-                            "Visar när insulintillförseln varit pausad, det vill säga när pumpen varit stoppad."
-                        ),
-                        color: Color.loopGray.opacity(
-                            colorScheme == .dark ? 0.3 : 0.8
-                        ),
-                        iconString: "square.fill"
-                    )
-
-                    DefinitionRow(
-                        term: "CGM-värde",
-                        definition: VStack(alignment: .leading, spacing: 10) {
-                            if state.settingsManager.settings.smoothGlucose {
-                                Text(
-                                    "Visar glukosvärden från din CGM som jämnats ut med Savitzky–Golay-filtret. De visade värdena kan därför skilja sig något från de faktiska CGM-värdena."
-                                )
-
-                                Text(
-                                    "Beroende på dina gränssnittsinställningar visas värdena antingen med statiska färger (röd, grön och orange) eller med ett dynamiskt färgspektrum."
-                                )
-                            } else {
-                                Text(
-                                    "Visar glukosvärden från din CGM. Beroende på dina gränssnittsinställningar visas värdena antingen med statiska färger (röd, grön och orange) eller med ett dynamiskt färgspektrum."
-                                )
-                            }
-
-                            Text(
-                                "Du kan ändra hur glukosvärden visas under Inställningar > Funktioner > Användargränssnitt > Glukosfärgschema."
-                            )
-
-                            if state.settingsManager.settings.smoothGlucose {
-                                Text(
-                                    "Du kan stänga av utjämning under Inställningar > Enheter > Kontinuerlig glukosmätare > Utjämna glukosvärde."
-                                )
-                            }
-                        },
-                        color: Color.green,
-                        iconString: state.settingsManager.settings.smoothGlucose
-                            ? "record.circle.fill"
-                            : "circle.fill"
-                    )
-
-                    DefinitionRow(
-                        term: "Manuellt glukosvärde",
-                        definition: Text(
-                            "Ett manuellt registrerat blodsockervärde, till exempel från ett fingerstick."
-                        ),
-                        color: Color.red,
-                        iconString: "drop.fill"
-                    )
-
-                    DefinitionRow(
-                        term: "Bolus",
-                        definition: Text(
-                            "Visar en insulindos. Det kan vara en automatisk mikrodos (SMB), en manuellt given bolus eller insulin som registrerats från en extern källa, exempelvis en insulinpenna."
-                        ),
-                        color: Color.insulin,
-                        iconString: "arrowtriangle.down.fill"
-                    )
-
-                    DefinitionRow(
-                        term: "Kolhydratregistrering",
-                        definition: Text(
-                            "Visar registrerade kolhydrater som används för att beräkna insulinbehandlingen."
-                        ),
-                        color: Color.orange,
-                        iconString: "arrowtriangle.down.fill",
-                        shouldRotateIcon: true
-                    )
-
-                    DefinitionRow(
-                        term: "Kolhydratekvivalent för fett och protein",
-                        definition: VStack(alignment: .leading, spacing: 10) {
-                            Text(
-                                "Visar den kolhydratekvivalent som beräknats från fett och protein enligt Warszawametoden."
-                            )
-
-                            Text(
-                                "Du kan aktivera eller konfigurera Warszawametoden under Inställningar > Funktioner > Måltidsinställningar."
-                            )
-                        },
-                        color: Color.brown,
-                        iconString: "circle.fill"
-                    )
-
-                    DefinitionRow(
-                        term: "Override",
-                        definition: Text(
-                            "Visar när en override varit aktiv. En override kan tillfälligt ändra basal, insulinkänslighet, kolhydratkvot, glukosmål eller om Trio får ge SMB."
-                        ),
-                        color: Color.purple.opacity(0.4),
-                        iconString: "button.horizontal.fill"
-                    )
-
-                    DefinitionRow(
-                        term: "Tillfälligt mål",
-                        definition: Text(
-                            "Visar när ett tillfälligt glukosmål varit aktivt, vilket kan påverka när och hur mycket insulin som ges."
-                        ),
-                        color: Color.green.opacity(0.4),
-                        iconString: "button.horizontal.fill"
-                    )
-
-                    DefinitionRow(
-                        term: "Tidigare IOB (aktivt insulin)",
-                        definition: Text(
-                            "Visar det IOB-värde som algoritmen beräknade vid en viss tidpunkt. Dessa värden är historiska ögonblicksbilder och ändras inte i efterhand."
-                        ),
-                        color: Color.insulin.opacity(0.8),
-                        iconString: "line.diagonal"
-                    )
-
-                    DefinitionRow(
-                        term: "Tidigare COB (aktiva kolhydrater)",
-                        definition: Text(
-                            "Visar det COB-värde som algoritmen beräknade vid en viss tidpunkt. Dessa värden är historiska ögonblicksbilder och ändras inte i efterhand."
-                        ),
-                        color: Color.orange.opacity(0.8),
-                        iconString: "line.diagonal"
-                    )
-                }
-                .listRowBackground(Color.chart)
-            }
-            .padding(.top, 80)
-            .scrollContentBackground(.hidden)
-            // .padding(.trailing, 10)
-
-            // Ger tillräckligt med extra skrollutrymme så den sista
-            // listposten kan skrollas upp ovanför den flytande knappen.
-            .contentMargins(.bottom, 110, for: .scrollContent)
-            // }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .overlay(alignment: .bottom) {
-                let bottomExtension: CGFloat = 34
-
-                ZStack(alignment: .bottom) {
-                    LinearGradient(
-                        colors: [
-                            .clear,
-                            (colorScheme == .dark ? Color.bgDarkerDarkBlue : Color(.systemBackground)).opacity(0.5),
-                            (colorScheme == .dark ? Color.bgDarkerDarkBlue : Color(.systemBackground)).opacity(0.8)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 150)
-                    .allowsHitTesting(false)
-
-                    Group {
-                        if #available(iOS 26.0, *) {
-                            Button {
-                                state.isLegendPresented.toggle()
-                            } label: {
-                                Text("Uppfattat!")
-                                    .bold()
-                                    .frame(
-                                        maxWidth: .infinity,
-                                        minHeight: 40,
-                                        alignment: .center
-                                    )
-                            }
-                            .buttonStyle(.glassProminent)
+                        if state.forecastDisplayType == .lines {
+                            legendLinesView
                         } else {
-                            Button {
-                                state.isLegendPresented.toggle()
-                            } label: {
-                                Text("Uppfattat!")
-                                    .bold()
-                                    .frame(
-                                        maxWidth: .infinity,
-                                        minHeight: 40,
-                                        alignment: .center
-                                    )
-                            }
-                            .buttonStyle(.borderedProminent)
+                            legendConeOfUncertaintyView
                         }
                     }
-                    .padding(.horizontal)
-                    .padding(.bottom, bottomExtension + 8)
+                    .listRowBackground(Color.chart)
+
+                    VStack(alignment: .leading) {
+                        Text("Övriga element och symboler")
+                            .bold()
+                            .padding(.bottom, 5)
+                            .textCase(.uppercase)
+
+                        DefinitionRow(
+                            term: "Schemalagd basal",
+                            definition: VStack(alignment: .leading, spacing: 10) {
+                                Text(
+                                    "Den prickade linjen visar din schemalagda basal timme för timme."
+                                )
+
+                                Text(
+                                    "Du kan visa eller ändra dina schemalagda basal under Inställningar > Behandling > Basalprofil."
+                                )
+                            },
+                            color: Color.insulin,
+                            iconString: "ellipsis"
+                        )
+
+                        DefinitionRow(
+                            term: "Tillfällig basal (TBR)",
+                            definition: Text(
+                                "Visar aktuella eller tidigare tillfälliga basaler som antingen satts av oref-algoritmen eller manuellt."
+                            ),
+                            color: Color.insulin,
+                            iconString: "square"
+                        )
+
+                        DefinitionRow(
+                            term: "Pump pausad",
+                            definition: Text(
+                                "Visar när insulintillförseln varit pausad, det vill säga när pumpen varit stoppad."
+                            ),
+                            color: Color.loopGray.opacity(
+                                colorScheme == .dark ? 0.3 : 0.8
+                            ),
+                            iconString: "square.fill"
+                        )
+
+                        DefinitionRow(
+                            term: "CGM-värde",
+                            definition: VStack(alignment: .leading, spacing: 10) {
+                                if state.settingsManager.settings.smoothGlucose {
+                                    Text(
+                                        "Visar glukosvärden från din CGM som jämnats ut med Savitzky–Golay-filtret. De visade värdena kan därför skilja sig något från de faktiska CGM-värdena."
+                                    )
+
+                                    Text(
+                                        "Beroende på dina gränssnittsinställningar visas värdena antingen med statiska färger (röd, grön och orange) eller med ett dynamiskt färgspektrum."
+                                    )
+                                } else {
+                                    Text(
+                                        "Visar glukosvärden från din CGM. Beroende på dina gränssnittsinställningar visas värdena antingen med statiska färger (röd, grön och orange) eller med ett dynamiskt färgspektrum."
+                                    )
+                                }
+
+                                Text(
+                                    "Du kan ändra hur glukosvärden visas under Inställningar > Funktioner > Användargränssnitt > Glukosfärgschema."
+                                )
+
+                                if state.settingsManager.settings.smoothGlucose {
+                                    Text(
+                                        "Du kan stänga av utjämning under Inställningar > Enheter > Kontinuerlig glukosmätare > Utjämna glukosvärde."
+                                    )
+                                }
+                            },
+                            color: Color.green,
+                            iconString: state.settingsManager.settings.smoothGlucose
+                                ? "record.circle.fill"
+                                : "circle.fill"
+                        )
+
+                        DefinitionRow(
+                            term: "Manuellt glukosvärde",
+                            definition: Text(
+                                "Ett manuellt registrerat blodsockervärde, till exempel från ett fingerstick."
+                            ),
+                            color: Color.red,
+                            iconString: "drop.fill"
+                        )
+
+                        DefinitionRow(
+                            term: "Bolus",
+                            definition: Text(
+                                "Visar en insulindos. Det kan vara en automatisk mikrodos (SMB), en manuellt given bolus eller insulin som registrerats från en extern källa, exempelvis en insulinpenna."
+                            ),
+                            color: Color.insulin,
+                            iconString: "arrowtriangle.down.fill"
+                        )
+
+                        DefinitionRow(
+                            term: "Kolhydratregistrering",
+                            definition: Text(
+                                "Visar registrerade kolhydrater som används för att beräkna insulinbehandlingen."
+                            ),
+                            color: Color.orange,
+                            iconString: "arrowtriangle.down.fill",
+                            shouldRotateIcon: true
+                        )
+
+                        DefinitionRow(
+                            term: "Kolhydratekvivalent för fett och protein",
+                            definition: VStack(alignment: .leading, spacing: 10) {
+                                Text(
+                                    "Visar den kolhydratekvivalent som beräknats från fett och protein enligt Warszawametoden."
+                                )
+
+                                Text(
+                                    "Du kan aktivera eller konfigurera Warszawametoden under Inställningar > Funktioner > Måltidsinställningar."
+                                )
+                            },
+                            color: Color.brown,
+                            iconString: "circle.fill"
+                        )
+
+                        DefinitionRow(
+                            term: "Override",
+                            definition: Text(
+                                "Visar när en override varit aktiv. En override kan tillfälligt ändra basal, insulinkänslighet, kolhydratkvot, glukosmål eller om Trio får ge SMB."
+                            ),
+                            color: Color.purple.opacity(0.4),
+                            iconString: "button.horizontal.fill"
+                        )
+
+                        DefinitionRow(
+                            term: "Tillfälligt mål",
+                            definition: Text(
+                                "Visar när ett tillfälligt glukosmål varit aktivt, vilket kan påverka när och hur mycket insulin som ges."
+                            ),
+                            color: Color.green.opacity(0.4),
+                            iconString: "button.horizontal.fill"
+                        )
+
+                        DefinitionRow(
+                            term: "Tidigare IOB (aktivt insulin)",
+                            definition: Text(
+                                "Visar det IOB-värde som algoritmen beräknade vid en viss tidpunkt. Dessa värden är historiska ögonblicksbilder och ändras inte i efterhand."
+                            ),
+                            color: Color.insulin.opacity(0.8),
+                            iconString: "line.diagonal"
+                        )
+
+                        DefinitionRow(
+                            term: "Tidigare COB (aktiva kolhydrater)",
+                            definition: Text(
+                                "Visar det COB-värde som algoritmen beräknade vid en viss tidpunkt. Dessa värden är historiska ögonblicksbilder och ändras inte i efterhand."
+                            ),
+                            color: Color.orange.opacity(0.8),
+                            iconString: "line.diagonal"
+                        )
+                    }
+                    .listRowBackground(Color.chart)
                 }
-                .frame(maxWidth: .infinity)
-                .offset(y: bottomExtension)
-                .ignoresSafeArea(edges: .bottom)
+                .scrollContentBackground(.hidden)
+                .contentMargins(.top, titleHeight + 24, for: .scrollContent)
+                .contentMargins(.bottom, buttonClearance, for: .scrollContent)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .mask(alignment: .top) {
+                    VStack(spacing: 0) {
+                        Color.clear.frame(height: titleHeight)
+                        Rectangle()
+                    }
+                }
+                .overlay(alignment: .top) {
+                    Text("Förklaring av diagrammet")
+                        .font(.headline)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
+                        .padding(.horizontal)
+                        .padding(.top, 26)
+                        .padding(.bottom, 16)
+                        .accessibilityAddTraits(.isHeader)
+                        .onGeometryChange(for: CGFloat.self) { proxy in
+                            proxy.size.height
+                        } action: { height in
+                            titleHeight = height
+                        }
+                        .allowsHitTesting(false)
+                }
+                .listSectionSpacing(10)
+                .frame(width: geometry.size.width, height: geometry.size.height)
+
+                dismissButton
+                    .padding(.horizontal)
+                    .padding(.bottom, 12)
             }
-            .navigationBarTitle("Förklaring av diagrammet", displayMode: .inline)
-            .background(appState.trioBackgroundColor(for: colorScheme))
-            .toolbarBackground(.hidden, for: .navigationBar)
-            .listSectionSpacing(10)
-            .ignoresSafeArea(edges: .top)
-            .presentationDetents(
-                [.fraction(0.9), .large],
-                selection: $legendSheetDetent
-            )
+            .frame(width: geometry.size.width, height: geometry.size.height)
         }
+        // Measure the sheet itself, without a navigation container or list insets.
+        .ignoresSafeArea(.container, edges: [.top, .bottom])
+        .background(appState.trioBackgroundColor(for: colorScheme))
+        .presentationDetents([.fraction(0.9), .large], selection: $legendSheetDetent)
         .presentationBackground(appState.trioBackgroundColor(for: colorScheme))
+    }
+
+    private var dismissButtonLabel: some View {
+        Text("Uppfattat!")
+            .bold()
+            .frame(maxWidth: .infinity, minHeight: 40, alignment: .center)
+    }
+
+    @ViewBuilder private var dismissButton: some View {
+        if #available(iOS 26, *) {
+            Button {
+                state.isLegendPresented = false
+            } label: {
+                dismissButtonLabel
+            }
+            .buttonStyle(.glass)
+            .buttonBorderShape(.capsule)
+        } else {
+            Button {
+                state.isLegendPresented = false
+            } label: {
+                dismissButtonLabel
+                    .padding(.vertical, 8)
+                    .background(.regularMaterial, in: Capsule())
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.accentColor)
+        }
     }
 
     var legendLinesView: some View {
