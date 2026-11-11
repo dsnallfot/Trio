@@ -4,10 +4,78 @@ import SwiftDate
 import SwiftUI
 import Swinject
 
-struct TimePicker: Identifiable {
-    var active: Bool
-    let hours: Int16
-    var id: String { hours.description }
+/// Keeps scrubbing local so the chart only reloads when the finger is released.
+private struct ChartTimeRangePicker: View {
+    @Binding var hours: Int16
+    @GestureState private var scrubbedHours: Int16?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @ScaledMetric(relativeTo: .footnote) private var pickerWidth = 168.0
+    @ScaledMetric(relativeTo: .footnote) private var pickerHeight = 28.0
+
+    private let options: [Int16] = [3, 6, 12, 24]
+    private var displayedHours: Int16 { scrubbedHours ?? hours }
+
+    var body: some View {
+        GeometryReader { geometry in
+            let segmentWidth = geometry.size.width / CGFloat(options.count)
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(.primary.opacity(0.16))
+                    .frame(width: segmentWidth, height: geometry.size.height)
+                    .offset(x: CGFloat(options.firstIndex(of: displayedHours) ?? 0) * segmentWidth)
+                    .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: displayedHours)
+                    .allowsHitTesting(false)
+
+                HStack(spacing: 0) {
+                    ForEach(options, id: \.self) { option in
+                        Button {
+                            hours = option
+                        } label: {
+                            Text(
+                                option
+                                    .description + (displayedHours == option ? " " + NSLocalizedString("h", comment: "h") : "")
+                            )
+                            .font(.footnote)
+                            .fontWeight(displayedHours == option ? .semibold : .regular)
+                            .foregroundStyle(displayedHours == option ? .primary : .secondary)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(Text("\(option) " + NSLocalizedString("h", comment: "h")))
+                        .accessibilityAddTraits(hours == option ? .isSelected : [])
+                    }
+                }
+            }
+            .contentShape(Capsule())
+            .highPriorityGesture(
+                DragGesture(minimumDistance: 4)
+                    .updating($scrubbedHours) { value, preview, _ in
+                        preview = option(at: value.location.x, width: geometry.size.width)
+                    }
+                    .onEnded { value in
+                        hours = option(at: value.location.x, width: geometry.size.width)
+                    }
+            )
+        }
+        .frame(width: pickerWidth, height: pickerHeight)
+        .modifier(TimeRangeGlassBackground())
+    }
+
+    private func option(at x: CGFloat, width: CGFloat) -> Int16 {
+        let index = Int((max(0, min(x, width)) / max(width, 1) * CGFloat(options.count)).rounded(.down))
+        return options[min(index, options.count - 1)]
+    }
+}
+
+private struct TimeRangeGlassBackground: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content.glassEffect(.regular.interactive(), in: .capsule)
+        } else {
+            content.background(.ultraThinMaterial, in: Capsule())
+        }
+    }
 }
 
 extension Home {
@@ -36,12 +104,6 @@ extension Home {
         @State var showPumpSelection: Bool = false
         @State private var pendingPumpSelection: PumpConfig.PumpType?
         @State var notificationsDisabled = false
-        @State var timeButtons: [TimePicker] = [
-            TimePicker(active: false, hours: 3),
-            TimePicker(active: false, hours: 6),
-            TimePicker(active: false, hours: 12),
-            TimePicker(active: false, hours: 24)
-        ]
 
         @FetchRequest(fetchRequest: OverrideStored.fetch(
             NSPredicate.lastActiveOverride,
@@ -323,41 +385,7 @@ extension Home {
         }
 
         var timeIntervalButtons: some View {
-            // let buttonColor = (colorScheme == .dark ? Color.white : Color.black).opacity(0.8)
-            let buttonColor = Color.secondary
-
-            return HStack(alignment: .center) {
-                ForEach(timeButtons) { button in
-                    Button(action: {
-                        state.hours = button.hours
-                    }) {
-                        Group {
-                            if button.active {
-                                Text(
-                                    NSLocalizedString(button.hours.description, comment: "") + " " +
-                                        NSLocalizedString("h", comment: "h")
-                                )
-                            } else {
-                                Text(NSLocalizedString(button.hours.description, comment: ""))
-                            }
-                        }
-                        .font(.footnote)
-                        .fontWeight(button.active ? .semibold : .regular)
-                        .padding(.vertical, 5)
-                        .padding(.horizontal, 10)
-                        .foregroundColor(
-                            button
-                                .active ? (colorScheme == .dark ? Color.bgDarkerDarkBlue : Color.white) : buttonColor
-                        )
-                        .background(button.active ? buttonColor.opacity(colorScheme == .dark ? 1 : 0.8) : Color.clear)
-                        .clipShape(Capsule())
-                        .overlay(
-                            Capsule()
-                                .stroke(button.active ? buttonColor.opacity(0.4) : Color.clear, lineWidth: 1)
-                        )
-                    }
-                }
-            }
+            ChartTimeRangePicker(hours: $state.hours)
         }
 
         var statsIconString: String {
@@ -421,12 +449,6 @@ extension Home {
                 }
             }
             .padding(.bottom, UIDevice.adjustPadding(min: 0, max: nil))
-        }
-
-        func highlightButtons() {
-            for i in 0 ..< timeButtons.count {
-                timeButtons[i].active = timeButtons[i].hours == state.hours
-            }
         }
 
         @ViewBuilder func rightHeaderPanel(_: GeometryProxy) -> some View {
@@ -853,12 +875,13 @@ extension Home {
                         state.showProgressView()
                         state.cancelBolus()
                     } label: {
-                        Image(systemName: "xmark.app")
-                            .font(.system(size: 25))
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 30))
+                            .tint(.loopRed)
                     }
                 }
                 .padding(.horizontal, 10)
-                .padding(.trailing, 8)
+                .padding(.trailing, 3)
                 .frame(height: HomeLayout.bottomPanelHeight)
                 .glassPanel(tint: .insulin, tintOpacity: 0.18, strokeOpacity: 0.30)
                 .overlay(alignment: .bottom) {
@@ -1008,13 +1031,8 @@ extension Home {
             }
             // no inline text input here; a stale keyboard inset must never shrink the zone budget
             .ignoresSafeArea(.keyboard, edges: .bottom)
-            .onChange(of: state.hours) {
-                highlightButtons()
-            }
             .onAppear {
-                configureView {
-                    highlightButtons()
-                }
+                configureView()
             }
             .navigationTitle("Home")
             .navigationBarHidden(true)
