@@ -20,7 +20,7 @@ extension Stat {
 
         @ViewBuilder func stats() -> some View {
             ZStack {
-                Color.gray.opacity(0.05).ignoresSafeArea(.all)
+                Color.clear.ignoresSafeArea(.all)
                 let filter = DateFilter()
                 switch state.selectedDuration {
                 case .Today:
@@ -111,19 +111,13 @@ extension Stat {
         var body: some View {
             VStack(alignment: .center) {
                 chart().padding(.top, 20)
-                Picker("Duration", selection: $state.selectedDuration) {
-                    ForEach(Stat.StateModel.Duration.allCases) { duration in
-                        Text(NSLocalizedString(duration.rawValue, comment: ""))
-                            .tag(duration)
+                StatsDurationPicker(selection: $state.selectedDuration)
+                    .padding(.horizontal, 10)
+                    .onChange(of: state.selectedDuration) { _, newValue in
+                        state.setupGlucoseArray(for: newValue)
                     }
-                }
-                .pickerStyle(.segmented)
-                .background(.cyan.opacity(0.2))
-                .onChange(of: state.selectedDuration) { _, newValue in
-                    state.setupGlucoseArray(for: newValue)
-                }
-                .pickerStyle(.segmented).background(.cyan.opacity(0.2))
                 stats()
+                    .padding(.top, 6)
             }.background(appState.trioBackgroundColor(for: colorScheme))
                 .task(id: state.selectedDuration) {
                     configureView()
@@ -144,5 +138,72 @@ extension Stat {
                     })
                 }
         }
+    }
+}
+
+/// Mirrors the Home time picker, committing a scrub only when the finger is released.
+private struct StatsDurationPicker: View {
+    @Binding var selection: Stat.StateModel.Duration
+    @GestureState private var scrubbedDuration: Stat.StateModel.Duration?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @ScaledMetric(relativeTo: .footnote) private var pickerHeight = 32.0
+
+    private let options = Stat.StateModel.Duration.selectableCases
+    private var displayedDuration: Stat.StateModel.Duration { scrubbedDuration ?? selection }
+
+    var body: some View {
+        if #available(iOS 26.0, *) {
+            segments.glassEffect(.regular.interactive(), in: .capsule)
+        } else {
+            segments.background(.ultraThinMaterial, in: Capsule())
+        }
+    }
+
+    private var segments: some View {
+        GeometryReader { geometry in
+            let segmentWidth = geometry.size.width / CGFloat(options.count)
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(.primary.opacity(0.16))
+                    .frame(width: segmentWidth, height: geometry.size.height)
+                    .offset(x: CGFloat(options.firstIndex(of: displayedDuration) ?? 0) * segmentWidth)
+                    .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: displayedDuration)
+                    .allowsHitTesting(false)
+
+                HStack(spacing: 0) {
+                    ForEach(options) { duration in
+                        Button {
+                            selection = duration
+                        } label: {
+                            Text(NSLocalizedString(duration.rawValue, comment: ""))
+                                .font(.footnote)
+                                .fontWeight(displayedDuration == duration ? .semibold : .regular)
+                                .foregroundStyle(displayedDuration == duration ? .primary : .secondary)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityAddTraits(selection == duration ? .isSelected : [])
+                    }
+                }
+            }
+            .contentShape(Capsule())
+            .highPriorityGesture(
+                DragGesture(minimumDistance: 4)
+                    .updating($scrubbedDuration) { value, preview, _ in
+                        preview = option(at: value.location.x, width: geometry.size.width)
+                    }
+                    .onEnded { value in
+                        selection = option(at: value.location.x, width: geometry.size.width)
+                    }
+            )
+        }
+        .frame(height: pickerHeight)
+        .accessibilityIdentifier("statsDurationPicker")
+    }
+
+    private func option(at x: CGFloat, width: CGFloat) -> Stat.StateModel.Duration {
+        let index = Int((max(0, min(x, width)) / max(width, 1) * CGFloat(options.count)).rounded(.down))
+        return options[min(index, options.count - 1)]
     }
 }

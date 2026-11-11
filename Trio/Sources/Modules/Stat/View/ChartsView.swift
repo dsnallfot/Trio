@@ -122,7 +122,7 @@ struct ChartsView: View {
                 .annotation(position: .top, alignment: .center) {
                     Text(
                         "\(shape.percent, format: .number.precision(.fractionLength(0 ... 1))) %"
-                    ).font(.footnote).foregroundColor(.secondary)
+                    ).font(.caption.weight(.semibold)).foregroundColor(.secondary)
                 }
             }
             .chartXAxis(.hidden)
@@ -152,7 +152,7 @@ struct ChartsView: View {
                 type: NSLocalizedString(
                     "Low",
                     comment: ""
-                ) + " (< \(low.formatted(.number.grouping(.never).rounded().precision(.fractionLength(fraction)))))",
+                ) + " (<\(low.formatted(.number.grouping(.never).rounded().precision(.fractionLength(fraction)))))",
                 percent: fetched[0].decimal
             ),
             .init(
@@ -163,7 +163,7 @@ struct ChartsView: View {
                 type: NSLocalizedString(
                     "High",
                     comment: ""
-                ) + " (> \(high.formatted(.number.grouping(.never).rounded().precision(.fractionLength(fraction)))))",
+                ) + " (>\(high.formatted(.number.grouping(.never).rounded().precision(.fractionLength(fraction)))))",
                 percent: fetched[2].decimal
             )
         ]
@@ -175,6 +175,7 @@ struct ChartsView: View {
             .foregroundStyle(by: .value("Group", shape.type))
             .annotation(position: shape.percent > 19 ? .overlay : .automatic, alignment: .center) {
                 Text(shape.percent == 0 ? "" : "\(shape.percent, format: .number.precision(.fractionLength(0 ... 1)))")
+                    .font(.subheadline.weight(.semibold))
             }
         }
         .chartXAxis(.hidden)
@@ -187,12 +188,12 @@ struct ChartsView: View {
             NSLocalizedString(
                 "Low",
                 comment: ""
-            ) + " (< \(low.formatted(.number.grouping(.never).rounded().precision(.fractionLength(fraction)))))": .red,
+            ) + " (<\(low.formatted(.number.grouping(.never).rounded().precision(.fractionLength(fraction)))))": .red,
             "\(low.formatted(.number.precision(.fractionLength(fraction)))) - \(high.formatted(.number.precision(.fractionLength(fraction))))": .green,
             NSLocalizedString(
                 "High",
                 comment: ""
-            ) + " (> \(high.formatted(.number.grouping(.never).rounded().precision(.fractionLength(fraction)))))": .orange
+            ) + " (>\(high.formatted(.number.grouping(.never).rounded().precision(.fractionLength(fraction)))))": .orange
         ])
     }
 
@@ -200,12 +201,12 @@ struct ChartsView: View {
         VStack(alignment: .leading, spacing: 15) {
             let mapGlucose = glucose.compactMap({ each in each.glucose })
             if !mapGlucose.isEmpty {
-                let mapGlucoseAcuteLow = mapGlucose.filter({ $0 < Int16(3.3 / 0.0555) })
-                let mapGlucoseHigh = mapGlucose.filter({ $0 > Int16(11 / 0.0555) })
+                let mapGlucoseAcuteLow = mapGlucose.filter({ $0 < 56 })
+                let mapGlucoseHigh = mapGlucose.filter({ $0 > 250 })
                 let mapGlucoseNormal = mapGlucose.filter({ $0 > Int16(3.8 / 0.0555) && $0 < Int16(7.9 / 0.0555) })
                 HStack {
                     let value = 100.0 * Double(mapGlucoseHigh.count) / Double(mapGlucose.count)
-                    Text(units == .mmolL ? ">  11  " : ">  198 ")
+                    Text(units == .mmolL ? ">13.9" : ">250")
                         .frame(width: 45, alignment: .leading)
                         .foregroundColor(.secondary)
                     Text("\(value.formatted(.number.precision(.fractionLength(0 ... 1)))) %")
@@ -223,7 +224,7 @@ struct ChartsView: View {
                 }.font(.caption)
                 HStack {
                     let value = 100.0 * Double(mapGlucoseAcuteLow.count) / Double(mapGlucose.count)
-                    Text(units == .mmolL ? "<  3.3 " : "<  59  ")
+                    Text(units == .mmolL ? "<3.1" : "<56")
                         .frame(width: 45, alignment: .leading)
                         .foregroundColor(.secondary)
                     Text("\(value.formatted(.number.precision(.fractionLength(0 ... 1)))) %")
@@ -238,13 +239,13 @@ struct ChartsView: View {
         HStack {
             let mapGlucose = glucose.compactMap({ each in each.glucose })
             if !mapGlucose.isEmpty {
-                let mapGlucoseLow = mapGlucose.filter({ $0 < Int16(3.3 / 0.0555) })
+                let mapGlucoseLow = mapGlucose.filter({ $0 < 56 })
                 let mapGlucoseNormal = mapGlucose.filter({ $0 > Int16(3.8 / 0.0555) && $0 < Int16(7.9 / 0.0555) })
-                let mapGlucoseAcuteHigh = mapGlucose.filter({ $0 > Int16(11 / 0.0555) })
+                let mapGlucoseAcuteHigh = mapGlucose.filter({ $0 > 250 })
                 Spacer()
                 HStack {
                     let value = 100.0 * Double(mapGlucoseLow.count) / Double(mapGlucose.count)
-                    Text(units == .mmolL ? "< 3.3" : "< 59").font(.caption2).foregroundColor(.secondary)
+                    Text(units == .mmolL ? "<3.1" : "<56").font(.caption2).foregroundColor(.secondary)
                     Text(value.formatted(.number.precision(.fractionLength(0 ... 1)))).font(.caption)
                         .foregroundColor(value == 0 ? .green : .red)
                     Text("%").font(.caption)
@@ -259,7 +260,7 @@ struct ChartsView: View {
                 Spacer()
                 HStack {
                     let value = 100.0 * Double(mapGlucoseAcuteHigh.count) / Double(mapGlucose.count)
-                    Text(units == .mmolL ? "> 11.0" : "> 198").font(.caption).foregroundColor(.secondary)
+                    Text(units == .mmolL ? ">13.9" : ">250").font(.caption).foregroundColor(.secondary)
                     Text(value.formatted(.number.precision(.fractionLength(0 ... 1)))).font(.caption)
                         .foregroundColor(value == 0 ? .green : .orange)
                     Text("%").font(.caption)
