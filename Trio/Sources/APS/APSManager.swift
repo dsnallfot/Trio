@@ -4,6 +4,7 @@ import Foundation
 import LoopKit
 import LoopKitUI
 import MedtrumKit
+import MockKit
 import SwiftDate
 import Swinject
 
@@ -116,7 +117,21 @@ final class BaseAPSManager: APSManager, Injectable {
 
     var pumpManager: PumpManagerUI? {
         get { deviceDataManager.pumpManager }
-        set { deviceDataManager.pumpManager = newValue }
+        set {
+            // Restoration goes through DeviceDataManager.setupPumpManager, not this setter.
+            // A newly selected simulator starts a new history session, even after a real pump.
+            if let simulator = newValue as? MockPumpManager, deviceDataManager.pumpManager !== simulator {
+                let now = Date()
+                pumpHistoryStorage.storePumpEvents([NewPumpEvent(
+                    date: now,
+                    dose: nil,
+                    raw: Data("Pump Simulator Activated \(now.timeIntervalSince1970)".utf8),
+                    title: "Pump Simulator Activated",
+                    type: .replaceComponent(componentType: .pump)
+                )])
+            }
+            deviceDataManager.pumpManager = newValue
+        }
     }
 
     var bluetoothManager: BluetoothStateManager? { deviceDataManager.bluetoothManager }

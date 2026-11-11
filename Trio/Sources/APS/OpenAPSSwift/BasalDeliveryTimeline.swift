@@ -112,6 +112,35 @@ enum BasalDeliveryTimeline {
         return result
     }
 
+    /// A pause belongs to its pump session. Removal or a new attachment closes it,
+    /// without inventing a resume command or rewriting historical delivery.
+    static func suspensionIntervals(events: [Event], now: Date) -> [DateInterval] {
+        let boundaries = events.filter {
+            $0.start <= now && [.suspend, .resume, .attached, .detached].contains($0.kind)
+        }.sorted { $0.start < $1.start }
+        var suspendedAt: Date?
+        var intervals: [DateInterval] = []
+        for date in Set(boundaries.map(\.start)).sorted() {
+            let simultaneous = boundaries.filter { $0.start == date }
+            // A removed pump cannot leave a pause open across the next session.
+            if simultaneous.contains(where: { $0.kind == .detached || $0.kind == .attached || $0.kind == .resume }) {
+                if let start = suspendedAt, date > start {
+                    intervals.append(DateInterval(start: start, end: date))
+                }
+                suspendedAt = nil
+            }
+            if simultaneous.contains(where: { $0.kind == .suspend }),
+               !simultaneous.contains(where: { $0.kind == .detached })
+            {
+                suspendedAt = suspendedAt ?? date
+            }
+        }
+        if let start = suspendedAt, now > start {
+            intervals.append(DateInterval(start: start, end: now))
+        }
+        return intervals
+    }
+
     static func events(from history: [PumpHistoryEvent]) -> [Event] {
         let durations = Dictionary(
             history.filter { $0.type == .tempBasalDuration }.map { ($0.timestamp, $0.durationMin ?? 0) },

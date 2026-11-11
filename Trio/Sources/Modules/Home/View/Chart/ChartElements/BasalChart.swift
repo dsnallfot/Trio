@@ -29,7 +29,7 @@ extension MainChartView {
                 calculateBasals()
                 calculateTempBasalsInBackground()
             }
-            .onChange(of: state.suspensions) { calculateTempBasalsInBackground() }
+            .onChange(of: state.insulinFromPersistence) { calculateTempBasalsInBackground() }
             .onChange(of: state.enactedAndNonEnactedDeterminations.first?.deliverAt) { calculateTempBasalsInBackground() }
             .onChange(of: state.basalProfile) { calculateBasals()
                 calculateTempBasalsInBackground() }
@@ -166,32 +166,19 @@ extension MainChartView {
     }
 
     func drawSuspensions() -> some ChartContent {
-        let suspensions = state.suspensions
-        return ForEach(suspensions) { suspension in
-            let now = Date()
-
-            if let type = suspension.type, type == EventType.pumpSuspend.rawValue, let suspensionStart = suspension.timestamp {
-                let suspensionEnd = min(
-                    (
-                        suspensions
-                            .first(where: {
-                                $0.timestamp ?? now > suspensionStart && $0.type == EventType.pumpResume.rawValue })?
-                            .timestamp
-                    ) ?? now,
-                    now
-                )
-
-                let basalProfileDuringSuspension = basalProfiles.first(where: { $0.startDate <= suspensionStart })
-                let suspensionMarkHeight = basalProfileDuringSuspension?.amount ?? 1
-
-                RectangleMark(
-                    xStart: .value("start", suspensionStart),
-                    xEnd: .value("end", suspensionEnd),
-                    yStart: .value("suspend-start", 0),
-                    yEnd: .value("suspend-end", suspensionMarkHeight)
-                )
-                .foregroundStyle(Color.loopGray.opacity(colorScheme == .dark ? 0.3 : 0.8))
-            }
+        let intervals = BasalDeliveryTimeline.suspensionIntervals(
+            events: state.insulinFromPersistence.compactMap(BasalDeliveryTimeline.event(from:)),
+            now: Date()
+        )
+        return ForEach(intervals, id: \.start) { interval in
+            let profile = basalProfiles.last(where: { $0.startDate <= interval.start })
+            RectangleMark(
+                xStart: .value("start", interval.start),
+                xEnd: .value("end", interval.end),
+                yStart: .value("suspend-start", 0),
+                yEnd: .value("suspend-end", profile?.amount ?? 1)
+            )
+            .foregroundStyle(Color.loopGray.opacity(colorScheme == .dark ? 0.3 : 0.8))
         }
     }
 }
