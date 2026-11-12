@@ -14,25 +14,39 @@ struct SavedProfilesView: View {
         _model = StateObject(wrappedValue: SavedProfilesModel(resolver: resolver))
     }
 
+    private var matchingProfileID: UUID? {
+        model.current.flatMap { model.matchingProfile(for: $0)?.id }
+    }
+
+    private func profileRowBackground(_ tint: Color?) -> some View {
+        Color.chart.overlay((tint ?? .clear).opacity(colorScheme == .dark ? 0.16 : 0.10))
+    }
+
     var body: some View {
         Form {
             Section("Aktuell profil") {
                 if let current = model.current {
-                    NavigationLink(model.currentProfileName) {
+                    NavigationLink {
                         SavedProfileReviewView(model: model, profile: current, savingCurrent: true)
+                    } label: {
+                        SavedProfileRowLabel(name: model.currentProfileName, profile: current, units: model.units)
                     }
+                    .listRowBackground(profileRowBackground(matchingProfileID == nil ? .orange : .green))
                 }
             }
-            .listRowBackground(Color.chart)
             Section("Sparade profiler") {
                 if model.profiles.isEmpty {
                     Text("Inga sparade profiler ännu. Spara aktuell profil för att skapa ett förval.")
                         .foregroundStyle(.secondary)
+                        .listRowBackground(Color.chart)
                 }
                 ForEach(model.profiles) { profile in
-                    NavigationLink(profile.name) {
+                    NavigationLink {
                         SavedProfileReviewView(model: model, profile: profile, savingCurrent: false)
+                    } label: {
+                        SavedProfileRowLabel(name: profile.name, profile: profile, units: model.units)
                     }
+                    .listRowBackground(profileRowBackground(profile.id == matchingProfileID ? .green : nil))
                     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                         Button {
                             profileToDelete = profile
@@ -50,7 +64,6 @@ struct SavedProfilesView: View {
                     }
                 }
             }
-            .listRowBackground(Color.chart)
         }
         .scrollContentBackground(.hidden)
         .background(appState.trioBackgroundColor(for: colorScheme))
@@ -84,6 +97,25 @@ struct SavedProfilesView: View {
         } message: {
             Text(listError ?? "")
         }
+    }
+}
+
+private struct SavedProfileRowLabel: View {
+    let name: String
+    let profile: SavedTherapyProfile
+    let units: GlucoseUnits
+    @Environment(\.locale) private var locale
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(name)
+                .foregroundStyle(.primary)
+            Text(profile.summary(units: units, locale: locale, multiline: true))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.vertical, 2)
     }
 }
 
@@ -225,5 +257,76 @@ private struct SavedProfileReviewView: View {
 
     private func glucose(_ value: Decimal) -> String {
         model.units == .mmolL ? value.formattedAsMmolL : number(value)
+    }
+}
+
+/// Shared two-step save flow for the four therapy editors. Reads the persisted profile,
+/// so the optional backup never includes the editor's pending changes.
+struct TherapyProfileSaveConfirmation: ViewModifier {
+    @StateObject private var profiles: SavedProfilesModel
+    @Binding private var isRequested: Bool
+    let saveChanges: () -> Void
+    @State private var originalProfile: SavedTherapyProfile?
+    @State private var name = ""
+    @State private var showingName = false
+    @State private var showingConfirmation = false
+    @State private var showingError = false
+
+    init(resolver: Resolver, isRequested: Binding<Bool>, saveChanges: @escaping () -> Void) {
+        _profiles = StateObject(wrappedValue: SavedProfilesModel(resolver: resolver))
+        _isRequested = isRequested
+        self.saveChanges = saveChanges
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: isRequested) { _, requested in
+                guard requested else { return }
+                isRequested = false
+                profiles.reload()
+                originalProfile = profiles.current
+                name = ""
+                if profiles.currentProfileIsSaved {
+                    showingConfirmation = true
+                } else {
+                    showingName = true
+                }
+            }
+            .alert("Ge profilen ett namn", isPresented: $showingName) {
+                TextField("Profilnamn", text: $name)
+                Button("Spara") {
+                    guard let originalProfile else { return }
+                    if profiles.save(originalProfile, name: name) {
+                        confirmChanges()
+                    } else {
+                        DispatchQueue.main.async { showingError = true }
+                    }
+                }
+                .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                Button("Spara inte") { confirmChanges() }
+            } message: {
+                Text("Den befintliga profilen är inte sparad. Vill du spara den innan du tillämpar ändringarna?")
+            }
+            .alert("Spara ändringar?", isPresented: $showingConfirmation) {
+                Button("Spara ändringar") {
+                    originalProfile = nil
+                    saveChanges()
+                }
+                Button("Avbryt", role: .cancel) { originalProfile = nil }
+            } message: {
+                Text("Vill du tillämpa de nya behandlingsinställningarna?")
+            }
+            .alert("Profilen kunde inte sparas", isPresented: $showingError) {
+                Button("Försök igen") {
+                    DispatchQueue.main.async { showingName = true }
+                }
+                Button("Avbryt", role: .cancel) { originalProfile = nil }
+            } message: {
+                Text(profiles.errorMessage ?? "Försök igen.")
+            }
+    }
+
+    private func confirmChanges() {
+        DispatchQueue.main.async { showingConfirmation = true }
     }
 }

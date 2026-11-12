@@ -27,6 +27,31 @@ struct SavedTherapyProfile: JSON, Identifiable {
             }
     }
 
+    func summary(units: GlucoseUnits, locale: Locale = .current, multiline: Bool = false) -> String {
+        func number(_ value: Decimal) -> String {
+            let formatter = NumberFormatter()
+            formatter.locale = locale
+            formatter.numberStyle = .decimal
+            formatter.maximumFractionDigits = 3
+            return formatter.string(from: value as NSDecimalNumber) ?? value.description
+        }
+        func glucose(_ value: Decimal) -> String {
+            units == .mmolL ? value.formattedAsMmolL : number(value)
+        }
+        func range(_ values: [Decimal], format: (Decimal) -> String) -> String {
+            guard let minimum = values.min(), let maximum = values.max() else { return "–" }
+            let low = format(minimum)
+            let high = format(maximum)
+            return low == high ? low : "\(low)–\(high)"
+        }
+        let basalRange = range(basal.map(\.rate), format: number)
+        let cr = range(carbRatios.schedule.map(\.ratio), format: number)
+        let isf = range(sensitivities.sensitivities.map(\.sensitivity), format: glucose)
+        let target = range(targets.targets.flatMap { [$0.low, $0.high] }, format: glucose)
+        let separator = multiline ? "\n" : " • "
+        return "Basal: \(basalRange) E/h (\(number(totalBasal)) E/dag) • CR: \(cr) g/E\(separator)ISF: \(isf) mmol/L/E • Mål: \(target) mmol/L"
+    }
+
     var totalBasal: Decimal {
         zip(basal, basal.dropFirst().map(\.minutes) + [1440]).reduce(0) {
             $0 + $1.0.rate * Decimal($1.1 - $1.0.minutes) / 60

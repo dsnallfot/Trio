@@ -40,6 +40,11 @@ import Swinject
         )
     }
 
+    var currentProfileIsSaved: Bool {
+        guard let current else { return false }
+        return matchingProfile(for: current) != nil
+    }
+
     var currentProfileName: String {
         guard let current else { return "Ej sparad profil" }
         return matchingProfile(for: current)?.name ?? "Ej sparad profil"
@@ -189,7 +194,8 @@ import Swinject
         broadcaster.notify(BGTargetsObserver.self, on: .main) { $0.bgTargetsDidChange(profile.targets) }
         current = profile
         // Keep the existing Nightscout format and profile name (default).
-        await nightscout.uploadProfiles(alsoUploadNote: true, note: "Sparad profil aktiverades: '\(profile.name)'")
+        let finalNote = "Sparad profil aktiverades: '\(profile.name)'\n\(profile.summary(units: units))"
+        await nightscout.uploadProfiles(alsoUploadNote: true, note: finalNote)
         return true
     }
 }

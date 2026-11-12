@@ -7,6 +7,7 @@ extension BasalProfileEditor {
         let resolver: Resolver
         @State var state = StateModel()
         @State private var editMode = EditMode.inactive
+        @State private var confirmProfileChanges = false
 
         let chartScale = Calendar.current
             .date(from: DateComponents(year: 2001, month: 01, day: 01, hour: 0, minute: 0, second: 0))
@@ -93,7 +94,7 @@ extension BasalProfileEditor {
                         Button(action: {
                             let impactHeavy = UIImpactFeedbackGenerator(style: .heavy)
                             impactHeavy.impactOccurred()
-                            state.save()
+                            confirmProfileChanges = true
                         }, label: {
                             HStack {
                                 if state.syncInProgress {
@@ -162,6 +163,9 @@ extension BasalProfileEditor {
                 }
             }
             .safeAreaInset(edge: .bottom, spacing: 30) { saveButton }
+            .modifier(TherapyProfileSaveConfirmation(resolver: resolver, isRequested: $confirmProfileChanges) {
+                state.save()
+            })
             .alert(isPresented: $state.showAlert) {
                 Alert(
                     title: Text("Unable to Save"),
@@ -207,7 +211,7 @@ extension BasalProfileEditor {
                             ).tag(i)
                         }
                     }
-                    .onChange(of: state.items[index].rateIndex, { state.calcTotal() })
+                    .onChange(of: state.items[index].rateIndex) { state.calcTotal() }
                 }.listRowBackground(Color.chart)
 
                 Section {
@@ -222,7 +226,7 @@ extension BasalProfileEditor {
                             ).tag(i)
                         }
                     }
-                    .onChange(of: state.items[index].timeIndex, { state.calcTotal() })
+                    .onChange(of: state.items[index].timeIndex) { state.calcTotal() }
                 }.listRowBackground(Color.chart)
             }
             .padding(.top)

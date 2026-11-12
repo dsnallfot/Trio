@@ -7,6 +7,7 @@ extension ISFEditor {
         let resolver: Resolver
         @State var state = StateModel()
         @State private var editMode = EditMode.inactive
+        @State private var confirmProfileChanges = false
 
         @Environment(\.colorScheme) var colorScheme
         @Environment(AppState.self) var appState
@@ -39,12 +40,7 @@ extension ISFEditor {
                             Button {
                                 let impactHeavy = UIImpactFeedbackGenerator(style: .heavy)
                                 impactHeavy.impactOccurred()
-                                state.save()
-
-                                // deactivate saving display after 1.25 seconds
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 1.25) {
-                                    state.shouldDisplaySaving = false
-                                }
+                                confirmProfileChanges = true
                             } label: {
                                 HStack {
                                     if state.shouldDisplaySaving {
@@ -97,6 +93,12 @@ extension ISFEditor {
                 }
             }
             .safeAreaInset(edge: .bottom, spacing: 30) { saveButton }
+            .modifier(TherapyProfileSaveConfirmation(resolver: resolver, isRequested: $confirmProfileChanges) {
+                state.save()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.25) {
+                    state.shouldDisplaySaving = false
+                }
+            })
             .scrollContentBackground(.hidden).background(appState.trioBackgroundColor(for: colorScheme))
             .onAppear(perform: configureView)
             .navigationTitle("Insulinkänslighet")
