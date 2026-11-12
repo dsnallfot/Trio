@@ -7,8 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		DC1439000000000000000012 /* DevicePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC1439000000000000000002 /* DevicePickerView.swift */; };
-		DC1439000000000000000011 /* DeviceCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC1439000000000000000001 /* DeviceCatalog.swift */; };
 		041D1E995A6AE92E9289DC49 /* TreatmentsDataFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D1A7CA8C10C4403D4BBFA7 /* TreatmentsDataFlow.swift */; };
 		0437CE46C12535A56504EC19 /* SnoozeRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5822B15939E719628E9FF7C /* SnoozeRootView.swift */; };
 		0D9445A20C0341088DCC266A /* Trio/Resources/GlucoseAlarmSounds/spring.caf in Resources */ = {isa = PBXBuildFile; fileRef = AAB59DB7989341169F83BC92 /* Trio/Resources/GlucoseAlarmSounds/spring.caf */; };
@@ -316,6 +314,9 @@
 		98641AF4F92123DA668AB931 /* CarbRatioEditorRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0BDC6993C1087310EDFC428 /* CarbRatioEditorRootView.swift */; };
 		9B40ED9D7A0D4DA58E531DA8 /* Trio/Resources/GlucoseAlarmSounds/high_chimes.caf in Resources */ = {isa = PBXBuildFile; fileRef = 90EB7DE66A9E469F92A33B44 /* Trio/Resources/GlucoseAlarmSounds/high_chimes.caf */; };
 		9CDF7168D3784ACEAFF1B17E /* Trio/Resources/GlucoseAlarmSounds/alarm.caf in Resources */ = {isa = PBXBuildFile; fileRef = 5FA97CEB43284C1CA2AFE3BD /* Trio/Resources/GlucoseAlarmSounds/alarm.caf */; };
+		A1B2C3D4E5F6000000000002 /* SavedTherapyProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6000000000001 /* SavedTherapyProfile.swift */; };
+		A1B2C3D4E5F6000000000012 /* SavedProfilesModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6000000000011 /* SavedProfilesModel.swift */; };
+		A1B2C3D4E5F6000000000022 /* SavedProfilesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6000000000021 /* SavedProfilesView.swift */; };
 		A33352ED40476125EBAC6EE0 /* CarbRatioEditorDataFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E22146D3DF4853786C78132 /* CarbRatioEditorDataFlow.swift */; };
 		A7F12A275E0F461193A4C1CD /* Trio/Resources/GlucoseAlarmSounds/bright_alarm.caf in Resources */ = {isa = PBXBuildFile; fileRef = 69DA884DA3D242E08EBC291B /* Trio/Resources/GlucoseAlarmSounds/bright_alarm.caf */; };
 		AB2610010123456789ABCDEF /* AlarmKitSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB2610020123456789ABCDEF /* AlarmKitSettings.swift */; };
@@ -462,6 +463,8 @@
 		D6DEC113821A7F1056C4AA1E /* NightscoutConfigDataFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F2A13DF0EDEEEDC4106AA2A /* NightscoutConfigDataFlow.swift */; };
 		D77B7FF64F6F473F8D9D1ACF /* GlucoseImportFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B377498E0D74995A9C87308 /* GlucoseImportFilter.swift */; };
 		DBA5254DBB2586C98F61220C /* ISFEditorProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F9F137F126D9F8DEB799F26 /* ISFEditorProvider.swift */; };
+		DC1439000000000000000011 /* DeviceCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC1439000000000000000001 /* DeviceCatalog.swift */; };
+		DC1439000000000000000012 /* DevicePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC1439000000000000000002 /* DevicePickerView.swift */; };
 		DD07CA142CE80B73002D45A9 /* TimeInRangeChartStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD07CA132CE80B73002D45A9 /* TimeInRangeChartStyle.swift */; };
 		DD09D47B2C5986D1003FEA5D /* CalendarEventSettingsDataFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD09D47A2C5986D1003FEA5D /* CalendarEventSettingsDataFlow.swift */; };
 		DD09D47D2C5986DA003FEA5D /* CalendarEventSettingsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD09D47C2C5986DA003FEA5D /* CalendarEventSettingsProvider.swift */; };
@@ -723,8 +726,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		DC1439000000000000000002 /* DevicePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevicePickerView.swift; sourceTree = "<group>"; };
-		DC1439000000000000000001 /* DeviceCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceCatalog.swift; sourceTree = "<group>"; };
 		0FECC2DE78144C638A0AFBF1 /* Trio/Resources/GlucoseAlarmSounds/minimal.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = Trio/Resources/GlucoseAlarmSounds/minimal.caf; sourceTree = SOURCE_ROOT; };
 		105F108A693641CEB84C25B0 /* Trio/Resources/GlucoseAlarmSounds/bloop.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = Trio/Resources/GlucoseAlarmSounds/bloop.caf; sourceTree = SOURCE_ROOT; };
 		110AEDE02C5193D100615CC9 /* BolusIntent.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BolusIntent.swift; sourceTree = "<group>"; };
@@ -1094,6 +1095,9 @@
 		9F9F137F126D9F8DEB799F26 /* ISFEditorProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ISFEditorProvider.swift; sourceTree = "<group>"; };
 		A0398E7349694A5497DBC890 /* Trio/Resources/GlucoseAlarmSounds/trill.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = Trio/Resources/GlucoseAlarmSounds/trill.caf; sourceTree = SOURCE_ROOT; };
 		A0A48AE3AC813A49A517846A /* NightscoutConfigStateModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NightscoutConfigStateModel.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F6000000000001 /* SavedTherapyProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedTherapyProfile.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F6000000000011 /* SavedProfilesModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedProfilesModel.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F6000000000021 /* SavedProfilesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedProfilesView.swift; sourceTree = "<group>"; };
 		A2491DFF88F04B18B37F4193 /* TrioCoreDataPersistentContainerBackfill.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = TrioCoreDataPersistentContainerBackfill.xcdatamodel; sourceTree = "<group>"; };
 		A401509D21F7F35D4E109EDA /* DataTableDataFlow.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DataTableDataFlow.swift; sourceTree = "<group>"; };
 		A8630D58BDAD6D9C650B9B39 /* PumpConfigProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PumpConfigProvider.swift; sourceTree = "<group>"; };
@@ -1241,6 +1245,8 @@
 		CEE9A65D2BBC9F6500EB5194 /* CalibrationsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalibrationsTests.swift; sourceTree = "<group>"; };
 		CFCFE0781F9074C2917890E8 /* ManualTempBasalStateModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ManualTempBasalStateModel.swift; sourceTree = "<group>"; };
 		D0BDC6993C1087310EDFC428 /* CarbRatioEditorRootView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CarbRatioEditorRootView.swift; sourceTree = "<group>"; };
+		DC1439000000000000000001 /* DeviceCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceCatalog.swift; sourceTree = "<group>"; };
+		DC1439000000000000000002 /* DevicePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevicePickerView.swift; sourceTree = "<group>"; };
 		DC2C6489D29ECCCAD78E0721 /* GlucoseNotificationSettingsStateModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GlucoseNotificationSettingsStateModel.swift; sourceTree = "<group>"; };
 		DD07CA132CE80B73002D45A9 /* TimeInRangeChartStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeInRangeChartStyle.swift; sourceTree = "<group>"; };
 		DD09D47A2C5986D1003FEA5D /* CalendarEventSettingsDataFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarEventSettingsDataFlow.swift; sourceTree = "<group>"; };
@@ -1411,7 +1417,7 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		BDFF7A9E2D25FA970016C40C /* Preview Content */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "Preview Content"; sourceTree = "<group>"; };
 		C0DE00000000000000000021 /* Trio/Sources/APS/OpenAPSSwift */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Trio/Sources/APS/OpenAPSSwift; sourceTree = SOURCE_ROOT; };
-		C0DE00000000000000000022 /* TrioTests/OpenAPSSwiftTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = ("Parity/goldens",); path = TrioTests/OpenAPSSwiftTests; sourceTree = SOURCE_ROOT; };
+		C0DE00000000000000000022 /* TrioTests/OpenAPSSwiftTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (Parity/goldens, ); path = TrioTests/OpenAPSSwiftTests; sourceTree = SOURCE_ROOT; };
 		DDCEBF412CC1B42500DF4C36 /* Views */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Views; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
@@ -2954,6 +2960,9 @@
 			children = (
 				6545DD6A2D70D493007B0D70 /* SubmodulesView.swift */,
 				DD1745122C54169400211FAC /* DevicesView.swift */,
+				A1B2C3D4E5F6000000000001 /* SavedTherapyProfile.swift */,
+				A1B2C3D4E5F6000000000011 /* SavedProfilesModel.swift */,
+				A1B2C3D4E5F6000000000021 /* SavedProfilesView.swift */,
 				DD1745142C54388A00211FAC /* TherapySettingsView.swift */,
 				DD1745162C54389F00211FAC /* FeatureSettingsView.swift */,
 				DD1745182C543B5700211FAC /* NotificationsView.swift */,
@@ -3840,6 +3849,9 @@
 				38E98A2725F52C9300C0CED0 /* CollectionIssueReporter.swift in Sources */,
 				E00EEC0427368630002FF094 /* SecurityAssembly.swift in Sources */,
 				3811DEE825CA063400A708ED /* Injected.swift in Sources */,
+				A1B2C3D4E5F6000000000002 /* SavedTherapyProfile.swift in Sources */,
+				A1B2C3D4E5F6000000000012 /* SavedProfilesModel.swift in Sources */,
+				A1B2C3D4E5F6000000000022 /* SavedProfilesView.swift in Sources */,
 				DD1745152C54388A00211FAC /* TherapySettingsView.swift in Sources */,
 				585E2CAE2BE7BF46006ECF1A /* PumpEvent+helper.swift in Sources */,
 				DDAA29832D2D1D93006546A1 /* AdjustmentsRootView+Overrides.swift in Sources */,
@@ -4986,9 +4998,6 @@
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
-
-/* Begin XCLocalSwiftPackageReference section */
-/* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
 		3811DE0E25C9D37700A708ED /* XCRemoteSwiftPackageReference "Swinject" */ = {

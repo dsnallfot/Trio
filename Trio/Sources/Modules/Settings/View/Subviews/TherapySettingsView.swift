@@ -36,6 +36,12 @@ struct TherapySettingsView: BaseView {
                 }
             )
             .listRowBackground(Color.chart)
+            Section("Profilhantering") {
+                NavigationLink("Sparade profiler") {
+                    SavedProfilesView(resolver: resolver)
+                }
+            }
+            .listRowBackground(Color.chart)
         }
         .scrollContentBackground(.hidden)
         .background(appState.trioBackgroundColor(for: colorScheme))
