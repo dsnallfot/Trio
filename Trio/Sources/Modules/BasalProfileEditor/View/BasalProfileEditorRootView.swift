@@ -166,12 +166,10 @@ extension BasalProfileEditor {
             .modifier(TherapyProfileSaveConfirmation(resolver: resolver, isRequested: $confirmProfileChanges) {
                 state.save()
             })
-            .alert(isPresented: $state.showAlert) {
-                Alert(
-                    title: Text("Unable to Save"),
-                    message: Text("Trio kunde inte kommunicera med din pump. Ändringar av baselen sparades inte."),
-                    dismissButton: .default(Text("Stäng"))
-                )
+            .alert("Unable to Save", isPresented: $state.showAlert) {
+                Button("Stäng", role: .cancel) {}
+            } message: {
+                Text("Trio kunde inte kommunicera med din pump. Ändringar av baselen sparades inte.")
             }
             .onChange(of: state.items) {
                 state.calcTotal()
