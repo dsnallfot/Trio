@@ -61,6 +61,26 @@ import Swinject
         return true
     }
 
+    func delete(_ profile: SavedTherapyProfile) -> String? {
+        var deletionError: String?
+        storage.transaction { storage in
+            guard let saved = storage.retrieve(filename, as: [SavedTherapyProfile].self) else {
+                deletionError = "Profilerna kunde inte läsas. Försök igen."
+                return
+            }
+            let updated = saved.filter { $0.id != profile.id }
+            storage.save(updated, as: filename)
+            guard let persisted = storage.retrieve(filename, as: [SavedTherapyProfile].self),
+                  persisted.map(\.id) == updated.map(\.id)
+            else {
+                deletionError = "Profilen kunde inte raderas. Försök igen."
+                return
+            }
+            profiles = persisted
+        }
+        return deletionError
+    }
+
     func activate(_ profile: SavedTherapyProfile) async -> Bool {
         guard !Self.activationInProgress else {
             errorMessage = "En profilaktivering pågår redan. Vänta tills den är klar."

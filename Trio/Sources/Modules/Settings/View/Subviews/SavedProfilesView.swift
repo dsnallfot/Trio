@@ -3,6 +3,8 @@ import Swinject
 
 struct SavedProfilesView: View {
     @StateObject private var model: SavedProfilesModel
+    @State private var profileToDelete: SavedTherapyProfile?
+    @State private var deletionError: String?
     @Environment(\.colorScheme) private var colorScheme
     @Environment(AppState.self) private var appState
 
@@ -29,6 +31,14 @@ struct SavedProfilesView: View {
                     NavigationLink(profile.name) {
                         SavedProfileReviewView(model: model, profile: profile, savingCurrent: false)
                     }
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        Button {
+                            profileToDelete = profile
+                        } label: {
+                            Label("Radera", systemImage: "trash")
+                        }
+                        .tint(.red)
+                    }
                 }
             }
             .listRowBackground(Color.chart)
@@ -37,6 +47,25 @@ struct SavedProfilesView: View {
         .background(appState.trioBackgroundColor(for: colorScheme))
         .navigationTitle("Sparade profiler")
         .onAppear { model.reload() }
+        .alert("Radera sparad profil?", isPresented: Binding(
+            get: { profileToDelete != nil },
+            set: { if !$0 { profileToDelete = nil } }
+        ), presenting: profileToDelete) { profile in
+            Button("Radera", role: .destructive) {
+                deletionError = model.delete(profile)
+            }
+            Button("Avbryt", role: .cancel) {}
+        } message: { profile in
+            Text("Vill du verkligen radera den sparade profilen '\(profile.name)'?")
+        }
+        .alert("Profilhantering", isPresented: Binding(
+            get: { deletionError != nil },
+            set: { if !$0 { deletionError = nil } }
+        )) {
+            Button("OK", role: .cancel) { deletionError = nil }
+        } message: {
+            Text(deletionError ?? "")
+        }
     }
 }
 
