@@ -18,6 +18,42 @@ final class SavedTherapyProfileTests: XCTestCase {
         )
     }
 
+    func testMatchingIgnoresIdentityNameAndTimeFormattingButChecksEverySchedule() {
+        let original = profile(basal: [.init(start: "00:00", minutes: 0, rate: 0.5)])
+        func variant(
+            rate: Decimal = 0.5, sensitivity: Decimal = 90, ratio: Decimal = 20,
+            low: Decimal = 90, high: Decimal = 100, offset: Int = 0, units: GlucoseUnits = .mgdL
+        ) -> SavedTherapyProfile {
+            SavedTherapyProfile(
+                name: "Annat namn",
+                basal: [.init(start: "00:00:00", minutes: offset, rate: rate)],
+                sensitivities: .init(
+                    units: units, userPreferredUnits: units,
+                    sensitivities: [.init(sensitivity: sensitivity, offset: offset, start: "00:00:00")]
+                ),
+                carbRatios: .init(units: .grams, schedule: [.init(start: "00:00:00", offset: offset, ratio: ratio)]),
+                targets: .init(
+                    units: units, userPreferredUnits: units,
+                    targets: [.init(low: low, high: high, start: "00:00:00", offset: offset)]
+                )
+            )
+        }
+        XCTAssertTrue(original.hasSameSettings(as: variant()))
+        for changed in [
+            variant(rate: 0.6),
+            variant(sensitivity: 91),
+            variant(ratio: 21),
+            variant(low: 91),
+            variant(high: 101),
+            variant(offset: 30),
+            variant(units: .mmolL)
+        ]
+        {
+            XCTAssertFalse(original.hasSameSettings(as: changed))
+        }
+        XCTAssertFalse(original.hasSameSettings(as: profile(basal: [])))
+    }
+
     func testDailyTotalWeightsEachSegmentIncludingLastSegment() {
         let snapshot = profile(basal: [
             BasalProfileEntry(start: "00:00", minutes: 0, rate: 0.5),

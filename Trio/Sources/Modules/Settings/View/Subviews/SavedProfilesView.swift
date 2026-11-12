@@ -4,7 +4,9 @@ import Swinject
 struct SavedProfilesView: View {
     @StateObject private var model: SavedProfilesModel
     @State private var profileToDelete: SavedTherapyProfile?
-    @State private var deletionError: String?
+    @State private var listError: String?
+    @State private var profileToRename: SavedTherapyProfile?
+    @State private var newName = ""
     @Environment(\.colorScheme) private var colorScheme
     @Environment(AppState.self) private var appState
 
@@ -16,7 +18,7 @@ struct SavedProfilesView: View {
         Form {
             Section("Aktuell profil") {
                 if let current = model.current {
-                    NavigationLink("Aktuell profil") {
+                    NavigationLink(model.currentProfileName) {
                         SavedProfileReviewView(model: model, profile: current, savingCurrent: true)
                     }
                 }
@@ -38,6 +40,13 @@ struct SavedProfilesView: View {
                             Label("Radera", systemImage: "trash")
                         }
                         .tint(.red)
+                        Button {
+                            newName = profile.name
+                            profileToRename = profile
+                        } label: {
+                            Label("Byt namn", systemImage: "pencil")
+                        }
+                        .tint(.blue)
                     }
                 }
             }
@@ -52,19 +61,28 @@ struct SavedProfilesView: View {
             set: { if !$0 { profileToDelete = nil } }
         ), presenting: profileToDelete) { profile in
             Button("Radera", role: .destructive) {
-                deletionError = model.delete(profile)
+                listError = model.delete(profile)
             }
             Button("Avbryt", role: .cancel) {}
         } message: { profile in
             Text("Vill du verkligen radera den sparade profilen '\(profile.name)'?")
         }
+        .alert("Byt namn", isPresented: Binding(
+            get: { profileToRename != nil },
+            set: { if !$0 { profileToRename = nil } }
+        ), presenting: profileToRename) { profile in
+            TextField("Profilnamn", text: $newName)
+            Button("Spara") { listError = model.rename(profile, to: newName) }
+                .disabled(newName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            Button("Avbryt", role: .cancel) {}
+        }
         .alert("Profilhantering", isPresented: Binding(
-            get: { deletionError != nil },
-            set: { if !$0 { deletionError = nil } }
+            get: { listError != nil },
+            set: { if !$0 { listError = nil } }
         )) {
-            Button("OK", role: .cancel) { deletionError = nil }
+            Button("OK", role: .cancel) { listError = nil }
         } message: {
-            Text(deletionError ?? "")
+            Text(listError ?? "")
         }
     }
 }
@@ -150,7 +168,7 @@ private struct SavedProfileReviewView: View {
             HStack(spacing: 12) {
                 Button {
                     if savingCurrent {
-                        showingName = true
+                        if model.canSave(profile) { showingName = true }
                     } else {
                         Task { if await model.activate(profile) { dismiss() } }
                     }

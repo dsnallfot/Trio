@@ -40,12 +40,30 @@ import Swinject
         )
     }
 
+    var currentProfileName: String {
+        guard let current else { return "Ej sparad profil" }
+        return matchingProfile(for: current)?.name ?? "Ej sparad profil"
+    }
+
+    func matchingProfile(for snapshot: SavedTherapyProfile) -> SavedTherapyProfile? {
+        profiles.first { $0.hasSameSettings(as: snapshot) }
+    }
+
+    func canSave(_ snapshot: SavedTherapyProfile) -> Bool {
+        if let existing = matchingProfile(for: snapshot) {
+            errorMessage = "Identisk profil redan sparad under namnet \"\(existing.name)\""
+            return false
+        }
+        return true
+    }
+
     func save(_ snapshot: SavedTherapyProfile, name: String) -> Bool {
         let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !name.isEmpty, snapshot.isValid else {
             errorMessage = "Profilen saknar ett namn eller innehåller ogiltiga inställningar."
             return false
         }
+        guard canSave(snapshot) else { return false }
         var saved = snapshot
         saved.id = UUID()
         saved.name = name
@@ -59,6 +77,30 @@ import Swinject
         }
         profiles = persisted
         return true
+    }
+
+    func rename(_ profile: SavedTherapyProfile, to name: String) -> String? {
+        let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return "Profilnamnet får inte vara tomt." }
+        var renameError: String?
+        storage.transaction { storage in
+            guard var saved = storage.retrieve(filename, as: [SavedTherapyProfile].self),
+                  let index = saved.firstIndex(where: { $0.id == profile.id })
+            else {
+                renameError = "Profilen kunde inte läsas. Försök igen."
+                return
+            }
+            saved[index].name = name
+            storage.save(saved, as: filename)
+            guard let persisted = storage.retrieve(filename, as: [SavedTherapyProfile].self),
+                  persisted.first(where: { $0.id == profile.id })?.name == name
+            else {
+                renameError = "Namnet kunde inte sparas. Försök igen."
+                return
+            }
+            profiles = persisted
+        }
+        return renameError
     }
 
     func delete(_ profile: SavedTherapyProfile) -> String? {
